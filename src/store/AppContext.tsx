@@ -1,9 +1,17 @@
-import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState, useCallback, type ReactNode } from 'react';
 import type { AppState } from '../lib/types';
 import { reducer, createInitialState, type Action } from './reducer';
 import { computeDerivedStats } from '../lib/stats';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { todayKey } from '../lib/date';
+import {
+  loadSyncConfig,
+  saveSyncConfig,
+  clearSyncConfig,
+  pushStateToGithub,
+  pullStateFromGithub,
+  type SyncConfig,
+} from '../lib/githubSync';
 
 const STORAGE_KEY = 'daily-quest-app-state-v1';
 
@@ -26,6 +34,8 @@ export type Celebration =
   | { kind: 'levelup'; level: number; title: string }
   | { kind: 'goal'; id: string; title: string; icon: string };
 
+export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+
 interface AppContextValue {
   state: AppState;
   dispatch: React.Dispatch<Action>;
@@ -34,6 +44,13 @@ interface AppContextValue {
   dismissCelebration: () => void;
   isNewDay: boolean;
   dismissNewDay: () => void;
+  syncConfig: SyncConfig | null;
+  syncStatus: SyncStatus;
+  syncMessage: string;
+  connectSync: (cfg: SyncConfig) => Promise<void>;
+  disconnectSync: () => void;
+  syncNow: () => Promise<void>;
+  restoreFromGithub: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -50,6 +67,93 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const prevGoalsCompletedRef = useRef<Set<string> | null>(null);
 
   const [isNewDay, setIsNewDay] = useState(() => state.lastOpenedDate !== todayKey());
+
+  const [syncConfig, setSyncConfigState] = useState<SyncConfig | null>(() => loadSyncConfig());
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [syncMessage, setSyncMessage] = useState('');
+  const autoSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextAutoSyncRef = useRef(false);
+
+  const recordSyncSuccess = useCallback((cfg: SyncConfig, message: string) => {
+    const updated = { ...cfg, lastSyncedAt: new Date().toISOString() };
+    saveSyncConfig(updated);
+    setSyncConfigState((prev) => (prev ? { ...prev, lastSyncedAt: updated.lastSyncedAt } : prev));
+    setSyncStatus('success');
+    setSyncMessage(message);
+  }, []);
+
+  const connectSync = useCallback(
+    async (cfg: SyncConfig) => {
+      saveSyncConfig(cfg);
+      setSyncConfigState(cfg);
+      setSyncStatus('syncing');
+      const result = await pushStateToGithub(cfg, state);
+      if (result.ok) recordSyncSuccess(cfg, 'Connected and synced.');
+      else {
+        setSyncStatus('error');
+        setSyncMessage(result.message);
+      }
+    },
+    [state, recordSyncSuccess],
+  );
+
+  const disconnectSync = useCallback(() => {
+    clearSyncConfig();
+    setSyncConfigState(null);
+    setSyncStatus('idle');
+    setSyncMessage('');
+  }, []);
+
+  const syncNow = useCallback(async () => {
+    if (!syncConfig) return;
+    setSyncStatus('syncing');
+    const result = await pushStateToGithub(syncConfig, state);
+    if (result.ok) recordSyncSuccess(syncConfig, 'Synced just now.');
+    else {
+      setSyncStatus('error');
+      setSyncMessage(result.message);
+    }
+  }, [syncConfig, state, recordSyncSuccess]);
+
+  const restoreFromGithub = useCallback(async () => {
+    if (!syncConfig) return;
+    setSyncStatus('syncing');
+    const result = await pullStateFromGithub(syncConfig);
+    if (result.ok) {
+      skipNextAutoSyncRef.current = true;
+      dispatch({ type: 'IMPORT_STATE', state: result.data as AppState });
+      setSyncStatus('success');
+      setSyncMessage('Restored from GitHub.');
+    } else {
+      setSyncStatus('error');
+      setSyncMessage(result.message);
+    }
+  }, [syncConfig]);
+
+  // Debounced auto-sync: push a fresh copy a few seconds after the last change.
+  useEffect(() => {
+    if (!syncConfig?.autoSync) return;
+    if (skipNextAutoSyncRef.current) {
+      skipNextAutoSyncRef.current = false;
+      return;
+    }
+    if (autoSyncTimerRef.current) clearTimeout(autoSyncTimerRef.current);
+    autoSyncTimerRef.current = setTimeout(async () => {
+      setSyncStatus('syncing');
+      const result = await pushStateToGithub(syncConfig, state);
+      if (result.ok) recordSyncSuccess(syncConfig, 'Auto-synced.');
+      else {
+        setSyncStatus('error');
+        setSyncMessage(result.message);
+      }
+    }, 4000);
+    return () => {
+      if (autoSyncTimerRef.current) clearTimeout(autoSyncTimerRef.current);
+    };
+    // Only the identity of these primitives should restart the debounce timer —
+    // recordSyncSuccess updates syncConfig.lastSyncedAt, which must not retrigger this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, syncConfig?.autoSync, syncConfig?.token, syncConfig?.owner, syncConfig?.repo, syncConfig?.path]);
 
   useEffect(() => {
     try {
@@ -117,6 +221,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'MARK_DAY_OPENED', date: todayKey() });
   }
 
+  // Ensure today's wildcard quest exists (or prune it if the feature is off).
+  useEffect(() => {
+    dispatch({ type: 'SYNC_WILDCARD' });
+  }, [state.wildcardEnabled]);
+
   const value: AppContextValue = {
     state,
     dispatch,
@@ -125,6 +234,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dismissCelebration,
     isNewDay,
     dismissNewDay,
+    syncConfig,
+    syncStatus,
+    syncMessage,
+    connectSync,
+    disconnectSync,
+    syncNow,
+    restoreFromGithub,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

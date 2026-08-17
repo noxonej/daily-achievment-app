@@ -2,6 +2,7 @@ import type { AppState, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGo
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
+import { buildWildcardQuestForDate } from '../lib/wildcard';
 import { DIFFICULTY_XP } from '../lib/xp';
 
 export function createInitialState(): AppState {
@@ -12,6 +13,7 @@ export function createInitialState(): AppState {
     weekLogs: {},
     unlockedAchievements: [],
     lastOpenedDate: todayKey(),
+    wildcardEnabled: true,
     createdAt: new Date().toISOString(),
   };
 }
@@ -28,6 +30,8 @@ export type Action =
   | { type: 'DELETE_GOAL'; goalId: string }
   | { type: 'UNLOCK_ACHIEVEMENTS'; ids: string[] }
   | { type: 'MARK_DAY_OPENED'; date: string }
+  | { type: 'SYNC_WILDCARD' }
+  | { type: 'SET_WILDCARD_ENABLED'; enabled: boolean }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
 
@@ -50,7 +54,8 @@ export interface NewGoalInput {
 }
 
 function recomputeDailyLog(quests: Quest[], completedQuestIds: string[]): DayLog {
-  const activeDaily = quests.filter((q) => q.frequency === 'daily' && !q.archived);
+  // The wildcard quest is a bonus and doesn't count toward the "perfect day" requirement.
+  const activeDaily = quests.filter((q) => q.frequency === 'daily' && !q.archived && !q.wildcardDate);
   const xpEarned = completedQuestIds.reduce((sum, id) => {
     const q = quests.find((x) => x.id === id);
     return sum + (q ? q.xp : 0);
@@ -203,8 +208,26 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, lastOpenedDate: action.date };
     }
 
+    case 'SYNC_WILDCARD': {
+      const today = todayKey();
+      const withoutStaleWildcards = state.quests.filter((q) => !q.wildcardDate || q.wildcardDate === today);
+      const hasToday = withoutStaleWildcards.some((q) => q.wildcardDate === today);
+      if (!state.wildcardEnabled) {
+        return withoutStaleWildcards.some((q) => !!q.wildcardDate)
+          ? { ...state, quests: withoutStaleWildcards.filter((q) => !q.wildcardDate) }
+          : state;
+      }
+      if (hasToday && withoutStaleWildcards.length === state.quests.length) return state;
+      const quests = hasToday ? withoutStaleWildcards : [...withoutStaleWildcards, buildWildcardQuestForDate(today)];
+      return { ...state, quests };
+    }
+
+    case 'SET_WILDCARD_ENABLED': {
+      return { ...state, wildcardEnabled: action.enabled };
+    }
+
     case 'IMPORT_STATE': {
-      return action.state;
+      return { ...createInitialState(), ...action.state };
     }
 
     case 'RESET_ALL': {

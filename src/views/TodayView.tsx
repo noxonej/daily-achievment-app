@@ -1,6 +1,7 @@
 import { useApp } from '../store/AppContext';
 import { todayKey, formatDisplayDate } from '../lib/date';
 import { QuestCard } from '../components/QuestCard';
+import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import type { ViewId } from '../components/NavTabs';
 
@@ -9,7 +10,9 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const key = todayKey();
   const log = state.dayLogs[key];
   const completed = log?.completedQuestIds ?? [];
-  const activeDaily = state.quests.filter((q) => q.frequency === 'daily' && !q.archived);
+  const allActiveDaily = state.quests.filter((q) => q.frequency === 'daily' && !q.archived);
+  const wildcard = allActiveDaily.find((q) => q.wildcardDate === key);
+  const activeDaily = allActiveDaily.filter((q) => q.wildcardDate !== key);
   const doneCount = activeDaily.filter((q) => completed.includes(q.id)).length;
   const isPerfect = activeDaily.length > 0 && doneCount === activeDaily.length;
 
@@ -43,6 +46,14 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           colorClass="bg-gradient-to-r from-emerald-500 to-teal-400"
         />
       </div>
+
+      {wildcard && (
+        <WildcardQuestCard
+          quest={wildcard}
+          completed={completed.includes(wildcard.id)}
+          onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: wildcard.id })}
+        />
+      )}
 
       {activeDaily.length === 0 ? (
         <EmptyState onNavigate={onNavigate} />

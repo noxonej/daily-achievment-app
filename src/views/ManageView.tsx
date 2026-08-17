@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { QuestFormModal } from '../components/QuestFormModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { SyncSettings } from '../components/SyncSettings';
 import type { Frequency, Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 
@@ -15,7 +16,7 @@ export function ManageView() {
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const daily = state.quests.filter((q) => q.frequency === 'daily');
+  const daily = state.quests.filter((q) => q.frequency === 'daily' && !q.wildcardDate);
   const weekly = state.quests.filter((q) => q.frequency === 'weekly');
 
   function openAdd(freq: Frequency) {
@@ -80,6 +81,32 @@ export function ManageView() {
         onArchiveToggle={(q) => dispatch({ type: 'TOGGLE_ARCHIVE_QUEST', questId: q.id })}
         onDelete={(q) => setDeleteTarget(q)}
       />
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-white">🎲 Daily Wildcard Quest</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              A bonus surprise quest that rotates to something new every day. Doesn't count toward your streak.
+            </p>
+          </div>
+          <button
+            onClick={() => dispatch({ type: 'SET_WILDCARD_ENABLED', enabled: !state.wildcardEnabled })}
+            className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${
+              state.wildcardEnabled ? 'bg-violet-500' : 'bg-white/10'
+            }`}
+            aria-label="Toggle daily wildcard quest"
+          >
+            <span
+              className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${
+                state.wildcardEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      <SyncSettings />
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
         <p className="text-sm font-semibold text-white">Your Data</p>
