@@ -54,6 +54,15 @@ export interface UnlockedAchievement {
   unlockedAt: string;
 }
 
+export type CosmeticSlot = 'outfit' | 'hat' | 'accessory' | 'aura';
+
+export interface Character {
+  outfit: string;
+  hat: string;
+  accessory: string;
+  aura: string;
+}
+
 export interface AppState {
   quests: Quest[];
   goals: LongTermGoal[];
@@ -62,6 +71,8 @@ export interface AppState {
   unlockedAchievements: UnlockedAchievement[];
   lastOpenedDate: string;
   wildcardEnabled: boolean;
+  character: Character;
+  unlockedCosmeticIds: string[];
   createdAt: string;
 }
 
@@ -82,4 +93,5 @@ export interface DerivedStats {
   totalPerfectDays: number;
   goalsCompleted: number;
   daysActive: number;
+  availableShards: number;
 }

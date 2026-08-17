@@ -1,9 +1,11 @@
-import type { AppState, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, Quest, WeekLog } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, Quest, WeekLog } from '../lib/types';
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
 import { buildWildcardQuestForDate } from '../lib/wildcard';
 import { DIFFICULTY_XP } from '../lib/xp';
+import { DEFAULT_CHARACTER, findCosmetic } from '../data/cosmetics';
+import { computeDerivedStats } from '../lib/stats';
 
 export function createInitialState(): AppState {
   return {
@@ -14,6 +16,8 @@ export function createInitialState(): AppState {
     unlockedAchievements: [],
     lastOpenedDate: todayKey(),
     wildcardEnabled: true,
+    character: { ...DEFAULT_CHARACTER },
+    unlockedCosmeticIds: [],
     createdAt: new Date().toISOString(),
   };
 }
@@ -32,6 +36,8 @@ export type Action =
   | { type: 'MARK_DAY_OPENED'; date: string }
   | { type: 'SYNC_WILDCARD' }
   | { type: 'SET_WILDCARD_ENABLED'; enabled: boolean }
+  | { type: 'UNLOCK_COSMETIC'; itemId: string }
+  | { type: 'EQUIP_COSMETIC'; slot: CosmeticSlot; itemId: string }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
 
@@ -224,6 +230,22 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'SET_WILDCARD_ENABLED': {
       return { ...state, wildcardEnabled: action.enabled };
+    }
+
+    case 'UNLOCK_COSMETIC': {
+      const item = findCosmetic(action.itemId);
+      if (!item || item.cost === 0 || state.unlockedCosmeticIds.includes(action.itemId)) return state;
+      const { availableShards } = computeDerivedStats(state);
+      if (availableShards < item.cost) return state;
+      return { ...state, unlockedCosmeticIds: [...state.unlockedCosmeticIds, action.itemId] };
+    }
+
+    case 'EQUIP_COSMETIC': {
+      const item = findCosmetic(action.itemId);
+      if (!item) return state;
+      const owned = item.cost === 0 || state.unlockedCosmeticIds.includes(action.itemId);
+      if (!owned) return state;
+      return { ...state, character: { ...state.character, [action.slot]: action.itemId } };
     }
 
     case 'IMPORT_STATE': {

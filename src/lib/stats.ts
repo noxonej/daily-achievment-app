@@ -1,6 +1,7 @@
 import type { AppState, DayLog, DerivedStats } from './types';
 import { addDaysToKey, daysBetween, todayKey } from './date';
 import { levelFromTotalXp } from './xp';
+import { findCosmetic } from '../data/cosmetics';
 
 function computeStreaks(dayLogs: Record<string, DayLog>): { current: number; longest: number } {
   const keys = Object.keys(dayLogs).sort();
@@ -57,6 +58,8 @@ export function computeDerivedStats(state: AppState): DerivedStats {
   const goalsCompleted = state.goals.filter((g) => !!g.completedAt).length;
   const { level } = levelFromTotalXp(totalXp);
   const { current, longest } = computeStreaks(state.dayLogs);
+  const shardsSpent = state.unlockedCosmeticIds.reduce((sum, id) => sum + (findCosmetic(id)?.cost ?? 0), 0);
+  const availableShards = Math.max(0, totalXp - shardsSpent);
 
   return {
     totalXp,
@@ -67,5 +70,6 @@ export function computeDerivedStats(state: AppState): DerivedStats {
     totalPerfectDays,
     goalsCompleted,
     daysActive,
+    availableShards,
   };
 }
