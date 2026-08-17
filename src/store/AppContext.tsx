@@ -23,7 +23,9 @@ function loadState(): AppState {
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.quests)) {
       return createInitialState();
     }
-    return parsed as AppState;
+    // Merge over fresh defaults so saves from before a schema change (new
+    // fields like character/wildcardEnabled) don't crash on load.
+    return { ...createInitialState(), ...parsed } as AppState;
   } catch {
     return createInitialState();
   }
