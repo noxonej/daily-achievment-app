@@ -50,3 +50,26 @@ export function formatShortDate(key: string): string {
 export function currentYear(): number {
   return new Date().getFullYear();
 }
+
+export function msUntilNextMidnight(now: Date = new Date()): number {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+  return next.getTime() - now.getTime();
+}
+
+// Weeks reset Monday 00:00 local time, matching weekKey()'s Monday-start weeks.
+export function msUntilNextWeekStart(now: Date = new Date()): number {
+  const dayNum = (now.getDay() + 6) % 7; // Monday = 0
+  const daysAhead = dayNum === 0 ? 7 : 7 - dayNum;
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysAhead, 0, 0, 0, 0);
+  return next.getTime() - now.getTime();
+}
+
+export function formatCountdown(ms: number): string {
+  const totalMinutes = Math.max(0, Math.round(ms / 60000));
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}

@@ -1,5 +1,6 @@
 import { useApp } from '../store/AppContext';
 import { weekKey } from '../lib/date';
+import { useWeeklyResetLabel } from '../lib/useResetCountdown';
 import { QuestCard } from '../components/QuestCard';
 import { NoteQuestCard } from '../components/NoteQuestCard';
 import { WildcardQuestCard } from '../components/WildcardQuestCard';
@@ -8,6 +9,7 @@ import type { ViewId } from '../components/NavTabs';
 
 export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch } = useApp();
+  const resetLabel = useWeeklyResetLabel();
   const key = weekKey();
   const log = state.weekLogs[key];
   const completed = log?.completedQuestIds ?? [];
@@ -46,6 +48,7 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
           )}
         </div>
         <ProgressBar value={doneCount} max={Math.max(activeWeekly.length, 1)} />
+        <p className="text-[11px] text-slate-500 mt-2">🔄 New quests in {resetLabel}</p>
       </div>
 
       {wildcard && (

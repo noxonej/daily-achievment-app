@@ -1,5 +1,6 @@
 import { useApp } from '../store/AppContext';
 import { todayKey, formatDisplayDate } from '../lib/date';
+import { useDailyResetLabel } from '../lib/useResetCountdown';
 import { QuestCard } from '../components/QuestCard';
 import { NoteQuestCard } from '../components/NoteQuestCard';
 import { WildcardQuestCard } from '../components/WildcardQuestCard';
@@ -10,6 +11,7 @@ import type { ViewId } from '../components/NavTabs';
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch, stats } = useApp();
+  const resetLabel = useDailyResetLabel();
   const key = todayKey();
   const log = state.dayLogs[key];
   const completed = log?.completedQuestIds ?? [];
@@ -49,6 +51,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           max={Math.max(activeDaily.length, 1)}
           colorClass="bg-gradient-to-r from-emerald-500 to-teal-400"
         />
+        <p className="text-[11px] text-slate-500 mt-2">🔄 New quests in {resetLabel}</p>
       </div>
 
       {wildcard && (
