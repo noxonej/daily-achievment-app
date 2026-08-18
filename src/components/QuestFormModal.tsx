@@ -16,6 +16,7 @@ interface QuestFormModalProps {
     icon: string;
     category: string;
     promptForNote?: boolean;
+    details?: string;
   }) => void;
   initial?: Quest;
   defaultFrequency?: Frequency;
@@ -24,6 +25,7 @@ interface QuestFormModalProps {
 export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFrequency = 'daily' }: QuestFormModalProps) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
+  const [details, setDetails] = useState(initial?.details ?? '');
   const [frequency, setFrequency] = useState<Frequency>(initial?.frequency ?? defaultFrequency);
   const [difficulty, setDifficulty] = useState<Difficulty>(initial?.difficulty ?? 'easy');
   const [icon, setIcon] = useState(initial?.icon ?? '🎯');
@@ -33,6 +35,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
   function reset() {
     setTitle('');
     setDescription('');
+    setDetails('');
     setFrequency(defaultFrequency);
     setDifficulty('easy');
     setIcon('🎯');
@@ -50,6 +53,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
       icon,
       category: category.trim() || 'Custom',
       promptForNote,
+      details: details.trim() || undefined,
     });
     if (!initial) reset();
     onClose();
@@ -92,6 +96,19 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="A little reminder of what this means"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 resize-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+            More info (optional)
+          </label>
+          <textarea
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            rows={2}
+            placeholder="A longer explanation, hidden behind a tap — useful for clearing up anything that could be read differently by different people"
             className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 resize-none"
           />
         </div>

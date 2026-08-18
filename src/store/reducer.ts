@@ -54,6 +54,7 @@ export interface NewQuestInput {
   icon: string;
   category: string;
   promptForNote?: boolean;
+  details?: string;
 }
 
 export interface NewGoalInput {
@@ -214,6 +215,7 @@ export function reducer(state: AppState, action: Action): AppState {
         archived: false,
         createdAt: new Date().toISOString(),
         promptForNote: action.quest.promptForNote,
+        details: action.quest.details,
       };
       return { ...state, quests: [...state.quests, q] };
     }

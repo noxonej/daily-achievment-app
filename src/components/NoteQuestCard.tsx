@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
+import { InfoDisclosure } from './InfoDisclosure';
 
 interface NoteQuestCardProps {
   quest: Quest;
@@ -47,6 +48,11 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote }: NoteQues
             {quest.title}
           </p>
           {quest.description && <p className="text-xs text-slate-400 mt-0.5 truncate">{quest.description}</p>}
+          {quest.details && (
+            <div className="mt-1">
+              <InfoDisclosure text={quest.details} />
+            </div>
+          )}
         </div>
         <div className="shrink-0 flex flex-col items-end gap-1">
           <span

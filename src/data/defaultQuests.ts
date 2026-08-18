@@ -1,7 +1,10 @@
 import type { Quest } from '../lib/types';
 import { DIFFICULTY_XP } from '../lib/xp';
 
-type SeedQuest = Pick<Quest, 'title' | 'description' | 'frequency' | 'difficulty' | 'icon' | 'category' | 'promptForNote'>;
+type SeedQuest = Pick<
+  Quest,
+  'title' | 'description' | 'frequency' | 'difficulty' | 'icon' | 'category' | 'promptForNote' | 'details'
+>;
 
 const seeds: SeedQuest[] = [
   // Daily quests
@@ -29,6 +32,8 @@ const seeds: SeedQuest[] = [
     difficulty: 'easy',
     icon: '🧘',
     category: 'Mind',
+    details:
+      'Any style counts — guided app, silent breathing, a body scan, even a slow mindful walk. There is no "correct" technique here, only that you actually stopped and were present for 10 minutes.',
   },
   {
     title: 'Move your body',
@@ -37,6 +42,8 @@ const seeds: SeedQuest[] = [
     difficulty: 'medium',
     icon: '🏃',
     category: 'Body',
+    details:
+      'This is intentionally broad: a gym session, a walk, yoga, dancing in your kitchen, a sport — anything that gets you moving for about 20 minutes. Match it to your own fitness level and what your body can actually do, not someone else\'s standard.',
   },
   {
     title: 'Drink 2L of water',
@@ -45,6 +52,8 @@ const seeds: SeedQuest[] = [
     difficulty: 'easy',
     icon: '💧',
     category: 'Body',
+    details:
+      '2L is a common rough guideline, not a medical prescription — adjust it up or down for your body size, activity level, and climate. Other unsweetened drinks (tea, sparkling water) can reasonably count toward this if that is how you track it.',
   },
   {
     title: 'Gratitude x3',
@@ -62,6 +71,8 @@ const seeds: SeedQuest[] = [
     difficulty: 'medium',
     icon: '🥗',
     category: 'Body',
+    details:
+      'Deliberately left open-ended, because "junk" means different things depending on the diet you actually follow — keto, vegan, carnivore, no restrictions at all, or something medically prescribed. Define it for yourself: usually that means skipping the things YOU consider ultra-processed, low-effort, or off-plan for how you eat, not a universal food list. If this doesn\'t map cleanly onto your diet, edit the quest or turn it off in Manage — it\'s meant to help, not to police you.',
   },
   {
     title: 'Tidy your space',
@@ -138,5 +149,6 @@ export function buildDefaultQuests(): Quest[] {
     archived: false,
     createdAt: now,
     promptForNote: s.promptForNote,
+    details: s.details,
   }));
 }

@@ -20,6 +20,8 @@ export interface Quest {
   wildcardWeekKey?: string;
   /** Shows an inline textarea on the card; writing something non-empty is what completes the quest. */
   promptForNote?: boolean;
+  /** Longer clarifying explanation, hidden behind a tap/click "more info" affordance on the card. */
+  details?: string;
 }
 
 export type GoalTimeframe = 'weekly' | 'monthly' | 'yearly' | 'custom';
