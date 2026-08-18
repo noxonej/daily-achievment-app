@@ -1,15 +1,22 @@
 import { useApp } from '../store/AppContext';
 import { ACHIEVEMENTS } from '../data/achievements';
+import { AchievementBadge } from '../components/AchievementBadge';
 import { ProgressBar } from '../components/ProgressBar';
-import { formatShortDate } from '../lib/date';
+
+const CATEGORY_ORDER = ['Quests', 'Streaks', 'Perfection', 'Levels', 'Goals', 'Consistency'];
 
 export function AchievementsView() {
-  const { state } = useApp();
+  const { state, stats } = useApp();
   const unlockedMap = new Map(state.unlockedAchievements.map((u) => [u.id, u.unlockedAt]));
   const unlockedCount = ACHIEVEMENTS.filter((a) => unlockedMap.has(a.id)).length;
 
+  const byCategory = CATEGORY_ORDER.map((category) => ({
+    category,
+    items: ACHIEVEMENTS.filter((a) => a.category === category),
+  })).filter((g) => g.items.length > 0);
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 space-y-5">
+    <div className="max-w-2xl mx-auto px-4 py-4 space-y-6">
       <div>
         <p className="text-slate-400 text-sm">Your trophy case</p>
         <h1 className="font-display text-2xl font-bold text-white mt-0.5">Achievements</h1>
@@ -28,35 +35,22 @@ export function AchievementsView() {
         />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {ACHIEVEMENTS.map((a) => {
-          const unlockedAt = unlockedMap.get(a.id);
-          const isUnlocked = !!unlockedAt;
-          return (
-            <div
-              key={a.id}
-              className={`rounded-2xl border p-3.5 text-center transition ${
-                isUnlocked
-                  ? 'border-amber-400/30 bg-gradient-to-b from-amber-400/10 to-transparent'
-                  : 'border-white/10 bg-white/[0.02]'
-              }`}
-            >
-              <div className={`text-3xl mb-1.5 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>{a.icon}</div>
-              <p className={`text-[13px] font-bold leading-tight ${isUnlocked ? 'text-white' : 'text-slate-500'}`}>
-                {a.title}
-              </p>
-              <p className={`text-[11px] mt-1 leading-snug ${isUnlocked ? 'text-slate-400' : 'text-slate-600'}`}>
-                {a.description}
-              </p>
-              {isUnlocked && unlockedAt && (
-                <p className="text-[10px] mt-1.5 font-semibold text-amber-400/80">
-                  {formatShortDate(unlockedAt.slice(0, 10))}
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {byCategory.map(({ category, items }) => (
+        <div key={category}>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2.5">{category}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {items.map((a, i) => (
+              <AchievementBadge
+                key={a.id}
+                achievement={a}
+                unlockedAt={unlockedMap.get(a.id)}
+                current={stats[a.metric]}
+                shineDelay={(i % 5) * 0.6}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

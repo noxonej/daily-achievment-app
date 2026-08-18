@@ -1,151 +1,49 @@
-import type { Achievement } from '../lib/types';
+import type { Achievement, AchievementTier, DerivedStats } from '../lib/types';
+
+function threshold(
+  id: string,
+  title: string,
+  description: string,
+  icon: string,
+  tier: AchievementTier,
+  category: string,
+  metric: keyof DerivedStats,
+  target: number,
+): Achievement {
+  return { id, title, description, icon, tier, category, metric, target, check: (s) => s[metric] >= target };
+}
 
 export const ACHIEVEMENTS: Achievement[] = [
-  {
-    id: 'first-quest',
-    title: 'First Steps',
-    description: 'Complete your first quest.',
-    icon: '🌱',
-    check: (s) => s.totalQuestsCompleted >= 1,
-  },
-  {
-    id: 'quests-25',
-    title: 'Getting Started',
-    description: 'Complete 25 quests.',
-    icon: '⚔️',
-    check: (s) => s.totalQuestsCompleted >= 25,
-  },
-  {
-    id: 'quests-100',
-    title: 'Centurion',
-    description: 'Complete 100 quests.',
-    icon: '🛡️',
-    check: (s) => s.totalQuestsCompleted >= 100,
-  },
-  {
-    id: 'quests-500',
-    title: 'Relentless',
-    description: 'Complete 500 quests.',
-    icon: '🗡️',
-    check: (s) => s.totalQuestsCompleted >= 500,
-  },
-  {
-    id: 'quests-1000',
-    title: 'Unstoppable',
-    description: 'Complete 1000 quests.',
-    icon: '👑',
-    check: (s) => s.totalQuestsCompleted >= 1000,
-  },
-  {
-    id: 'streak-3',
-    title: 'Warming Up',
-    description: 'Reach a 3 day streak.',
-    icon: '🔥',
-    check: (s) => s.longestStreak >= 3,
-  },
-  {
-    id: 'streak-7',
-    title: 'One Week Strong',
-    description: 'Reach a 7 day streak.',
-    icon: '🔥',
-    check: (s) => s.longestStreak >= 7,
-  },
-  {
-    id: 'streak-30',
-    title: 'Habit Formed',
-    description: 'Reach a 30 day streak.',
-    icon: '🔥',
-    check: (s) => s.longestStreak >= 30,
-  },
-  {
-    id: 'streak-100',
-    title: 'Iron Will',
-    description: 'Reach a 100 day streak.',
-    icon: '🔥',
-    check: (s) => s.longestStreak >= 100,
-  },
-  {
-    id: 'streak-365',
-    title: 'A Full Year',
-    description: 'Reach a 365 day streak.',
-    icon: '🌟',
-    check: (s) => s.longestStreak >= 365,
-  },
-  {
-    id: 'perfect-1',
-    title: 'Perfect Day',
-    description: 'Complete every daily quest in one day.',
-    icon: '✨',
-    check: (s) => s.totalPerfectDays >= 1,
-  },
-  {
-    id: 'perfect-7',
-    title: 'Flawless Week',
-    description: 'Rack up 7 perfect days.',
-    icon: '💎',
-    check: (s) => s.totalPerfectDays >= 7,
-  },
-  {
-    id: 'perfect-30',
-    title: 'Flawless Month',
-    description: 'Rack up 30 perfect days.',
-    icon: '💠',
-    check: (s) => s.totalPerfectDays >= 30,
-  },
-  {
-    id: 'level-5',
-    title: 'Level 5',
-    description: 'Reach level 5.',
-    icon: '⭐',
-    check: (s) => s.level >= 5,
-  },
-  {
-    id: 'level-10',
-    title: 'Level 10',
-    description: 'Reach level 10.',
-    icon: '⭐',
-    check: (s) => s.level >= 10,
-  },
-  {
-    id: 'level-25',
-    title: 'Level 25',
-    description: 'Reach level 25.',
-    icon: '🌠',
-    check: (s) => s.level >= 25,
-  },
-  {
-    id: 'level-50',
-    title: 'Level 50',
-    description: 'Reach level 50.',
-    icon: '☄️',
-    check: (s) => s.level >= 50,
-  },
-  {
-    id: 'goal-1',
-    title: 'Dream Chaser',
-    description: 'Complete your first long-term goal.',
-    icon: '🏆',
-    check: (s) => s.goalsCompleted >= 1,
-  },
-  {
-    id: 'goal-5',
-    title: 'Dream Achiever',
-    description: 'Complete 5 long-term goals.',
-    icon: '🏆',
-    check: (s) => s.goalsCompleted >= 5,
-  },
-  {
-    id: 'days-active-30',
-    title: 'Regular',
-    description: 'Show up on 30 different days.',
-    icon: '🗓️',
-    check: (s) => s.daysActive >= 30,
-  },
-  {
-    id: 'days-active-365',
-    title: 'A Whole Year',
-    description: 'Show up on 365 different days.',
-    icon: '🎂',
-    check: (s) => s.daysActive >= 365,
-  },
+  // Quests
+  threshold('first-quest', 'First Steps', 'Complete your first quest.', '🌱', 'bronze', 'Quests', 'totalQuestsCompleted', 1),
+  threshold('quests-25', 'Getting Started', 'Complete 25 quests.', '⚔️', 'bronze', 'Quests', 'totalQuestsCompleted', 25),
+  threshold('quests-100', 'Centurion', 'Complete 100 quests.', '🛡️', 'silver', 'Quests', 'totalQuestsCompleted', 100),
+  threshold('quests-500', 'Relentless', 'Complete 500 quests.', '🗡️', 'gold', 'Quests', 'totalQuestsCompleted', 500),
+  threshold('quests-1000', 'Unstoppable', 'Complete 1000 quests.', '👑', 'platinum', 'Quests', 'totalQuestsCompleted', 1000),
+
+  // Streaks
+  threshold('streak-3', 'Warming Up', 'Reach a 3 day streak.', '🔥', 'bronze', 'Streaks', 'longestStreak', 3),
+  threshold('streak-7', 'One Week Strong', 'Reach a 7 day streak.', '🔥', 'bronze', 'Streaks', 'longestStreak', 7),
+  threshold('streak-30', 'Habit Formed', 'Reach a 30 day streak.', '🔥', 'silver', 'Streaks', 'longestStreak', 30),
+  threshold('streak-100', 'Iron Will', 'Reach a 100 day streak.', '🔥', 'gold', 'Streaks', 'longestStreak', 100),
+  threshold('streak-365', 'A Full Year', 'Reach a 365 day streak.', '🌟', 'platinum', 'Streaks', 'longestStreak', 365),
+
+  // Perfect days
+  threshold('perfect-1', 'Perfect Day', 'Complete every daily quest in one day.', '✨', 'bronze', 'Perfection', 'totalPerfectDays', 1),
+  threshold('perfect-7', 'Flawless Week', 'Rack up 7 perfect days.', '💎', 'silver', 'Perfection', 'totalPerfectDays', 7),
+  threshold('perfect-30', 'Flawless Month', 'Rack up 30 perfect days.', '💠', 'gold', 'Perfection', 'totalPerfectDays', 30),
+
+  // Levels
+  threshold('level-5', 'Level 5', 'Reach level 5.', '⭐', 'bronze', 'Levels', 'level', 5),
+  threshold('level-10', 'Level 10', 'Reach level 10.', '⭐', 'silver', 'Levels', 'level', 10),
+  threshold('level-25', 'Level 25', 'Reach level 25.', '🌠', 'gold', 'Levels', 'level', 25),
+  threshold('level-50', 'Level 50', 'Reach level 50.', '☄️', 'platinum', 'Levels', 'level', 50),
+
+  // Goals
+  threshold('goal-1', 'Dream Chaser', 'Complete your first long-term goal.', '🏆', 'silver', 'Goals', 'goalsCompleted', 1),
+  threshold('goal-5', 'Dream Achiever', 'Complete 5 long-term goals.', '🏆', 'gold', 'Goals', 'goalsCompleted', 5),
+
+  // Consistency
+  threshold('days-active-30', 'Regular', 'Show up on 30 different days.', '🗓️', 'silver', 'Consistency', 'daysActive', 30),
+  threshold('days-active-365', 'A Whole Year', 'Show up on 365 different days.', '🎂', 'platinum', 'Consistency', 'daysActive', 365),
 ];

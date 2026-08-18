@@ -93,11 +93,17 @@ export interface AppState {
   createdAt: string;
 }
 
+export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum';
+
 export interface Achievement {
   id: string;
   title: string;
   description: string;
   icon: string;
+  tier: AchievementTier;
+  category: string;
+  metric: keyof DerivedStats;
+  target: number;
   check: (stats: DerivedStats) => boolean;
 }
 
