@@ -32,7 +32,7 @@ export function ConfirmDialog({
         <button
           onClick={onConfirm}
           className={`flex-1 rounded-xl text-white font-semibold py-2.5 active:scale-95 transition-transform ${
-            danger ? 'bg-red-500 hover:bg-red-400' : 'bg-gradient-to-r from-violet-500 to-fuchsia-500'
+            danger ? 'bg-red-500 hover:bg-red-400' : 'bg-amber-500 hover:bg-amber-400'
           }`}
         >
           {confirmLabel}

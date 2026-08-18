@@ -15,6 +15,7 @@ interface QuestFormModalProps {
     difficulty: Difficulty;
     icon: string;
     category: string;
+    promptForNote?: boolean;
   }) => void;
   initial?: Quest;
   defaultFrequency?: Frequency;
@@ -27,6 +28,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
   const [difficulty, setDifficulty] = useState<Difficulty>(initial?.difficulty ?? 'easy');
   const [icon, setIcon] = useState(initial?.icon ?? '🎯');
   const [category, setCategory] = useState(initial?.category ?? 'Custom');
+  const [promptForNote, setPromptForNote] = useState(initial?.promptForNote ?? false);
 
   function reset() {
     setTitle('');
@@ -35,6 +37,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
     setDifficulty('easy');
     setIcon('🎯');
     setCategory('Custom');
+    setPromptForNote(false);
   }
 
   function handleSubmit() {
@@ -46,6 +49,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
       difficulty,
       icon,
       category: category.trim() || 'Custom',
+      promptForNote,
     });
     if (!initial) reset();
     onClose();
@@ -62,7 +66,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
                 key={i}
                 onClick={() => setIcon(i)}
                 className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg border transition ${
-                  icon === i ? 'border-violet-400 bg-violet-500/20' : 'border-white/10 bg-white/5 hover:border-white/20'
+                  icon === i ? 'border-amber-400 bg-amber-500/20' : 'border-white/10 bg-white/5 hover:border-white/20'
                 }`}
               >
                 {i}
@@ -77,7 +81,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Read 15 pages"
-            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-400"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
           />
         </div>
 
@@ -88,7 +92,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="A little reminder of what this means"
-            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-400 resize-none"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 resize-none"
           />
         </div>
 
@@ -98,7 +102,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder="Mind, Body, Life..."
-            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-400"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
           />
         </div>
 
@@ -111,7 +115,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
                 onClick={() => setFrequency(f)}
                 className={`rounded-lg border px-2 py-2 text-xs font-semibold capitalize transition ${
                   frequency === f
-                    ? 'border-violet-400 bg-violet-500/20 text-violet-200'
+                    ? 'border-amber-400 bg-amber-500/20 text-amber-200'
                     : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20'
                 }`}
               >
@@ -130,7 +134,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
                 onClick={() => setDifficulty(d)}
                 className={`rounded-lg border px-2 py-2 text-xs font-semibold transition ${
                   difficulty === d
-                    ? 'border-violet-400 bg-violet-500/20 text-violet-200'
+                    ? 'border-amber-400 bg-amber-500/20 text-amber-200'
                     : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20'
                 }`}
               >
@@ -141,10 +145,22 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
           </div>
         </div>
 
+        <label className="flex items-center gap-2.5 rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={promptForNote}
+            onChange={(e) => setPromptForNote(e.target.checked)}
+            className="w-4 h-4 accent-amber-500"
+          />
+          <span className="text-xs text-slate-300">
+            📝 Ask for a written note — writing something is what completes it
+          </span>
+        </label>
+
         <button
           onClick={handleSubmit}
           disabled={!title.trim()}
-          className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 active:scale-95 transition-transform"
+          className="w-full rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 active:scale-95 transition-all"
         >
           {initial ? 'Save Changes' : 'Create Quest'}
         </button>

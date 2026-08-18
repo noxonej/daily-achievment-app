@@ -10,7 +10,7 @@ interface ProgressBarProps {
 export function ProgressBar({
   value,
   max,
-  colorClass = 'bg-gradient-to-r from-violet-500 to-fuchsia-500',
+  colorClass = 'bg-gradient-to-r from-amber-500 to-rose-500',
   trackClass = 'bg-white/10',
   heightClass = 'h-3',
   animated = true,

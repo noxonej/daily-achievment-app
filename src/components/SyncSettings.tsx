@@ -55,7 +55,7 @@ export function SyncSettings() {
             <button
               onClick={() => syncNow()}
               disabled={busy}
-              className="flex-1 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-white font-semibold text-sm py-2.5 transition"
+              className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white font-semibold text-sm py-2.5 transition"
             >
               {busy ? 'Syncing…' : 'Sync Now'}
             </button>
@@ -81,27 +81,27 @@ export function SyncSettings() {
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder="GitHub personal access token"
-            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-400 text-sm"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 text-sm"
           />
           <div className="grid grid-cols-2 gap-2">
             <input
               value={owner}
               onChange={(e) => setOwner(e.target.value)}
               placeholder="owner"
-              className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-400 text-sm"
+              className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 text-sm"
             />
             <input
               value={repo}
               onChange={(e) => setRepo(e.target.value)}
               placeholder="repo"
-              className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-400 text-sm"
+              className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 text-sm"
             />
           </div>
           <input
             value={path}
             onChange={(e) => setPath(e.target.value)}
             placeholder="cloud-save/progress.json"
-            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-400 text-sm"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 text-sm"
           />
           <p className="text-[11px] text-slate-500 leading-relaxed">
             Create a fine-grained token at GitHub → Settings → Developer settings → Personal
@@ -121,7 +121,7 @@ export function SyncSettings() {
             <button
               onClick={handleConnect}
               disabled={busy || !token.trim() || !owner.trim() || !repo.trim() || !path.trim()}
-              className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 disabled:opacity-40 text-white font-semibold text-sm py-2.5 transition"
+              className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-white font-semibold text-sm py-2.5 transition"
             >
               {busy ? 'Connecting…' : 'Connect & Sync'}
             </button>

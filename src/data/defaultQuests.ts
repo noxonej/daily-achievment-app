@@ -1,7 +1,7 @@
 import type { Quest } from '../lib/types';
 import { DIFFICULTY_XP } from '../lib/xp';
 
-type SeedQuest = Pick<Quest, 'title' | 'description' | 'frequency' | 'difficulty' | 'icon' | 'category'>;
+type SeedQuest = Pick<Quest, 'title' | 'description' | 'frequency' | 'difficulty' | 'icon' | 'category' | 'promptForNote'>;
 
 const seeds: SeedQuest[] = [
   // Daily quests
@@ -20,6 +20,7 @@ const seeds: SeedQuest[] = [
     difficulty: 'easy',
     icon: '📝',
     category: 'Mind',
+    promptForNote: true,
   },
   {
     title: 'Meditate 10 minutes',
@@ -52,6 +53,7 @@ const seeds: SeedQuest[] = [
     difficulty: 'easy',
     icon: '🙏',
     category: 'Mind',
+    promptForNote: true,
   },
   {
     title: 'No junk food',
@@ -135,5 +137,6 @@ export function buildDefaultQuests(): Quest[] {
     custom: false,
     archived: false,
     createdAt: now,
+    promptForNote: s.promptForNote,
   }));
 }

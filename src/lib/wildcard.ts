@@ -1,5 +1,6 @@
 import type { Quest } from './types';
 import { WILDCARD_POOL } from '../data/wildcardPool';
+import { WEEKLY_WILDCARD_POOL } from '../data/weeklyWildcardPool';
 import { DIFFICULTY_XP } from './xp';
 
 function hashString(s: string): number {
@@ -25,5 +26,23 @@ export function buildWildcardQuestForDate(dateKey: string): Quest {
     archived: false,
     createdAt: new Date().toISOString(),
     wildcardDate: dateKey,
+  };
+}
+
+export function buildWeeklyWildcardQuestForWeek(weekKeyValue: string): Quest {
+  const seed = WEEKLY_WILDCARD_POOL[hashString(weekKeyValue) % WEEKLY_WILDCARD_POOL.length];
+  return {
+    id: `wildcard-week-${weekKeyValue}`,
+    title: seed.title,
+    description: seed.description,
+    frequency: 'weekly',
+    difficulty: seed.difficulty,
+    xp: DIFFICULTY_XP[seed.difficulty],
+    icon: seed.icon,
+    category: 'Wildcard',
+    custom: false,
+    archived: false,
+    createdAt: new Date().toISOString(),
+    wildcardWeekKey: weekKeyValue,
   };
 }

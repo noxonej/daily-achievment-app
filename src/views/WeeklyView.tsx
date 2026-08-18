@@ -1,6 +1,8 @@
 import { useApp } from '../store/AppContext';
 import { weekKey } from '../lib/date';
 import { QuestCard } from '../components/QuestCard';
+import { NoteQuestCard } from '../components/NoteQuestCard';
+import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import type { ViewId } from '../components/NavTabs';
 
@@ -9,7 +11,10 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
   const key = weekKey();
   const log = state.weekLogs[key];
   const completed = log?.completedQuestIds ?? [];
-  const activeWeekly = state.quests.filter((q) => q.frequency === 'weekly' && !q.archived);
+  const notes = log?.notes ?? {};
+  const allActiveWeekly = state.quests.filter((q) => q.frequency === 'weekly' && !q.archived);
+  const wildcard = allActiveWeekly.find((q) => q.wildcardWeekKey === key);
+  const activeWeekly = allActiveWeekly.filter((q) => q.wildcardWeekKey !== key);
   const doneCount = activeWeekly.filter((q) => completed.includes(q.id)).length;
   const isPerfect = activeWeekly.length > 0 && doneCount === activeWeekly.length;
 
@@ -43,6 +48,14 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
         <ProgressBar value={doneCount} max={Math.max(activeWeekly.length, 1)} />
       </div>
 
+      {wildcard && (
+        <WildcardQuestCard
+          quest={wildcard}
+          completed={completed.includes(wildcard.id)}
+          onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: wildcard.id })}
+        />
+      )}
+
       {activeWeekly.length === 0 ? (
         <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
           <p className="text-3xl mb-2">🏔️</p>
@@ -52,21 +65,31 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
           </p>
           <button
             onClick={() => onNavigate('manage')}
-            className="rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold text-sm px-4 py-2 transition"
+            className="rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-4 py-2 transition"
           >
             Add a quest
           </button>
         </div>
       ) : (
         <div className="space-y-2.5">
-          {sorted.map((quest) => (
-            <QuestCard
-              key={quest.id}
-              quest={quest}
-              completed={completed.includes(quest.id)}
-              onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
-            />
-          ))}
+          {sorted.map((quest) =>
+            quest.promptForNote ? (
+              <NoteQuestCard
+                key={quest.id}
+                quest={quest}
+                note={notes[quest.id] ?? ''}
+                completed={completed.includes(quest.id)}
+                onChangeNote={(note) => dispatch({ type: 'SET_QUEST_NOTE', questId: quest.id, note })}
+              />
+            ) : (
+              <QuestCard
+                key={quest.id}
+                quest={quest}
+                completed={completed.includes(quest.id)}
+                onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
+              />
+            ),
+          )}
         </div>
       )}
     </div>

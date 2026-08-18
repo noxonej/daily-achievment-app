@@ -37,7 +37,7 @@ export function GoalsView() {
         </div>
         <button
           onClick={openAdd}
-          className="shrink-0 rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold text-sm px-3.5 py-2 transition"
+          className="shrink-0 rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-3.5 py-2 transition"
         >
           + Add
         </button>
@@ -52,7 +52,7 @@ export function GoalsView() {
           </p>
           <button
             onClick={openAdd}
-            className="rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold text-sm px-4 py-2 transition"
+            className="rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-4 py-2 transition"
           >
             Set a goal
           </button>
@@ -158,7 +158,7 @@ function GoalCard({
           <span className="text-xs text-slate-400">
             {goal.progress} / {goal.target} {goal.unit}
           </span>
-          <span className="text-xs font-semibold text-violet-300">
+          <span className="text-xs font-semibold text-amber-300">
             {Math.round((goal.progress / goal.target) * 100)}%
           </span>
         </div>
@@ -177,7 +177,7 @@ function GoalCard({
         <button
           onClick={() => onAdjust(1)}
           aria-label={`Increase progress on ${goal.title}`}
-          className="w-8 h-8 rounded-lg bg-violet-500/20 border border-violet-500/40 hover:bg-violet-500/30 text-violet-200 font-bold transition"
+          className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-200 font-bold transition"
         >
           +
         </button>

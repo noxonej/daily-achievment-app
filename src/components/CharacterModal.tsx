@@ -41,7 +41,7 @@ export function CharacterModal({ open, onClose }: CharacterModalProps) {
             onClick={() => setActiveSlot(tab.id)}
             className={`rounded-lg py-2 text-xs font-semibold transition ${
               activeSlot === tab.id
-                ? 'bg-violet-500/20 border border-violet-400 text-violet-200'
+                ? 'bg-amber-500/20 border border-amber-400 text-amber-200'
                 : 'bg-white/5 border border-white/10 text-slate-400 hover:border-white/20'
             }`}
           >
@@ -90,7 +90,7 @@ function CosmeticCard({
       disabled={disabled}
       className={`flex flex-col items-center gap-1.5 rounded-xl border p-2.5 transition ${
         equipped
-          ? 'border-violet-400 bg-violet-500/15'
+          ? 'border-amber-400 bg-amber-500/15'
           : disabled
             ? 'border-white/5 bg-white/[0.02] opacity-40 cursor-not-allowed'
             : 'border-white/10 bg-white/[0.03] hover:border-white/20'
@@ -99,7 +99,7 @@ function CosmeticCard({
       <ItemSwatch item={item} />
       <span className="text-[11px] font-medium text-slate-200 leading-tight text-center">{item.name}</span>
       {equipped ? (
-        <span className="text-[10px] font-bold text-violet-300">Equipped</span>
+        <span className="text-[10px] font-bold text-amber-300">Equipped</span>
       ) : owned ? (
         <span className="text-[10px] font-bold text-slate-400">Equip</span>
       ) : (

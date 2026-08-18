@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { QuestFormModal } from '../components/QuestFormModal';
+import { QuestLibraryModal } from '../components/QuestLibraryModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SyncSettings } from '../components/SyncSettings';
 import type { Frequency, Quest } from '../lib/types';
@@ -9,6 +10,7 @@ import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 export function ManageView() {
   const { state, dispatch } = useApp();
   const [formOpen, setFormOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [editing, setEditing] = useState<Quest | null>(null);
   const [formFrequency, setFormFrequency] = useState<Frequency>('daily');
   const [deleteTarget, setDeleteTarget] = useState<Quest | null>(null);
@@ -17,7 +19,7 @@ export function ManageView() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const daily = state.quests.filter((q) => q.frequency === 'daily' && !q.wildcardDate);
-  const weekly = state.quests.filter((q) => q.frequency === 'weekly');
+  const weekly = state.quests.filter((q) => q.frequency === 'weekly' && !q.wildcardWeekKey);
 
   function openAdd(freq: Frequency) {
     setEditing(null);
@@ -59,9 +61,17 @@ export function ManageView() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-6">
-      <div>
-        <p className="text-slate-400 text-sm">Configure your journey</p>
-        <h1 className="font-display text-2xl font-bold text-white mt-0.5">Manage Quests</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-slate-400 text-sm">Configure your journey</p>
+          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Manage Quests</h1>
+        </div>
+        <button
+          onClick={() => setLibraryOpen(true)}
+          className="shrink-0 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm px-3.5 py-2 transition"
+        >
+          📚 Library
+        </button>
       </div>
 
       <QuestSection
@@ -85,15 +95,15 @@ export function ManageView() {
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-white">🎲 Daily Wildcard Quest</p>
+            <p className="text-sm font-semibold text-white">🎲 Wildcard Quests</p>
             <p className="text-xs text-slate-400 mt-0.5">
-              A bonus surprise quest that rotates to something new every day. Doesn't count toward your streak.
+              Bonus surprise quests — one rotates daily, one rotates weekly. Don't count toward your streak.
             </p>
           </div>
           <button
             onClick={() => dispatch({ type: 'SET_WILDCARD_ENABLED', enabled: !state.wildcardEnabled })}
             className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${
-              state.wildcardEnabled ? 'bg-violet-500' : 'bg-white/10'
+              state.wildcardEnabled ? 'bg-amber-500' : 'bg-white/10'
             }`}
             aria-label="Toggle daily wildcard quest"
           >
@@ -162,6 +172,8 @@ export function ManageView() {
         }}
       />
 
+      <QuestLibraryModal open={libraryOpen} onClose={() => setLibraryOpen(false)} />
+
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete Quest"
@@ -215,7 +227,7 @@ function QuestSection({
         <p className="text-sm font-bold text-white">{title}</p>
         <button
           onClick={onAdd}
-          className="rounded-lg bg-violet-500 hover:bg-violet-400 text-white text-xs font-semibold px-3 py-1.5 transition"
+          className="rounded-lg bg-amber-500 hover:bg-amber-400 text-white text-xs font-semibold px-3 py-1.5 transition"
         >
           + Add
         </button>

@@ -2,7 +2,7 @@ import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimefra
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
-import { buildWildcardQuestForDate } from '../lib/wildcard';
+import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../lib/wildcard';
 import { DIFFICULTY_XP } from '../lib/xp';
 import { DEFAULT_CHARACTER, findCosmetic } from '../data/cosmetics';
 import { computeDerivedStats } from '../lib/stats';
@@ -38,6 +38,11 @@ export type Action =
   | { type: 'SET_WILDCARD_ENABLED'; enabled: boolean }
   | { type: 'UNLOCK_COSMETIC'; itemId: string }
   | { type: 'EQUIP_COSMETIC'; slot: CosmeticSlot; itemId: string }
+  | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
+  | { type: 'SET_FREE_NOTE'; note: string }
+  | { type: 'ADD_QUICK_TASK'; text: string }
+  | { type: 'TOGGLE_QUICK_TASK'; taskId: string }
+  | { type: 'DELETE_QUICK_TASK'; taskId: string }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
 
@@ -48,6 +53,7 @@ export interface NewQuestInput {
   difficulty: Difficulty;
   icon: string;
   category: string;
+  promptForNote?: boolean;
 }
 
 export interface NewGoalInput {
@@ -59,7 +65,9 @@ export interface NewGoalInput {
   icon: string;
 }
 
-function recomputeDailyLog(quests: Quest[], completedQuestIds: string[]): DayLog {
+// Both recompute functions spread over `existing` first so fields they don't
+// touch (notes, freeNote, quickTasks, ...) survive every recompute untouched.
+function recomputeDailyLog(quests: Quest[], completedQuestIds: string[], existing?: Partial<DayLog>): DayLog {
   // The wildcard quest is a bonus and doesn't count toward the "perfect day" requirement.
   const activeDaily = quests.filter((q) => q.frequency === 'daily' && !q.archived && !q.wildcardDate);
   const xpEarned = completedQuestIds.reduce((sum, id) => {
@@ -68,6 +76,7 @@ function recomputeDailyLog(quests: Quest[], completedQuestIds: string[]): DayLog
   }, 0);
   const perfectDay = activeDaily.length > 0 && activeDaily.every((q) => completedQuestIds.includes(q.id));
   return {
+    ...existing,
     date: todayKey(),
     completedQuestIds,
     xpEarned,
@@ -76,14 +85,16 @@ function recomputeDailyLog(quests: Quest[], completedQuestIds: string[]): DayLog
   };
 }
 
-function recomputeWeeklyLog(quests: Quest[], completedQuestIds: string[]): WeekLog {
-  const activeWeekly = quests.filter((q) => q.frequency === 'weekly' && !q.archived);
+function recomputeWeeklyLog(quests: Quest[], completedQuestIds: string[], existing?: Partial<WeekLog>): WeekLog {
+  // The weekly wildcard quest is a bonus and doesn't count toward "perfect week".
+  const activeWeekly = quests.filter((q) => q.frequency === 'weekly' && !q.archived && !q.wildcardWeekKey);
   const xpEarned = completedQuestIds.reduce((sum, id) => {
     const q = quests.find((x) => x.id === id);
     return sum + (q ? q.xp : 0);
   }, 0);
   const perfectWeek = activeWeekly.length > 0 && activeWeekly.every((q) => completedQuestIds.includes(q.id));
   return {
+    ...existing,
     weekKey: weekKey(),
     completedQuestIds,
     xpEarned,
@@ -105,7 +116,7 @@ export function reducer(state: AppState, action: Action): AppState {
         const idx = completed.indexOf(quest.id);
         if (idx >= 0) completed.splice(idx, 1);
         else completed.push(quest.id);
-        const newLog = recomputeDailyLog(state.quests, completed);
+        const newLog = recomputeDailyLog(state.quests, completed, existing);
         return { ...state, dayLogs: { ...state.dayLogs, [key]: newLog } };
       } else {
         const key = weekKey();
@@ -114,9 +125,79 @@ export function reducer(state: AppState, action: Action): AppState {
         const idx = completed.indexOf(quest.id);
         if (idx >= 0) completed.splice(idx, 1);
         else completed.push(quest.id);
-        const newLog = recomputeWeeklyLog(state.quests, completed);
+        const newLog = recomputeWeeklyLog(state.quests, completed, existing);
         return { ...state, weekLogs: { ...state.weekLogs, [key]: newLog } };
       }
+    }
+
+    case 'SET_QUEST_NOTE': {
+      const quest = state.quests.find((q) => q.id === action.questId);
+      if (!quest) return state;
+      const hasContent = action.note.trim().length > 0;
+
+      if (quest.frequency === 'daily') {
+        const key = todayKey();
+        const existing = state.dayLogs[key];
+        const completed = existing ? [...existing.completedQuestIds] : [];
+        const idx = completed.indexOf(quest.id);
+        if (hasContent && idx < 0) completed.push(quest.id);
+        if (!hasContent && idx >= 0) completed.splice(idx, 1);
+        const notes = { ...(existing?.notes ?? {}) };
+        if (hasContent) notes[quest.id] = action.note;
+        else delete notes[quest.id];
+        const newLog = recomputeDailyLog(state.quests, completed, { ...existing, notes });
+        return { ...state, dayLogs: { ...state.dayLogs, [key]: newLog } };
+      } else {
+        const key = weekKey();
+        const existing = state.weekLogs[key];
+        const completed = existing ? [...existing.completedQuestIds] : [];
+        const idx = completed.indexOf(quest.id);
+        if (hasContent && idx < 0) completed.push(quest.id);
+        if (!hasContent && idx >= 0) completed.splice(idx, 1);
+        const notes = { ...(existing?.notes ?? {}) };
+        if (hasContent) notes[quest.id] = action.note;
+        else delete notes[quest.id];
+        const newLog = recomputeWeeklyLog(state.quests, completed, { ...existing, notes });
+        return { ...state, weekLogs: { ...state.weekLogs, [key]: newLog } };
+      }
+    }
+
+    case 'SET_FREE_NOTE': {
+      const key = todayKey();
+      const existing = state.dayLogs[key];
+      const completed = existing?.completedQuestIds ?? [];
+      const newLog = recomputeDailyLog(state.quests, completed, { ...existing, freeNote: action.note });
+      return { ...state, dayLogs: { ...state.dayLogs, [key]: newLog } };
+    }
+
+    case 'ADD_QUICK_TASK': {
+      const key = todayKey();
+      const existing = state.dayLogs[key];
+      const completed = existing?.completedQuestIds ?? [];
+      const quickTasks = [
+        ...(existing?.quickTasks ?? []),
+        { id: `qt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text: action.text, done: false },
+      ];
+      const newLog = recomputeDailyLog(state.quests, completed, { ...existing, quickTasks });
+      return { ...state, dayLogs: { ...state.dayLogs, [key]: newLog } };
+    }
+
+    case 'TOGGLE_QUICK_TASK': {
+      const key = todayKey();
+      const existing = state.dayLogs[key];
+      if (!existing?.quickTasks) return state;
+      const quickTasks = existing.quickTasks.map((t) => (t.id === action.taskId ? { ...t, done: !t.done } : t));
+      const newLog = recomputeDailyLog(state.quests, existing.completedQuestIds, { ...existing, quickTasks });
+      return { ...state, dayLogs: { ...state.dayLogs, [key]: newLog } };
+    }
+
+    case 'DELETE_QUICK_TASK': {
+      const key = todayKey();
+      const existing = state.dayLogs[key];
+      if (!existing?.quickTasks) return state;
+      const quickTasks = existing.quickTasks.filter((t) => t.id !== action.taskId);
+      const newLog = recomputeDailyLog(state.quests, existing.completedQuestIds, { ...existing, quickTasks });
+      return { ...state, dayLogs: { ...state.dayLogs, [key]: newLog } };
     }
 
     case 'ADD_QUEST': {
@@ -132,6 +213,7 @@ export function reducer(state: AppState, action: Action): AppState {
         custom: true,
         archived: false,
         createdAt: new Date().toISOString(),
+        promptForNote: action.quest.promptForNote,
       };
       return { ...state, quests: [...state.quests, q] };
     }
@@ -216,16 +298,28 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'SYNC_WILDCARD': {
       const today = todayKey();
-      const withoutStaleWildcards = state.quests.filter((q) => !q.wildcardDate || q.wildcardDate === today);
-      const hasToday = withoutStaleWildcards.some((q) => q.wildcardDate === today);
+      const thisWeek = weekKey();
+      const withoutStale = state.quests.filter(
+        (q) => (!q.wildcardDate || q.wildcardDate === today) && (!q.wildcardWeekKey || q.wildcardWeekKey === thisWeek),
+      );
+      const removedStale = withoutStale.length !== state.quests.length;
+
       if (!state.wildcardEnabled) {
-        return withoutStaleWildcards.some((q) => !!q.wildcardDate)
-          ? { ...state, quests: withoutStaleWildcards.filter((q) => !q.wildcardDate) }
-          : state;
+        const withoutAnyWildcard = withoutStale.filter((q) => !q.wildcardDate && !q.wildcardWeekKey);
+        return withoutAnyWildcard.length !== state.quests.length ? { ...state, quests: withoutAnyWildcard } : state;
       }
-      if (hasToday && withoutStaleWildcards.length === state.quests.length) return state;
-      const quests = hasToday ? withoutStaleWildcards : [...withoutStaleWildcards, buildWildcardQuestForDate(today)];
-      return { ...state, quests };
+
+      let quests = withoutStale;
+      let changed = removedStale;
+      if (!quests.some((q) => q.wildcardDate === today)) {
+        quests = [...quests, buildWildcardQuestForDate(today)];
+        changed = true;
+      }
+      if (!quests.some((q) => q.wildcardWeekKey === thisWeek)) {
+        quests = [...quests, buildWeeklyWildcardQuestForWeek(thisWeek)];
+        changed = true;
+      }
+      return changed ? { ...state, quests } : state;
     }
 
     case 'SET_WILDCARD_ENABLED': {

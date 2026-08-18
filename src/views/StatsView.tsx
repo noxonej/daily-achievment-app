@@ -1,5 +1,6 @@
 import { useApp } from '../store/AppContext';
 import { HeatmapCalendar } from '../components/HeatmapCalendar';
+import { JournalHistory } from '../components/JournalHistory';
 
 export function StatsView() {
   const { state, stats } = useApp();
@@ -38,6 +39,8 @@ export function StatsView() {
           </div>
         ))}
       </div>
+
+      <JournalHistory dayLogs={state.dayLogs} weekLogs={state.weekLogs} quests={state.quests} />
     </div>
   );
 }

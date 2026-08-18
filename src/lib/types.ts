@@ -16,6 +16,10 @@ export interface Quest {
   createdAt: string;
   /** Set only on the auto-rotating daily wildcard quest; value is the date (YYYY-MM-DD) it belongs to. */
   wildcardDate?: string;
+  /** Set only on the auto-rotating weekly wildcard quest; value is the ISO week (YYYY-Www) it belongs to. */
+  wildcardWeekKey?: string;
+  /** Shows an inline textarea on the card; writing something non-empty is what completes the quest. */
+  promptForNote?: boolean;
 }
 
 export type GoalTimeframe = 'weekly' | 'monthly' | 'yearly' | 'custom';
@@ -33,12 +37,24 @@ export interface LongTermGoal {
   completedAt?: string;
 }
 
+export interface QuickTask {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
 export interface DayLog {
   date: string;
   completedQuestIds: string[];
   xpEarned: number;
   perfectDay: boolean;
   dailyQuestCount: number;
+  /** Notes written on individual quests (e.g. Gratitude x3), keyed by quest id. */
+  notes?: Record<string, string>;
+  /** Freeform journal entry for the day, independent of any quest. */
+  freeNote?: string;
+  /** One-off, non-recurring to-dos for the day. */
+  quickTasks?: QuickTask[];
 }
 
 export interface WeekLog {
@@ -47,6 +63,7 @@ export interface WeekLog {
   xpEarned: number;
   perfectWeek: boolean;
   weeklyQuestCount: number;
+  notes?: Record<string, string>;
 }
 
 export interface UnlockedAchievement {

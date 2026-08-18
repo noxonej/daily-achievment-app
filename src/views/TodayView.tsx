@@ -1,8 +1,11 @@
 import { useApp } from '../store/AppContext';
 import { todayKey, formatDisplayDate } from '../lib/date';
 import { QuestCard } from '../components/QuestCard';
+import { NoteQuestCard } from '../components/NoteQuestCard';
 import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
+import { QuickTaskList } from '../components/QuickTaskList';
+import { DailyNoteBox } from '../components/DailyNoteBox';
 import type { ViewId } from '../components/NavTabs';
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
@@ -10,6 +13,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const key = todayKey();
   const log = state.dayLogs[key];
   const completed = log?.completedQuestIds ?? [];
+  const notes = log?.notes ?? {};
   const allActiveDaily = state.quests.filter((q) => q.frequency === 'daily' && !q.archived);
   const wildcard = allActiveDaily.find((q) => q.wildcardDate === key);
   const activeDaily = allActiveDaily.filter((q) => q.wildcardDate !== key);
@@ -59,16 +63,29 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <EmptyState onNavigate={onNavigate} />
       ) : (
         <div className="space-y-2.5">
-          {sorted.map((quest) => (
-            <QuestCard
-              key={quest.id}
-              quest={quest}
-              completed={completed.includes(quest.id)}
-              onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
-            />
-          ))}
+          {sorted.map((quest) =>
+            quest.promptForNote ? (
+              <NoteQuestCard
+                key={quest.id}
+                quest={quest}
+                note={notes[quest.id] ?? ''}
+                completed={completed.includes(quest.id)}
+                onChangeNote={(note) => dispatch({ type: 'SET_QUEST_NOTE', questId: quest.id, note })}
+              />
+            ) : (
+              <QuestCard
+                key={quest.id}
+                quest={quest}
+                completed={completed.includes(quest.id)}
+                onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
+              />
+            ),
+          )}
         </div>
       )}
+
+      <QuickTaskList />
+      <DailyNoteBox />
 
       <button
         onClick={() => onNavigate('weekly')}
@@ -99,7 +116,7 @@ function EmptyState({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <p className="text-slate-400 text-sm mb-4 px-6">Add one to start building your streak.</p>
       <button
         onClick={() => onNavigate('manage')}
-        className="rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold text-sm px-4 py-2 transition"
+        className="rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-4 py-2 transition"
       >
         Add a quest
       </button>

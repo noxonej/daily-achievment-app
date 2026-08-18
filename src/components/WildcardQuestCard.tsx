@@ -8,7 +8,7 @@ interface WildcardQuestCardProps {
 
 export function WildcardQuestCard({ quest, completed, onToggle }: WildcardQuestCardProps) {
   return (
-    <div className="rounded-2xl p-[1.5px] bg-gradient-to-r from-fuchsia-500/60 via-violet-500/60 to-amber-400/60">
+    <div className="rounded-2xl p-[1.5px] bg-gradient-to-r from-rose-500/60 via-amber-500/60 to-amber-400/60">
       <button
         onClick={onToggle}
         className={`w-full flex items-center gap-3 rounded-[15px] px-4 py-3.5 text-left transition-all ${
@@ -24,7 +24,7 @@ export function WildcardQuestCard({ quest, completed, onToggle }: WildcardQuestC
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-full px-2 py-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-full px-2 py-0.5">
               🎲 Today's Wildcard
             </span>
           </div>

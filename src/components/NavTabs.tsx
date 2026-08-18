@@ -25,7 +25,7 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
               key={tab.id}
               onClick={() => onChange(tab.id)}
               className={`flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors ${
-                isActive ? 'text-violet-300' : 'text-slate-500 hover:text-slate-300'
+                isActive ? 'text-amber-300' : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               <span className={`text-lg leading-none ${isActive ? 'scale-110' : ''} transition-transform`}>

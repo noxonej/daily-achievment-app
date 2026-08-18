@@ -6,7 +6,7 @@ export function NewDayBanner() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-3">
-      <div className="flex items-center gap-3 bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-xl px-4 py-3 animate-pop-in">
+      <div className="flex items-center gap-3 bg-gradient-to-r from-amber-600/20 to-rose-600/20 border border-amber-500/30 rounded-xl px-4 py-3 animate-pop-in">
         <span className="text-2xl">🌅</span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white">A new day, a new set of quests!</p>

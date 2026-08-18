@@ -24,7 +24,7 @@ export function Header() {
                 aria-label="Customize your character"
               >
                 <CharacterAvatar character={state.character} size={44} />
-                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 border-2 border-[#0b0e17] flex items-center justify-center text-[10px] font-display font-bold text-white">
+                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-500 border-2 border-[#0b0e17] flex items-center justify-center text-[10px] font-display font-bold text-white">
                   {stats.level}
                 </span>
               </button>
