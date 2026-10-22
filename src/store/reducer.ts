@@ -4,6 +4,7 @@ import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
 import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../lib/wildcard';
 import { DIFFICULTY_XP } from '../lib/xp';
+import { questReward } from '../lib/rewards';
 import { DEFAULT_CHARACTER, findCosmetic } from '../data/cosmetics';
 import { computeDerivedStats } from '../lib/stats';
 
@@ -71,14 +72,15 @@ export interface NewGoalInput {
 function recomputeDailyLog(quests: Quest[], completedQuestIds: string[], existing?: Partial<DayLog>): DayLog {
   // The wildcard quest is a bonus and doesn't count toward the "perfect day" requirement.
   const activeDaily = quests.filter((q) => q.frequency === 'daily' && !q.archived && !q.wildcardDate);
+  const dateKey = todayKey();
   const xpEarned = completedQuestIds.reduce((sum, id) => {
     const q = quests.find((x) => x.id === id);
-    return sum + (q ? q.xp : 0);
+    return sum + (q ? questReward(dateKey, id, q.xp).xp : 0);
   }, 0);
   const perfectDay = activeDaily.length > 0 && activeDaily.every((q) => completedQuestIds.includes(q.id));
   return {
     ...existing,
-    date: todayKey(),
+    date: dateKey,
     completedQuestIds,
     xpEarned,
     perfectDay,
@@ -89,14 +91,15 @@ function recomputeDailyLog(quests: Quest[], completedQuestIds: string[], existin
 function recomputeWeeklyLog(quests: Quest[], completedQuestIds: string[], existing?: Partial<WeekLog>): WeekLog {
   // The weekly wildcard quest is a bonus and doesn't count toward "perfect week".
   const activeWeekly = quests.filter((q) => q.frequency === 'weekly' && !q.archived && !q.wildcardWeekKey);
+  const wKey = weekKey();
   const xpEarned = completedQuestIds.reduce((sum, id) => {
     const q = quests.find((x) => x.id === id);
-    return sum + (q ? q.xp : 0);
+    return sum + (q ? questReward(wKey, id, q.xp).xp : 0);
   }, 0);
   const perfectWeek = activeWeekly.length > 0 && activeWeekly.every((q) => completedQuestIds.includes(q.id));
   return {
     ...existing,
-    weekKey: weekKey(),
+    weekKey: wKey,
     completedQuestIds,
     xpEarned,
     perfectWeek,

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { weekKey } from '../lib/date';
 import { useWeeklyResetLabel } from '../lib/useResetCountdown';
@@ -5,6 +6,7 @@ import { QuestCard } from '../components/QuestCard';
 import { NoteQuestCard } from '../components/NoteQuestCard';
 import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
+import { Confetti } from '../components/Confetti';
 import type { ViewId } from '../components/NavTabs';
 
 export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
@@ -19,6 +21,18 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
   const activeWeekly = allActiveWeekly.filter((q) => q.wildcardWeekKey !== key);
   const doneCount = activeWeekly.filter((q) => completed.includes(q.id)).length;
   const isPerfect = activeWeekly.length > 0 && doneCount === activeWeekly.length;
+
+  const [showConfetti, setShowConfetti] = useState(false);
+  const wasPerfectRef = useRef(isPerfect);
+  useEffect(() => {
+    if (isPerfect && !wasPerfectRef.current) {
+      setShowConfetti(true);
+      const t = setTimeout(() => setShowConfetti(false), 1400);
+      wasPerfectRef.current = isPerfect;
+      return () => clearTimeout(t);
+    }
+    wasPerfectRef.current = isPerfect;
+  }, [isPerfect]);
 
   const sorted = [...activeWeekly].sort((a, b) => {
     const ac = completed.includes(a.id) ? 1 : 0;
@@ -36,7 +50,8 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
         </p>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        {showConfetti && <Confetti count={36} />}
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-slate-300">
             {doneCount} / {activeWeekly.length} complete
@@ -56,6 +71,7 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
           quest={wildcard}
           completed={completed.includes(wildcard.id)}
           onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: wildcard.id })}
+          periodKey={key}
         />
       )}
 
@@ -83,6 +99,7 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
                 note={notes[quest.id] ?? ''}
                 completed={completed.includes(quest.id)}
                 onChangeNote={(note) => dispatch({ type: 'SET_QUEST_NOTE', questId: quest.id, note })}
+                periodKey={key}
               />
             ) : (
               <QuestCard
@@ -90,6 +107,7 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
                 quest={quest}
                 completed={completed.includes(quest.id)}
                 onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
+                periodKey={key}
               />
             ),
           )}

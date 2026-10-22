@@ -1,24 +1,31 @@
 import type { Quest } from '../lib/types';
+import { FloatingReward } from './FloatingReward';
+import { useCompletionFx } from '../lib/useCompletionFx';
+import { questReward } from '../lib/rewards';
 
 interface WildcardQuestCardProps {
   quest: Quest;
   completed: boolean;
   onToggle: () => void;
+  periodKey: string;
 }
 
-export function WildcardQuestCard({ quest, completed, onToggle }: WildcardQuestCardProps) {
+export function WildcardQuestCard({ quest, completed, onToggle, periodKey }: WildcardQuestCardProps) {
+  const { justCompleted } = useCompletionFx(completed);
+  const { xp, crit } = questReward(periodKey, quest.id, quest.xp);
+
   return (
-    <div className="rounded-2xl p-[1.5px] bg-gradient-to-r from-rose-500/60 via-amber-500/60 to-amber-400/60">
+    <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-r from-rose-500/60 via-amber-500/60 to-amber-400/60">
       <button
         onClick={onToggle}
-        className={`w-full flex items-center gap-3 rounded-[15px] px-4 py-3.5 text-left transition-all ${
+        className={`w-full flex items-center gap-3 rounded-[15px] px-4 py-3.5 text-left transition-all active:scale-[0.99] ${
           completed ? 'bg-emerald-500/10' : 'bg-[#0f1220]'
         }`}
       >
         <div
           className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg ${
             completed ? 'bg-emerald-500/20' : 'bg-white/5'
-          }`}
+          } ${justCompleted ? 'animate-pop-in' : ''}`}
         >
           {completed ? '✅' : quest.icon}
         </div>
@@ -39,6 +46,7 @@ export function WildcardQuestCard({ quest, completed, onToggle }: WildcardQuestC
         </div>
         <span className="shrink-0 text-[11px] font-display font-bold text-amber-300">+{quest.xp} XP</span>
       </button>
+      {justCompleted && <FloatingReward xp={xp} crit={crit} />}
     </div>
   );
 }

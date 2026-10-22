@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useApp } from '../store/AppContext';
 import { titleForLevel } from '../lib/xp';
+import { Confetti } from './Confetti';
 
 export function CelebrationOverlay() {
   const { celebrations, dismissCelebration } = useApp();
@@ -18,6 +19,7 @@ export function CelebrationOverlay() {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={dismissCelebration} />
+        <Confetti count={48} />
         <div className="relative bg-gradient-to-b from-[#241a10] to-[#121629] border border-amber-500/40 rounded-2xl shadow-2xl shadow-amber-900/50 px-8 py-8 text-center max-w-xs w-full animate-celebrate">
           <div className="text-6xl mb-3">🎉</div>
           <p className="text-xs uppercase tracking-[0.2em] text-amber-300 font-bold mb-1">Level Up</p>

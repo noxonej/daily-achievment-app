@@ -1,27 +1,34 @@
 import type { Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { InfoDisclosure } from './InfoDisclosure';
+import { FloatingReward } from './FloatingReward';
+import { useCompletionFx } from '../lib/useCompletionFx';
+import { questReward } from '../lib/rewards';
 
 interface QuestCardProps {
   quest: Quest;
   completed: boolean;
   onToggle: () => void;
+  periodKey: string;
 }
 
-export function QuestCard({ quest, completed, onToggle }: QuestCardProps) {
+export function QuestCard({ quest, completed, onToggle, periodKey }: QuestCardProps) {
+  const { justCompleted } = useCompletionFx(completed);
+  const { xp, crit } = questReward(periodKey, quest.id, quest.xp);
+
   return (
     <div
-      className={`rounded-xl border px-4 py-3.5 transition-all group ${
+      className={`relative rounded-xl border px-4 py-3.5 transition-all group ${
         completed
           ? 'bg-emerald-500/10 border-emerald-500/30'
           : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
       }`}
     >
-      <button onClick={onToggle} className="w-full flex items-center gap-3 text-left">
+      <button onClick={onToggle} className="w-full flex items-center gap-3 text-left active:scale-[0.985] transition-transform">
         <div
           className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
             completed ? 'bg-emerald-500/20' : 'bg-white/5 group-hover:bg-white/10'
-          }`}
+          } ${justCompleted ? 'animate-pop-in' : ''}`}
         >
           {completed ? '✅' : quest.icon}
         </div>
@@ -51,6 +58,7 @@ export function QuestCard({ quest, completed, onToggle }: QuestCardProps) {
           <InfoDisclosure text={quest.details} />
         </div>
       )}
+      {justCompleted && <FloatingReward xp={xp} crit={crit} />}
     </div>
   );
 }

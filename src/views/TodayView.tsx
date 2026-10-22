@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { todayKey, formatDisplayDate } from '../lib/date';
 import { useDailyResetLabel } from '../lib/useResetCountdown';
@@ -7,6 +8,8 @@ import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { QuickTaskList } from '../components/QuickTaskList';
 import { DailyNoteBox } from '../components/DailyNoteBox';
+import { DailyInsight } from '../components/DailyInsight';
+import { Confetti } from '../components/Confetti';
 import type { ViewId } from '../components/NavTabs';
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
@@ -22,6 +25,18 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const doneCount = activeDaily.filter((q) => completed.includes(q.id)).length;
   const isPerfect = activeDaily.length > 0 && doneCount === activeDaily.length;
 
+  const [showConfetti, setShowConfetti] = useState(false);
+  const wasPerfectRef = useRef(isPerfect);
+  useEffect(() => {
+    if (isPerfect && !wasPerfectRef.current) {
+      setShowConfetti(true);
+      const t = setTimeout(() => setShowConfetti(false), 1400);
+      wasPerfectRef.current = isPerfect;
+      return () => clearTimeout(t);
+    }
+    wasPerfectRef.current = isPerfect;
+  }, [isPerfect]);
+
   const sorted = [...activeDaily].sort((a, b) => {
     const ac = completed.includes(a.id) ? 1 : 0;
     const bc = completed.includes(b.id) ? 1 : 0;
@@ -35,7 +50,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <h1 className="font-display text-2xl font-bold text-white mt-0.5">Today's Quests</h1>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        {showConfetti && <Confetti count={36} />}
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-slate-300">
             {doneCount} / {activeDaily.length} complete
@@ -54,11 +70,14 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <p className="text-[11px] text-slate-500 mt-2">🔄 New quests in {resetLabel}</p>
       </div>
 
+      <DailyInsight activeDailyCount={activeDaily.length} doneCount={doneCount} />
+
       {wildcard && (
         <WildcardQuestCard
           quest={wildcard}
           completed={completed.includes(wildcard.id)}
           onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: wildcard.id })}
+          periodKey={key}
         />
       )}
 
@@ -74,6 +93,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 note={notes[quest.id] ?? ''}
                 completed={completed.includes(quest.id)}
                 onChangeNote={(note) => dispatch({ type: 'SET_QUEST_NOTE', questId: quest.id, note })}
+                periodKey={key}
               />
             ) : (
               <QuestCard
@@ -81,6 +101,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 quest={quest}
                 completed={completed.includes(quest.id)}
                 onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
+                periodKey={key}
               />
             ),
           )}

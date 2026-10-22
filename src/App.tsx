@@ -18,12 +18,14 @@ export default function App() {
       <Header />
       <NewDayBanner />
       <main className="flex-1 pb-4">
-        {view === 'today' && <TodayView onNavigate={setView} />}
-        {view === 'weekly' && <WeeklyView onNavigate={setView} />}
-        {view === 'goals' && <GoalsView />}
-        {view === 'achievements' && <AchievementsView />}
-        {view === 'stats' && <StatsView />}
-        {view === 'manage' && <ManageView />}
+        <div key={view} className="animate-view-in">
+          {view === 'today' && <TodayView onNavigate={setView} />}
+          {view === 'weekly' && <WeeklyView onNavigate={setView} />}
+          {view === 'goals' && <GoalsView />}
+          {view === 'achievements' && <AchievementsView />}
+          {view === 'stats' && <StatsView />}
+          {view === 'manage' && <ManageView />}
+        </div>
       </main>
       <NavTabs active={view} onChange={setView} />
       <CelebrationOverlay />

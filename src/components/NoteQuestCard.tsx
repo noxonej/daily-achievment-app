@@ -2,17 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import type { Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { InfoDisclosure } from './InfoDisclosure';
+import { FloatingReward } from './FloatingReward';
+import { useCompletionFx } from '../lib/useCompletionFx';
+import { questReward } from '../lib/rewards';
 
 interface NoteQuestCardProps {
   quest: Quest;
   note: string;
   completed: boolean;
   onChangeNote: (note: string) => void;
+  periodKey: string;
 }
 
-export function NoteQuestCard({ quest, note, completed, onChangeNote }: NoteQuestCardProps) {
+export function NoteQuestCard({ quest, note, completed, onChangeNote, periodKey }: NoteQuestCardProps) {
   const [text, setText] = useState(note);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { justCompleted } = useCompletionFx(completed);
+  const { xp, crit } = questReward(periodKey, quest.id, quest.xp);
 
   useEffect(() => {
     setText(note);
@@ -31,7 +37,7 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote }: NoteQues
 
   return (
     <div
-      className={`rounded-xl border px-4 py-3.5 transition-colors ${
+      className={`relative rounded-xl border px-4 py-3.5 transition-colors ${
         completed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.03] border-white/10'
       }`}
     >
@@ -39,7 +45,7 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote }: NoteQues
         <div
           className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg ${
             completed ? 'bg-emerald-500/20' : 'bg-white/5'
-          }`}
+          } ${justCompleted ? 'animate-pop-in' : ''}`}
         >
           {completed ? '✅' : quest.icon}
         </div>
@@ -71,6 +77,7 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote }: NoteQues
         placeholder="Write here — this is what marks it done."
         className="w-full rounded-lg bg-black/20 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 resize-none"
       />
+      {justCompleted && <FloatingReward xp={xp} crit={crit} />}
     </div>
   );
 }
