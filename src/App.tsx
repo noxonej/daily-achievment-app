@@ -6,6 +6,7 @@ import { CelebrationOverlay } from './components/CelebrationOverlay';
 import { TodayView } from './views/TodayView';
 import { WeeklyView } from './views/WeeklyView';
 import { PlanView } from './views/PlanView';
+import { PlanReminderToast } from './components/PlanReminderToast';
 import { GoalsView } from './views/GoalsView';
 import { AchievementsView } from './views/AchievementsView';
 import { StatsView } from './views/StatsView';
@@ -31,6 +32,7 @@ export default function App() {
       </main>
       <NavTabs active={view} onChange={setView} />
       <CelebrationOverlay />
+      <PlanReminderToast />
     </div>
   );
 }

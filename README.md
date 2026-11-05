@@ -13,7 +13,10 @@ unlockable achievements.
   timed items like "7:00 Wake up", "7:15 Meditation", tap any item to
   edit it, copy a whole day to other days, and tick things off — ticks
   clear automatically each new week while the plan stays. Today's slice
-  shows up on the Today tab.
+  shows up on the Today tab. Colour-code items (Health, Mind, Study,
+  Work, Personal), start from a ready-made routine, and get reminders:
+  export the plan to your phone's calendar as weekly repeating events
+  with alerts, or get pop-up alerts while the app is open.
 - **Weekly quests** — bigger challenges you have all week to finish.
 - **Long-term goals** — track progress toward yearly/monthly/custom
   targets (books read, meditation days, savings, anything with a number).

@@ -1,4 +1,4 @@
-import type { AppState, PlanItem, WeekdayId } from './types';
+import type { AppState, PlanCategory, PlanItem, WeekdayId } from './types';
 import { weekKey } from './date';
 
 export const WEEKDAYS: Array<{ id: WeekdayId; short: string; long: string }> = [
@@ -39,3 +39,58 @@ export function formatPlanTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
   return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
+
+export const PLAN_CATEGORIES: Array<{ id: PlanCategory; label: string; dot: string; text: string; bar: string; chip: string }> = [
+  { id: 'health', label: 'Health', dot: 'bg-emerald-400', text: 'text-emerald-300', bar: 'bg-emerald-400', chip: 'bg-emerald-500/15 border-emerald-400/60 text-emerald-200' },
+  { id: 'mind', label: 'Mind', dot: 'bg-violet-400', text: 'text-violet-300', bar: 'bg-violet-400', chip: 'bg-violet-500/15 border-violet-400/60 text-violet-200' },
+  { id: 'study', label: 'Study', dot: 'bg-sky-400', text: 'text-sky-300', bar: 'bg-sky-400', chip: 'bg-sky-500/15 border-sky-400/60 text-sky-200' },
+  { id: 'work', label: 'Work', dot: 'bg-orange-400', text: 'text-orange-300', bar: 'bg-orange-400', chip: 'bg-orange-500/15 border-orange-400/60 text-orange-200' },
+  { id: 'personal', label: 'Personal', dot: 'bg-rose-400', text: 'text-rose-300', bar: 'bg-rose-400', chip: 'bg-rose-500/15 border-rose-400/60 text-rose-200' },
+];
+
+export function planCategory(id: PlanCategory | undefined) {
+  return PLAN_CATEGORIES.find((c) => c.id === id);
+}
+
+type StarterItem = Omit<PlanItem, 'id'>;
+
+const WEEKDAY_STARTER: StarterItem[] = [
+  { time: '07:00', text: 'Wake up + glass of water', category: 'health' },
+  { time: '07:15', text: 'Meditation (10 min)', category: 'mind' },
+  { time: '07:30', text: 'Breakfast + read 10 pages', category: 'study' },
+  { time: '08:00', text: 'School / work', category: 'work' },
+  { time: '16:00', text: 'Skill practice (1 hour)', category: 'study' },
+  { time: '17:30', text: 'Workout', category: 'health' },
+  { time: '19:00', text: 'Dinner + family / friends', category: 'personal' },
+  { time: '21:30', text: 'Plan tomorrow + no screens', category: 'mind' },
+  { time: '22:30', text: 'Sleep', category: 'health' },
+];
+
+const SATURDAY_STARTER: StarterItem[] = [
+  { time: '08:30', text: 'Wake up + glass of water', category: 'health' },
+  { time: '08:45', text: 'Meditation (10 min)', category: 'mind' },
+  { time: '10:00', text: 'Side project / money skill (2 hours)', category: 'work' },
+  { time: '13:00', text: 'Long workout or sport', category: 'health' },
+  { time: '15:00', text: 'Free time', category: 'personal' },
+  { time: '23:00', text: 'Sleep', category: 'health' },
+];
+
+const SUNDAY_STARTER: StarterItem[] = [
+  { time: '08:30', text: 'Wake up + glass of water', category: 'health' },
+  { time: '08:45', text: 'Meditation (10 min)', category: 'mind' },
+  { time: '10:00', text: 'Clean room + laundry', category: 'personal' },
+  { time: '12:00', text: 'Free time', category: 'personal' },
+  { time: '19:00', text: 'Weekly review: what worked, what to change', category: 'mind' },
+  { time: '19:30', text: 'Check spending + set money goal for the week', category: 'work' },
+  { time: '22:30', text: 'Sleep', category: 'health' },
+];
+
+export const STARTER_ROUTINE: Record<WeekdayId, StarterItem[]> = {
+  mon: WEEKDAY_STARTER,
+  tue: WEEKDAY_STARTER,
+  wed: WEEKDAY_STARTER,
+  thu: WEEKDAY_STARTER,
+  fri: WEEKDAY_STARTER,
+  sat: SATURDAY_STARTER,
+  sun: SUNDAY_STARTER,
+};

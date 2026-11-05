@@ -84,8 +84,11 @@ export interface Character {
 
 export type WeekdayId = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+export type PlanCategory = 'health' | 'mind' | 'study' | 'work' | 'personal';
+
 export interface PlanItem {
   id: string;
+  category?: PlanCategory;
   /** Optional "HH:MM" (24h) start time; items without one sort after timed ones. */
   time?: string;
   text: string;

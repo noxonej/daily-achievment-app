@@ -1,0 +1,42 @@
+import { useApp } from '../store/AppContext';
+import { useLivePlanReminders } from '../lib/planReminders';
+import { formatPlanTime } from '../lib/weekPlan';
+
+export function PlanReminderToast() {
+  const { state, dispatch } = useApp();
+  const { reminder, dismiss } = useLivePlanReminders(state);
+  if (!reminder) return null;
+  return (
+    <div className="fixed inset-x-0 top-3 z-[60] px-4 flex justify-center pointer-events-none">
+      <div
+        role="alert"
+        className="pointer-events-auto w-full max-w-md rounded-2xl border border-amber-400/40 bg-[#171b30]/95 backdrop-blur shadow-2xl p-4 animate-pop-in"
+      >
+        <div className="flex items-start gap-3">
+          <span className="text-2xl leading-none">🔔</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-amber-300 tabular-nums">{formatPlanTime(reminder.time)} · Time for</p>
+            <p className="text-white font-semibold break-words">{reminder.text}</p>
+          </div>
+        </div>
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={dismiss}
+            className="flex-1 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm font-semibold text-slate-200 py-2 transition"
+          >
+            Later
+          </button>
+          <button
+            onClick={() => {
+              dispatch({ type: 'PLAN_TOGGLE', itemId: reminder.id });
+              dismiss();
+            }}
+            className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-sm font-bold text-white py-2 transition"
+          >
+            ✓ Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

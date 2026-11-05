@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId } from '../lib/types';
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -78,8 +78,9 @@ export type Action =
   | { type: 'ADD_QUICK_TASK'; text: string }
   | { type: 'TOGGLE_QUICK_TASK'; taskId: string }
   | { type: 'DELETE_QUICK_TASK'; taskId: string }
-  | { type: 'PLAN_ADD'; day: WeekdayId; text: string; time?: string }
-  | { type: 'PLAN_UPDATE'; day: WeekdayId; itemId: string; text: string; time?: string }
+  | { type: 'PLAN_ADD'; day: WeekdayId; text: string; time?: string; category?: PlanCategory }
+  | { type: 'PLAN_UPDATE'; day: WeekdayId; itemId: string; text: string; time?: string; category?: PlanCategory }
+  | { type: 'PLAN_LOAD_STARTER'; days: Record<WeekdayId, Array<Omit<PlanItem, 'id'>>> }
   | { type: 'PLAN_DELETE'; day: WeekdayId; itemId: string }
   | { type: 'PLAN_TOGGLE'; itemId: string }
   | { type: 'PLAN_COPY_DAY'; from: WeekdayId; to: WeekdayId[] }
@@ -391,7 +392,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const text = action.text.trim();
       if (!text) return state;
       const plan = normalizePlan(state.weekPlan);
-      return withPlanDay(state, action.day, [...plan.days[action.day], { id: planId(), text, time: cleanTime(action.time) }]);
+      return withPlanDay(state, action.day, [...plan.days[action.day], { id: planId(), text, time: cleanTime(action.time), category: action.category }]);
     }
 
     case 'PLAN_UPDATE': {
@@ -401,7 +402,7 @@ export function reducer(state: AppState, action: Action): AppState {
       return withPlanDay(
         state,
         action.day,
-        plan.days[action.day].map((i) => (i.id === action.itemId ? { ...i, text, time: cleanTime(action.time) } : i)),
+        plan.days[action.day].map((i) => (i.id === action.itemId ? { ...i, text, time: cleanTime(action.time), category: action.category } : i)),
       );
     }
 
@@ -433,6 +434,16 @@ export function reducer(state: AppState, action: Action): AppState {
           .filter((s) => !existing.some((e) => e.text === s.text && (e.time ?? '') === (s.time ?? '')))
           .map((s) => ({ ...s, id: planId() }));
         days[day] = [...existing, ...additions];
+      }
+      return { ...state, weekPlan: { ...plan, days } };
+    }
+
+    case 'PLAN_LOAD_STARTER': {
+      // Only fills days that are still empty, so it can never wipe something the user wrote.
+      const plan = normalizePlan(state.weekPlan);
+      const days = { ...plan.days };
+      for (const day of Object.keys(days) as WeekdayId[]) {
+        if (days[day].length === 0) days[day] = (action.days[day] ?? []).map((i) => ({ ...i, id: planId() }));
       }
       return { ...state, weekPlan: { ...plan, days } };
     }

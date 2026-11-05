@@ -1,5 +1,5 @@
 import { useApp } from '../store/AppContext';
-import { checkedPlanIds, formatPlanTime, planItemsForDay, todayWeekday, weekdayLabel } from '../lib/weekPlan';
+import { checkedPlanIds, formatPlanTime, planCategory, planItemsForDay, todayWeekday, weekdayLabel } from '../lib/weekPlan';
 
 /** Today's slice of the Week Plan, so the routine is visible the moment the app opens. */
 export function TodayPlanCard({ onOpen }: { onOpen: () => void }) {
@@ -60,6 +60,9 @@ export function TodayPlanCard({ onOpen }: { onOpen: () => void }) {
                   {item.time ? formatPlanTime(item.time) : '—'}
                 </span>
                 <span className={`flex-1 min-w-0 text-sm ${done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                  {planCategory(item.category) && (
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${planCategory(item.category)!.dot}`} />
+                  )}
                   {item.text}
                 </span>
               </button>

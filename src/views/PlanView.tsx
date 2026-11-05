@@ -1,7 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
-import type { PlanItem, WeekdayId } from '../lib/types';
-import { WEEKDAYS, checkedPlanIds, formatPlanTime, planItemsForDay, todayWeekday, weekdayLabel } from '../lib/weekPlan';
+import type { PlanCategory, PlanItem, WeekdayId } from '../lib/types';
+import {
+  PLAN_CATEGORIES,
+  STARTER_ROUTINE,
+  WEEKDAYS,
+  checkedPlanIds,
+  formatPlanTime,
+  planCategory,
+  planItemsForDay,
+  todayWeekday,
+  weekdayLabel,
+} from '../lib/weekPlan';
+import {
+  countTimedItems,
+  downloadPlanIcs,
+  loadLiveRemindersEnabled,
+  notificationsSupported,
+  saveLiveRemindersEnabled,
+} from '../lib/planReminders';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
@@ -16,6 +33,10 @@ export function PlanView() {
   const [day, setDay] = useState<WeekdayId>(today);
   const [mode, setMode] = useState<Mode>('day');
   const checked = checkedPlanIds(state);
+  const [remindersOpen, setRemindersOpen] = useState(false);
+  const [starterOpen, setStarterOpen] = useState(false);
+  const emptyDays = WEEKDAYS.filter((w) => (state.weekPlan?.days?.[w.id]?.length ?? 0) === 0);
+  const weekIsEmpty = emptyDays.length === WEEKDAYS.length;
 
   function openDay(d: WeekdayId) {
     setDay(d);
@@ -45,6 +66,26 @@ export function PlanView() {
         </div>
       </div>
 
+      {weekIsEmpty ? (
+        <button
+          onClick={() => setStarterOpen(true)}
+          className="w-full flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-4 py-3.5 text-left hover:border-amber-400/60 transition"
+        >
+          <span className="text-2xl">✨</span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-white">Start with a ready-made routine</span>
+            <span className="block text-xs text-slate-400">Fills your week with a sample plan you can change however you like</span>
+          </span>
+          <span className="text-amber-300 font-bold">→</span>
+        </button>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <ToolbarButton onClick={() => setRemindersOpen(true)}>🔔 Reminders</ToolbarButton>
+          {emptyDays.length > 0 && <ToolbarButton onClick={() => setStarterOpen(true)}>✨ Fill empty days</ToolbarButton>}
+          <CategoryLegend />
+        </div>
+      )}
+
       {mode === 'day' ? (
         <>
           <DayPicker selected={day} today={today} onSelect={setDay} />
@@ -53,7 +94,182 @@ export function PlanView() {
       ) : (
         <WeekOverview today={today} checked={checked} onOpenDay={openDay} />
       )}
+
+      <RemindersModal open={remindersOpen} onClose={() => setRemindersOpen(false)} />
+      <StarterModal open={starterOpen} emptyDays={emptyDays.map((w) => w.id)} onClose={() => setStarterOpen(false)} />
     </div>
+  );
+}
+
+function ToolbarButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm font-semibold text-slate-200 px-3 py-2 transition"
+    >
+      {children}
+    </button>
+  );
+}
+
+function CategoryLegend() {
+  return (
+    <div className="hidden sm:flex items-center gap-3 ml-auto text-xs text-slate-400">
+      {PLAN_CATEGORIES.map((c) => (
+        <span key={c.id} className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full ${c.dot}`} />
+          {c.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function CategoryPicker({ value, onChange }: { value?: PlanCategory; onChange: (c?: PlanCategory) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Category">
+      {PLAN_CATEGORIES.map((c) => {
+        const on = value === c.id;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(on ? undefined : c.id)}
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+              on ? c.chip : 'border-white/10 text-slate-400 hover:text-slate-200 hover:border-white/25'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${c.dot}`} />
+            {c.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function StarterModal({ open, emptyDays, onClose }: { open: boolean; emptyDays: WeekdayId[]; onClose: () => void }) {
+  const { dispatch } = useApp();
+  const all = emptyDays.length === WEEKDAYS.length;
+  return (
+    <Modal open={open} onClose={onClose} title="Starter routine">
+      <p className="text-sm text-slate-300 mb-3">
+        {all
+          ? 'A balanced week to start from: early mornings, meditation, reading, a daily hour on a skill, workouts, a Saturday side project, and a Sunday review.'
+          : `This fills only your empty days (${emptyDays.map(weekdayLabel).join(', ')}). Days you've already planned stay exactly as they are.`}
+      </p>
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 mb-5 space-y-1.5 max-h-56 overflow-y-auto">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Monday–Friday sample</p>
+        {STARTER_ROUTINE.mon.map((i) => (
+          <div key={i.text} className="flex items-center gap-2.5 text-sm">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${planCategory(i.category)?.dot ?? 'bg-slate-600'}`} />
+            <span className="w-16 shrink-0 text-xs font-bold tabular-nums text-amber-300">{formatPlanTime(i.time!)}</span>
+            <span className="text-slate-200">{i.text}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-slate-500 mb-4">You can edit, delete, or add to anything afterwards. It's just a starting point.</p>
+      <button
+        onClick={() => {
+          dispatch({ type: 'PLAN_LOAD_STARTER', days: STARTER_ROUTINE });
+          onClose();
+        }}
+        className="w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 transition active:scale-[0.98]"
+      >
+        {all ? 'Use this routine' : `Fill ${emptyDays.length} empty ${emptyDays.length === 1 ? 'day' : 'days'}`}
+      </button>
+    </Modal>
+  );
+}
+
+function RemindersModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { state } = useApp();
+  const [before, setBefore] = useState(5);
+  const [live, setLive] = useState(loadLiveRemindersEnabled);
+  const [permission, setPermission] = useState(() => (notificationsSupported() ? Notification.permission : 'unsupported'));
+  const timed = countTimedItems(state);
+
+  async function toggleLive() {
+    const next = !live;
+    if (next && notificationsSupported() && Notification.permission === 'default') {
+      try {
+        setPermission(await Notification.requestPermission());
+      } catch {
+        // permission prompt unavailable; the in-app banner still works
+      }
+    }
+    setLive(next);
+    saveLiveRemindersEnabled(next);
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="🔔 Reminders">
+      <div className="space-y-5">
+        <section>
+          <p className="text-sm font-bold text-white">Phone alarms (recommended)</p>
+          <p className="text-sm text-slate-400 mt-1">
+            Adds every timed item to your phone's calendar as a weekly repeating event with an alert, so your phone reminds
+            you even when this app is closed.
+          </p>
+          <div className="flex items-center gap-2 mt-3">
+            <label htmlFor="remind-before" className="text-sm text-slate-300">
+              Remind me
+            </label>
+            <select
+              id="remind-before"
+              value={before}
+              onChange={(e) => setBefore(Number(e.target.value))}
+              className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-amber-400/60"
+            >
+              <option value={0}>at the time</option>
+              <option value={5}>5 min before</option>
+              <option value={10}>10 min before</option>
+              <option value={15}>15 min before</option>
+              <option value={30}>30 min before</option>
+            </select>
+          </div>
+          <button
+            disabled={timed === 0}
+            onClick={() => downloadPlanIcs(state, before)}
+            className="mt-3 w-full rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-white font-bold py-3 transition active:scale-[0.98]"
+          >
+            {timed === 0 ? 'Add times to your items first' : `Add ${timed} reminders to my calendar`}
+          </button>
+          <ul className="text-xs text-slate-500 mt-2.5 space-y-1 list-disc pl-4">
+            <li>iPhone: tap “Add All” when Calendar opens.</li>
+            <li>Android: open the downloaded file with Google Calendar, or import it at calendar.google.com → Settings → Import.</li>
+            <li>Changed your plan? Delete the old “Week Plan” events and add them again, so you don't get double alerts.</li>
+          </ul>
+        </section>
+
+        <section className="border-t border-white/10 pt-5">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-bold text-white">Alerts while the app is open</p>
+              <p className="text-sm text-slate-400 mt-1">
+                Pops up a reminder (and buzzes) when an item's time comes, while this app is open on your screen.
+              </p>
+              {live && permission === 'denied' && (
+                <p className="text-xs text-amber-300 mt-1.5">
+                  Notifications are blocked in your browser settings, so you'll only see the in-app pop-up.
+                </p>
+              )}
+            </div>
+            <button
+              role="switch"
+              aria-checked={live}
+              aria-label="Alerts while the app is open"
+              onClick={toggleLive}
+              className={`shrink-0 mt-0.5 w-12 h-7 rounded-full p-0.5 transition ${live ? 'bg-emerald-500' : 'bg-white/15'}`}
+            >
+              <span className={`block w-6 h-6 rounded-full bg-white shadow transition-transform ${live ? 'translate-x-5' : ''}`} />
+            </button>
+          </div>
+        </section>
+      </div>
+    </Modal>
   );
 }
 
@@ -221,7 +437,13 @@ function ItemRow({
   onEdit: () => void;
 }) {
   return (
-    <li className="group flex items-center gap-3 px-4 py-2.5">
+    <li className="group relative flex items-center gap-3 px-4 py-2.5">
+      {planCategory(item.category) && (
+        <span
+          className={`absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full ${planCategory(item.category)!.bar} ${done ? 'opacity-30' : ''}`}
+          aria-label={planCategory(item.category)!.label}
+        />
+      )}
       <Checkbox done={done} onToggle={onToggle} />
       <button onClick={onEdit} className="flex-1 min-w-0 flex items-baseline gap-3 text-left py-1" title="Tap to edit">
         <span
@@ -250,10 +472,11 @@ function EditRow({ day, item, onDone }: { day: WeekdayId; item: PlanItem; onDone
   const { dispatch } = useApp();
   const [time, setTime] = useState(item.time ?? '');
   const [text, setText] = useState(item.text);
+  const [category, setCategory] = useState<PlanCategory | undefined>(item.category);
 
   function save() {
     if (!text.trim()) return;
-    dispatch({ type: 'PLAN_UPDATE', day, itemId: item.id, text, time });
+    dispatch({ type: 'PLAN_UPDATE', day, itemId: item.id, text, time, category });
     onDone();
   }
 
@@ -285,6 +508,7 @@ function EditRow({ day, item, onDone }: { day: WeekdayId; item: PlanItem; onDone
             className={`${inputClass} flex-1 min-w-0`}
           />
         </div>
+        <CategoryPicker value={category} onChange={setCategory} />
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -340,11 +564,12 @@ function AddRow({ day }: { day: WeekdayId }) {
   const items = planItemsForDay(state, day);
   const [time, setTime] = useState(() => suggestNextTime(items));
   const [text, setText] = useState('');
+  const [category, setCategory] = useState<PlanCategory | undefined>();
   const textRef = useRef<HTMLInputElement>(null);
 
   function add() {
     if (!text.trim()) return;
-    dispatch({ type: 'PLAN_ADD', day, text, time });
+    dispatch({ type: 'PLAN_ADD', day, text, time, category });
     setText('');
     // Next suggestion builds on what was just added.
     if (time) setTime(suggestNextTime([...items, { id: '', text, time }].sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''))));
@@ -357,32 +582,35 @@ function AddRow({ day }: { day: WeekdayId }) {
         e.preventDefault();
         add();
       }}
-      className="flex gap-2 p-3 border-t border-white/[0.06] bg-black/10 rounded-b-2xl"
+      className="p-3 border-t border-white/[0.06] bg-black/10 rounded-b-2xl space-y-2.5"
     >
-      <input
-        type="time"
-        value={time}
-        onChange={(e) => setTime(e.target.value)}
-        aria-label="Time (optional)"
-        className={`${inputClass} w-[7.5rem] shrink-0`}
-      />
-      <input
-        ref={textRef}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Add something…"
-        aria-label="What"
-        enterKeyHint="done"
-        className={`${inputClass} flex-1 min-w-0`}
-      />
-      <button
-        type="submit"
-        disabled={!text.trim()}
-        aria-label="Add"
-        className="shrink-0 w-11 h-11 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-white/10 disabled:text-slate-500 text-white text-xl font-bold transition active:scale-95"
-      >
-        +
-      </button>
+      <div className="flex gap-2">
+        <input
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          aria-label="Time (optional)"
+          className={`${inputClass} w-[7.5rem] shrink-0`}
+        />
+        <input
+          ref={textRef}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Add something…"
+          aria-label="What"
+          enterKeyHint="done"
+          className={`${inputClass} flex-1 min-w-0`}
+        />
+        <button
+          type="submit"
+          disabled={!text.trim()}
+          aria-label="Add"
+          className="shrink-0 w-11 h-11 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-white/10 disabled:text-slate-500 text-white text-xl font-bold transition active:scale-95"
+        >
+          +
+        </button>
+      </div>
+      <CategoryPicker value={category} onChange={setCategory} />
     </form>
   );
 }
@@ -514,6 +742,11 @@ function WeekOverview({
                         {item.time ? formatPlanTime(item.time) : '—'}
                       </span>
                       <span className={`flex-1 min-w-0 break-words ${done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                        {planCategory(item.category) && (
+                          <span
+                            className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${planCategory(item.category)!.dot}`}
+                          />
+                        )}
                         {item.text}
                       </span>
                     </li>
