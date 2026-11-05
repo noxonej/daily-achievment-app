@@ -1,8 +1,9 @@
-export type ViewId = 'today' | 'plan' | 'weekly' | 'goals' | 'achievements' | 'stats' | 'manage';
+export type ViewId = 'today' | 'plan' | 'money' | 'weekly' | 'goals' | 'achievements' | 'stats' | 'manage';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'today', label: 'Today', icon: '☀️' },
   { id: 'plan', label: 'Plan', icon: '📅' },
+  { id: 'money', label: 'Money', icon: '💰' },
   { id: 'weekly', label: 'Weekly', icon: '🗡️' },
   { id: 'goals', label: 'Goals', icon: '🏆' },
   { id: 'achievements', label: 'Badges', icon: '🎖️' },
@@ -32,7 +33,7 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
               <button
                 key={tab.id}
                 onClick={() => onChange(tab.id)}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[10.5px] sm:text-[11px] font-semibold transition-colors ${
+                className={`flex flex-col items-center gap-0.5 py-2 text-[10px] sm:text-[11px] tracking-tight sm:tracking-normal font-semibold transition-colors ${
                   isActive ? 'text-amber-300' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >

@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, MoneyKind, MoneyState, SpendCategory } from '../lib/types';
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -7,6 +7,7 @@ import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
 import { DEFAULT_CHARACTER, findCosmetic } from '../data/cosmetics';
 import { computeDerivedStats } from '../lib/stats';
+import { createEmptyMoney, moneyId } from '../lib/money';
 
 export function createInitialState(): AppState {
   return {
@@ -20,6 +21,7 @@ export function createInitialState(): AppState {
     character: { ...DEFAULT_CHARACTER },
     unlockedCosmeticIds: [],
     weekPlan: createEmptyWeekPlan(),
+    money: createEmptyMoney(),
     createdAt: new Date().toISOString(),
   };
 }
@@ -50,6 +52,26 @@ function normalizePlan(plan: WeekPlan | undefined): WeekPlan {
 function withPlanDay(state: AppState, day: WeekdayId, items: PlanItem[]): AppState {
   const plan = normalizePlan(state.weekPlan);
   return { ...state, weekPlan: { ...plan, days: { ...plan.days, [day]: items } } };
+}
+
+function normalizeMoney(money: MoneyState | undefined): MoneyState {
+  const empty = createEmptyMoney();
+  if (!money || typeof money !== 'object') return empty;
+  return {
+    currency: money.currency || empty.currency,
+    setupDone: !!money.setupDone,
+    accounts: Array.isArray(money.accounts) ? money.accounts : [],
+    categories: Array.isArray(money.categories) ? money.categories : empty.categories,
+    expenses: Array.isArray(money.expenses) ? money.expenses : [],
+  };
+}
+
+function withMoney(state: AppState, update: (m: MoneyState) => MoneyState): AppState {
+  return { ...state, money: update(normalizeMoney(state.money)) };
+}
+
+function adjustAccount(accounts: MoneyAccount[], id: string | undefined, delta: number): MoneyAccount[] {
+  return accounts.map((a) => (a.id === id ? { ...a, amount: a.amount + delta } : a));
 }
 
 function cleanTime(time: string | undefined): string | undefined {
@@ -85,6 +107,14 @@ export type Action =
   | { type: 'PLAN_TOGGLE'; itemId: string }
   | { type: 'PLAN_COPY_DAY'; from: WeekdayId; to: WeekdayId[] }
   | { type: 'PLAN_CLEAR_DAY'; day: WeekdayId }
+  | { type: 'MONEY_SETUP'; currency: string; amounts: Record<MoneyKind, number> }
+  | { type: 'MONEY_SET_CURRENCY'; currency: string }
+  | { type: 'MONEY_UPSERT_ACCOUNT'; account: Omit<MoneyAccount, 'id'> & { id?: string } }
+  | { type: 'MONEY_DELETE_ACCOUNT'; accountId: string }
+  | { type: 'MONEY_TRANSFER'; fromId: string; toId: string; amount: number }
+  | { type: 'MONEY_ADD_EXPENSE'; amount: number; categoryId: string; accountId?: string; note?: string }
+  | { type: 'MONEY_DELETE_EXPENSE'; expenseId: string }
+  | { type: 'MONEY_SET_CATEGORIES'; categories: SpendCategory[] }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
 
@@ -454,6 +484,82 @@ export function reducer(state: AppState, action: Action): AppState {
       const next = withPlanDay(state, action.day, []);
       return { ...next, weekPlan: { ...next.weekPlan, checkedIds: plan.checkedIds.filter((id) => !removed.has(id)) } };
     }
+
+    case 'MONEY_SETUP': {
+      const names: Record<MoneyKind, string> = { spending: 'Wallet', savings: 'Savings', investing: 'Investments' };
+      return withMoney(state, (m) => ({
+        ...m,
+        currency: action.currency,
+        setupDone: true,
+        accounts: (['spending', 'savings', 'investing'] as MoneyKind[]).map((kind) => ({
+          id: moneyId('acct'),
+          name: names[kind],
+          kind,
+          amount: Math.max(0, action.amounts[kind] || 0),
+        })),
+      }));
+    }
+
+    case 'MONEY_SET_CURRENCY':
+      return withMoney(state, (m) => ({ ...m, currency: action.currency }));
+
+    case 'MONEY_UPSERT_ACCOUNT': {
+      const { id, ...rest } = action.account;
+      const name = rest.name.trim() || 'Account';
+      return withMoney(state, (m) => ({
+        ...m,
+        setupDone: true,
+        accounts: id
+          ? m.accounts.map((a) => (a.id === id ? { ...a, ...rest, name } : a))
+          : [...m.accounts, { ...rest, name, id: moneyId('acct') }],
+      }));
+    }
+
+    case 'MONEY_DELETE_ACCOUNT':
+      return withMoney(state, (m) => ({ ...m, accounts: m.accounts.filter((a) => a.id !== action.accountId) }));
+
+    case 'MONEY_TRANSFER': {
+      if (action.amount <= 0 || action.fromId === action.toId) return state;
+      return withMoney(state, (m) => ({
+        ...m,
+        accounts: adjustAccount(adjustAccount(m.accounts, action.fromId, -action.amount), action.toId, action.amount),
+      }));
+    }
+
+    case 'MONEY_ADD_EXPENSE': {
+      if (action.amount <= 0) return state;
+      return withMoney(state, (m) => ({
+        ...m,
+        accounts: adjustAccount(m.accounts, action.accountId, -action.amount),
+        expenses: [
+          ...m.expenses,
+          {
+            id: moneyId('exp'),
+            date: todayKey(),
+            amount: action.amount,
+            categoryId: action.categoryId,
+            accountId: action.accountId,
+            note: action.note?.trim() || undefined,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      }));
+    }
+
+    case 'MONEY_DELETE_EXPENSE': {
+      return withMoney(state, (m) => {
+        const exp = m.expenses.find((e) => e.id === action.expenseId);
+        if (!exp) return m;
+        return {
+          ...m,
+          accounts: adjustAccount(m.accounts, exp.accountId, exp.amount),
+          expenses: m.expenses.filter((e) => e.id !== action.expenseId),
+        };
+      });
+    }
+
+    case 'MONEY_SET_CATEGORIES':
+      return withMoney(state, (m) => ({ ...m, categories: action.categories }));
 
     case 'IMPORT_STATE': {
       return { ...createInitialState(), ...action.state };

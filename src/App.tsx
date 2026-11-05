@@ -6,6 +6,7 @@ import { CelebrationOverlay } from './components/CelebrationOverlay';
 import { TodayView } from './views/TodayView';
 import { WeeklyView } from './views/WeeklyView';
 import { PlanView } from './views/PlanView';
+import { MoneyView } from './views/MoneyView';
 import { PlanReminderToast } from './components/PlanReminderToast';
 import { GoalsView } from './views/GoalsView';
 import { AchievementsView } from './views/AchievementsView';
@@ -23,6 +24,7 @@ export default function App() {
         <div key={view} className="animate-view-in">
           {view === 'today' && <TodayView onNavigate={setView} />}
           {view === 'plan' && <PlanView />}
+          {view === 'money' && <MoneyView />}
           {view === 'weekly' && <WeeklyView onNavigate={setView} />}
           {view === 'goals' && <GoalsView />}
           {view === 'achievements' && <AchievementsView />}

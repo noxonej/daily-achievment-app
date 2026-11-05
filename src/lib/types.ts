@@ -102,6 +102,43 @@ export interface WeekPlan {
   checkedIds: string[];
 }
 
+export type MoneyKind = 'spending' | 'savings' | 'investing';
+
+/** All money amounts are stored as integer cents to avoid floating-point drift. */
+export interface MoneyAccount {
+  id: string;
+  name: string;
+  kind: MoneyKind;
+  amount: number;
+}
+
+export interface SpendCategory {
+  id: string;
+  name: string;
+  icon: string;
+  /** How much may be spent in this category per day, in cents. The daily limit is the sum of these. */
+  dailyLimit: number;
+}
+
+export interface Expense {
+  id: string;
+  date: string;
+  amount: number;
+  categoryId: string;
+  /** Account the money came out of; refunded there if the expense is deleted. */
+  accountId?: string;
+  note?: string;
+  createdAt: string;
+}
+
+export interface MoneyState {
+  currency: string;
+  setupDone: boolean;
+  accounts: MoneyAccount[];
+  categories: SpendCategory[];
+  expenses: Expense[];
+}
+
 export interface AppState {
   quests: Quest[];
   goals: LongTermGoal[];
@@ -113,6 +150,7 @@ export interface AppState {
   character: Character;
   unlockedCosmeticIds: string[];
   weekPlan: WeekPlan;
+  money: MoneyState;
   createdAt: string;
 }
 
