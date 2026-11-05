@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, Quest, WeekLog } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId } from '../lib/types';
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -19,8 +19,42 @@ export function createInitialState(): AppState {
     wildcardEnabled: true,
     character: { ...DEFAULT_CHARACTER },
     unlockedCosmeticIds: [],
+    weekPlan: createEmptyWeekPlan(),
     createdAt: new Date().toISOString(),
   };
+}
+
+export function createEmptyWeekPlan(): WeekPlan {
+  return {
+    days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+    checkedWeekKey: weekKey(),
+    checkedIds: [],
+  };
+}
+
+function planId(): string {
+  return `plan-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** Older saves (or partial imports) may be missing the plan or some days; fill the gaps. */
+function normalizePlan(plan: WeekPlan | undefined): WeekPlan {
+  const empty = createEmptyWeekPlan();
+  if (!plan || typeof plan !== 'object') return empty;
+  return {
+    days: { ...empty.days, ...(plan.days ?? {}) },
+    checkedWeekKey: plan.checkedWeekKey ?? empty.checkedWeekKey,
+    checkedIds: Array.isArray(plan.checkedIds) ? plan.checkedIds : [],
+  };
+}
+
+function withPlanDay(state: AppState, day: WeekdayId, items: PlanItem[]): AppState {
+  const plan = normalizePlan(state.weekPlan);
+  return { ...state, weekPlan: { ...plan, days: { ...plan.days, [day]: items } } };
+}
+
+function cleanTime(time: string | undefined): string | undefined {
+  const t = time?.trim();
+  return t && /^\d{2}:\d{2}$/.test(t) ? t : undefined;
 }
 
 export type Action =
@@ -44,6 +78,12 @@ export type Action =
   | { type: 'ADD_QUICK_TASK'; text: string }
   | { type: 'TOGGLE_QUICK_TASK'; taskId: string }
   | { type: 'DELETE_QUICK_TASK'; taskId: string }
+  | { type: 'PLAN_ADD'; day: WeekdayId; text: string; time?: string }
+  | { type: 'PLAN_UPDATE'; day: WeekdayId; itemId: string; text: string; time?: string }
+  | { type: 'PLAN_DELETE'; day: WeekdayId; itemId: string }
+  | { type: 'PLAN_TOGGLE'; itemId: string }
+  | { type: 'PLAN_COPY_DAY'; from: WeekdayId; to: WeekdayId[] }
+  | { type: 'PLAN_CLEAR_DAY'; day: WeekdayId }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
 
@@ -345,6 +385,63 @@ export function reducer(state: AppState, action: Action): AppState {
       const owned = item.cost === 0 || state.unlockedCosmeticIds.includes(action.itemId);
       if (!owned) return state;
       return { ...state, character: { ...state.character, [action.slot]: action.itemId } };
+    }
+
+    case 'PLAN_ADD': {
+      const text = action.text.trim();
+      if (!text) return state;
+      const plan = normalizePlan(state.weekPlan);
+      return withPlanDay(state, action.day, [...plan.days[action.day], { id: planId(), text, time: cleanTime(action.time) }]);
+    }
+
+    case 'PLAN_UPDATE': {
+      const text = action.text.trim();
+      if (!text) return state;
+      const plan = normalizePlan(state.weekPlan);
+      return withPlanDay(
+        state,
+        action.day,
+        plan.days[action.day].map((i) => (i.id === action.itemId ? { ...i, text, time: cleanTime(action.time) } : i)),
+      );
+    }
+
+    case 'PLAN_DELETE': {
+      const plan = normalizePlan(state.weekPlan);
+      const next = withPlanDay(state, action.day, plan.days[action.day].filter((i) => i.id !== action.itemId));
+      return { ...next, weekPlan: { ...next.weekPlan, checkedIds: next.weekPlan.checkedIds.filter((id) => id !== action.itemId) } };
+    }
+
+    case 'PLAN_TOGGLE': {
+      const plan = normalizePlan(state.weekPlan);
+      const wk = weekKey();
+      const current = plan.checkedWeekKey === wk ? plan.checkedIds : [];
+      const checkedIds = current.includes(action.itemId)
+        ? current.filter((id) => id !== action.itemId)
+        : [...current, action.itemId];
+      return { ...state, weekPlan: { ...plan, checkedWeekKey: wk, checkedIds } };
+    }
+
+    case 'PLAN_COPY_DAY': {
+      const plan = normalizePlan(state.weekPlan);
+      const source = plan.days[action.from];
+      const days = { ...plan.days };
+      for (const day of action.to) {
+        if (day === action.from) continue;
+        const existing = days[day];
+        // Skip entries that are already on that day so copying twice doesn't duplicate.
+        const additions = source
+          .filter((s) => !existing.some((e) => e.text === s.text && (e.time ?? '') === (s.time ?? '')))
+          .map((s) => ({ ...s, id: planId() }));
+        days[day] = [...existing, ...additions];
+      }
+      return { ...state, weekPlan: { ...plan, days } };
+    }
+
+    case 'PLAN_CLEAR_DAY': {
+      const plan = normalizePlan(state.weekPlan);
+      const removed = new Set(plan.days[action.day].map((i) => i.id));
+      const next = withPlanDay(state, action.day, []);
+      return { ...next, weekPlan: { ...next.weekPlan, checkedIds: plan.checkedIds.filter((id) => !removed.has(id)) } };
     }
 
     case 'IMPORT_STATE': {

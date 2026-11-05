@@ -82,6 +82,23 @@ export interface Character {
   aura: string;
 }
 
+export type WeekdayId = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+export interface PlanItem {
+  id: string;
+  /** Optional "HH:MM" (24h) start time; items without one sort after timed ones. */
+  time?: string;
+  text: string;
+}
+
+/** A reusable Monday–Sunday routine. Not tied to any date — the same plan repeats every week. */
+export interface WeekPlan {
+  days: Record<WeekdayId, PlanItem[]>;
+  /** Ticks only count for this ISO week; they clear automatically when a new week starts. */
+  checkedWeekKey: string;
+  checkedIds: string[];
+}
+
 export interface AppState {
   quests: Quest[];
   goals: LongTermGoal[];
@@ -92,6 +109,7 @@ export interface AppState {
   wildcardEnabled: boolean;
   character: Character;
   unlockedCosmeticIds: string[];
+  weekPlan: WeekPlan;
   createdAt: string;
 }
 

@@ -1,7 +1,8 @@
-export type ViewId = 'today' | 'weekly' | 'goals' | 'achievements' | 'stats' | 'manage';
+export type ViewId = 'today' | 'plan' | 'weekly' | 'goals' | 'achievements' | 'stats' | 'manage';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'today', label: 'Today', icon: '☀️' },
+  { id: 'plan', label: 'Plan', icon: '📅' },
   { id: 'weekly', label: 'Weekly', icon: '🗡️' },
   { id: 'goals', label: 'Goals', icon: '🏆' },
   { id: 'achievements', label: 'Badges', icon: '🎖️' },
@@ -22,16 +23,16 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
       <div className="max-w-2xl mx-auto relative px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         <div
           className="absolute top-1.5 bottom-[max(0.375rem,env(safe-area-inset-bottom))] rounded-xl bg-amber-500/10 transition-transform duration-300 ease-out"
-          style={{ width: `calc((100% - 0.75rem) / 6)`, transform: `translateX(calc(${activeIndex} * 100%))` }}
+          style={{ width: `calc((100% - 0.75rem) / ${TABS.length})`, transform: `translateX(calc(${activeIndex} * 100%))` }}
         />
-        <div className="relative grid grid-cols-6">
+        <div className="relative grid" style={{ gridTemplateColumns: `repeat(${TABS.length}, minmax(0, 1fr))` }}>
           {TABS.map((tab) => {
             const isActive = tab.id === active;
             return (
               <button
                 key={tab.id}
                 onClick={() => onChange(tab.id)}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition-colors ${
+                className={`flex flex-col items-center gap-0.5 py-2 text-[10.5px] sm:text-[11px] font-semibold transition-colors ${
                   isActive ? 'text-amber-300' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >

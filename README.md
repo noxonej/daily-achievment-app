@@ -9,6 +9,11 @@ unlockable achievements.
 
 - **Daily quests** that reset every day — small, repeatable habits worth
   quick XP.
+- **Week Plan** — a reusable Monday–Sunday routine (no dates). Add
+  timed items like "7:00 Wake up", "7:15 Meditation", tap any item to
+  edit it, copy a whole day to other days, and tick things off — ticks
+  clear automatically each new week while the plan stays. Today's slice
+  shows up on the Today tab.
 - **Weekly quests** — bigger challenges you have all week to finish.
 - **Long-term goals** — track progress toward yearly/monthly/custom
   targets (books read, meditation days, savings, anything with a number).

@@ -10,6 +10,7 @@ import { QuickTaskList } from '../components/QuickTaskList';
 import { DailyNoteBox } from '../components/DailyNoteBox';
 import { DailyInsight } from '../components/DailyInsight';
 import { Confetti } from '../components/Confetti';
+import { TodayPlanCard } from '../components/TodayPlanCard';
 import type { ViewId } from '../components/NavTabs';
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
@@ -69,6 +70,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         />
         <p className="text-[11px] text-slate-500 mt-2">🔄 New quests in {resetLabel}</p>
       </div>
+
+      <TodayPlanCard onOpen={() => onNavigate('plan')} />
 
       <DailyInsight activeDailyCount={activeDaily.length} doneCount={doneCount} />
 

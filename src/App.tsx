@@ -5,6 +5,7 @@ import { NewDayBanner } from './components/NewDayBanner';
 import { CelebrationOverlay } from './components/CelebrationOverlay';
 import { TodayView } from './views/TodayView';
 import { WeeklyView } from './views/WeeklyView';
+import { PlanView } from './views/PlanView';
 import { GoalsView } from './views/GoalsView';
 import { AchievementsView } from './views/AchievementsView';
 import { StatsView } from './views/StatsView';
@@ -20,6 +21,7 @@ export default function App() {
       <main className="flex-1 pb-4">
         <div key={view} className="animate-view-in">
           {view === 'today' && <TodayView onNavigate={setView} />}
+          {view === 'plan' && <PlanView />}
           {view === 'weekly' && <WeeklyView onNavigate={setView} />}
           {view === 'goals' && <GoalsView />}
           {view === 'achievements' && <AchievementsView />}
