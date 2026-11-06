@@ -11,7 +11,8 @@ export type SettingsPage =
   | 'quests'
   | 'data'
   | 'install'
-  | 'about';
+  | 'about'
+  | 'help';
 
 /** Open/closed state and page for the Settings screen, so the header, You tab and empty states can open it. */
 let current: SettingsPage | null = null;

@@ -25,6 +25,7 @@ export const KEYS = [
   'notes.new', 'notes.search', 'notes.empty', 'notes.titlePh', 'notes.bodyPh',
   'common.save', 'common.cancel', 'common.delete', 'common.done', 'common.back', 'common.pin', 'common.unpin',
   'settings.general',
+  'settings.help', 'settings.simple', 'settings.simpleHint',
 ] as const;
 
 export type TKey = (typeof KEYS)[number];
@@ -82,6 +83,7 @@ const S: Record<string, string[]> = {
     'New note', 'Search notes', 'No notes yet. Tap New note to start.', 'Title', 'Write anything…',
     'Save', 'Cancel', 'Delete', 'Done', 'Back', 'Pin', 'Unpin',
     'General',
+    'How it works', 'Simple mode', 'Shows only the main things. Turn off to see every card and extra.',
   ],
   lt: [
     'Šiandien', 'Planas', 'Pinigai', 'Užduotys', 'Tu',
@@ -103,6 +105,7 @@ const S: Record<string, string[]> = {
     'Naujas užrašas', 'Ieškoti užrašų', 'Užrašų dar nėra. Bakstelėk „Naujas užrašas“.', 'Pavadinimas', 'Rašyk ką nori…',
     'Išsaugoti', 'Atšaukti', 'Ištrinti', 'Atlikta', 'Atgal', 'Prisegti', 'Atsegti',
     'Bendra',
+    'Kaip tai veikia', 'Paprastas režimas', 'Rodo tik svarbiausius dalykus. Išjunk, jei nori matyti viską.',
   ],
   lv: [
     'Šodien', 'Plāns', 'Nauda', 'Uzdevumi', 'Tu',
@@ -695,6 +698,7 @@ export const DEFAULT_PREFS: Prefs = {
   haptics: true,
   reduceMotion: false,
   splash: true,
+  simple: true,
 };
 
 /** Best match between the phone's languages and the ones the app has. */

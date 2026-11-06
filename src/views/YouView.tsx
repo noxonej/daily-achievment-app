@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TabHint } from '../components/Guide';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
 import { Avatar } from '../components/Avatar';
@@ -85,6 +86,13 @@ export function YouView() {
             {stats.chestsAvailable > 0 ? `Customize · open ${stats.chestsAvailable} ${stats.chestsAvailable === 1 ? 'chest' : 'chests'}` : t('you.customize')}
           </button>
         </div>
+
+        <TabHint
+          id="you"
+          icon="👨"
+          title="You and your progress"
+          text="Every quest gives XP. Level up to win chests, then open them to dress up your character. Your stats, badges and private diary are here too."
+        />
 
         <Segmented
           value={section}

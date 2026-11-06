@@ -39,6 +39,11 @@ unlockable achievements.
 - **Diary & notes** — a private ruled diary page for every day (with writing
   prompts, word count and your mood), past pages by month, and free notes
   with colours, pinning, search and undo for deletes.
+- **Easy for first-timers** — Simple mode (on by default, switch in
+  Settings) keeps each screen to its main cards. New users start with 4
+  daily quests matched to their goals (the rest can be switched on in
+  Settings → Quests), a "Getting started" checklist on Today, a one-time
+  explainer on each tab, and a plain-words "How it works" page.
 - **Skip Pass** — a rare prize (6% in reward chests, 3% in the daily box)
   that skips one daily quest: it counts as done for your streak and perfect
   day, but gives no XP and doesn't unlock the daily box.

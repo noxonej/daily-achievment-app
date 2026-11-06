@@ -178,6 +178,7 @@ export type Action =
   | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
   | { type: 'USE_SKIP_PASS'; questId: string }
   | { type: 'PRUNE_PLAN_EVENTS'; today: string }
+  | { type: 'GUIDE_MARK'; key: string }
   | { type: 'MONEY_UPSERT_CRYPTO'; holding: Omit<CryptoHolding, 'id'> & { id?: string } }
   | { type: 'MONEY_DELETE_CRYPTO'; holdingId: string }
   | { type: 'MONEY_SET_CRYPTO_PRICES'; prices: NonNullable<MoneyState['cryptoPrices']> }
@@ -255,6 +256,26 @@ function recomputeWeeklyLog(quests: Quest[], completedQuestIds: string[], existi
     perfectWeek,
     weeklyQuestCount: activeWeekly.length,
   };
+}
+
+const STARTER_BY_AREA: Record<string, string[]> = {
+  health: ['Move your body', 'Drink 2L of water', 'Walk 8,000 steps', 'No junk food'],
+  mind: ['Meditate 10 minutes', 'Gratitude x3', 'Journal'],
+  study: ['Read 15 pages', 'Journal'],
+  money: ['Read 15 pages', 'Tidy your space'],
+  work: ['Tidy your space', 'Read 15 pages'],
+  sleep: ['Meditate 10 minutes', 'Tidy your space'],
+};
+
+/** Four starter daily quests, taking turns between the chosen focus areas. */
+export function starterQuestTitles(areas: string[]): string[] {
+  const lists = areas.map((a) => STARTER_BY_AREA[a] ?? []).filter((l) => l.length);
+  const picked: string[] = [];
+  for (let i = 0; picked.length < 4 && i < 4; i++) {
+    for (const l of lists) if (l[i] && !picked.includes(l[i]) && picked.length < 4) picked.push(l[i]);
+  }
+  for (const t of ['Move your body', 'Read 15 pages', 'Drink 2L of water', 'Tidy your space']) if (picked.length < 4 && !picked.includes(t)) picked.push(t);
+  return picked;
 }
 
 /** Quests finished for real today (Skip Pass skips don't count, e.g. for unlocking the daily box). */
@@ -511,6 +532,9 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'MARK_DAY_OPENED':
       return { ...state, lastOpenedDate: action.date };
+
+    case 'GUIDE_MARK':
+      return (state.guide ?? []).includes(action.key) ? state : { ...state, guide: [...(state.guide ?? []), action.key] };
 
     case 'PRUNE_PLAN_EVENTS': {
       // One-time plan items vanish once their day is over.
@@ -781,7 +805,13 @@ export function reducer(state: AppState, action: Action): AppState {
       for (const day of Object.keys(days) as WeekdayId[]) {
         if (days[day].length === 0) days[day] = (action.plan[day] ?? []).map((i) => ({ ...i, id: planId() }));
       }
-      return { ...state, onboarded: true, profile: action.profile, weekPlan: { ...plan, days } };
+      // Start small: 4 daily quests that match what they want to work on. The rest stay in the list
+      // (paused) and can be switched on any time in Settings → Quests.
+      const keep = new Set(starterQuestTitles(action.profile.focusAreas));
+      const quests = state.quests.map((q) =>
+        q.frequency === 'daily' && !q.custom && !q.wildcardDate ? { ...q, archived: !keep.has(q.title) } : q,
+      );
+      return { ...state, onboarded: true, profile: action.profile, weekPlan: { ...plan, days }, quests, wildcardEnabled: false };
     }
 
     case 'SET_PROFILE':

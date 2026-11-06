@@ -1,4 +1,5 @@
 import { settings } from '../lib/settingsNav';
+import { GettingStarted } from '../components/Guide';
 import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
@@ -88,6 +89,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const [swapOpen, setSwapOpen] = useState(false);
   const [skipOpen, setSkipOpen] = useState(false);
   const skipped = log?.skipped ?? [];
+  const simple = state.prefs?.simple !== false;
   const sorted = [...activeDaily].sort((a, b) => {
     const ac = completed.includes(a.id) ? 1 : 0;
     const bc = completed.includes(b.id) ? 1 : 0;
@@ -103,6 +105,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           {state.profile?.name ? `, ${state.profile.name}` : ''}
         </h1>
       </div>
+
+      <GettingStarted onNavigate={onNavigate} />
 
       <InstallCard />
 
@@ -187,11 +191,12 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         )}
       </div>
 
-      <TodayPlanCard onOpen={() => onNavigate('plan')} />
+      {/* Simple mode keeps Today to the essentials: what's now, your quests, the box and your mood. */}
+      {!simple && <TodayPlanCard onOpen={() => onNavigate('plan')} />}
 
-      <MoodCheckIn />
+      {!simple && <MoodCheckIn />}
 
-      <DailyInsight activeDailyCount={activeDaily.length} doneCount={doneCount} />
+      {!simple && <DailyInsight activeDailyCount={activeDaily.length} doneCount={doneCount} />}
 
       {wildcard && (
         <WildcardQuestCard
@@ -244,9 +249,12 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         </div>
       )}
 
-      <QuickTaskList />
-      <DailyNoteBox />
+      {simple && <MoodCheckIn />}
 
+      {!simple && <QuickTaskList />}
+      {!simple && <DailyNoteBox />}
+
+      {!simple && (
       <button
         onClick={() => onNavigate('quests')}
         className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left hover:border-white/20 transition"
@@ -260,10 +268,13 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         </span>
         <span className="text-slate-400">→</span>
       </button>
+      )}
 
-      <div className="text-center text-xs text-slate-500 pt-1">
-        Level {stats.level} · {stats.totalQuestsCompleted} quests completed all-time
-      </div>
+      {!simple && (
+        <div className="text-center text-xs text-slate-500 pt-1">
+          Level {stats.level} · {stats.totalQuestsCompleted} quests completed all-time
+        </div>
+      )}
 
       <QuestSwapModal
         mode="skip"

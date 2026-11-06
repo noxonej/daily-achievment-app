@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { t } from '../lib/prefs';
+import { TabHint } from '../components/Guide';
+import { t, useSimple } from '../lib/prefs';
 import { useApp } from '../store/AppContext';
 import type { PlanCategory, PlanItem, WeekdayId } from '../lib/types';
 import {
@@ -75,6 +76,13 @@ export function PlanView() {
           ))}
         </div>
       </div>
+
+      <TabHint
+        id="plan"
+        icon="📅"
+        title="Your week, Monday to Sunday"
+        text="Add what you do each day, like 7:00 Wake up. It repeats every week. Tick things off as you do them. For a one-time thing, like the dentist, choose Only once."
+      />
 
       {weekIsEmpty ? (
         <button
@@ -609,6 +617,8 @@ function AddRow({ day }: { day: WeekdayId }) {
   const [text, setText] = useState('');
   const [category, setCategory] = useState<PlanCategory | undefined>();
   const [once, setOnce] = useState(false);
+  const simple = useSimple();
+  const [showCat, setShowCat] = useState(false);
   const thisWeek = dateOfWeekday(day);
   const [date, setDate] = useState(() => (thisWeek >= todayKey() ? thisWeek : addDaysToKey(thisWeek, 7)));
   const textRef = useRef<HTMLInputElement>(null);
@@ -672,6 +682,11 @@ function AddRow({ day }: { day: WeekdayId }) {
             </button>
           ))}
         </div>
+        {simple && !showCat && (
+          <button type="button" onClick={() => setShowCat(true)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200">
+            + Colour
+          </button>
+        )}
         {once && (
           <input
             type="date"
@@ -688,7 +703,7 @@ function AddRow({ day }: { day: WeekdayId }) {
           Shows on {formatEventDate(date)}{weekdayOfDate(date) !== day ? ` (${weekdayLabel(weekdayOfDate(date))})` : ''}, then disappears by itself.
         </p>
       )}
-      <CategoryPicker value={category} onChange={setCategory} />
+      {(!simple || showCat) && <CategoryPicker value={category} onChange={setCategory} />}
     </form>
   );
 }

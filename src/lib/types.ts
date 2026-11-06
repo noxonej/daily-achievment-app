@@ -235,6 +235,8 @@ export interface Prefs {
   haptics: boolean;
   reduceMotion: boolean;
   splash: boolean;
+  /** Simple mode: hides the extra cards so the app is easy for a first-timer. */
+  simple: boolean;
 }
 
 export type Accent = 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose';
@@ -296,6 +298,8 @@ export interface AppState {
   questSwaps: number;
   /** Skip Passes (rare chest / daily box prize): skip one daily quest without breaking the streak. */
   skipPasses: number;
+  /** Getting-started progress and tab explainers already seen (e.g. "visit:plan", "hint:money"). */
+  guide?: string[];
   streakShields: number;
   /** Days a Streak Shield covered; they count as perfect for the streak only. */
   shieldedDates: string[];

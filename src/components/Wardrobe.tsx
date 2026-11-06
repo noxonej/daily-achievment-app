@@ -42,6 +42,9 @@ export function Wardrobe() {
   const [preview, setPreview] = useState<AvatarItem | null>(null);
   const [chestOpen, setChestOpen] = useState(false);
   const look = normalizeLook(state.character);
+  useEffect(() => {
+    if (open) dispatch({ type: 'GUIDE_MARK', key: 'wardrobe' });
+  }, [open, dispatch]);
   const ctx = ownership(state, stats);
 
   useEffect(() => {

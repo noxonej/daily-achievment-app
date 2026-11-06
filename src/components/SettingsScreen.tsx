@@ -29,6 +29,7 @@ const TITLES: Record<SettingsPage, TKey> = {
   data: 'settings.data',
   install: 'settings.install',
   about: 'settings.about',
+  help: 'settings.help',
 };
 
 /** Full-screen Settings, laid out like a phone's settings app: grouped rows that open sub-pages. */
@@ -104,6 +105,7 @@ export function SettingsScreen() {
         {page === 'data' && <ManageView part="data" />}
         {page === 'install' && <InstallCard always />}
         {page === 'about' && <AboutCard />}
+        {page === 'help' && <HelpPage />}
       </div>
     </div>
   );
@@ -117,7 +119,7 @@ function usePrefs(): [Prefs, (p: Partial<Prefs>) => void] {
 function Home() {
   const { state, stats } = useApp();
   const auth = useAuth();
-  const [prefs] = usePrefs();
+  const [prefs, setPrefs] = usePrefs();
   const lang = LANGUAGES.find((l) => l.code === prefs.language);
   const themeLabel = t(prefs.theme === 'light' ? 'appearance.light' : prefs.theme === 'system' ? 'appearance.system' : 'appearance.dark');
 
@@ -136,6 +138,11 @@ function Home() {
         </span>
         <Icon name="›" size={20} className="text-slate-500" />
       </button>
+
+      <Group>
+        <SwitchRow label={t('settings.simple')} hint={t('settings.simpleHint')} on={prefs.simple} onChange={(v) => setPrefs({ simple: v })} />
+        <Row icon="💡" tint="bg-yellow-500" label={t('settings.help')} to="help" />
+      </Group>
 
       <Group title={t('settings.general')}>
         <Row icon="🌗" tint="bg-violet-500" label={t('settings.appearance')} value={themeLabel} to="appearance" />
@@ -387,5 +394,42 @@ function SoundsPage() {
         onChange={(v) => setPrefs({ haptics: v })}
       />
     </Group>
+  );
+}
+
+const HELP: Array<{ icon: string; title: string; text: string }> = [
+  { icon: '🎯', title: 'Quests', text: 'Small things to do every day (daily quests) or during the week (weekly quests). Tap one when you have done it. Daily quests start fresh every midnight, weekly ones every Monday.' },
+  { icon: '⚡', title: 'XP and levels', text: 'Every quest gives XP (points). Harder quests give more. Collect enough XP and you reach the next level.' },
+  { icon: '🔥', title: 'Streak', text: 'How many days in a row you finished all your daily quests. Miss a day and it starts again from zero, so keep your quest list small and doable.' },
+  { icon: '🎁', title: 'Chests', text: 'You win a chest for every perfect day, every perfect week and every new level. Open them in the wardrobe (tap your character) to win clothes, faces and more.' },
+  { icon: '💎', title: 'Shards', text: 'The app\'s coins. You get them from chests and the daily box, and spend them on items in the wardrobe.' },
+  { icon: '📦', title: 'Daily box', text: 'Finish one quest and the daily box on Today unlocks. Open it once a day for a prize. Very rarely it has a Mythic item you can\'t get anywhere else.' },
+  { icon: '🔁', title: 'Quest Swap', text: 'Trade one of today\'s quests for a different one. Back to normal tomorrow.' },
+  { icon: '🛡', title: 'Streak Shield', text: 'Saves your streak automatically if you miss a day.' },
+  { icon: '⏭', title: 'Skip Pass', text: 'A rare prize. Skip one quest on a busy or sick day: it counts for your streak but gives no XP.' },
+  { icon: '📅', title: 'Week Plan', text: 'Your routine from Monday to Sunday, like 7:00 Wake up. It repeats every week. Choose "Only once" for one-time things like a dentist visit; they disappear after the day.' },
+  { icon: '💰', title: 'Money', text: 'Type in how much you have. Each time you buy something, tap "I spent money". The daily limit shows how much you can still spend today. Add goals (like a car) to save for.' },
+  { icon: '📕', title: 'Diary', text: 'In the You tab. A private page for every day, plus notes. Nobody else can see it.' },
+  { icon: '🔐', title: 'Your data', text: 'Everything stays on your phone. Make a backup in Settings → Data & backup so you never lose it.' },
+];
+
+function HelpPage() {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-400 px-1">Everything in the app, in plain words.</p>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/[0.06]">
+        {HELP.map((h) => (
+          <div key={h.title} className="flex gap-3 px-4 py-3.5">
+            <span className="shrink-0 w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center">
+              <Icon name={h.icon} size={18} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[15px] font-bold text-white">{h.title}</span>
+              <span className="block text-[13px] text-slate-300 leading-relaxed mt-0.5">{h.text}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

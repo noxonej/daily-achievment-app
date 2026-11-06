@@ -3,6 +3,7 @@ import type { Prefs } from './types';
 import { DEFAULT_PREFS, LANGUAGES, translate, type TKey } from './i18n';
 import { locale, setLocale, setTimeFormat } from './locale';
 import { setSoundsEnabled } from './focusTimer';
+import { useApp } from '../store/AppContext';
 
 const THEME_KEY = 'dayforge-theme';
 
@@ -83,4 +84,10 @@ const CODES = new Set(LANGUAGES.map((l) => l.code));
 export function t(key: TKey, vars?: Record<string, string | number>): string {
   const l = locale();
   return translate(CODES.has(l) ? l : l.split('-')[0], key, vars);
+}
+
+/** True in Simple mode (the default): screens show only their main cards. */
+export function useSimple(): boolean {
+  const { state } = useApp();
+  return state.prefs?.simple !== false;
 }

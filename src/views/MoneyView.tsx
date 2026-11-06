@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useSimple } from '../lib/prefs';
+import { TabHint } from '../components/Guide';
 import type { MoneyAccount, MoneyKind, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, parseKey } from '../lib/date';
 import {
@@ -47,6 +49,7 @@ export function MoneyView() {
   const [editing, setEditing] = useState<MoneyAccount | 'new' | null>(null);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | 'new' | null>(null);
   const [tab, setTab] = useState<'overview' | 'crypto' | 'tips'>('overview');
+  const simple = useSimple();
   useEffect(() => {
     if (takeIntent('add-expense') && money.setupDone) setExpenseOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,6 +77,13 @@ export function MoneyView() {
           </select>
         )}
       </div>
+
+      <TabHint
+        id="money"
+        icon="💰"
+        title="Know where your money goes"
+        text="Tell the app how much you have. When you buy something, tap I spent money. Stay under your daily limit and watch your savings goal fill up."
+      />
 
       {!money.setupDone ? (
         <SetupCard />
@@ -110,8 +120,8 @@ export function MoneyView() {
             onEdit={(g) => setEditingGoal(g)}
             onAddMoney={(g) => setTransferOpen({ fromKind: 'spending', toId: g.accountId })}
           />
-          <HistoryCard />
-          <MonthCard />
+          {!simple && <HistoryCard />}
+          {!simple && <MonthCard />}
           <BillsCard />
           <AccountsCard
             onEdit={(a) => setEditing(a)}

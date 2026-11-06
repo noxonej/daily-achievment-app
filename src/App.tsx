@@ -28,7 +28,7 @@ const Wardrobe = lazy(() => import('./components/Wardrobe').then((m) => ({ defau
 const VIEW_ORDER: ViewId[] = ['today', 'plan', 'money', 'quests', 'you'];
 
 export default function App() {
-  const { state, stats } = useApp();
+  const { state, stats, dispatch } = useApp();
   const auth = useAuth();
   // Keep the account picker's picture, name and level current.
   const lookKey = JSON.stringify(state.character);
@@ -71,6 +71,7 @@ export default function App() {
   function setView(next: ViewId) {
     if (next === view) return;
     directionRef.current = VIEW_ORDER.indexOf(next) > VIEW_ORDER.indexOf(view) ? 'right' : 'left';
+    dispatch({ type: 'GUIDE_MARK', key: `visit:${next}` });
     setViewState(next);
     window.scrollTo({ top: 0 });
   }
