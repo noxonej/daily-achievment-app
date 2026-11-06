@@ -513,3 +513,133 @@ body {
 
 /* Inset tiles (bg-black/20) are a soft grey on white instead of a heavy shade. */
 :root[data-theme='light'] .bg-black\/20 { background-color: rgba(15, 23, 42, 0.04); }
+
+/* ===================== Polish animations ===================== */
+/* Numbers that change (streak, counters) give a tiny pop. */
+@keyframes num-pop {
+  0% { transform: translateY(40%) scale(0.8); opacity: 0; }
+  60% { transform: translateY(-6%) scale(1.08); opacity: 1; }
+  100% { transform: none; }
+}
+.animate-num-pop { display: inline-block; animation: num-pop 0.45s var(--ease-spring) backwards; }
+
+/* The header logo breathes very slowly. */
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+.logo-float { animation: logo-float 5s ease-in-out infinite; }
+
+/* Settings gear turns a little when pressed or hovered. */
+.gear-spin { transition: transform 0.6s var(--ease-out); }
+button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg); }
+
+/* XP ring flashes on level up. */
+@keyframes ring-flash {
+  0% { filter: drop-shadow(0 0 0 transparent); transform: rotate(-90deg) scale(1); }
+  35% { filter: drop-shadow(0 0 10px var(--color-amber-400)); transform: rotate(-90deg) scale(1.12); }
+  100% { filter: drop-shadow(0 0 0 transparent); transform: rotate(-90deg) scale(1); }
+}
+.ring-flash { animation: ring-flash 0.9s var(--ease-out); }
+
+/* Small popovers (info bubbles, level card) grow from where they were tapped. */
+@keyframes popover-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.popover-in { animation: popover-in 0.22s var(--ease-out) both; transform-origin: top left; }
+.popover-in-right { animation: popover-in 0.22s var(--ease-out) both; transform-origin: top right; }
+
+/* Smooth open/close for sections (grid row trick: animates to the content's natural height). */
+.reveal-rows { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.35s var(--ease-out), opacity 0.25s ease; opacity: 0; }
+.reveal-rows > * { overflow: hidden; min-height: 0; }
+.reveal-rows[data-open='true'] { grid-template-rows: 1fr; opacity: 1; }
+
+/* Gentle float for things waiting to be tapped (the ready daily box). */
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float-soft { animation: float-soft 3.2s ease-in-out infinite; }
+
+/* Twinkling sparkles. */
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+.twinkle { animation: twinkle 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+/* A soft pulse of glow behind something special. */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.92); }
+  50% { opacity: 0.9; transform: scale(1.05); }
+}
+.glow-pulse { animation: glow-pulse 2.6s ease-in-out infinite; }
+
+/* ---- Daily box opening: shake → lid flies off with a beam and a burst → prize ---- */
+@keyframes box-shake {
+  0% { transform: rotate(0) scale(1); }
+  15% { transform: rotate(-3deg) scale(1.01); }
+  30% { transform: rotate(3deg) scale(1.02); }
+  45% { transform: rotate(-5deg) scale(1.03); }
+  60% { transform: rotate(5deg) scale(1.04); }
+  75% { transform: rotate(-6deg) scale(1.05); }
+  90% { transform: rotate(0) scaleX(1.08) scaleY(0.92); }
+  100% { transform: rotate(0) scaleX(1.1) scaleY(0.9); }
+}
+.box-shake { animation: box-shake 0.75s cubic-bezier(.36,.07,.19,.97) both; transform-origin: 50% 90%; }
+@keyframes box-pop {
+  0% { transform: scaleX(1.1) scaleY(0.9); }
+  35% { transform: scaleX(0.94) scaleY(1.08) translateY(-6px); }
+  70% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(0.85) translateY(10px); opacity: 0; }
+}
+.box-pop { animation: box-pop 0.6s var(--ease-out) both; transform-origin: 50% 90%; }
+@keyframes box-lid-off {
+  0% { transform: none; opacity: 1; }
+  100% { transform: translate(-18px, -90px) rotate(-28deg); opacity: 0; }
+}
+.box-lid-off { animation: box-lid-off 0.55s cubic-bezier(.2,.9,.3,1) forwards; transform-box: view-box; }
+.box-beam {
+  position: absolute; left: 50%; bottom: 45%; width: 90px; height: 420px; margin-left: -45px;
+  background: linear-gradient(to top, rgba(253, 230, 138, 0.85), rgba(196, 181, 253, 0.35) 45%, transparent);
+  filter: blur(6px); border-radius: 50% 50% 0 0; transform-origin: bottom center;
+  animation: box-beam 0.6s var(--ease-out) forwards; pointer-events: none;
+}
+@keyframes box-beam {
+  0% { transform: scaleY(0) scaleX(0.4); opacity: 0; }
+  40% { transform: scaleY(1) scaleX(1); opacity: 1; }
+  100% { transform: scaleY(1.1) scaleX(1.4); opacity: 0; }
+}
+.box-shockwave {
+  position: absolute; left: 50%; top: 40%; width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 9999px;
+  border: 3px solid rgba(253, 230, 138, 0.8); animation: box-shock 0.6s var(--ease-out) forwards; pointer-events: none;
+}
+@keyframes box-shock {
+  0% { transform: scale(0.2); opacity: 1; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.box-particle {
+  position: absolute; left: 50%; top: 40%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 9999px;
+  background: #fde68a; box-shadow: 0 0 10px #fbbf24; animation: box-particle 0.6s var(--ease-out) forwards; pointer-events: none;
+}
+.box-particle:nth-child(3n) { background: #c4b5fd; box-shadow: 0 0 10px #a78bfa; }
+@keyframes box-particle {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+/* The prize comes into focus instead of just appearing. */
+@keyframes prize-focus {
+  0% { transform: scale(0.5) rotate(-8deg); opacity: 0; filter: blur(10px); }
+  60% { transform: scale(1.06) rotate(2deg); opacity: 1; filter: blur(0); }
+  100% { transform: none; }
+}
+.animate-prize-in { animation: prize-focus 0.65s var(--ease-spring) both !important; }
+
+/* A soft green wash sweeps across a quest card when you tick it off. */
+.complete-sweep {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, transparent 0%, rgba(16, 185, 129, 0.28) 45%, rgba(110, 231, 183, 0.35) 50%, transparent 60%);
+  transform: translateX(-100%); animation: complete-sweep 0.7s var(--ease-out) forwards;
+}
+@keyframes complete-sweep { to { transform: translateX(100%); } }

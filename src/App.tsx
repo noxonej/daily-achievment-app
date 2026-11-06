@@ -19,6 +19,7 @@ import { focusTimer } from './lib/focusTimer';
 import { useApplyAppearance } from './lib/theme';
 import { useWardrobeOpen } from './lib/wardrobe';
 import { useApplyPrefs } from './lib/prefs';
+import { useGoogleAutoBackup } from './components/GoogleConnect';
 import { SettingsScreen } from './components/SettingsScreen';
 
 // Loaded only when needed, so the app opens faster.
@@ -43,6 +44,7 @@ export default function App() {
   }, [lookKey, stats.level, state.profile?.name]);
   useApplyAppearance(state.appearance);
   useApplyPrefs(state.prefs);
+  useGoogleAutoBackup();
   const wardrobeOpen = useWardrobeOpen();
   // Fetch the lazy screens in the background so they're cached for offline use.
   useEffect(() => {

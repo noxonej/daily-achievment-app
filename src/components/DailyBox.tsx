@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { t } from '../lib/prefs';
 import { doneByHand } from '../store/reducer';
 import { useApp } from '../store/AppContext';
@@ -11,44 +11,94 @@ import { Avatar } from './Avatar';
 import { Confetti } from './Confetti';
 import { Icon } from './Icon';
 
-/** The daily box drawing: a glowing cube with a ribbon. `open` pops the lid. */
-export function BoxArt({ size = 120, open = false, glow = '#a78bfa' }: { size?: number; open?: boolean; glow?: string }) {
+/**
+ * The daily box: a violet gift box with a gold ribbon and bow. `glow` adds an aura, `sparkle`
+ * twinkling stars, and `lid` controls the lid ("on", or "off" while it flies away when opened).
+ */
+export function BoxArt({
+  size = 120,
+  glow = false,
+  sparkle = false,
+  lid = 'on',
+  locked = false,
+}: {
+  size?: number;
+  glow?: boolean;
+  sparkle?: boolean;
+  lid?: 'on' | 'off';
+  locked?: boolean;
+}) {
+  const id = useId().replace(/:/g, '');
+  const u = (n: string) => `url(#${n}${id})`;
   return (
-    <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true">
+    <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true" className="overflow-visible">
       <defs>
-        <linearGradient id="boxFront" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#4c1d95" />
-          <stop offset="1" stopColor="#1e1b4b" />
+        <linearGradient id={`body${id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={locked ? '#475569' : '#7c3aed'} />
+          <stop offset="1" stopColor={locked ? '#1e293b' : '#3b0764'} />
         </linearGradient>
-        <linearGradient id="boxSide" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#312e81" />
-          <stop offset="1" stopColor="#0f0b2e" />
+        <linearGradient id={`lid${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={locked ? '#94a3b8' : '#a78bfa'} />
+          <stop offset="1" stopColor={locked ? '#475569' : '#6d28d9'} />
         </linearGradient>
-        <linearGradient id="boxLid" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#7c3aed" />
-          <stop offset="1" stopColor="#4c1d95" />
+        <linearGradient id={`gold${id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={locked ? '#e2e8f0' : '#fef3c7'} />
+          <stop offset=".45" stopColor={locked ? '#cbd5e1' : '#fbbf24'} />
+          <stop offset="1" stopColor={locked ? '#64748b' : '#d97706'} />
         </linearGradient>
-        <radialGradient id="boxGlow" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stopColor={glow} stopOpacity=".9" />
-          <stop offset="1" stopColor={glow} stopOpacity="0" />
+        <linearGradient id={`shine${id}`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#fff" stopOpacity=".28" />
+          <stop offset=".35" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        <radialGradient id={`aura${id}`} cx=".5" cy=".5" r=".5">
+          <stop offset="0" stopColor="#c4b5fd" stopOpacity=".85" />
+          <stop offset=".55" stopColor="#8b5cf6" stopOpacity=".25" />
+          <stop offset="1" stopColor="#8b5cf6" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <ellipse cx="60" cy="108" rx="38" ry="5" fill="#000" opacity=".4" />
-      {open && <circle cx="60" cy="40" r="50" fill="url(#boxGlow)" />}
+      {glow && <circle cx="60" cy="66" r="58" fill={u('aura')} className="glow-pulse" style={{ transformOrigin: '60px 66px' }} />}
+      <ellipse cx="60" cy="108" rx="36" ry="5" fill="#000" opacity=".35" />
       {/* body */}
-      <path d="M22 50 L60 64 L60 104 L22 90 Z" fill="url(#boxFront)" />
-      <path d="M98 50 L60 64 L60 104 L98 90 Z" fill="url(#boxSide)" />
-      <path d="M60 64 V104" stroke="#22d3ee" strokeWidth="1.2" opacity=".8" />
-      <path d="M41 57 V97 M79 57 V97" stroke="#f0abfc" strokeWidth="3" opacity=".9" />
-      <path d="M22 50 L60 64 L98 50" fill="none" stroke="#67e8f9" strokeWidth="1" opacity=".7" />
-      {/* lid */}
-      <g style={{ transformOrigin: '60px 50px', transform: open ? 'translateY(-26px) rotate(-14deg)' : 'none', transition: 'transform .45s cubic-bezier(.34,1.56,.64,1)' }}>
-        <path d="M18 46 L60 32 L102 46 L60 60 Z" fill="url(#boxLid)" stroke="#a5f3fc" strokeWidth="1" strokeOpacity=".6" />
-        <path d="M18 46 L60 60 L60 66 L18 52 Z" fill="#5b21b6" />
-        <path d="M102 46 L60 60 L60 66 L102 52 Z" fill="#3b0764" />
-        <path d="M39 39 L81 53 M81 39 L39 53" stroke="#f0abfc" strokeWidth="3" />
-        <path d="M60 46 C52 34 44 34 46 40 C48 44 56 45 60 46 C64 45 72 44 74 40 C76 34 68 34 60 46Z" fill="#f0abfc" />
+      <rect x="24" y="56" width="72" height="50" rx="7" fill={u('body')} />
+      <rect x="24" y="56" width="72" height="50" rx="7" fill={u('shine')} />
+      <rect x="24" y="56" width="72" height="8" fill="#000" opacity=".18" />
+      <rect x="53.5" y="56" width="13" height="50" fill={u('gold')} />
+      <rect x="53.5" y="56" width="3" height="50" fill="#fff" opacity=".35" />
+      {/* lid + bow */}
+      <g className={lid === 'off' ? 'box-lid-off' : ''} style={{ transformOrigin: '60px 50px' }}>
+        <rect x="18" y="42" width="84" height="18" rx="6" fill={u('lid')} />
+        <rect x="18" y="42" width="84" height="5" rx="3" fill="#fff" opacity=".22" />
+        <rect x="52" y="42" width="16" height="18" fill={u('gold')} />
+        <rect x="52" y="42" width="3.5" height="18" fill="#fff" opacity=".35" />
+        <path d="M60 41 C49 24 33 25 37 35 C40 42 52 42 60 41Z" fill={u('gold')} />
+        <path d="M60 41 C71 24 87 25 83 35 C80 42 68 42 60 41Z" fill={u('gold')} />
+        <path d="M60 41 C53 32 44 31 45 35 C46 38 53 40 60 41Z" fill="#000" opacity=".14" />
+        <path d="M60 41 C67 32 76 31 75 35 C74 38 67 40 60 41Z" fill="#000" opacity=".14" />
+        <rect x="55" y="36" width="10" height="9" rx="3.5" fill={u('gold')} />
+        <rect x="56.5" y="37" width="3" height="4" rx="1.5" fill="#fff" opacity=".5" />
       </g>
+      {locked && (
+        <g>
+          <circle cx="92" cy="96" r="12" fill="#0f172a" stroke="#475569" strokeWidth="2" />
+          <rect x="86.5" y="94" width="11" height="8.5" rx="2" fill="#94a3b8" />
+          <path d="M89 94 v-2.5 a3 3 0 0 1 6 0 V94" fill="none" stroke="#94a3b8" strokeWidth="2" />
+        </g>
+      )}
+      {sparkle &&
+        [
+          [14, 30, 0],
+          [104, 24, 0.8],
+          [108, 76, 1.5],
+          [10, 82, 2],
+        ].map(([x, y, d]) => (
+          <path
+            key={`${x}-${y}`}
+            d={`M${x} ${y - 6} L${x + 1.6} ${y - 1.6} L${x + 6} ${y} L${x + 1.6} ${y + 1.6} L${x} ${y + 6} L${x - 1.6} ${y + 1.6} L${x - 6} ${y} L${x - 1.6} ${y - 1.6}Z`}
+            fill="#fde68a"
+            className="twinkle"
+            style={{ animationDelay: `${d}s` }}
+          />
+        ))}
     </svg>
   );
 }
@@ -76,9 +126,9 @@ export function DailyBoxCard() {
           onClick={() => ready && setOpening(true)}
           disabled={!ready}
           aria-label={ready ? 'Open the daily box' : 'Daily box'}
-          className={`shrink-0 ${ready ? 'animate-chest-wiggle' : opened ? 'opacity-60' : 'grayscale opacity-50'}`}
+          className={`shrink-0 ${ready ? 'animate-float-soft' : opened ? 'opacity-70' : ''}`}
         >
-          <BoxArt size={64} />
+          <BoxArt size={64} glow={ready} sparkle={ready} locked={!ready && !opened} />
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wider text-violet-300">{t('box.title')}</p>
@@ -115,29 +165,39 @@ export function DailyBoxCard() {
 
 function BoxOpening({ onClose }: { onClose: () => void }) {
   const { state, stats, dispatch } = useApp();
-  const [phase, setPhase] = useState<'closed' | 'opening' | 'reveal'>('closed');
+  // closed → shake (anticipation) → burst (lid flies off, light, particles) → reveal
+  const [phase, setPhase] = useState<'closed' | 'shake' | 'burst' | 'reveal'>('closed');
   const [reward, setReward] = useState<BoxReward | null>(null);
+  const busy = phase === 'shake' || phase === 'burst';
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && phase !== 'opening' && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !busy && onClose();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [phase, onClose]);
+  }, [busy, onClose]);
 
   function open() {
     if (phase !== 'closed') return;
     const r = rollBox(boxPool(ownership(state, stats)));
     setReward(r);
-    setPhase('opening');
+    setPhase('shake');
     try {
-      navigator.vibrate?.([30, 40, 30, 40, 90]);
+      navigator.vibrate?.([20, 60, 20, 60, 30]);
     } catch {
       // optional
     }
     setTimeout(() => {
+      setPhase('burst');
+      try {
+        navigator.vibrate?.(60);
+      } catch {
+        // optional
+      }
+    }, 750);
+    setTimeout(() => {
       dispatch({ type: 'OPEN_DAILY_BOX', reward: r });
       setPhase('reveal');
-    }, 950);
+    }, 1350);
   }
 
   const info = reward ? rewardInfo(reward) : null;
@@ -146,18 +206,38 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
 
   return (
     <div data-overlay className="theme-dark fixed inset-0 z-[80] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center px-6 backdrop-in">
-      {phase !== 'opening' && (
+      {!busy && (
         <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
           <Icon name="✕" size={20} />
         </button>
       )}
       {phase !== 'reveal' ? (
-        <button onClick={open} className="flex flex-col items-center" aria-label="Open box">
-          <div className={phase === 'closed' ? 'animate-chest-wiggle' : 'animate-chest-burst'}>
-            <BoxArt size={210} open={phase === 'opening'} />
+        <button onClick={open} className="relative flex flex-col items-center" aria-label="Open box">
+          <div className="relative">
+            {phase === 'burst' && (
+              <>
+                <span className="box-beam" aria-hidden="true" />
+                <span className="box-shockwave" aria-hidden="true" />
+                {Array.from({ length: 16 }, (_, i) => {
+                  const a = (i / 16) * Math.PI * 2;
+                  const d = 110 + (i % 3) * 28;
+                  return (
+                    <span
+                      key={i}
+                      className="box-particle"
+                      aria-hidden="true"
+                      style={{ ['--dx' as string]: `${Math.cos(a) * d}px`, ['--dy' as string]: `${Math.sin(a) * d - 40}px`, animationDelay: `${(i % 4) * 0.03}s` }}
+                    />
+                  );
+                })}
+              </>
+            )}
+            <div className={phase === 'closed' ? 'animate-float-soft' : phase === 'shake' ? 'box-shake' : 'box-pop'}>
+              <BoxArt size={220} glow sparkle={phase === 'closed'} lid={phase === 'burst' ? 'off' : 'on'} />
+            </div>
           </div>
-          <p className="mt-6 font-display text-2xl font-extrabold text-white">{phase === 'closed' ? 'Tap to open' : 'Opening…'}</p>
-          <p className="text-sm text-slate-400 mt-1">1 in 50 boxes hides a mythic item</p>
+          <p className={`mt-6 font-display text-2xl font-extrabold text-white transition-opacity duration-300 ${busy ? 'opacity-0' : ''}`}>Tap to open</p>
+          <p className={`text-sm text-slate-400 mt-1 transition-opacity duration-300 ${busy ? 'opacity-0' : ''}`}>1 in 50 boxes hides a mythic item</p>
         </button>
       ) : (
         info && (
@@ -171,8 +251,11 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
             ) : (
-              <div className="w-32 h-32 rounded-[28%] bg-white/[0.06] border border-white/10 flex items-center justify-center animate-prize-in">
-                <Icon name={info.icon} size={60} strokeWidth={1.6} className={info.tone} />
+              <div className="relative">
+                <div className="absolute inset-[-50px] rounded-full prize-rays" style={{ ['--ray' as string]: '#a78bfa' }} />
+                <div className="relative w-36 h-36 rounded-[30%] bg-gradient-to-br from-white/[0.12] to-white/[0.03] border border-white/15 flex items-center justify-center animate-prize-in shadow-[0_0_60px_-10px_rgba(167,139,250,0.7)]">
+                  <Icon name={info.icon} size={64} strokeWidth={1.6} className={info.tone} />
+                </div>
               </div>
             )}
             <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] fade-up ${item ? mythic.text : 'text-slate-400'}`}>{item ? 'Mythic · daily box exclusive' : "Today's prize"}</p>

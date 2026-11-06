@@ -8,11 +8,13 @@ import { APP_NAME } from '../lib/brand';
 export function InstallCard({ always = false }: { always?: boolean }) {
   const { canPrompt, prompt } = useInstall();
   const [hidden, setHidden] = useState(() => !always && installDismissed());
+  // On Today it's one tidy row; the how-to only opens when tapped.
+  const [open, setOpen] = useState(always);
   if (hidden || isStandalone()) return null;
   const os = platform();
 
   return (
-    <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className={`relative rounded-2xl border border-white/10 bg-white/[0.03] ${always ? "p-4" : "px-4 py-3"}`}>
       {!always && (
         <button
           onClick={() => {
@@ -25,13 +27,16 @@ export function InstallCard({ always = false }: { always?: boolean }) {
           <Icon name="✕" size={16} />
         </button>
       )}
-      <div className="flex items-center gap-3 pr-8">
-        <Logo size={44} />
-        <div>
-          <p className="text-sm font-bold text-white">Put {APP_NAME} on your home screen</p>
-          <p className="text-xs text-slate-400">Opens full-screen like a real app and works without internet.</p>
-        </div>
-      </div>
+      <button onClick={() => setOpen((o) => always || !o)} aria-expanded={open} className="w-full flex items-center gap-3 pr-8 text-left">
+        <Logo size={always ? 44 : 36} />
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-bold text-white">Put {APP_NAME} on your home screen</span>
+          {(always || open) && <span className="block text-xs text-slate-400">Opens full-screen like a real app and works without internet.</span>}
+        </span>
+        {!always && <Icon name="›" size={18} className={`shrink-0 text-slate-500 transition-transform duration-300 ${open ? 'rotate-90' : ''}`} />}
+      </button>
+      <div className="reveal-rows" data-open={open}>
+      <div>
       {canPrompt ? (
         <button
           onClick={() => void prompt()}
@@ -62,6 +67,8 @@ export function InstallCard({ always = false }: { always?: boolean }) {
           </li>
         </ol>
       )}
+      </div>
+      </div>
     </div>
   );
 }

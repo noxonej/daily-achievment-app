@@ -89,7 +89,7 @@ function Diary() {
         months.map((m) => (
           <section key={m.label}>
             <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500 first-letter:uppercase">{m.label}</p>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/[0.06] overflow-hidden">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/[0.06] overflow-hidden rows-stagger">
               {m.items.map((p) => {
                 const d = parseKey(p.date);
                 const mood = MOODS.find((x) => x.value === state.moods?.[p.date]);
@@ -299,7 +299,7 @@ function Notes() {
           <p className="text-sm text-slate-400 px-6">{t('notes.empty')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5 rows-stagger">
           {list.map((n) => {
             const c = NOTE_COLORS.find((x) => x.id === n.color) ?? NOTE_COLORS[0];
             return (

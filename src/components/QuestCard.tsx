@@ -19,7 +19,7 @@ export function QuestCard({ quest, completed, onToggle, periodKey }: QuestCardPr
 
   return (
     <div
-      className={`relative rounded-xl border px-4 py-3.5 transition-all group ${
+      className={`relative rounded-xl border px-4 py-3.5 transition-all duration-300 group ${
         completed
           ? 'bg-emerald-500/10 border-emerald-500/30'
           : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
@@ -58,6 +58,11 @@ export function QuestCard({ quest, completed, onToggle, periodKey }: QuestCardPr
         <div className="pl-12 mt-1">
           <InfoDisclosure text={quest.details} />
         </div>
+      )}
+      {justCompleted && (
+        <span className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none" aria-hidden="true">
+          <span className="complete-sweep" />
+        </span>
       )}
       {justCompleted && <FloatingReward xp={xp} crit={crit} />}
     </div>

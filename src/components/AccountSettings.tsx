@@ -53,7 +53,9 @@ export function AccountSettings() {
       </div>
 
       <p className="text-[11px] text-slate-500 mt-3 leading-relaxed">
-        Accounts live on this phone. To use yours on another device, export a backup below and import it there.
+        {account.google
+          ? 'Your progress is backed up to Google. On a new phone, tap Continue with Google to get it back.'
+          : 'Accounts live on this phone. Connect Google above (or export a backup) to use yours on another phone.'}
       </p>
       <button onClick={() => setConfirmDelete(true)} className="mt-2 text-xs font-semibold text-red-300/80 hover:text-red-300">
         Delete this account

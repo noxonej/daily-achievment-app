@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { doneByHand } from '../store/reducer';
 import { wardrobe } from '../lib/wardrobe';
@@ -5,26 +6,63 @@ import { settings } from '../lib/settingsNav';
 import type { ViewId } from './NavTabs';
 import { Icon } from './Icon';
 
-/** A one-time explainer at the top of a tab: what it's for, in one sentence. "Got it" hides it for good. */
-export function TabHint({ id, icon, title, text }: { id: string; icon: string; title: string; text: string }) {
-  const { state, dispatch } = useApp();
-  if ((state.guide ?? []).includes(`hint:${id}`)) return null;
+/**
+ * A small ⓘ button. The explanation only shows when it's tapped (a bubble under it); tap
+ * anywhere else, or the button again, to close it.
+ */
+export function InfoTip({ title, text, align = 'left' }: { title: string; text: string; align?: 'left' | 'right' }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  const bubble = useRef<HTMLSpanElement>(null);
+  const [shift, setShift] = useState(0);
+  // Keep the bubble on screen: slide it left or right if it would stick out.
+  useLayoutEffect(() => {
+    if (!open || !bubble.current || !ref.current) return;
+    const btn = ref.current.getBoundingClientRect();
+    const w = bubble.current.offsetWidth;
+    const start = align === 'right' ? btn.right - w : btn.left;
+    const min = 12;
+    const max = window.innerWidth - 12 - w;
+    setShift(Math.min(Math.max(start, min), max) - start);
+  }, [open, align]);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
   return (
-    <div className="rounded-2xl border border-amber-400/30 bg-amber-500/[0.07] p-4 flex gap-3">
-      <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center">
-        <Icon name={icon} size={20} />
-      </span>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-white">{title}</p>
-        <p className="text-[13px] text-slate-300 leading-relaxed mt-0.5">{text}</p>
-        <button
-          onClick={() => dispatch({ type: 'GUIDE_MARK', key: `hint:${id}` })}
-          className="mt-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold px-3.5 py-1.5"
+    <span ref={ref} className="relative inline-flex align-middle">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-label={`About: ${title}`}
+        className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${open ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-200 hover:bg-white/10'}`}
+      >
+        <Icon name="ℹ" size={16} />
+      </button>
+      {open && (
+        <span
+          ref={bubble}
+          style={{ transform: `translateX(${shift}px)` }}
+          className={`absolute top-full mt-1.5 z-40 w-[min(17rem,calc(100vw-1.5rem))] ${align === 'right' ? 'right-0' : 'left-0'}`}
         >
-          Got it
-        </button>
-      </div>
-    </div>
+          <span
+            role="dialog"
+            aria-label={title}
+            className={`block rounded-2xl border border-white/10 bg-raised p-3.5 shadow-2xl text-left font-sans ${align === 'right' ? 'popover-in-right' : 'popover-in'}`}
+          >
+            <span className="block text-sm font-bold text-white">{title}</span>
+            <span className="block text-[13px] font-normal leading-relaxed text-slate-300 mt-1 normal-case tracking-normal">{text}</span>
+          </span>
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -32,7 +70,6 @@ interface Step {
   id: string;
   icon: string;
   title: string;
-  hint: string;
   done: boolean;
   go?: () => void;
 }
@@ -40,6 +77,7 @@ interface Step {
 /** First-steps checklist on Today for new users. Disappears once everything is done (or when hidden). */
 export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch } = useApp();
+  const [open, setOpen] = useState(false);
   const guide = state.guide ?? [];
   if (guide.includes('start:hidden')) return null;
 
@@ -48,14 +86,12 @@ export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void
       id: 'quest',
       icon: '✅',
       title: 'Finish your first quest',
-      hint: 'Did one of the quests below? Tap it to tick it off.',
       done: Object.values(state.dayLogs).some((l) => doneByHand(l) > 0),
     },
     {
       id: 'plan',
       icon: '📅',
       title: 'Look at your week plan',
-      hint: 'Your routine for every day of the week.',
       done: guide.includes('visit:plan'),
       go: () => onNavigate('plan'),
     },
@@ -63,7 +99,6 @@ export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void
       id: 'money',
       icon: '💰',
       title: 'Set up your money',
-      hint: 'Type how much you have. Takes 30 seconds.',
       done: !!state.money?.setupDone,
       go: () => onNavigate('money'),
     },
@@ -71,7 +106,6 @@ export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void
       id: 'character',
       icon: '👕',
       title: 'Dress up your character',
-      hint: 'Pick a face, hair and clothes.',
       done: guide.includes('wardrobe'),
       go: () => wardrobe.open(),
     },
@@ -79,7 +113,6 @@ export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void
       id: 'box',
       icon: '🎁',
       title: 'Open your daily box',
-      hint: 'It unlocks after your first quest of the day.',
       done: !!state.dailyBox?.lastOpened,
     },
   ];
@@ -87,61 +120,77 @@ export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void
   if (doneCount === steps.length) return null;
   const next = steps.find((s) => !s.done)!;
 
+  const r = 15;
+  const c = 2 * Math.PI * r;
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-4 pt-4">
+      <div className="flex items-center gap-1 pr-2">
+        <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3 text-left">
+          <span className="relative shrink-0 w-9 h-9">
+            <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90" aria-hidden="true">
+              <circle cx="18" cy="18" r={r} fill="none" stroke="currentColor" className="text-white/10" strokeWidth="3.5" />
+              <circle
+                cx="18"
+                cy="18"
+                r={r}
+                fill="none"
+                stroke="var(--color-amber-400)"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                strokeDasharray={c}
+                strokeDashoffset={c * (1 - doneCount / steps.length)}
+                style={{ transition: 'stroke-dashoffset .7s cubic-bezier(.22,1,.36,1)' }}
+              />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white tabular-nums">
+              {doneCount}/{steps.length}
+            </span>
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-white">Getting started</span>
+            <span className="block text-xs text-slate-400 truncate">Next: {next.title}</span>
+          </span>
+          <Icon name="›" size={18} className={`shrink-0 text-slate-500 transition-transform duration-300 ${open ? 'rotate-90' : ''}`} />
+        </button>
+        <button
+          onClick={() => dispatch({ type: 'GUIDE_MARK', key: 'start:hidden' })}
+          aria-label="Hide getting started"
+          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/10"
+        >
+          <Icon name="✕" size={15} />
+        </button>
+      </div>
+      <div className="reveal-rows" data-open={open}>
         <div>
-          <p className="text-sm font-bold text-white">
-            <Icon name="🚀" size="1.1em" className="icon-inline text-amber-300" />
-            Getting started
-          </p>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {doneCount} of {steps.length} done · a minute each
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => settings.open('help')} className="rounded-lg px-2 py-1 text-xs font-semibold text-amber-300 hover:bg-white/5">
-            How it works
-          </button>
-          <button
-            onClick={() => dispatch({ type: 'GUIDE_MARK', key: 'start:hidden' })}
-            aria-label="Hide getting started"
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/10"
-          >
-            <Icon name="✕" size={16} />
+          <ul className="px-2 pb-2">
+            {steps.map((s) => {
+              const isNext = s === next;
+              const Row = s.go && !s.done ? 'button' : 'div';
+              return (
+                <li key={s.id}>
+                  <Row
+                    {...(Row === 'button' ? { onClick: s.go } : {})}
+                    className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2 text-left ${isNext ? 'bg-amber-500/[0.08]' : ''} ${Row === 'button' ? 'hover:bg-white/[0.05]' : ''}`}
+                  >
+                    <span
+                      className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${
+                        s.done ? 'bg-emerald-500 border-emerald-500 text-[#fff]' : isNext ? 'border-amber-400 text-amber-300' : 'border-white/15 text-slate-500'
+                      }`}
+                    >
+                      <Icon name={s.done ? '✓' : s.icon} size={14} strokeWidth={s.done ? 3 : 2} className={s.done ? 'animate-check' : ''} />
+                    </span>
+                    <span className={`flex-1 min-w-0 text-sm font-semibold ${s.done ? 'text-slate-500 line-through' : 'text-white'}`}>{s.title}</span>
+                    {Row === 'button' && <Icon name="›" size={18} className="shrink-0 text-slate-500" />}
+                  </Row>
+                </li>
+              );
+            })}
+          </ul>
+          <button onClick={() => settings.open('help')} className="w-full border-t border-white/[0.06] py-2.5 text-xs font-semibold text-amber-300 hover:bg-white/[0.03]">
+            How does the app work?
           </button>
         </div>
       </div>
-      <div className="mx-4 mt-3 h-1.5 rounded-full bg-white/[0.07] overflow-hidden">
-        <div className="h-full rounded-full bg-amber-400 transition-all duration-500" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
-      </div>
-      <ul className="p-2 mt-1">
-        {steps.map((s) => {
-          const isNext = s === next;
-          const Row = s.go && !s.done ? 'button' : 'div';
-          return (
-            <li key={s.id}>
-              <Row
-                {...(Row === 'button' ? { onClick: s.go } : {})}
-                className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2 text-left ${isNext ? 'bg-amber-500/[0.08]' : ''} ${Row === 'button' ? 'hover:bg-white/[0.05]' : ''}`}
-              >
-                <span
-                  className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center border ${
-                    s.done ? 'bg-emerald-500 border-emerald-500 text-[#fff]' : isNext ? 'border-amber-400 text-amber-300' : 'border-white/15 text-slate-500'
-                  }`}
-                >
-                  <Icon name={s.done ? '✓' : s.icon} size={14} strokeWidth={s.done ? 3 : 2} />
-                </span>
-                <span className="flex-1 min-w-0">
-                  <span className={`block text-sm font-semibold ${s.done ? 'text-slate-500 line-through' : 'text-white'}`}>{s.title}</span>
-                  {isNext && <span className="block text-xs text-slate-400">{s.hint}</span>}
-                </span>
-                {Row === 'button' && <Icon name="›" size={18} className="shrink-0 text-slate-500" />}
-              </Row>
-            </li>
-          );
-        })}
-      </ul>
     </div>
   );
 }

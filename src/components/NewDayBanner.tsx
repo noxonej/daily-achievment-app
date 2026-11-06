@@ -1,9 +1,17 @@
+import { useEffect } from 'react';
+import { useSimple } from '../lib/prefs';
 import { useApp } from '../store/AppContext';
 import { Icon } from './Icon';
 
 export function NewDayBanner() {
   const { isNewDay, dismissNewDay, stats } = useApp();
-  if (!isNewDay) return null;
+  const simple = useSimple();
+  // Simple mode skips the "new day" banner: the day just starts quietly.
+  useEffect(() => {
+    if (simple && isNewDay) dismissNewDay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simple, isNewDay]);
+  if (!isNewDay || simple) return null;
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-3">

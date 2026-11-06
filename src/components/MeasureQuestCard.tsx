@@ -128,6 +128,11 @@ export function MeasureQuestCard({
           )}
         </div>
       )}
+      {justCompleted && (
+        <span className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none" aria-hidden="true">
+          <span className="complete-sweep" />
+        </span>
+      )}
       {justCompleted && <FloatingReward xp={xp} crit={crit} />}
     </div>
   );

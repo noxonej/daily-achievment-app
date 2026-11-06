@@ -1,5 +1,6 @@
 import { settings } from '../lib/settingsNav';
 import { GettingStarted } from '../components/Guide';
+import { useFlip } from '../lib/useFlip';
 import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
@@ -90,11 +91,13 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const [skipOpen, setSkipOpen] = useState(false);
   const skipped = log?.skipped ?? [];
   const simple = state.prefs?.simple !== false;
+  const listRef = useRef<HTMLDivElement>(null);
   const sorted = [...activeDaily].sort((a, b) => {
     const ac = completed.includes(a.id) ? 1 : 0;
     const bc = completed.includes(b.id) ? 1 : 0;
     return ac - bc;
   });
+  useFlip(listRef, sorted.map((q) => q.id).join(','));
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
@@ -210,15 +213,22 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       {activeDaily.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="space-y-2.5 rows-stagger">
+        <div ref={listRef} className="space-y-2.5 rows-stagger">
           {sorted.map((original) => {
             // A swapped quest shows its replacement for today; completing it still counts for the original slot.
-            if (skipped.includes(original.id)) return <SkippedQuest key={original.id} quest={original} />;
+            if (skipped.includes(original.id))
+              return (
+                <div key={original.id} data-flip={original.id}>
+                  <SkippedQuest quest={original} />
+                </div>
+              );
             const swap = swaps[original.id];
             const quest = swap
               ? { ...original, ...swap, promptForNote: false, measure: undefined, noteList: undefined, noteMinWords: undefined, details: undefined }
               : original;
-            return quest.measure ? (
+            return (
+              <div key={original.id} data-flip={original.id}>
+              {quest.measure ? (
               <MeasureQuestCard
                 key={quest.id}
                 quest={quest}
@@ -244,6 +254,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
                 periodKey={key}
               />
+              )}
+              </div>
             );
           })}
         </div>

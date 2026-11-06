@@ -49,6 +49,7 @@ export function CryptoPanel() {
   const [editing, setEditing] = useState<CryptoHolding | 'new' | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lessonsOpen, setLessonsOpen] = useState(false);
   const prices = money.cryptoPrices;
   const ids = useMemo(() => [...new Set(holdings.map((h) => h.coinId))].sort().join(','), [holdings]);
 
@@ -193,12 +194,15 @@ export function CryptoPanel() {
         </div>
       )}
 
-      <div className={`${card} p-4`}>
-        <p className="text-sm font-bold text-white mb-3">
-          <Icon name="💡" size="1.15em" className="icon-inline text-yellow-300" />
-          Know this before you buy crypto
-        </p>
-        <ul className="space-y-3">
+      <div className={card}>
+        <button onClick={() => setLessonsOpen((o) => !o)} aria-expanded={lessonsOpen} className="w-full flex items-center gap-2 p-4 text-left">
+          <Icon name="💡" size={17} className="text-yellow-300" />
+          <span className="flex-1 text-sm font-bold text-white">Know this before you buy crypto</span>
+          <Icon name="›" size={18} className={`text-slate-500 transition-transform duration-300 ${lessonsOpen ? 'rotate-90' : ''}`} />
+        </button>
+        <div className="reveal-rows" data-open={lessonsOpen}>
+        <div>
+        <ul className="space-y-3 px-4 pb-4">
           {CRYPTO_LESSONS.map((l) => (
             <li key={l.title} className="flex gap-3">
               <span className="shrink-0 w-8 h-8 rounded-lg bg-white/5 text-amber-300 flex items-center justify-center">
@@ -211,10 +215,10 @@ export function CryptoPanel() {
             </li>
           ))}
         </ul>
+        </div>
+        </div>
       </div>
-      <p className="text-center text-[11px] text-slate-500 px-6">
-        Prices from CoinGecko. Your coins aren't connected to any exchange; you type in what you hold. Not financial advice.
-      </p>
+      <p className="text-center text-[11px] text-slate-500 px-6">Prices by CoinGecko · not financial advice</p>
 
       <CoinModal holding={editing} onClose={() => setEditing(null)} />
     </div>

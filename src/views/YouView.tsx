@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TabHint } from '../components/Guide';
+import { InfoTip } from '../components/Guide';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
 import { Avatar } from '../components/Avatar';
@@ -26,6 +26,13 @@ export function YouView() {
     <div>
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+          <span className="absolute top-[18px] right-14">
+            <InfoTip
+              align="right"
+              title="You and your progress"
+              text="Every quest gives XP. Level up to win chests, then open them to dress up your character. Your stats, badges and private diary are here too."
+            />
+          </span>
           <button
             onClick={() => settings.open()}
             aria-label={t('settings.title')}
@@ -40,7 +47,7 @@ export function YouView() {
                 LV {stats.level}
               </span>
             </button>
-            <div className="flex-1 min-w-0 pr-8">
+            <div className="flex-1 min-w-0 pr-16">
               <p className="font-display text-xl font-extrabold text-white truncate">{name || 'Your profile'}</p>
               <p className="text-sm text-amber-300 font-semibold">{titleForLevel(stats.level)}</p>
               <div className="mt-2">
@@ -86,13 +93,6 @@ export function YouView() {
             {stats.chestsAvailable > 0 ? `Customize · open ${stats.chestsAvailable} ${stats.chestsAvailable === 1 ? 'chest' : 'chests'}` : t('you.customize')}
           </button>
         </div>
-
-        <TabHint
-          id="you"
-          icon="👨"
-          title="You and your progress"
-          text="Every quest gives XP. Level up to win chests, then open them to dress up your character. Your stats, badges and private diary are here too."
-        />
 
         <Segmented
           value={section}

@@ -14,18 +14,25 @@ export function Logo({ size = 32, animated = false, className = '' }: { size?: n
       aria-label={APP_NAME}
     >
       <defs>
+        {/* The tile follows the app's accent colour, so the logo always matches the theme. */}
         <linearGradient id={`bg${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#fbbf24" />
-          <stop offset="0.55" stopColor="#f59e0b" />
-          <stop offset="1" stopColor="#ea580c" />
+          <stop offset="0" style={{ stopColor: 'var(--color-amber-300)' }} />
+          <stop offset="0.5" style={{ stopColor: 'var(--color-amber-500)' }} />
+          <stop offset="1" style={{ stopColor: 'var(--color-amber-600)' }} />
         </linearGradient>
         <linearGradient id={`hl${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity=".28" />
-          <stop offset=".5" stopColor="#fff" stopOpacity="0" />
+          <stop offset="0" stopColor="#fff" stopOpacity=".38" />
+          <stop offset=".55" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
+        <radialGradient id={`sh${id}`} cx=".25" cy=".1" r=".9">
+          <stop offset="0" stopColor="#fff" stopOpacity=".22" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </radialGradient>
       </defs>
-      <rect width="48" height="48" rx="12" fill={`url(#bg${id})`} />
-      <rect width="48" height="48" rx="12" fill={`url(#hl${id})`} />
+      <rect width="48" height="48" rx="14" fill={`url(#bg${id})`} />
+      <rect width="48" height="48" rx="14" fill={`url(#sh${id})`} />
+      <rect x="1" y="1" width="46" height="24" rx="13" fill={`url(#hl${id})`} />
+      <rect x=".75" y=".75" width="46.5" height="46.5" rx="13.25" fill="none" stroke="#fff" strokeOpacity=".22" strokeWidth="1.5" />
       <g fill="none" stroke="#fff" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round">
         <path
           d="M12.5 26.5 20 34 35 17"

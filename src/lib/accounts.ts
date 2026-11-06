@@ -17,6 +17,8 @@ export interface Account {
   /** Cached for the account picker, which shows before the account's data is loaded. */
   look?: Character;
   level?: number;
+  /** Linked Google account (sign-in + Drive backup). */
+  google?: { email: string; name?: string; picture?: string; fileId?: string; lastBackup?: string; auto?: boolean };
 }
 
 const REGISTRY = 'dayforge-accounts';

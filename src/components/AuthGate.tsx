@@ -21,6 +21,10 @@ import { Logo, Wordmark } from './Logo';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { APP_NAME } from '../lib/brand';
+import { downloadBackup, findBackup, googleProfile, googleSignIn, isBackup } from '../lib/google';
+import { GoogleButton } from './GoogleConnect';
+import { settings } from '../lib/settingsNav';
+import { wardrobe } from '../lib/wardrobe';
 
 function legacyData(): { name: string } | null {
   try {
@@ -42,9 +46,45 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const legacy = useMemo(() => (listAccounts().length === 0 ? legacyData() : null), []);
 
   const refresh = () => setAccounts(listAccounts());
+  const [google, setGoogle] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
+
+  /** Sign in with Google: open the linked account, or bring back the Drive backup, or start fresh. */
+  async function continueWithGoogle() {
+    setGoogle({ busy: true, error: null });
+    try {
+      await googleSignIn();
+      const profile = await googleProfile();
+      const known = listAccounts().find((a) => a.google?.email === profile.email);
+      if (known) {
+        setAdding(false);
+        open(known);
+        return;
+      }
+      const file = await findBackup();
+      const data = file ? await downloadBackup(file.id) : null;
+      const backup = isBackup(data) ? (data as Record<string, unknown> & { profile?: { name?: string }; onboarded?: boolean }) : null;
+      const acc = await createAccount({ name: backup?.profile?.name || profile.name || 'Me', pin: null, remember: true });
+      if (backup) {
+        localStorage.setItem(acc.storageKey, JSON.stringify({ ...backup, onboarded: backup.onboarded ?? true }));
+      } else {
+        const fresh = createInitialState();
+        localStorage.setItem(acc.storageKey, JSON.stringify({ ...fresh, profile: { ...fresh.profile, name: acc.name } }));
+      }
+      updateAccount(acc.id, { google: { ...profile, fileId: file?.id, lastBackup: file?.modifiedTime, auto: true } });
+      setAdding(false);
+      open(listAccounts().find((a) => a.id === acc.id) ?? acc);
+    } catch (e) {
+      setGoogle({ busy: false, error: e instanceof Error ? e.message : 'Google sign-in failed.' });
+      return;
+    }
+    setGoogle({ busy: false, error: null });
+  }
   const active = accounts.find((a) => a.id === activeId) ?? null;
 
   function open(acc: Account) {
+    // A different account starts on its own Today screen, with nothing left open from before.
+    settings.close();
+    wardrobe.close();
     setActiveId(acc.id);
     setActive(acc.id);
     refresh();
@@ -63,6 +103,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
           refresh();
         },
         signOut: () => {
+          settings.close();
           setActiveId(null);
           setActive(null);
           refresh();
@@ -80,6 +121,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
       <CreateAccount
         existing={adding ? null : legacy}
         canCancel={adding}
+        google={google}
+        onGoogle={continueWithGoogle}
         onCancel={() => setAdding(false)}
         onCreate={async (name, pin, remember) => {
           const isFirstWithData = !adding && !!legacy;
@@ -98,7 +141,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (!active) {
-    return <AccountPicker accounts={accounts} onPick={open} onAdd={() => setAdding(true)} />;
+    return <AccountPicker accounts={accounts} onPick={open} onAdd={() => setAdding(true)} google={google} onGoogle={continueWithGoogle} />;
   }
 
   if (!isUnlocked(active)) {
@@ -148,9 +191,13 @@ function CreateAccount({
   canCancel,
   onCancel,
   onCreate,
+  google,
+  onGoogle,
 }: {
   existing: { name: string } | null;
   canCancel: boolean;
+  google: { busy: boolean; error: string | null };
+  onGoogle: () => void;
   onCancel: () => void;
   onCreate: (name: string, pin: string | null, remember: boolean) => Promise<void>;
 }) {
@@ -234,14 +281,37 @@ function CreateAccount({
       >
         {existing ? 'Save & continue' : 'Create account'}
       </button>
+      {!existing && (
+        <>
+          <div className="flex items-center gap-3 my-3 text-xs text-slate-500">
+            <span className="flex-1 h-px bg-white/10" />
+            or
+            <span className="flex-1 h-px bg-white/10" />
+          </div>
+          <GoogleButton onClick={onGoogle} busy={google.busy} />
+          {google.error && <p className="text-xs text-amber-300 text-center mt-2">{google.error}</p>}
+        </>
+      )}
       <p className="text-center text-[11px] text-slate-500 mt-3 leading-relaxed">
-        Your account is saved on this device. To move to another phone, export a backup in Settings.
+        {existing ? 'Your account is saved on this device.' : 'With Google, your progress is backed up and comes back on any phone.'}
       </p>
     </Shell>
   );
 }
 
-function AccountPicker({ accounts, onPick, onAdd }: { accounts: Account[]; onPick: (a: Account) => void; onAdd: () => void }) {
+function AccountPicker({
+  accounts,
+  onPick,
+  onAdd,
+  google,
+  onGoogle,
+}: {
+  accounts: Account[];
+  onPick: (a: Account) => void;
+  onAdd: () => void;
+  google: { busy: boolean; error: string | null };
+  onGoogle: () => void;
+}) {
   return (
     <Shell>
       <div className="flex flex-col items-center text-center">
@@ -253,7 +323,7 @@ function AccountPicker({ accounts, onPick, onAdd }: { accounts: Account[]; onPic
           <button key={a.id} onClick={() => onPick(a)} className="relative flex flex-col items-center rounded-2xl border border-white/10 bg-white/[0.03] hover:border-amber-400/50 p-3 transition">
             <Avatar look={a.look} size={96} />
             <span className="mt-2 text-sm font-bold text-white truncate max-w-full">{a.name}</span>
-            <span className="text-[11px] text-slate-500">{a.level ? `Level ${a.level}` : 'New'}</span>
+            <span className="text-[11px] text-slate-500 truncate max-w-full">{a.google ? a.google.email : a.level ? `Level ${a.level}` : 'New'}</span>
             {a.pinHash && (
               <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center text-slate-200">
                 <Icon name="🔒" size={12} />
@@ -265,6 +335,10 @@ function AccountPicker({ accounts, onPick, onAdd }: { accounts: Account[]; onPic
           <span className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-2xl font-light">+</span>
           <span className="mt-2 text-sm font-semibold">Add account</span>
         </button>
+      </div>
+      <div className="mt-6">
+        <GoogleButton onClick={onGoogle} busy={google.busy} />
+        {google.error && <p className="text-xs text-amber-300 text-center mt-2">{google.error}</p>}
       </div>
     </Shell>
   );
@@ -389,7 +463,7 @@ function PinInput({ label, value, onChange, invalid }: { label: string; value: s
 export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={`shrink-0 w-12 h-7 rounded-full p-0.5 transition ${on ? 'bg-amber-500' : 'bg-white/15'}`}>
-      <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform ${on ? 'translate-x-5' : ''}`} />
+      <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] ${on ? 'translate-x-5' : ''}`} />
     </button>
   );
 }

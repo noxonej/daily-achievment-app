@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSimple } from '../lib/prefs';
-import { TabHint } from '../components/Guide';
+import { InfoTip } from '../components/Guide';
 import type { MoneyAccount, MoneyKind, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, parseKey } from '../lib/date';
 import {
@@ -60,7 +60,10 @@ export function MoneyView() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-slate-400 text-sm">Your money</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Money</h1>
+          <h1 className="font-display text-2xl font-bold text-white mt-0.5 flex items-center gap-1">
+            Money
+            <InfoTip title="Know where your money goes" text="Tell the app how much you have. When you buy something, tap I spent money. Stay under your daily limit and watch your savings goals fill up. Everything stays on your phone." />
+          </h1>
         </div>
         {money.setupDone && (
           <select
@@ -77,13 +80,6 @@ export function MoneyView() {
           </select>
         )}
       </div>
-
-      <TabHint
-        id="money"
-        icon="💰"
-        title="Know where your money goes"
-        text="Tell the app how much you have. When you buy something, tap I spent money. Stay under your daily limit and watch your savings goal fill up."
-      />
 
       {!money.setupDone ? (
         <SetupCard />
@@ -109,7 +105,7 @@ export function MoneyView() {
           ) : (
           <>
           <OverviewCard />
-          <TopTip onMore={() => setTab('tips')} />
+          {!simple && <TopTip onMore={() => setTab('tips')} />}
           <TodayCard
             onAddExpense={() => setExpenseOpen(true)}
             onEditLimits={() => setLimitsOpen(true)}
@@ -128,10 +124,6 @@ export function MoneyView() {
             onAdd={() => setEditing('new')}
             onTransfer={() => setTransferOpen({})}
           />
-          <p className="text-center text-xs text-slate-500 px-6 pb-2">
-            Your money info stays on this device. It's only saved somewhere else if you export a backup or turn on sync in
-            Settings.
-          </p>
           </>
           )}
         </>

@@ -13,6 +13,7 @@ import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { Toggle } from './AuthGate';
 import { AccountSettings } from './AccountSettings';
+import { GoogleCard } from './GoogleConnect';
 import { AboutCard, AccentPicker, BackgroundPicker, ProfileCard } from './ProfileSettings';
 import { InstallCard } from './InstallCard';
 import { ManageView } from '../views/ManageView';
@@ -96,7 +97,12 @@ export function SettingsScreen() {
       >
         {page === 'home' && <Home />}
         {page === 'profile' && <ProfileCard />}
-        {page === 'account' && <AccountSettings />}
+        {page === 'account' && (
+          <>
+            <GoogleCard />
+            <AccountSettings />
+          </>
+        )}
         {page === 'appearance' && <AppearancePage />}
         {page === 'language' && <LanguagePage />}
         {page === 'notifications' && <NotificationsPage />}
@@ -124,7 +130,7 @@ function Home() {
   const themeLabel = t(prefs.theme === 'light' ? 'appearance.light' : prefs.theme === 'system' ? 'appearance.system' : 'appearance.dark');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 stagger">
       <button
         onClick={() => settings.open('profile')}
         className="w-full flex items-center gap-3.5 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 text-left hover:border-white/20"
@@ -153,7 +159,7 @@ function Home() {
 
       <Group>
         <Row icon="🎯" tint="bg-amber-500" label={t('settings.quests')} value={String(state.quests.filter((q) => !q.archived && !q.wildcardDate && !q.wildcardWeekKey).length)} to="quests" />
-        {auth && <Row icon="🔐" tint="bg-emerald-500" label={t('settings.account')} value={auth.account.pinHash ? 'PIN' : undefined} to="account" />}
+        {auth && <Row icon="🔐" tint="bg-emerald-500" label={t('settings.account')} value={auth.account.google?.email ?? (auth.account.pinHash ? 'PIN' : undefined)} to="account" />}
         <Row icon="💾" tint="bg-cyan-500" label={t('settings.data')} to="data" />
       </Group>
 

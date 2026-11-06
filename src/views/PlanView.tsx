@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { TabHint } from '../components/Guide';
+import { InfoTip } from '../components/Guide';
 import { t, useSimple } from '../lib/prefs';
 import { useApp } from '../store/AppContext';
 import type { PlanCategory, PlanItem, WeekdayId } from '../lib/types';
@@ -60,7 +60,10 @@ export function PlanView() {
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="text-slate-400 text-sm">Your routine</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5">{t('plan.title')}</h1>
+          <h1 className="font-display text-2xl font-bold text-white mt-0.5 flex items-center gap-1">
+            {t('plan.title')}
+            <InfoTip title="Your week, Monday to Sunday" text="Add what you do each day, like 7:00 Wake up. It repeats every week, and you tick things off as you do them. For a one-time thing, like the dentist, choose Only once: it disappears after that day." />
+          </h1>
         </div>
         <div className="shrink-0 grid grid-cols-2 rounded-xl bg-white/5 border border-white/10 p-1 text-sm font-semibold">
           {(['day', 'week'] as const).map((m) => (
@@ -76,13 +79,6 @@ export function PlanView() {
           ))}
         </div>
       </div>
-
-      <TabHint
-        id="plan"
-        icon="📅"
-        title="Your week, Monday to Sunday"
-        text="Add what you do each day, like 7:00 Wake up. It repeats every week. Tick things off as you do them. For a one-time thing, like the dentist, choose Only once."
-      />
 
       {weekIsEmpty ? (
         <button
@@ -698,11 +694,6 @@ function AddRow({ day }: { day: WeekdayId }) {
           />
         )}
       </div>
-      {once && (
-        <p className="text-[11px] text-slate-500 -mt-1">
-          Shows on {formatEventDate(date)}{weekdayOfDate(date) !== day ? ` (${weekdayLabel(weekdayOfDate(date))})` : ''}, then disappears by itself.
-        </p>
-      )}
       {(!simple || showCat) && <CategoryPicker value={category} onChange={setCategory} />}
     </form>
   );
@@ -870,7 +861,6 @@ function UpcomingCard({ onAdd, onOpenDay }: { onAdd: () => void; onOpenDay: (d: 
             <Icon name="📆" size="1.1em" className="icon-inline text-rose-300" />
             Coming up
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">One-time things. They disappear once the day is over.</p>
         </div>
         <button onClick={onAdd} className="shrink-0 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-semibold text-slate-200 px-2.5 py-1.5">
           + Add
@@ -956,7 +946,6 @@ function EventModal({ open, onClose, defaultDate }: { open: boolean; onClose: ()
         }}
         className="space-y-3"
       >
-        <p className="text-sm text-slate-400">For things that happen once, like an appointment. It shows on that day and then disappears.</p>
         <input autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="What is it?" aria-label="What" maxLength={80} className={`${inputClass} w-full`} />
         <div className="flex flex-wrap gap-1.5">
           {EVENT_IDEAS.map((idea) => (
