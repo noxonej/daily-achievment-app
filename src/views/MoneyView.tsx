@@ -24,6 +24,7 @@ import {
 } from '../lib/money';
 import { MoneyDonut } from '../components/MoneyDonut';
 import { useCountUp } from '../lib/useCountUp';
+import { takeIntent } from '../lib/intents';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon, IconGrid } from '../components/Icon';
@@ -42,10 +43,10 @@ function CountUp({ value, format }: { value: number; format: (cents: number) => 
 }
 
 function useMoney() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, undoable } = useApp();
   const money = state.money ?? createEmptyMoney();
   const fmt = (cents: number, compact = false) => formatMoney(cents, money.currency, { compact });
-  return { money, dispatch, fmt };
+  return { money, dispatch, fmt, undoable };
 }
 
 export function MoneyView() {
@@ -55,6 +56,10 @@ export function MoneyView() {
   const [transferOpen, setTransferOpen] = useState<TransferPreset | null>(null);
   const [editing, setEditing] = useState<MoneyAccount | 'new' | null>(null);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | 'new' | null>(null);
+  useEffect(() => {
+    if (takeIntent('add-expense') && money.setupDone) setExpenseOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 stagger">
@@ -231,7 +236,7 @@ function TodayCard({
   onEditLimits: () => void;
   onSaveLeftover: (amount: number) => void;
 }) {
-  const { money, dispatch, fmt } = useMoney();
+  const { money, fmt, undoable } = useMoney();
   const today = todayKey();
   const limit = dailyLimit(money.categories);
   const spent = spentOn(money.expenses, today);
@@ -343,7 +348,7 @@ function TodayCard({
                 </span>
                 <span className="text-sm font-bold text-white tabular-nums">−{fmt(e.amount)}</span>
                 <button
-                  onClick={() => dispatch({ type: 'MONEY_DELETE_EXPENSE', expenseId: e.id })}
+                  onClick={() => undoable({ type: 'MONEY_DELETE_EXPENSE', expenseId: e.id }, `Expense removed, ${fmt(e.amount)} put back`)}
                   aria-label="Remove expense (puts the money back)"
                   title="Remove (puts the money back)"
                   className="shrink-0 w-8 h-8 -mr-2 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-white/5"
@@ -721,7 +726,7 @@ function ExpenseModal({ open, onClose }: { open: boolean; onClose: () => void })
 const GOAL_ICONS = ['🚗', '🏍️', '🛟', '📱', '💻', '✈️', '🏠', '🎓', '🎮', '👟', '⌚', '🎸', '💍', '🎯'];
 
 function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClose: () => void }) {
-  const { money, dispatch, fmt } = useMoney();
+  const { money, dispatch, fmt, undoable } = useMoney();
   const existing = goal && goal !== 'new' ? goal : null;
   const savingsAccounts = money.accounts.filter((a) => a.kind === 'savings');
   const [name, setName] = useState('');
@@ -870,7 +875,7 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
         danger
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
-          if (existing) dispatch({ type: 'MONEY_DELETE_GOAL', goalId: existing.id });
+          if (existing) undoable({ type: 'MONEY_DELETE_GOAL', goalId: existing.id }, `${existing.name} goal deleted`);
           setConfirmDelete(false);
           onClose();
         }}
@@ -1099,7 +1104,7 @@ function TransferModal({ preset, onClose }: { preset: TransferPreset | null; onC
 }
 
 function AccountModal({ account, onClose }: { account: MoneyAccount | 'new' | null; onClose: () => void }) {
-  const { money, dispatch } = useMoney();
+  const { money, dispatch, undoable } = useMoney();
   const [name, setName] = useState('');
   const [kind, setKind] = useState<MoneyKind>('spending');
   const [amount, setAmount] = useState('');
@@ -1194,7 +1199,7 @@ function AccountModal({ account, onClose }: { account: MoneyAccount | 'new' | nu
         danger
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
-          if (existing) dispatch({ type: 'MONEY_DELETE_ACCOUNT', accountId: existing.id });
+          if (existing) undoable({ type: 'MONEY_DELETE_ACCOUNT', accountId: existing.id }, `${existing.name} deleted`);
           setConfirmDelete(false);
           onClose();
         }}

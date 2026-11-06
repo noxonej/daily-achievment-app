@@ -1,17 +1,24 @@
 {
-  "name": "Quest Log",
-  "short_name": "Quest Log",
-  "description": "Turn your daily habits into quests — daily and weekly quests, notes, streaks, and achievements.",
-  "start_url": "./",
+  "id": "/daily-achievment-app/",
+  "name": "QuestLog: Planner, Habits & Money",
+  "short_name": "QuestLog",
+  "description": "Plan your week, build habits, track your money and savings goals, and level up every day.",
+  "start_url": "./?source=homescreen",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b0e17",
   "theme_color": "#0b0e17",
+  "categories": ["productivity", "lifestyle", "finance"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "app-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Today", "url": "./?view=today", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Week plan", "url": "./?view=plan", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Log spending", "url": "./?view=money", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Start focus", "url": "./?focus=1", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] }
   ]
 }

@@ -4,12 +4,13 @@ import { QuestFormModal } from '../components/QuestFormModal';
 import { QuestLibraryModal } from '../components/QuestLibraryModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SyncSettings } from '../components/SyncSettings';
+import { ProfileSettings } from '../components/ProfileSettings';
 import type { Frequency, Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { Icon } from '../components/Icon';
 
 export function ManageView() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, undoable } = useApp();
   const [formOpen, setFormOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [editing, setEditing] = useState<Quest | null>(null);
@@ -64,8 +65,8 @@ export function ManageView() {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-6 stagger">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-slate-400 text-sm">Configure your journey</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Manage Quests</h1>
+          <p className="text-slate-400 text-sm">Quests, profile & settings</p>
+          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Manage</h1>
         </div>
         <button
           onClick={() => setLibraryOpen(true)}
@@ -116,6 +117,8 @@ export function ManageView() {
           </button>
         </div>
       </div>
+
+      <ProfileSettings />
 
       <SyncSettings />
 
@@ -183,7 +186,7 @@ export function ManageView() {
         danger
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {
-          if (deleteTarget) dispatch({ type: 'DELETE_QUEST', questId: deleteTarget.id });
+          if (deleteTarget) undoable({ type: 'DELETE_QUEST', questId: deleteTarget.id }, `${deleteTarget.title} deleted`);
           setDeleteTarget(null);
         }}
       />

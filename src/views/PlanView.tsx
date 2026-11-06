@@ -318,7 +318,7 @@ function DayPicker({
 }
 
 function DayPanel({ day, isToday, checked }: { day: WeekdayId; isToday: boolean; checked: Set<string> }) {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, undoable } = useApp();
   const items = planItemsForDay(state, day);
   const doneCount = items.filter((i) => checked.has(i.id)).length;
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -399,7 +399,7 @@ function DayPanel({ day, isToday, checked }: { day: WeekdayId; isToday: boolean;
         danger
         onCancel={() => setClearOpen(false)}
         onConfirm={() => {
-          dispatch({ type: 'PLAN_CLEAR_DAY', day });
+          undoable({ type: 'PLAN_CLEAR_DAY', day }, `${weekdayLabel(day)} cleared`);
           setClearOpen(false);
         }}
       />
@@ -470,7 +470,7 @@ function ItemRow({
 }
 
 function EditRow({ day, item, onDone }: { day: WeekdayId; item: PlanItem; onDone: () => void }) {
-  const { dispatch } = useApp();
+  const { dispatch, undoable } = useApp();
   const [time, setTime] = useState(item.time ?? '');
   const [text, setText] = useState(item.text);
   const [category, setCategory] = useState<PlanCategory | undefined>(item.category);
@@ -514,7 +514,7 @@ function EditRow({ day, item, onDone }: { day: WeekdayId; item: PlanItem; onDone
           <button
             type="button"
             onClick={() => {
-              dispatch({ type: 'PLAN_DELETE', day, itemId: item.id });
+              undoable({ type: 'PLAN_DELETE', day, itemId: item.id }, `${item.text} removed`);
               onDone();
             }}
             className="rounded-lg text-sm font-semibold text-red-300 hover:bg-red-500/15 px-3 py-2 transition"

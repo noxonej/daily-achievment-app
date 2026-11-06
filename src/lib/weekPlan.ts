@@ -45,6 +45,7 @@ export const PLAN_CATEGORIES: Array<{ id: PlanCategory; label: string; dot: stri
   { id: 'mind', label: 'Mind', dot: 'bg-violet-400', text: 'text-violet-300', bar: 'bg-violet-400', chip: 'bg-violet-500/15 border-violet-400/60 text-violet-200' },
   { id: 'study', label: 'Study', dot: 'bg-sky-400', text: 'text-sky-300', bar: 'bg-sky-400', chip: 'bg-sky-500/15 border-sky-400/60 text-sky-200' },
   { id: 'work', label: 'Work', dot: 'bg-orange-400', text: 'text-orange-300', bar: 'bg-orange-400', chip: 'bg-orange-500/15 border-orange-400/60 text-orange-200' },
+  { id: 'money', label: 'Money', dot: 'bg-yellow-300', text: 'text-yellow-200', bar: 'bg-yellow-300', chip: 'bg-yellow-400/15 border-yellow-300/60 text-yellow-100' },
   { id: 'personal', label: 'Personal', dot: 'bg-rose-400', text: 'text-rose-300', bar: 'bg-rose-400', chip: 'bg-rose-500/15 border-rose-400/60 text-rose-200' },
 ];
 

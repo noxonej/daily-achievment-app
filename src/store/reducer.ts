@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -22,6 +22,10 @@ export function createInitialState(): AppState {
     unlockedCosmeticIds: [],
     weekPlan: createEmptyWeekPlan(),
     money: createEmptyMoney(),
+    onboarded: false,
+    profile: { name: '', focusAreas: [], wakeTime: '07:00', bedTime: '22:30' },
+    moods: {},
+    focusMinutes: {},
     createdAt: new Date().toISOString(),
   };
 }
@@ -123,6 +127,14 @@ export type Action =
       newAccount?: { name: string; amount: number; fromAccountId?: string };
     }
   | { type: 'MONEY_DELETE_GOAL'; goalId: string }
+  | {
+      type: 'COMPLETE_ONBOARDING';
+      profile: Profile;
+      plan: Record<WeekdayId, Array<Omit<PlanItem, 'id'>>>;
+    }
+  | { type: 'SET_PROFILE'; profile: Partial<Profile> }
+  | { type: 'SET_MOOD'; date: string; mood: Mood | null }
+  | { type: 'ADD_FOCUS_MINUTES'; date: string; minutes: number }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
 
@@ -602,8 +614,35 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'MONEY_SET_CATEGORIES':
       return withMoney(state, (m) => ({ ...m, categories: action.categories }));
 
+    case 'COMPLETE_ONBOARDING': {
+      const plan = normalizePlan(state.weekPlan);
+      const days = { ...plan.days };
+      for (const day of Object.keys(days) as WeekdayId[]) {
+        if (days[day].length === 0) days[day] = (action.plan[day] ?? []).map((i) => ({ ...i, id: planId() }));
+      }
+      return { ...state, onboarded: true, profile: action.profile, weekPlan: { ...plan, days } };
+    }
+
+    case 'SET_PROFILE':
+      return { ...state, profile: { ...state.profile, ...action.profile } };
+
+    case 'SET_MOOD': {
+      const moods = { ...(state.moods ?? {}) };
+      if (action.mood === null) delete moods[action.date];
+      else moods[action.date] = action.mood;
+      return { ...state, moods };
+    }
+
+    case 'ADD_FOCUS_MINUTES': {
+      if (action.minutes <= 0) return state;
+      const focusMinutes = { ...(state.focusMinutes ?? {}) };
+      focusMinutes[action.date] = (focusMinutes[action.date] ?? 0) + action.minutes;
+      return { ...state, focusMinutes };
+    }
+
     case 'IMPORT_STATE': {
-      return { ...createInitialState(), ...action.state };
+      // Backups from before first-run setup existed belong to existing users, so never re-run setup for them.
+      return { ...createInitialState(), ...action.state, onboarded: action.state.onboarded ?? true };
     }
 
     case 'RESET_ALL': {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppState, WeekdayId } from './types';
 import { WEEKDAYS, checkedPlanIds, formatPlanTime, planItemsForDay, todayWeekday } from './weekPlan';
 import { todayKey } from './date';
+import { showSystemNotification } from './notify';
 
 const ICS_DAY: Record<WeekdayId, string> = { mon: 'MO', tue: 'TU', wed: 'WE', thu: 'TH', fri: 'FR', sat: 'SA', sun: 'SU' };
 
@@ -172,17 +173,7 @@ export function useLivePlanReminders(state: AppState): { reminder: LiveReminder 
         } catch {
           // vibration not supported
         }
-        if (notificationsSupported() && Notification.permission === 'granted') {
-          try {
-            new Notification(`${formatPlanTime(item.time)} · ${item.text}`, {
-              body: 'From your Week Plan',
-              icon: `${import.meta.env.BASE_URL}icon-192.png`,
-              tag: key,
-            });
-          } catch {
-            // some mobile browsers only allow notifications from a service worker; the in-app banner still shows
-          }
-        }
+        showSystemNotification(`${formatPlanTime(item.time)} · ${item.text}`, 'From your Week Plan', key);
       }
     }
     check();

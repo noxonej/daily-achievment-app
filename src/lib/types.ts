@@ -84,7 +84,7 @@ export interface Character {
 
 export type WeekdayId = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
-export type PlanCategory = 'health' | 'mind' | 'study' | 'work' | 'personal';
+export type PlanCategory = 'health' | 'mind' | 'study' | 'work' | 'money' | 'personal';
 
 export interface PlanItem {
   id: string;
@@ -153,6 +153,18 @@ export interface MoneyState {
   goals: SavingsGoal[];
 }
 
+export type FocusArea = 'health' | 'mind' | 'study' | 'money' | 'work' | 'sleep';
+
+export interface Profile {
+  name: string;
+  focusAreas: FocusArea[];
+  wakeTime: string;
+  bedTime: string;
+}
+
+/** 1 = awful … 5 = great */
+export type Mood = 1 | 2 | 3 | 4 | 5;
+
 export interface AppState {
   quests: Quest[];
   goals: LongTermGoal[];
@@ -165,6 +177,13 @@ export interface AppState {
   unlockedCosmeticIds: string[];
   weekPlan: WeekPlan;
   money: MoneyState;
+  /** False only for brand-new users who haven't been through first-run setup. */
+  onboarded: boolean;
+  profile: Profile;
+  /** Daily mood check-in, keyed by YYYY-MM-DD. */
+  moods: Record<string, Mood>;
+  /** Minutes of focus-timer time completed, keyed by YYYY-MM-DD. */
+  focusMinutes: Record<string, number>;
   createdAt: string;
 }
 

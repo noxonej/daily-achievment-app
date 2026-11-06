@@ -13,7 +13,7 @@ const TIMEFRAME_LABEL: Record<string, string> = {
 };
 
 export function GoalsView() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, undoable } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<LongTermGoal | null>(null);
 
@@ -67,7 +67,7 @@ export function GoalsView() {
             goal={g}
             onAdjust={(delta) => dispatch({ type: 'ADJUST_GOAL_PROGRESS', goalId: g.id, delta })}
             onEdit={() => openEdit(g)}
-            onDelete={() => dispatch({ type: 'DELETE_GOAL', goalId: g.id })}
+            onDelete={() => undoable({ type: 'DELETE_GOAL', goalId: g.id }, `${g.title} deleted`)}
           />
         ))}
       </div>
@@ -92,7 +92,7 @@ export function GoalsView() {
                 </span>
                 <Icon name="🏆" size={18} className="text-amber-300" />
                 <button
-                  onClick={() => dispatch({ type: 'DELETE_GOAL', goalId: g.id })}
+                  onClick={() => undoable({ type: 'DELETE_GOAL', goalId: g.id }, `${g.title} deleted`)}
                   className="text-slate-500 hover:text-red-400 text-sm px-1"
                   aria-label="Delete goal"
                 >

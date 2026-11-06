@@ -2,9 +2,13 @@ import { useApp } from '../store/AppContext';
 import { HeatmapCalendar } from '../components/HeatmapCalendar';
 import { JournalHistory } from '../components/JournalHistory';
 import { Icon } from '../components/Icon';
+import { MoodInsights } from '../components/MoodInsights';
+import { todayKey } from '../lib/date';
 
 export function StatsView() {
   const { state, stats } = useApp();
+  const focusToday = state.focusMinutes?.[todayKey()] ?? 0;
+  const focusTotal = Object.values(state.focusMinutes ?? {}).reduce((a, b) => a + b, 0);
 
   const tiles: Array<{ label: string; value: string | number; icon: string }> = [
     { label: 'Total XP', value: stats.totalXp, icon: '⚡' },
@@ -15,6 +19,8 @@ export function StatsView() {
     { label: 'Quests Done', value: stats.totalQuestsCompleted, icon: '⚔️' },
     { label: 'Days Active', value: stats.daysActive, icon: '🗓️' },
     { label: 'Goals Done', value: stats.goalsCompleted, icon: '🏆' },
+    { label: 'Focus Today', value: `${focusToday}m`, icon: '⏱' },
+    { label: 'Focus Total', value: focusTotal >= 120 ? `${Math.round(focusTotal / 6) / 10}h` : `${focusTotal}m`, icon: '⏳' },
   ];
 
   return (
@@ -28,6 +34,8 @@ export function StatsView() {
         <p className="text-sm font-semibold text-white mb-3">Activity</p>
         <HeatmapCalendar dayLogs={state.dayLogs} />
       </div>
+
+      <MoodInsights />
 
       <div className="grid grid-cols-2 gap-3">
         {tiles.map((t) => (

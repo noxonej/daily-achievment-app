@@ -25,7 +25,8 @@ function loadState(): AppState {
     }
     // Merge over fresh defaults so saves from before a schema change (new
     // fields like character/wildcardEnabled) don't crash on load.
-    return { ...createInitialState(), ...parsed } as AppState;
+    // Saves from before first-run setup existed are existing users: mark them onboarded.
+    return { ...createInitialState(), onboarded: true, ...parsed } as AppState;
   } catch {
     return createInitialState();
   }
@@ -53,6 +54,11 @@ interface AppContextValue {
   disconnectSync: () => void;
   syncNow: () => Promise<void>;
   restoreFromGithub: () => Promise<void>;
+  /** Runs an action and offers a few seconds to undo it. */
+  undoable: (action: Action, message: string) => void;
+  undoToast: { id: number; message: string } | null;
+  undo: () => void;
+  dismissUndo: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -228,6 +234,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SYNC_WILDCARD' });
   }, [state.wildcardEnabled]);
 
+  const [undoToast, setUndoToast] = useState<{ id: number; message: string; prev: AppState } | null>(null);
+  const undoable = useCallback(
+    (action: Action, message: string) => {
+      setUndoToast({ id: Date.now(), message, prev: state });
+      dispatch(action);
+    },
+    [state],
+  );
+  const undo = useCallback(() => {
+    if (!undoToast) return;
+    dispatch({ type: 'IMPORT_STATE', state: undoToast.prev });
+    setUndoToast(null);
+  }, [undoToast]);
+  const dismissUndo = useCallback(() => setUndoToast(null), []);
+
   const value: AppContextValue = {
     state,
     dispatch,
@@ -243,6 +264,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     disconnectSync,
     syncNow,
     restoreFromGithub,
+    undoable,
+    undoToast: undoToast ? { id: undoToast.id, message: undoToast.message } : null,
+    undo,
+    dismissUndo,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

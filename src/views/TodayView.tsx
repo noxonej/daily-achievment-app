@@ -13,6 +13,33 @@ import { Confetti } from '../components/Confetti';
 import { TodayPlanCard } from '../components/TodayPlanCard';
 import type { ViewId } from '../components/NavTabs';
 import { Icon } from '../components/Icon';
+import { NowNextCard } from '../components/NowNextCard';
+import { MoodCheckIn } from '../components/MoodCheckIn';
+import { InstallCard } from '../components/InstallCard';
+import { focusTimer } from '../lib/focusTimer';
+import { setIntent } from '../lib/intents';
+
+function greeting(d: Date = new Date()): string {
+  const h = d.getHours();
+  if (h < 5) return 'Good night';
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function QuickAction({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] py-3 transition"
+    >
+      <span className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center">
+        <Icon name={icon} size={19} />
+      </span>
+      <span className="text-xs font-semibold text-slate-200">{label}</span>
+    </button>
+  );
+}
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch, stats } = useApp();
@@ -49,14 +76,34 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
       <div>
         <p className="text-slate-400 text-sm">{formatDisplayDate(key)}</p>
-        <h1 className="font-display text-2xl font-bold text-white mt-0.5">Today's Quests</h1>
+        <h1 className="font-display text-[26px] leading-tight font-extrabold text-white mt-0.5">
+          {greeting()}
+          {state.profile?.name ? `, ${state.profile.name}` : ''}
+        </h1>
+      </div>
+
+      <InstallCard />
+
+      <NowNextCard onOpenPlan={() => onNavigate('plan')} />
+
+      <div className="grid grid-cols-3 gap-2">
+        <QuickAction icon="⏱" label="Focus" onClick={() => focusTimer.open()} />
+        <QuickAction
+          icon="💸"
+          label="Log spending"
+          onClick={() => {
+            setIntent('add-expense');
+            onNavigate('money');
+          }}
+        />
+        <QuickAction icon="📅" label="Week plan" onClick={() => onNavigate('plan')} />
       </div>
 
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         {showConfetti && <Confetti count={36} />}
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-slate-300">
-            {doneCount} / {activeDaily.length} complete
+            <span className="font-bold text-white">Daily quests</span> · {doneCount} / {activeDaily.length} done
           </span>
           {isPerfect && (
             <span className="text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1">
@@ -73,6 +120,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       </div>
 
       <TodayPlanCard onOpen={() => onNavigate('plan')} />
+
+      <MoodCheckIn />
 
       <DailyInsight activeDailyCount={activeDaily.length} doneCount={doneCount} />
 

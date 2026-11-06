@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Header } from './components/Header';
 import { NavTabs, type ViewId } from './components/NavTabs';
 import { NewDayBanner } from './components/NewDayBanner';
@@ -13,11 +13,30 @@ import { AchievementsView } from './views/AchievementsView';
 import { StatsView } from './views/StatsView';
 import { ManageView } from './views/ManageView';
 import { SplashScreen } from './components/SplashScreen';
+import { Onboarding } from './components/Onboarding';
+import { FocusTimer } from './components/FocusTimer';
+import { UndoToast } from './components/UndoToast';
+import { useApp } from './store/AppContext';
+import { focusTimer } from './lib/focusTimer';
 
 const VIEW_ORDER: ViewId[] = ['today', 'plan', 'money', 'weekly', 'goals', 'achievements', 'stats', 'manage'];
 
 export default function App() {
-  const [view, setViewState] = useState<ViewId>('today');
+  const { state } = useApp();
+  // The launch animation is for returning users; someone finishing setup has just seen the logo.
+  const [launchedOnboarded] = useState(() => state.onboarded);
+  // Home-screen shortcuts open straight into a tab (?view=plan) or the focus timer (?focus=1).
+  const [view, setViewState] = useState<ViewId>(() => {
+    const v = new URLSearchParams(window.location.search).get('view') as ViewId | null;
+    return v && VIEW_ORDER.includes(v) ? v : 'today';
+  });
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('focus') === '1') focusTimer.open();
+    if (params.has('view') || params.has('focus') || params.has('source')) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
   const directionRef = useRef<'left' | 'right'>('right');
 
   function setView(next: ViewId) {
@@ -46,7 +65,9 @@ export default function App() {
       <NavTabs active={view} onChange={setView} />
       <CelebrationOverlay />
       <PlanReminderToast />
-      <SplashScreen />
+      <FocusTimer />
+      <UndoToast />
+      {!state.onboarded ? <Onboarding /> : launchedOnboarded ? <SplashScreen /> : null}
     </div>
   );
 }

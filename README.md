@@ -1,4 +1,4 @@
-# Quest Log — Daily Achievement App
+# QuestLog: Planner, Habits & Money
 
 Turn your daily habits into a game. Track daily quests (read, journal,
 meditate, move, ...), bigger weekly quests, and long-term goals you're
@@ -6,6 +6,20 @@ chasing across months and years — all with XP, levels, streaks, and
 unlockable achievements.
 
 ## Features
+
+- **First-run setup** — a one-minute walkthrough (name, what you want to
+  get better at, wake/bed time, school or work hours) that builds a
+  personal Monday–Sunday plan.
+- **Today home screen** — a greeting, a "Right now / Next" card from your
+  plan with one-tap Done and Focus, quick actions, and a daily mood
+  check-in.
+- **Focus timer** — 15/25/45/60-minute sessions that keep running when
+  the app is closed, with a chime, vibration and notification at the end;
+  focus minutes show up in Stats.
+- **Mood insights** — mood this week, and once there's enough data, what
+  seems to lift it (finishing your quests, focus time).
+- **Undo** for deletes, **offline support** and an **install guide** for
+  putting the app on your home screen, plus home-screen shortcuts.
 
 - **Daily quests** that reset every day — small, repeatable habits worth
   quick XP.

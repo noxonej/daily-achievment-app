@@ -304,3 +304,6 @@ body {
 .rows-stagger > *:nth-child(7) { animation-delay: 0.3s; }
 .rows-stagger > *:nth-child(8) { animation-delay: 0.34s; }
 .rows-stagger > *:nth-child(n + 9) { animation-delay: 0.38s; }
+
+@keyframes toast-timer { from { width: 100%; } to { width: 0%; } }
+.toast-timer { animation: toast-timer linear forwards; }

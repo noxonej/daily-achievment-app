@@ -4,7 +4,7 @@ import { todayKey } from '../lib/date';
 import { Icon } from './Icon';
 
 export function QuickTaskList() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, undoable } = useApp();
   const [text, setText] = useState('');
   const tasks = state.dayLogs[todayKey()]?.quickTasks ?? [];
 
@@ -45,7 +45,7 @@ export function QuickTaskList() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  dispatch({ type: 'DELETE_QUICK_TASK', taskId: t.id });
+                  undoable({ type: 'DELETE_QUICK_TASK', taskId: t.id }, 'Task removed');
                 }}
                 className="shrink-0 text-slate-500 hover:text-red-400 text-xs px-1"
                 aria-label="Remove"

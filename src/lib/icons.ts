@@ -11,6 +11,7 @@ import {
   ShowerHead, Smartphone, Smile, Soup, Sparkle, Sparkles, Speech, SprayCan, Sprout, Star, StickyNote, Sun, Sunrise,
   Sword, Swords, Target, TrendingUp, TriangleAlert, Trophy, Upload, User, Utensils, UtensilsCrossed, Wallet, Wand,
   WandSparkles, Watch, Wind, Wrench, X, Zap,
+  ArrowLeft, Timer, Play, Pause, RotateCcw, Frown, Annoyed, Meh, Laugh, Share, SquarePlus, Undo2, Info, EllipsisVertical, ShieldCheck, Sunset,
 } from 'lucide-react';
 
 /**
@@ -39,6 +40,10 @@ const EMOJI_ICONS: Record<string, LucideIcon> = {
   '👨': User, '🔧': Wrench, '💠': Diamond, '🌠': Sparkles, '☄': Orbit, '🎂': Cake, '🍲': CookingPot,
   '📮': Mailbox, '🧼': Bath, '🥤': CupSoda, '🗒': StickyNote, '🤝': Handshake, '🥾': Footprints, '🌤': CloudSun,
   '🙌': Hand, '🔁': Repeat,
+  // UI-only ids (not used as saved data)
+  '⬅': ArrowLeft, '⏱': Timer, '▶': Play, '⏸': Pause, '↺': RotateCcw, '↩': Undo2, 'ℹ': Info, '⋮': EllipsisVertical,
+  '😞': Frown, '😕': Annoyed, '😐': Meh, '🙂': Smile, '😄': Laugh, '📤': Share, '➕': SquarePlus, '🔐': ShieldCheck,
+  '🌇': Sunset,
 };
 
 export function normalizeIconId(name: string): string {
