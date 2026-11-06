@@ -957,8 +957,10 @@ function Eye({ cx, kind, x }: { cx: number; kind: EyeKind; x: Ctx }) {
     default:
       return (
         <g>
-          <ellipse cx={cx} cy={cy} rx="2.5" ry="3.1" fill={INK} />
-          <circle cx={cx + 0.9} cy={cy - 1.2} r=".95" fill="#fff" />
+          <path d={`M${cx - 3.1} ${cy + 0.3} Q${cx} ${cy - 4} ${cx + 3.1} ${cy + 0.3} Q${cx} ${cy + 3.3} ${cx - 3.1} ${cy + 0.3}Z`} fill="#fff" opacity=".92" />
+          <circle cx={cx + 0.15} cy={cy + 0.1} r="2.15" fill={INK} />
+          <circle cx={cx + 0.9} cy={cy - 0.75} r=".6" fill="#fff" />
+          <path d={`M${cx - 3.3} ${cy + 0.2} Q${cx} ${cy - 4.3} ${cx + 3.3} ${cy}`} stroke={INK} strokeWidth="1.1" fill="none" strokeLinecap="round" />
         </g>
       );
   }
@@ -967,7 +969,7 @@ function Eye({ cx, kind, x }: { cx: number; kind: EyeKind; x: Ctx }) {
 type BrowKind = 'normal' | 'raised' | 'angry' | 'sad' | 'flat' | 'one' | 'none';
 function Brows({ kind, x }: { kind: BrowKind; x: Ctx }) {
   const paths: Record<Exclude<BrowKind, 'none'>, string> = {
-    normal: 'M39.3 39.6 q3.2 -1.7 6.4 0 M54.3 39.6 q3.2 -1.7 6.4 0',
+    normal: 'M39 39.8 Q42.5 37.9 46 39.2 M54 39.2 Q57.5 37.9 61 39.8',
     raised: 'M39.3 37.6 q3.2 -2.2 6.4 0 M54.3 37.6 q3.2 -2.2 6.4 0',
     angry: 'M39.3 38.2 L45.7 40.6 M60.7 38.2 L54.3 40.6',
     sad: 'M39.3 40.6 L45.7 38.6 M60.7 40.6 L54.3 38.6',
@@ -975,7 +977,7 @@ function Brows({ kind, x }: { kind: BrowKind; x: Ctx }) {
     one: 'M39.5 40 H45.5 M54.3 38.2 q3.2 -3 6.4 -1',
   };
   if (kind === 'none') return null;
-  return <path d={paths[kind]} stroke={x.hairDark} strokeWidth={kind === 'angry' ? 1.7 : 1.3} fill="none" strokeLinecap="round" />;
+  return <path d={paths[kind]} stroke={x.hairDark} strokeWidth={kind === 'angry' ? 1.5 : 1.15} fill="none" strokeLinecap="round" />;
 }
 
 type MouthKind = 'smile' | 'grin' | 'soft' | 'sad' | 'frown' | 'o' | 'smirk' | 'laugh' | 'cat' | 'robot' | 'grit' | 'small' | 'flat' | 'buck' | 'pout';
@@ -1039,7 +1041,12 @@ function Mouth({ kind }: { kind: MouthKind }) {
     case 'pout':
       return <path d="M47 54.4 Q50 52.6 53 54.4" stroke={LIP} strokeWidth="1.5" fill="none" strokeLinecap="round" />;
     default:
-      return <path d="M45 52.4 Q50 57.2 55 52.4" stroke={LIP} strokeWidth="1.5" fill="none" strokeLinecap="round" />;
+      return (
+        <g>
+          <path d="M46.2 53 Q50 55.8 53.8 53" stroke={LIP} strokeWidth="1.25" fill="none" strokeLinecap="round" />
+          <path d="M47.8 55.6 Q50 56.4 52.2 55.6" stroke={LIP} strokeWidth=".7" fill="none" strokeLinecap="round" opacity=".35" />
+        </g>
+      );
   }
 }
 
@@ -1056,7 +1063,7 @@ interface ExpressionSpec {
 }
 
 const EXPRESSIONS: Record<string, ExpressionSpec> = {
-  happy: { eyes: ['open', 'open'], brows: 'normal', mouth: 'smile', blush: true },
+  happy: { eyes: ['open', 'open'], brows: 'normal', mouth: 'smile' },
   grin: { eyes: ['open', 'open'], brows: 'raised', mouth: 'grin', blush: true },
   calm: { eyes: ['closed', 'closed'], brows: 'flat', mouth: 'soft' },
   sad: { eyes: ['open', 'open'], brows: 'sad', mouth: 'sad', tear: true },
@@ -1097,13 +1104,13 @@ function Face({ x, style, mood }: { x: Ctx; style: string; mood?: number }) {
       <Eye cx={EYE_R} kind={e.eyes[1]} x={x} />
       <Brows kind={e.brows} x={x} />
       {e.mouth !== 'robot' && (
-        <path d="M50 47.5 q1.3 1.8 0 2.6" stroke={x.skinDark} strokeWidth=".9" fill="none" strokeLinecap="round" opacity=".7" />
+        <path d="M50.6 45.5 Q51.8 49.4 50.4 50.6 Q49.4 51 48.7 50.4" stroke={x.skinDark} strokeWidth=".85" fill="none" strokeLinecap="round" opacity=".55" />
       )}
       <Mouth kind={e.mouth} />
       {e.blush && (
         <>
-          <ellipse cx="37.5" cy="51" rx="3.2" ry="1.8" fill="#ff6b81" opacity=".3" />
-          <ellipse cx="62.5" cy="51" rx="3.2" ry="1.8" fill="#ff6b81" opacity=".3" />
+          <ellipse cx="38" cy="51" rx="3" ry="1.6" fill="#ff6b81" opacity=".16" />
+          <ellipse cx="62" cy="51" rx="3" ry="1.6" fill="#ff6b81" opacity=".16" />
         </>
       )}
       {e.tear && <path d="M39.2 48.6 q-1.4 2.4 0 3.4 q1.4 -1 0 -3.4Z" fill="#7dd3fc" />}
@@ -1645,6 +1652,12 @@ function Pet({ item }: { item: AvatarItem }) {
   return <g transform="translate(72 64) scale(1.05)">{body}</g>;
 }
 
+/* ---------- head geometry ---------- */
+/** Scales every head layer (hair, face, glasses, hats) about the chin: a smaller head reads as less cartoonish. */
+const HEAD = 'translate(50 66.5) scale(0.9) translate(-50 -63.5)';
+/** Oval face with a defined jaw and chin (fits the same box the hair and hats were drawn for). */
+const FACE = 'M29 41 C29 27 38.5 21 50 21 C61.5 21 71 27 71 41 C71 50 68 57 62.5 60.8 C58.5 63.4 54.5 64.4 50 64.4 C45.5 64.4 41.5 63.4 37.5 60.8 C32 57 29 50 29 41Z';
+
 /* ---------- the avatar ---------- */
 export function Avatar({
   look,
@@ -1685,20 +1698,22 @@ export function Avatar({
       </defs>
       <g clipPath={`url(#${clip})`}>
         <Backdrop item={findItem(l.backdrop)!} x={x} />
-        <g transform="translate(0 2.5)">
+        <g transform={HEAD}>
           <HairBack style={hairItem.style} x={x} />
         </g>
         {/* neck */}
-        <path d="M43 56 H57 V76 H43 Z" fill={skin} />
-        <path d="M43 60 Q50 66 57 60 V64 Q50 69 43 64 Z" fill={x.skinDark} opacity=".35" />
+        <path d="M44.6 58 H55.4 V76 H44.6 Z" fill={skin} />
+        <path d="M44.6 61 Q50 67.5 55.4 61 V65.5 Q50 70 44.6 65.5 Z" fill={x.skinDark} opacity=".3" />
         <Outfit item={findItem(l.outfit)!} x={x} />
-        {/* ears + head (nudged down for a shorter, friendlier neck) */}
-        <g transform="translate(0 2.5)">
-        <circle cx="29.5" cy="46" r="4.3" fill={skin} />
-        <circle cx="70.5" cy="46" r="4.3" fill={skin} />
-        <circle cx="29.5" cy="46" r="2" fill={x.skinDark} opacity=".25" />
-        <circle cx="70.5" cy="46" r="2" fill={x.skinDark} opacity=".25" />
-        <circle cx="50" cy="42" r="21" fill={`url(#${id}skin)`} />
+        {/* ears + head: scaled about the chin for natural, grown-up proportions */}
+        <g transform={HEAD}>
+        <ellipse cx="29.6" cy="46" rx="3.2" ry="4.6" fill={skin} />
+        <ellipse cx="70.4" cy="46" rx="3.2" ry="4.6" fill={skin} />
+        <path d="M30 43.5 q-1.6 2.5 0 5" stroke={x.skinDark} strokeWidth=".8" fill="none" opacity=".45" />
+        <path d="M70 43.5 q1.6 2.5 0 5" stroke={x.skinDark} strokeWidth=".8" fill="none" opacity=".45" />
+        <path d={FACE} fill={`url(#${id}skin)`} />
+        <path d="M61 26 C70 32 72 46 66 56 C63 60 58 62.5 54 63.2 C60 59 66 51 66.5 42 C66.8 35 64.5 29.5 61 26Z" fill={x.skinDark} opacity=".13" />
+        <path d="M43 60.5 Q50 64 57 60.5" stroke={x.skinDark} strokeWidth="1" fill="none" opacity=".18" strokeLinecap="round" />
         <Face x={x} style={findItem(l.expression)!.style} mood={mood ?? todayMood} />
         <HairFront style={hairItem.style} x={x} />
         <Eyewear item={findItem(l.face)!} x={x} />
