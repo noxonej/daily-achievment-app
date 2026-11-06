@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { dismissInstall, installDismissed, isStandalone, platform, useInstall } from '../lib/install';
 import { Icon } from './Icon';
 import { Logo } from './Logo';
+import { APP_NAME } from '../lib/brand';
 
 /** Explains how to put the app on the home screen (where it opens full-screen and works offline). */
 export function InstallCard({ always = false }: { always?: boolean }) {
@@ -27,7 +28,7 @@ export function InstallCard({ always = false }: { always?: boolean }) {
       <div className="flex items-center gap-3 pr-8">
         <Logo size={44} />
         <div>
-          <p className="text-sm font-bold text-white">Put QuestLog on your home screen</p>
+          <p className="text-sm font-bold text-white">Put {APP_NAME} on your home screen</p>
           <p className="text-xs text-slate-400">Opens full-screen like a real app and works without internet.</p>
         </div>
       </div>

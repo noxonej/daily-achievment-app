@@ -5,7 +5,7 @@ import { Icon } from '../components/Icon';
 import { MoodInsights } from '../components/MoodInsights';
 import { todayKey } from '../lib/date';
 
-export function StatsView() {
+export function StatsView({ embedded = false }: { embedded?: boolean } = {}) {
   const { state, stats } = useApp();
   const focusToday = state.focusMinutes?.[todayKey()] ?? 0;
   const focusTotal = Object.values(state.focusMinutes ?? {}).reduce((a, b) => a + b, 0);
@@ -25,10 +25,12 @@ export function StatsView() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
-      <div>
-        <p className="text-slate-400 text-sm">Your journey so far</p>
-        <h1 className="font-display text-2xl font-bold text-white mt-0.5">Stats</h1>
-      </div>
+      {!embedded && (
+        <div>
+          <p className="text-slate-400 text-sm">Your journey so far</p>
+          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Stats</h1>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <p className="text-sm font-semibold text-white mb-3">Activity</p>

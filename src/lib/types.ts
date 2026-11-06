@@ -73,14 +73,11 @@ export interface UnlockedAchievement {
   unlockedAt: string;
 }
 
-export type CosmeticSlot = 'outfit' | 'hat' | 'accessory' | 'aura';
+export type AvatarSlot = 'skin' | 'hair' | 'hairColor' | 'outfit' | 'headwear' | 'face' | 'backdrop' | 'pet';
+export type CosmeticSlot = AvatarSlot;
 
-export interface Character {
-  outfit: string;
-  hat: string;
-  accessory: string;
-  aura: string;
-}
+/** The avatar's look: one item id per slot. */
+export type Character = Record<AvatarSlot, string>;
 
 export type WeekdayId = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
@@ -174,7 +171,13 @@ export interface AppState {
   lastOpenedDate: string;
   wildcardEnabled: boolean;
   character: Character;
+  /** Avatar items bought with shards. */
   unlockedCosmeticIds: string[];
+  /** Avatar items won from reward chests. */
+  wonCosmeticIds: string[];
+  chestsOpened: number;
+  /** Shards granted by chests once every item is already owned. */
+  bonusShards: number;
   weekPlan: WeekPlan;
   money: MoneyState;
   /** False only for brand-new users who haven't been through first-run setup. */
@@ -211,4 +214,7 @@ export interface DerivedStats {
   goalsCompleted: number;
   daysActive: number;
   availableShards: number;
+  /** Reward chests earned so far: one per perfect day, perfect week and level reached. */
+  chestsEarned: number;
+  chestsAvailable: number;
 }

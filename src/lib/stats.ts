@@ -1,7 +1,7 @@
 import type { AppState, DayLog, DerivedStats } from './types';
 import { addDaysToKey, daysBetween, todayKey } from './date';
 import { levelFromTotalXp } from './xp';
-import { findCosmetic } from '../data/cosmetics';
+import { findItem, itemCost } from '../data/avatar';
 
 function computeStreaks(dayLogs: Record<string, DayLog>): { current: number; longest: number } {
   const keys = Object.keys(dayLogs).sort();
@@ -58,8 +58,12 @@ export function computeDerivedStats(state: AppState): DerivedStats {
   const goalsCompleted = state.goals.filter((g) => !!g.completedAt).length;
   const { level } = levelFromTotalXp(totalXp);
   const { current, longest } = computeStreaks(state.dayLogs);
-  const shardsSpent = state.unlockedCosmeticIds.reduce((sum, id) => sum + (findCosmetic(id)?.cost ?? 0), 0);
-  const availableShards = Math.max(0, totalXp - shardsSpent);
+  // Items that no longer exist cost nothing, so shards spent on retired items are refunded automatically.
+  const shardsSpent = (state.unlockedCosmeticIds ?? []).reduce((sum, id) => sum + itemCost(findItem(id)), 0);
+  const availableShards = Math.max(0, totalXp + (state.bonusShards ?? 0) - shardsSpent);
+  const perfectWeeks = weekLogsArr.filter((l) => l.perfectWeek && l.weeklyQuestCount > 0).length;
+  const chestsEarned = totalPerfectDays + perfectWeeks + (level - 1);
+  const chestsAvailable = Math.max(0, chestsEarned - (state.chestsOpened ?? 0));
 
   return {
     totalXp,
@@ -71,5 +75,7 @@ export function computeDerivedStats(state: AppState): DerivedStats {
     goalsCompleted,
     daysActive,
     availableShards,
+    chestsEarned,
+    chestsAvailable,
   };
 }

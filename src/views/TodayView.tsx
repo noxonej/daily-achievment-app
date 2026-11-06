@@ -165,7 +165,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <DailyNoteBox />
 
       <button
-        onClick={() => onNavigate('weekly')}
+        onClick={() => onNavigate('quests')}
         className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-gradient-to-r from-sky-500/10 to-indigo-500/10 px-4 py-3.5 text-left hover:border-white/20 transition"
       >
         <span className="flex items-center gap-3">
@@ -192,7 +192,10 @@ function EmptyState({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <p className="text-white font-semibold mb-1">No daily quests yet</p>
       <p className="text-slate-400 text-sm mb-4 px-6">Add one to start building your streak.</p>
       <button
-        onClick={() => onNavigate('manage')}
+        onClick={() => {
+          setIntent('you-settings');
+          onNavigate('you');
+        }}
         className="rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-4 py-2 transition"
       >
         Add a quest

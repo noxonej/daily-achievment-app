@@ -1,4 +1,4 @@
-# QuestLog: Planner, Habits & Money
+# Dayforge: Planner, Habits & Money
 
 Turn your daily habits into a game. Track daily quests (read, journal,
 meditate, move, ...), bigger weekly quests, and long-term goals you're
@@ -18,6 +18,14 @@ unlockable achievements.
   focus minutes show up in Stats.
 - **Mood insights** — mood this week, and once there's enough data, what
   seems to lift it (finishing your quests, focus time).
+- **Avatar & wardrobe** — a drawn character with 70+ items across skin,
+  hair, hair colour, outfits, hats, eyewear, scenes and shoulder pets,
+  each Common, Rare, Epic or Legendary. Try anything on, buy with shards
+  (earned from XP), unlock milestone gear through levels and streaks, and
+  win chest-only items from reward chests (one per perfect day, perfect
+  week and level-up).
+- **Five tabs** — Today, Plan, Money, Quests (weekly quests + long-term
+  goals) and You (profile, stats, badges, settings).
 - **Undo** for deletes, **offline support** and an **install guide** for
   putting the app on your home screen, plus home-screen shortcuts.
 

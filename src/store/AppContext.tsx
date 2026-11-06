@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState, useCallback, type ReactNode } from 'react';
 import type { AppState } from '../lib/types';
 import { reducer, createInitialState, type Action } from './reducer';
+import { normalizeLook } from '../data/avatar';
 import { computeDerivedStats } from '../lib/stats';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { todayKey } from '../lib/date';
@@ -26,7 +27,9 @@ function loadState(): AppState {
     // Merge over fresh defaults so saves from before a schema change (new
     // fields like character/wildcardEnabled) don't crash on load.
     // Saves from before first-run setup existed are existing users: mark them onboarded.
-    return { ...createInitialState(), onboarded: true, ...parsed } as AppState;
+    const merged = { ...createInitialState(), onboarded: true, ...parsed } as AppState;
+    // Older saves used a different character format; map them onto the current avatar slots.
+    return { ...merged, character: normalizeLook(merged.character) };
   } catch {
     return createInitialState();
   }

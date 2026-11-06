@@ -1,7 +1,7 @@
-/* QuestLog service worker: makes the app open offline and lets Android show notifications.
+/* Dayforge service worker: makes the app open offline and lets Android show notifications.
  * Pages: network first (so updates arrive right away), falling back to the cached copy offline.
  * Built files (hashed names) and icons: cache first, since a given URL never changes. */
-const CACHE = 'questlog-v1';
+const CACHE = 'dayforge-v1';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './favicon.svg', './app-icon-192.png', './app-icon-512.png'];
 
 self.addEventListener('install', (event) => {

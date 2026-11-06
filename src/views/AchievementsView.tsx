@@ -5,7 +5,7 @@ import { ProgressBar } from '../components/ProgressBar';
 
 const CATEGORY_ORDER = ['Quests', 'Streaks', 'Perfection', 'Levels', 'Goals', 'Consistency'];
 
-export function AchievementsView() {
+export function AchievementsView({ embedded = false }: { embedded?: boolean } = {}) {
   const { state, stats } = useApp();
   const unlockedMap = new Map(state.unlockedAchievements.map((u) => [u.id, u.unlockedAt]));
   const unlockedCount = ACHIEVEMENTS.filter((a) => unlockedMap.has(a.id)).length;
@@ -17,10 +17,12 @@ export function AchievementsView() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-6 stagger">
-      <div>
-        <p className="text-slate-400 text-sm">Your trophy case</p>
-        <h1 className="font-display text-2xl font-bold text-white mt-0.5">Achievements</h1>
-      </div>
+      {!embedded && (
+        <div>
+          <p className="text-slate-400 text-sm">Your trophy case</p>
+          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Achievements</h1>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <div className="flex items-center justify-between mb-2">

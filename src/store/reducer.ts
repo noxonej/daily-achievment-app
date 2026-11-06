@@ -5,7 +5,7 @@ import { buildDefaultGoals } from '../data/defaultGoals';
 import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../lib/wildcard';
 import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
-import { DEFAULT_CHARACTER, findCosmetic } from '../data/cosmetics';
+import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
 import { computeDerivedStats } from '../lib/stats';
 import { createEmptyMoney, moneyId } from '../lib/money';
 
@@ -18,8 +18,11 @@ export function createInitialState(): AppState {
     unlockedAchievements: [],
     lastOpenedDate: todayKey(),
     wildcardEnabled: true,
-    character: { ...DEFAULT_CHARACTER },
+    character: { ...DEFAULT_LOOK },
     unlockedCosmeticIds: [],
+    wonCosmeticIds: [],
+    chestsOpened: 0,
+    bonusShards: 0,
     weekPlan: createEmptyWeekPlan(),
     money: createEmptyMoney(),
     onboarded: false,
@@ -27,6 +30,15 @@ export function createInitialState(): AppState {
     moods: {},
     focusMinutes: {},
     createdAt: new Date().toISOString(),
+  };
+}
+
+export function ownership(state: AppState, stats: { level: number; longestStreak: number }): OwnershipContext {
+  return {
+    bought: state.unlockedCosmeticIds ?? [],
+    won: state.wonCosmeticIds ?? [],
+    level: stats.level,
+    longestStreak: stats.longestStreak,
   };
 }
 
@@ -100,6 +112,8 @@ export type Action =
   | { type: 'SET_WILDCARD_ENABLED'; enabled: boolean }
   | { type: 'UNLOCK_COSMETIC'; itemId: string }
   | { type: 'EQUIP_COSMETIC'; slot: CosmeticSlot; itemId: string }
+  /** itemId is the rolled prize, or null when everything is owned (gives bonus shards instead). */
+  | { type: 'OPEN_CHEST'; itemId: string | null }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
   | { type: 'SET_FREE_NOTE'; note: string }
   | { type: 'ADD_QUICK_TASK'; text: string }
@@ -423,19 +437,30 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'UNLOCK_COSMETIC': {
-      const item = findCosmetic(action.itemId);
-      if (!item || item.cost === 0 || state.unlockedCosmeticIds.includes(action.itemId)) return state;
-      const { availableShards } = computeDerivedStats(state);
-      if (availableShards < item.cost) return state;
+      const item = findItem(action.itemId);
+      if (!item || item.unlock.kind !== 'shop') return state;
+      const stats = computeDerivedStats(state);
+      if (isOwned(item, ownership(state, stats)) || stats.availableShards < item.unlock.cost) return state;
       return { ...state, unlockedCosmeticIds: [...state.unlockedCosmeticIds, action.itemId] };
     }
 
     case 'EQUIP_COSMETIC': {
-      const item = findCosmetic(action.itemId);
-      if (!item) return state;
-      const owned = item.cost === 0 || state.unlockedCosmeticIds.includes(action.itemId);
-      if (!owned) return state;
-      return { ...state, character: { ...state.character, [action.slot]: action.itemId } };
+      const item = findItem(action.itemId);
+      if (!item || item.slot !== action.slot) return state;
+      if (!isOwned(item, ownership(state, computeDerivedStats(state)))) return state;
+      return { ...state, character: { ...normalizeLook(state.character), [action.slot]: action.itemId } };
+    }
+
+    case 'OPEN_CHEST': {
+      const stats = computeDerivedStats(state);
+      if (stats.chestsAvailable <= 0) return state;
+      const chestsOpened = (state.chestsOpened ?? 0) + 1;
+      if (action.itemId === null) {
+        return { ...state, chestsOpened, bonusShards: (state.bonusShards ?? 0) + CHEST_DUPLICATE_SHARDS };
+      }
+      const valid = chestPool(ownership(state, stats)).some((i) => i.id === action.itemId);
+      if (!valid) return state;
+      return { ...state, chestsOpened, wonCosmeticIds: [...(state.wonCosmeticIds ?? []), action.itemId] };
     }
 
     case 'PLAN_ADD': {
@@ -642,7 +667,8 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'IMPORT_STATE': {
       // Backups from before first-run setup existed belong to existing users, so never re-run setup for them.
-      return { ...createInitialState(), ...action.state, onboarded: action.state.onboarded ?? true };
+      const merged = { ...createInitialState(), ...action.state, onboarded: action.state.onboarded ?? true };
+      return { ...merged, character: normalizeLook(merged.character) };
     }
 
     case 'RESET_ALL': {

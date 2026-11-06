@@ -12,6 +12,7 @@ import {
   Sword, Swords, Target, TrendingUp, TriangleAlert, Trophy, Upload, User, Utensils, UtensilsCrossed, Wallet, Wand,
   WandSparkles, Watch, Wind, Wrench, X, Zap,
   ArrowLeft, Timer, Play, Pause, RotateCcw, Frown, Annoyed, Meh, Laugh, Share, SquarePlus, Undo2, Info, EllipsisVertical, ShieldCheck, Sunset,
+  Scissors, LockOpen, Shirt as ShirtIcon,
 } from 'lucide-react';
 
 /**
@@ -43,7 +44,7 @@ const EMOJI_ICONS: Record<string, LucideIcon> = {
   // UI-only ids (not used as saved data)
   '⬅': ArrowLeft, '⏱': Timer, '▶': Play, '⏸': Pause, '↺': RotateCcw, '↩': Undo2, 'ℹ': Info, '⋮': EllipsisVertical,
   '😞': Frown, '😕': Annoyed, '😐': Meh, '🙂': Smile, '😄': Laugh, '📤': Share, '➕': SquarePlus, '🔐': ShieldCheck,
-  '🌇': Sunset,
+  '🌇': Sunset, '✂': Scissors, '🔓': LockOpen, '👚': ShirtIcon,
 };
 
 export function normalizeIconId(name: string): string {

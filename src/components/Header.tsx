@@ -4,8 +4,8 @@ import { titleForLevel } from '../lib/xp';
 import { ProgressBar } from './ProgressBar';
 import { levelFromTotalXp } from '../lib/xp';
 import { useCountUp } from '../lib/useCountUp';
-import { CharacterAvatar } from './CharacterAvatar';
-import { CharacterModal } from './CharacterModal';
+import { Avatar } from './Avatar';
+import { wardrobe } from '../lib/wardrobe';
 import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
 
@@ -14,7 +14,6 @@ export function Header() {
   const { xpIntoLevel, xpForNextLevel } = levelFromTotalXp(stats.totalXp);
   const animatedXp = useCountUp(xpIntoLevel);
   const title = titleForLevel(stats.level);
-  const [characterOpen, setCharacterOpen] = useState(false);
 
   const [levelBump, setLevelBump] = useState(false);
   useEffect(() => {
@@ -60,11 +59,11 @@ export function Header() {
                 </span>
               </div>
               <button
-                onClick={() => setCharacterOpen(true)}
+                onClick={() => wardrobe.open()}
                 className="relative shrink-0 rounded-xl p-1.5 -m-1.5"
                 aria-label="Customize your character"
               >
-                <CharacterAvatar character={state.character} size={38} />
+                <Avatar look={state.character} size={38} />
                 <span
                   className={`absolute bottom-0.5 right-0.5 w-[18px] h-[18px] rounded-full bg-amber-500 border-2 border-[#0b0e17] flex items-center justify-center text-[9px] font-display font-bold text-white ${
                     levelBump ? 'animate-pop-in' : ''
@@ -85,7 +84,6 @@ export function Header() {
           </div>
         </div>
       </header>
-      <CharacterModal open={characterOpen} onClose={() => setCharacterOpen(false)} />
     </>
   );
 }

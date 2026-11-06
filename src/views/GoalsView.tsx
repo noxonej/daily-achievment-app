@@ -12,7 +12,7 @@ const TIMEFRAME_LABEL: Record<string, string> = {
   custom: 'Custom',
 };
 
-export function GoalsView() {
+export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
   const { state, dispatch, undoable } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<LongTermGoal | null>(null);
@@ -32,10 +32,14 @@ export function GoalsView() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-slate-400 text-sm">Dreams in progress</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Long-Term Goals</h1>
-        </div>
+        {embedded ? (
+          <p className="text-sm text-slate-400">Monthly and yearly targets you're chasing.</p>
+        ) : (
+          <div>
+            <p className="text-slate-400 text-sm">Dreams in progress</p>
+            <h1 className="font-display text-2xl font-bold text-white mt-0.5">Long-Term Goals</h1>
+          </div>
+        )}
         <button
           onClick={openAdd}
           className="shrink-0 rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-3.5 py-2 transition"

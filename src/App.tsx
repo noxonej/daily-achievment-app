@@ -4,22 +4,20 @@ import { NavTabs, type ViewId } from './components/NavTabs';
 import { NewDayBanner } from './components/NewDayBanner';
 import { CelebrationOverlay } from './components/CelebrationOverlay';
 import { TodayView } from './views/TodayView';
-import { WeeklyView } from './views/WeeklyView';
 import { PlanView } from './views/PlanView';
 import { MoneyView } from './views/MoneyView';
+import { QuestsView } from './views/QuestsView';
+import { YouView } from './views/YouView';
 import { PlanReminderToast } from './components/PlanReminderToast';
-import { GoalsView } from './views/GoalsView';
-import { AchievementsView } from './views/AchievementsView';
-import { StatsView } from './views/StatsView';
-import { ManageView } from './views/ManageView';
 import { SplashScreen } from './components/SplashScreen';
 import { Onboarding } from './components/Onboarding';
 import { FocusTimer } from './components/FocusTimer';
 import { UndoToast } from './components/UndoToast';
+import { Wardrobe } from './components/Wardrobe';
 import { useApp } from './store/AppContext';
 import { focusTimer } from './lib/focusTimer';
 
-const VIEW_ORDER: ViewId[] = ['today', 'plan', 'money', 'weekly', 'goals', 'achievements', 'stats', 'manage'];
+const VIEW_ORDER: ViewId[] = ['today', 'plan', 'money', 'quests', 'you'];
 
 export default function App() {
   const { state } = useApp();
@@ -55,11 +53,8 @@ export default function App() {
           {view === 'today' && <TodayView onNavigate={setView} />}
           {view === 'plan' && <PlanView />}
           {view === 'money' && <MoneyView />}
-          {view === 'weekly' && <WeeklyView onNavigate={setView} />}
-          {view === 'goals' && <GoalsView />}
-          {view === 'achievements' && <AchievementsView />}
-          {view === 'stats' && <StatsView />}
-          {view === 'manage' && <ManageView />}
+          {view === 'quests' && <QuestsView onNavigate={setView} />}
+          {view === 'you' && <YouView />}
         </div>
       </main>
       <NavTabs active={view} onChange={setView} />
@@ -67,6 +62,7 @@ export default function App() {
       <PlanReminderToast />
       <FocusTimer />
       <UndoToast />
+      <Wardrobe />
       {!state.onboarded ? <Onboarding /> : launchedOnboarded ? <SplashScreen /> : null}
     </div>
   );

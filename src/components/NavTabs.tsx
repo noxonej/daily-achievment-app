@@ -1,16 +1,15 @@
 import { Icon } from './Icon';
+import { Avatar } from './Avatar';
+import { useApp } from '../store/AppContext';
 
-export type ViewId = 'today' | 'plan' | 'money' | 'weekly' | 'goals' | 'achievements' | 'stats' | 'manage';
+export type ViewId = 'today' | 'plan' | 'money' | 'quests' | 'you';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'today', label: 'Today', icon: '☀️' },
   { id: 'plan', label: 'Plan', icon: '📅' },
   { id: 'money', label: 'Money', icon: '💰' },
-  { id: 'weekly', label: 'Weekly', icon: '🗡️' },
-  { id: 'goals', label: 'Goals', icon: '🏆' },
-  { id: 'achievements', label: 'Badges', icon: '🎖️' },
-  { id: 'stats', label: 'Stats', icon: '📊' },
-  { id: 'manage', label: 'Manage', icon: '⚙️' },
+  { id: 'quests', label: 'Quests', icon: '⚔️' },
+  { id: 'you', label: 'You', icon: 'avatar' },
 ];
 
 interface NavTabsProps {
@@ -19,6 +18,7 @@ interface NavTabsProps {
 }
 
 export function NavTabs({ active, onChange }: NavTabsProps) {
+  const { state, stats } = useApp();
   const activeIndex = Math.max(0, TABS.findIndex((t) => t.id === active));
 
   return (
@@ -35,12 +35,21 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
               <button
                 key={tab.id}
                 onClick={() => onChange(tab.id)}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[10px] sm:text-[11px] tracking-tight sm:tracking-normal font-semibold transition-colors ${
+                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition-colors ${
                   isActive ? 'text-amber-300' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
                 <span key={isActive ? 'on' : 'off'} className={`leading-none ${isActive ? 'animate-nav-pop' : ''}`}>
-                  <Icon name={tab.icon} size={20} strokeWidth={isActive ? 2.3 : 1.9} />
+                  {tab.icon === 'avatar' ? (
+                    <span className={`relative block rounded-[8px] ring-2 ${isActive ? 'ring-amber-400' : 'ring-transparent'}`}>
+                      <Avatar look={state.character} size={22} />
+                      {stats.chestsAvailable > 0 && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-[#0d0f19]" />
+                      )}
+                    </span>
+                  ) : (
+                    <Icon name={tab.icon} size={20} strokeWidth={isActive ? 2.3 : 1.9} />
+                  )}
                 </span>
                 {tab.label}
               </button>

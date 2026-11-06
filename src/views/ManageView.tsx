@@ -9,7 +9,7 @@ import type { Frequency, Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { Icon } from '../components/Icon';
 
-export function ManageView() {
+export function ManageView({ embedded = false }: { embedded?: boolean } = {}) {
   const { state, dispatch, undoable } = useApp();
   const [formOpen, setFormOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -64,10 +64,14 @@ export function ManageView() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-6 stagger">
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-slate-400 text-sm">Quests, profile & settings</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Manage</h1>
-        </div>
+        {embedded ? (
+          <p className="text-sm text-slate-400">Your quests, profile and app settings.</p>
+        ) : (
+          <div>
+            <p className="text-slate-400 text-sm">Quests, profile & settings</p>
+            <h1 className="font-display text-2xl font-bold text-white mt-0.5">Manage</h1>
+          </div>
+        )}
         <button
           onClick={() => setLibraryOpen(true)}
           className="shrink-0 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm px-3.5 py-2 transition"

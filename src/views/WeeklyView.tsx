@@ -8,9 +8,10 @@ import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { Confetti } from '../components/Confetti';
 import type { ViewId } from '../components/NavTabs';
+import { setIntent } from '../lib/intents';
 import { Icon } from '../components/Icon';
 
-export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
+export function WeeklyView({ onNavigate, embedded = false }: { onNavigate: (v: ViewId) => void; embedded?: boolean }) {
   const { state, dispatch } = useApp();
   const resetLabel = useWeeklyResetLabel();
   const key = weekKey();
@@ -43,13 +44,15 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
-      <div>
-        <p className="text-slate-400 text-sm">This week</p>
-        <h1 className="font-display text-2xl font-bold text-white mt-0.5">Weekly Quests</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Bigger challenges — you've got until Sunday to finish these.
-        </p>
-      </div>
+      {embedded ? (
+        <p className="text-sm text-slate-400">Bigger challenges. You've got until Sunday to finish these.</p>
+      ) : (
+        <div>
+          <p className="text-slate-400 text-sm">This week</p>
+          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Weekly Quests</h1>
+          <p className="text-sm text-slate-400 mt-1">Bigger challenges. You've got until Sunday to finish these.</p>
+        </div>
+      )}
 
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         {showConfetti && <Confetti count={36} />}
@@ -84,7 +87,10 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
             Add a bigger challenge you can chip away at all week.
           </p>
           <button
-            onClick={() => onNavigate('manage')}
+            onClick={() => {
+              setIntent('you-settings');
+              onNavigate('you');
+            }}
             className="rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-4 py-2 transition"
           >
             Add a quest

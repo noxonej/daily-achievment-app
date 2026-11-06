@@ -1,7 +1,7 @@
 {
   "id": "/daily-achievment-app/",
-  "name": "QuestLog: Planner, Habits & Money",
-  "short_name": "QuestLog",
+  "name": "Dayforge: Planner, Habits & Money",
+  "short_name": "Dayforge",
   "description": "Plan your week, build habits, track your money and savings goals, and level up every day.",
   "start_url": "./?source=homescreen",
   "scope": "./",

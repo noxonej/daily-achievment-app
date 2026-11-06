@@ -1,6 +1,7 @@
 import { useId } from 'react';
+import { APP_NAME, APP_NAME_PARTS } from '../lib/brand';
 
-/** The Quest Log mark: a check that turns into an upward arrow (done, then growing). */
+/** The Dayforge mark: a check that turns into an upward arrow (done, then growing). */
 export function Logo({ size = 32, animated = false, className = '' }: { size?: number; animated?: boolean; className?: string }) {
   const id = useId().replace(/:/g, '');
   return (
@@ -10,7 +11,7 @@ export function Logo({ size = 32, animated = false, className = '' }: { size?: n
       height={size}
       className={`${animated ? 'logo-tile' : ''} ${className}`}
       role="img"
-      aria-label="Quest Log"
+      aria-label={APP_NAME}
     >
       <defs>
         <linearGradient id={`bg${id}`} x1="0" y1="0" x2="1" y2="1">
@@ -46,7 +47,7 @@ export function Logo({ size = 32, animated = false, className = '' }: { size?: n
 export function Wordmark({ className = '' }: { className?: string }) {
   return (
     <span className={`font-display font-extrabold tracking-tight text-white ${className}`}>
-      Quest<span className="text-amber-400">Log</span>
+      {APP_NAME_PARTS[0]}<span className="text-amber-400">{APP_NAME_PARTS[1]}</span>
     </span>
   );
 }
