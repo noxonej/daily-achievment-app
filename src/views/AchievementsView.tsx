@@ -16,7 +16,7 @@ export function AchievementsView() {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 py-4 space-y-6 stagger">
       <div>
         <p className="text-slate-400 text-sm">Your trophy case</p>
         <h1 className="font-display text-2xl font-bold text-white mt-0.5">Achievements</h1>

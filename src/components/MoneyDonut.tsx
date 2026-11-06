@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useCountUp } from '../lib/useCountUp';
 import type { MoneyKind } from '../lib/types';
 import { MONEY_KINDS, formatMoney } from '../lib/money';
 
@@ -16,6 +17,12 @@ const GAP = 3; // surface gap between segments, in px along the ring
 /** Part-to-whole ring of where the money sits; total in the middle. Tap a slice or legend row to focus it. */
 export function MoneyDonut({ slices, currency }: { slices: Slice[]; currency: string }) {
   const [active, setActive] = useState<MoneyKind | null>(null);
+  // Ring draws itself in on first show, then eases between values.
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => requestAnimationFrame(() => setDrawn(true)));
+    return () => cancelAnimationFrame(r);
+  }, []);
   const total = slices.reduce((s, x) => s + x.amount, 0);
   const positive = slices.filter((s) => s.amount > 0);
   const ringTotal = positive.reduce((s, x) => s + x.amount, 0);
@@ -32,7 +39,8 @@ export function MoneyDonut({ slices, currency }: { slices: Slice[]; currency: st
 
   const centerLabel = focused ? MONEY_KINDS.find((k) => k.id === focused.kind)!.short : 'Total';
   const centerValue = focused ? focused.amount : total;
-  const valueText = formatMoney(centerValue, currency, { compact: Math.abs(centerValue) >= 10000000 });
+  const shownValue = useCountUp(centerValue, 900, 0);
+  const valueText = formatMoney(shownValue, currency, { compact: Math.abs(centerValue) >= 10000000 });
 
   return (
     <div>
@@ -51,10 +59,14 @@ export function MoneyDonut({ slices, currency }: { slices: Slice[]; currency: st
                 fill="none"
                 stroke={meta.color}
                 strokeWidth={active === a.kind ? STROKE + 4 : STROKE}
-                strokeDasharray={`${a.dash} ${C - a.dash}`}
-                strokeDashoffset={-a.offset}
+                strokeDasharray={drawn ? `${a.dash} ${C - a.dash}` : `0 ${C}`}
+                strokeDashoffset={drawn ? -a.offset : 0}
                 opacity={dim ? 0.3 : 1}
-                className="transition-all duration-200 cursor-pointer"
+                style={{
+                  transition:
+                    'stroke-dasharray 1s cubic-bezier(0.22,1,0.36,1), stroke-dashoffset 1s cubic-bezier(0.22,1,0.36,1), stroke-width 0.2s, opacity 0.2s',
+                }}
+                className="cursor-pointer"
                 onClick={() => setActive(active === a.kind ? null : a.kind)}
                 onMouseEnter={() => setActive(a.kind)}
                 onMouseLeave={() => setActive(null)}

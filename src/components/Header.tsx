@@ -6,6 +6,7 @@ import { levelFromTotalXp } from '../lib/xp';
 import { useCountUp } from '../lib/useCountUp';
 import { CharacterAvatar } from './CharacterAvatar';
 import { CharacterModal } from './CharacterModal';
+import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
 
 export function Header() {
@@ -35,45 +36,52 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-30 bg-[#0b0e17]/90 backdrop-blur border-b border-white/10">
-        <div className="max-w-2xl mx-auto px-4 pt-4 pb-3">
+        <div className="max-w-2xl mx-auto px-4 pt-3 pb-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Logo size={30} />
+              <Wordmark className="text-[17px]" />
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <div
+                className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 transition-all ${streakClass} ${
+                  streakTier >= 3 ? 'badge-shine' : ''
+                }`}
+                title={`${stats.currentStreak} day streak`}
+              >
+                <Icon
+                  name="🔥"
+                  size={streakTier >= 2 ? 18 : 16}
+                  className={`text-orange-400 ${stats.currentStreak > 0 ? 'animate-flicker' : ''}`}
+                  fill={streakTier >= 1 ? 'currentColor' : 'none'}
+                />
+                <span className="font-display font-bold text-orange-300 text-sm leading-none tabular-nums">
+                  {stats.currentStreak}
+                </span>
+              </div>
               <button
                 onClick={() => setCharacterOpen(true)}
-                className="relative shrink-0"
+                className="relative shrink-0 rounded-xl"
                 aria-label="Customize your character"
               >
-                <CharacterAvatar character={state.character} size={44} />
+                <CharacterAvatar character={state.character} size={38} />
                 <span
-                  className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-500 border-2 border-[#0b0e17] flex items-center justify-center text-[10px] font-display font-bold text-white transition-transform ${
+                  className={`absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full bg-amber-500 border-2 border-[#0b0e17] flex items-center justify-center text-[9px] font-display font-bold text-white ${
                     levelBump ? 'animate-pop-in' : ''
                   }`}
                 >
                   {stats.level}
                 </span>
               </button>
-              <div className="min-w-0">
-                <p className="font-display font-bold text-white text-base leading-tight truncate">
-                  {title}
-                </p>
-                <p className="text-xs text-slate-400 leading-tight">
-                  {animatedXp} / {xpForNextLevel} XP to level {stats.level + 1}
-                </p>
-              </div>
-            </div>
-            <div
-              className={`shrink-0 flex items-center gap-1.5 border rounded-full px-3 py-1.5 transition-all ${streakClass} ${
-                streakTier >= 3 ? 'badge-shine' : ''
-              }`}
-            >
-              <Icon name="🔥" size={streakTier >= 2 ? 18 : 16} className="text-orange-400" fill={streakTier >= 1 ? 'currentColor' : 'none'} />
-              <span className="font-display font-bold text-orange-300 text-sm leading-none">
-                {stats.currentStreak}
-              </span>
             </div>
           </div>
-          <div className="mt-2.5">
-            <ProgressBar value={xpIntoLevel} max={xpForNextLevel} heightClass="h-2" />
+          <div className="mt-2.5 flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <ProgressBar value={xpIntoLevel} max={xpForNextLevel} heightClass="h-1.5" />
+            </div>
+            <p className="shrink-0 text-[11px] text-slate-400 tabular-nums">
+              <span className="font-semibold text-slate-200">{title}</span> · {animatedXp}/{xpForNextLevel} XP
+            </p>
           </div>
         </div>
       </header>

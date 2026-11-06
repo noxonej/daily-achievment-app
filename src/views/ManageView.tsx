@@ -61,7 +61,7 @@ export function ManageView() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 py-4 space-y-6 stagger">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-slate-400 text-sm">Configure your journey</p>

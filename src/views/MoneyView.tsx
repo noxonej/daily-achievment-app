@@ -23,6 +23,7 @@ import {
   totalByKind,
 } from '../lib/money';
 import { MoneyDonut } from '../components/MoneyDonut';
+import { useCountUp } from '../lib/useCountUp';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon, IconGrid } from '../components/Icon';
@@ -34,6 +35,11 @@ const primaryBtn =
   'rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-white font-bold transition active:scale-[0.98]';
 const secondaryBtn =
   'rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm font-semibold text-slate-200 transition';
+
+/** A money amount that counts up when it first appears and when it changes. */
+function CountUp({ value, format }: { value: number; format: (cents: number) => string }) {
+  return <>{format(useCountUp(value, 800, 0))}</>;
+}
 
 function useMoney() {
   const { state, dispatch } = useApp();
@@ -51,7 +57,7 @@ export function MoneyView() {
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | 'new' | null>(null);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+    <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 stagger">
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-slate-400 text-sm">Your money</p>
@@ -162,13 +168,14 @@ function SetupCard() {
 
       <button
         disabled={invalid}
-        onClick={() =>
+        onClick={() => {
           dispatch({
             type: 'MONEY_SETUP',
             currency,
             amounts: { spending: parsed.spending ?? 0, savings: parsed.savings ?? 0, investing: parsed.investing ?? 0 },
-          })
-        }
+          });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
         className={`${primaryBtn} w-full py-3 mt-5`}
       >
         Show my money
@@ -199,13 +206,13 @@ function OverviewCard() {
         <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-3">
           <p className="text-xs font-bold text-emerald-300"><Icon name="✅" size="1.15em" className="icon-inline" />Can spend</p>
           <p className={`font-display text-xl font-extrabold tabular-nums mt-1 ${spending < 0 ? 'text-red-300' : 'text-white'}`}>
-            {fmt(spending, true)}
+            <CountUp value={spending} format={(v) => fmt(v, true)} />
           </p>
           <p className="text-[11px] text-slate-400 mt-0.5">Your spending money</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
           <p className="text-xs font-bold text-slate-300"><Icon name="🔒" size="1.15em" className="icon-inline" />Don't touch</p>
-          <p className="font-display text-xl font-extrabold text-white tabular-nums mt-1">{fmt(savings + investing, true)}</p>
+          <p className="font-display text-xl font-extrabold text-white tabular-nums mt-1"><CountUp value={savings + investing} format={(v) => fmt(v, true)} /></p>
           <p className="text-[11px] text-slate-400 mt-0.5">Savings + investments</p>
         </div>
       </div>
@@ -246,12 +253,12 @@ function TodayCard({
               <p className="text-sm text-slate-400 mt-1">Set a daily limit so you know how much you can spend each day.</p>
             ) : left >= 0 ? (
               <p className="mt-1">
-                <span className="font-display text-3xl font-extrabold text-white tabular-nums">{fmt(left)}</span>
+                <span className="font-display text-3xl font-extrabold text-white tabular-nums"><CountUp value={left} format={(v) => fmt(v)} /></span>
                 <span className="block text-sm text-slate-400">left to spend today, out of {fmt(limit)}</span>
               </p>
             ) : (
               <p className="mt-1">
-                <span className="font-display text-3xl font-extrabold text-red-300 tabular-nums">{fmt(-left)}</span>
+                <span className="font-display text-3xl font-extrabold text-red-300 tabular-nums"><CountUp value={-left} format={(v) => fmt(v)} /></span>
                 <span className="block text-sm text-red-300/80">over today's limit. Try to spend less tomorrow.</span>
               </p>
             )}
@@ -264,7 +271,7 @@ function TodayCard({
         {limit > 0 && (
           <>
             <div className="h-2.5 rounded-full bg-white/[0.07] mt-4 overflow-hidden">
-              <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+              <div className={`h-full rounded-full transition-all duration-500 bar-in ${barColor}`} style={{ width: `${pct}%` }} />
             </div>
             {daysItLasts !== null && (
               <p className="text-xs text-slate-400 mt-2">
@@ -299,7 +306,7 @@ function TodayCard({
                 </div>
                 <div className="h-1.5 rounded-full bg-white/[0.07] mt-1.5 overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${over ? 'bg-red-500' : 'bg-cyan-500'}`}
+                    className={`h-full rounded-full transition-all duration-500 bar-in ${over ? 'bg-red-500' : 'bg-cyan-500'}`}
                     style={{ width: `${w}%` }}
                   />
                 </div>
@@ -324,7 +331,7 @@ function TodayCard({
       </div>
 
       {todays.length > 0 && (
-        <ul className="border-t border-white/[0.06] divide-y divide-white/[0.06]">
+        <ul className="border-t border-white/[0.06] divide-y divide-white/[0.06] rows-stagger">
           {todays.map((e) => {
             const cat = money.categories.find((c) => c.id === e.categoryId);
             return (
@@ -404,13 +411,13 @@ function GoalsCard({
                     <p className="text-sm font-bold text-emerald-300 tabular-nums">{Math.floor(p.pct)}%</p>
                   </div>
                   <p className="text-sm text-slate-400 tabular-nums">
-                    <span className="font-bold text-white">{fmt(p.saved, true)}</span> of {fmt(g.target, true)}
+                    <span className="font-bold text-white"><CountUp value={p.saved} format={(v) => fmt(v, true)} /></span> of {fmt(g.target, true)}
                   </p>
                 </div>
               </div>
               <div className="h-3 rounded-full bg-white/[0.07] mt-3 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700 bar-in"
                   style={{ width: `${p.pct}%` }}
                 />
               </div>

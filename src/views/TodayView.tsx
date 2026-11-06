@@ -46,7 +46,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   });
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 space-y-5">
+    <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
       <div>
         <p className="text-slate-400 text-sm">{formatDisplayDate(key)}</p>
         <h1 className="font-display text-2xl font-bold text-white mt-0.5">Today's Quests</h1>
@@ -88,7 +88,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       {activeDaily.length === 0 ? (
         <EmptyState onNavigate={onNavigate} />
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-2.5 rows-stagger">
           {sorted.map((quest) =>
             quest.promptForNote ? (
               <NoteQuestCard

@@ -25,7 +25,7 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
     <nav className="sticky bottom-0 z-30 bg-[#0d0f19]/95 backdrop-blur border-t border-white/[0.06] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.5)]">
       <div className="max-w-2xl mx-auto relative px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         <div
-          className="absolute top-1.5 bottom-[max(0.375rem,env(safe-area-inset-bottom))] rounded-xl bg-amber-500/10 transition-transform duration-300 ease-out"
+          className="absolute top-1.5 bottom-[max(0.375rem,env(safe-area-inset-bottom))] rounded-xl bg-amber-500/10 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
           style={{ width: `calc((100% - 0.75rem) / ${TABS.length})`, transform: `translateX(calc(${activeIndex} * 100%))` }}
         />
         <div className="relative grid" style={{ gridTemplateColumns: `repeat(${TABS.length}, minmax(0, 1fr))` }}>
@@ -39,7 +39,7 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
                   isActive ? 'text-amber-300' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                <span className={`leading-none ${isActive ? 'scale-110' : ''} transition-transform`}>
+                <span key={isActive ? 'on' : 'off'} className={`leading-none ${isActive ? 'animate-nav-pop' : ''}`}>
                   <Icon name={tab.icon} size={20} strokeWidth={isActive ? 2.3 : 1.9} />
                 </span>
                 {tab.label}

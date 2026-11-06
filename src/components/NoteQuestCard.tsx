@@ -48,7 +48,7 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote, periodKey 
             completed ? 'bg-emerald-500/20' : 'bg-white/5'
           } ${justCompleted ? 'animate-pop-in' : ''}`}
         >
-          {completed ? <Icon name="✅" size={20} className="text-emerald-300" /> : <Icon name={quest.icon} size={19} className="text-slate-200" />}
+          {completed ? <Icon name="✅" size={20} className="text-emerald-300 animate-check" /> : <Icon name={quest.icon} size={19} className="text-slate-200" />}
         </div>
         <div className="min-w-0 flex-1">
           <p className={`font-semibold text-[15px] leading-tight ${completed ? 'text-emerald-300' : 'text-white'}`}>

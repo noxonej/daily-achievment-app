@@ -19,7 +19,7 @@ export function ProgressBar({
   return (
     <div className={`w-full ${heightClass} ${trackClass} rounded-full overflow-hidden relative`}>
       <div
-        className={`${heightClass} ${colorClass} rounded-full transition-all duration-500 ease-out relative overflow-hidden`}
+        className={`${heightClass} ${colorClass} rounded-full transition-all duration-500 ease-out relative overflow-hidden bar-in`}
         style={{ width: `${pct}%` }}
       >
         {animated && pct > 0 && (

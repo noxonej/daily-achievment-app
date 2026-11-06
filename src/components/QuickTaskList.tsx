@@ -37,7 +37,7 @@ export function QuickTaskList() {
                   t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/20'
                 }`}
               >
-                {t.done && <Icon name="✓" size={13} strokeWidth={3} />}
+                {t.done && <Icon name="✓" size={13} strokeWidth={3} className="animate-check" />}
               </span>
               <span className={`flex-1 text-sm ${t.done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
                 {t.text}

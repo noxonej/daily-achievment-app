@@ -52,7 +52,7 @@ export function AchievementBadge({ achievement, unlockedAt, current, shineDelay 
       ) : (
         <div className="mt-2">
           <div className="h-1 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-1 rounded-full bg-white/25" style={{ width: `${pct}%` }} />
+            <div className="h-1 rounded-full bg-white/25 bar-in" style={{ width: `${pct}%` }} />
           </div>
           <p className="text-[10px] text-slate-600 mt-1">
             {clampedCurrent} / {achievement.target}

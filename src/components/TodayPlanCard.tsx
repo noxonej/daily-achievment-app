@@ -41,7 +41,7 @@ export function TodayPlanCard({ onOpen }: { onOpen: () => void }) {
           Edit plan →
         </button>
       </div>
-      <ul className="space-y-1">
+      <ul className="space-y-1 rows-stagger">
         {items.map((item) => {
           const done = checked.has(item.id);
           return (
@@ -55,7 +55,7 @@ export function TodayPlanCard({ onOpen }: { onOpen: () => void }) {
                     done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/20'
                   }`}
                 >
-                  {done && <Icon name="✓" size={13} strokeWidth={3} />}
+                  {done && <Icon name="✓" size={13} strokeWidth={3} className="animate-check" />}
                 </span>
                 <span className={`shrink-0 w-16 text-xs font-bold tabular-nums ${done ? 'text-slate-600' : 'text-amber-300'}`}>
                   {item.time ? formatPlanTime(item.time) : '—'}

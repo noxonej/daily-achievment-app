@@ -46,7 +46,7 @@ export function PlanView() {
   }
 
   return (
-    <div className={`mx-auto px-4 py-4 space-y-4 ${mode === 'week' ? 'max-w-6xl' : 'max-w-2xl'}`}>
+    <div className={`mx-auto px-4 py-4 space-y-4 stagger ${mode === 'week' ? 'max-w-6xl' : 'max-w-2xl'}`}>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="text-slate-400 text-sm">Your routine</p>
@@ -371,7 +371,7 @@ function DayPanel({ day, isToday, checked }: { day: WeekdayId; isToday: boolean;
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-white/[0.06]">
+        <ul className="divide-y divide-white/[0.06] rows-stagger">
           {items.map((item) =>
             editingId === item.id ? (
               <EditRow key={item.id} day={day} item={item} onDone={() => setEditingId(null)} />
@@ -420,7 +420,7 @@ function Checkbox({ done, onToggle, small }: { done: boolean; onToggle: () => vo
           done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/25 hover:border-white/50'
         }`}
       >
-        {done && <Icon name="✓" size={small ? 11 : 14} strokeWidth={3} />}
+        {done && <Icon name="✓" size={small ? 11 : 14} strokeWidth={3} className="animate-check" />}
       </span>
     </button>
   );
@@ -670,7 +670,7 @@ function CopyDayModal({ open, from, onClose }: { open: boolean; from: WeekdayId;
                   on ? 'bg-amber-500 border-amber-500 text-white' : 'border-white/25'
                 }`}
               >
-                {on && <Icon name="✓" size={13} strokeWidth={3} />}
+                {on && <Icon name="✓" size={13} strokeWidth={3} className="animate-check" />}
               </span>
               {w.long}
             </button>
