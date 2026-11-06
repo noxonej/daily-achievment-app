@@ -73,7 +73,7 @@ export interface UnlockedAchievement {
   unlockedAt: string;
 }
 
-export type AvatarSlot = 'skin' | 'hair' | 'hairColor' | 'outfit' | 'headwear' | 'face' | 'backdrop' | 'pet';
+export type AvatarSlot = 'skin' | 'expression' | 'hair' | 'hairColor' | 'outfit' | 'headwear' | 'face' | 'backdrop' | 'pet';
 export type CosmeticSlot = AvatarSlot;
 
 /** The avatar's look: one item id per slot. */
@@ -150,6 +150,13 @@ export interface MoneyState {
   goals: SavingsGoal[];
 }
 
+export type Accent = 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose';
+export type BgTheme = 'graphite' | 'midnight' | 'black';
+export interface Appearance {
+  accent: Accent;
+  background: BgTheme;
+}
+
 export type FocusArea = 'health' | 'mind' | 'study' | 'money' | 'work' | 'sleep';
 
 export interface Profile {
@@ -187,6 +194,7 @@ export interface AppState {
   moods: Record<string, Mood>;
   /** Minutes of focus-timer time completed, keyed by YYYY-MM-DD. */
   focusMinutes: Record<string, number>;
+  appearance: Appearance;
   createdAt: string;
 }
 

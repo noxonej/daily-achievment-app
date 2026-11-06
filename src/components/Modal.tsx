@@ -51,14 +51,14 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label={shown.title}
-        className={`relative w-full sm:max-w-md bg-[#121629] border border-white/10 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto ${
+        className={`relative w-full sm:max-w-md bg-surface border border-white/10 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto ${
           closing ? 'sheet-out' : 'sheet-in'
         }`}
       >
         <div className="sm:hidden flex justify-center pt-2">
           <span className="w-10 h-1 rounded-full bg-white/15" />
         </div>
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-white/10 bg-[#121629]">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-white/10 bg-surface">
           <h2 className="font-display text-lg font-bold tracking-wide text-white">{shown.title}</h2>
           <button
             onClick={onClose}

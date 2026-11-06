@@ -23,11 +23,11 @@ export function YouView() {
   return (
     <div>
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-amber-500/[0.12] via-white/[0.03] to-violet-500/[0.10] p-4">
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-4">
           <div className="flex items-center gap-4">
             <button onClick={() => wardrobe.open()} className="relative shrink-0 rounded-[28%]" aria-label="Open wardrobe">
               <Avatar look={state.character} size={104} className="drop-shadow-[0_14px_30px_rgba(0,0,0,0.5)]" />
-              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 border-2 border-[#0b0e17] px-2 py-0.5 text-[11px] font-black text-white whitespace-nowrap">
+              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 border-2 border-canvas px-2 py-0.5 text-[11px] font-black text-white whitespace-nowrap">
                 LV {stats.level}
               </span>
             </button>

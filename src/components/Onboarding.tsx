@@ -49,7 +49,7 @@ export function Onboarding() {
   }
 
   return (
-    <div className="fixed inset-0 z-[90] bg-[#0b0e17] bg-grid overflow-y-auto">
+    <div className="fixed inset-0 z-[90] bg-canvas bg-grid overflow-y-auto">
       <div className="min-h-full max-w-md mx-auto px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col">
         {step !== 'welcome' && (
           <div className="flex items-center gap-3 mb-6">

@@ -41,6 +41,26 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'skin-alien', slot: 'skin', name: 'Alien', rarity: 'epic', unlock: chest, style: 'skin', c1: '#9be59b' },
   { id: 'skin-gold', slot: 'skin', name: 'Golden', rarity: 'legendary', unlock: chest, style: 'skin', c1: '#f5c542' },
 
+  // Faces & expressions
+  { id: 'exp-happy', slot: 'expression', name: 'Happy', rarity: 'common', unlock: free, style: 'happy' },
+  { id: 'exp-mood', slot: 'expression', name: 'Match my mood', rarity: 'common', unlock: free, style: 'mood' },
+  { id: 'exp-grin', slot: 'expression', name: 'Big grin', rarity: 'common', unlock: free, style: 'grin' },
+  { id: 'exp-calm', slot: 'expression', name: 'Calm', rarity: 'common', unlock: free, style: 'calm' },
+  { id: 'exp-sad', slot: 'expression', name: 'Sad', rarity: 'common', unlock: free, style: 'sad' },
+  { id: 'exp-angry', slot: 'expression', name: 'Angry', rarity: 'common', unlock: free, style: 'angry' },
+  { id: 'exp-surprised', slot: 'expression', name: 'Surprised', rarity: 'common', unlock: free, style: 'surprised' },
+  { id: 'exp-sleepy', slot: 'expression', name: 'Sleepy', rarity: 'common', unlock: free, style: 'sleepy' },
+  { id: 'exp-wink', slot: 'expression', name: 'Wink', rarity: 'common', unlock: free, style: 'wink' },
+  { id: 'exp-laugh', slot: 'expression', name: 'Laughing', rarity: 'common', unlock: shop(120), style: 'laugh' },
+  { id: 'exp-smirk', slot: 'expression', name: 'Cool smirk', rarity: 'rare', unlock: shop(180), style: 'smirk' },
+  { id: 'exp-determined', slot: 'expression', name: 'Determined', rarity: 'rare', unlock: level(4), style: 'determined' },
+  { id: 'exp-starstruck', slot: 'expression', name: 'Star-struck', rarity: 'rare', unlock: chest, style: 'starstruck' },
+  { id: 'exp-love', slot: 'expression', name: 'Heart eyes', rarity: 'rare', unlock: chest, style: 'love' },
+  { id: 'exp-dizzy', slot: 'expression', name: 'Dizzy', rarity: 'rare', unlock: chest, style: 'dizzy' },
+  { id: 'exp-cat', slot: 'expression', name: 'Cat face', rarity: 'epic', unlock: chest, style: 'cat' },
+  { id: 'exp-robot', slot: 'expression', name: 'Robot eyes', rarity: 'epic', unlock: chest, style: 'robot' },
+  { id: 'exp-fire', slot: 'expression', name: 'Fire eyes', rarity: 'legendary', unlock: streak(21), style: 'fire' },
+
   // Hair styles
   { id: 'hair-short', slot: 'hair', name: 'Classic', rarity: 'common', unlock: free, style: 'short' },
   { id: 'hair-buzz', slot: 'hair', name: 'Buzz cut', rarity: 'common', unlock: free, style: 'buzz' },
@@ -52,6 +72,11 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'hair-spiky', slot: 'hair', name: 'Spiky', rarity: 'rare', unlock: shop(200), style: 'spiky' },
   { id: 'hair-afro', slot: 'hair', name: 'Afro', rarity: 'rare', unlock: shop(200), style: 'afro' },
   { id: 'hair-mohawk', slot: 'hair', name: 'Mohawk', rarity: 'epic', unlock: chest, style: 'mohawk' },
+  { id: 'hair-quiff', slot: 'hair', name: 'Quiff', rarity: 'common', unlock: free, style: 'quiff' },
+  { id: 'hair-bob', slot: 'hair', name: 'Bob', rarity: 'common', unlock: free, style: 'bob' },
+  { id: 'hair-pigtails', slot: 'hair', name: 'Pigtails', rarity: 'common', unlock: shop(120), style: 'pigtails' },
+  { id: 'hair-braids', slot: 'hair', name: 'Braids', rarity: 'rare', unlock: shop(220), style: 'braids' },
+  { id: 'hair-messy', slot: 'hair', name: 'Messy', rarity: 'rare', unlock: chest, style: 'messy' },
 
   // Hair colours
   { id: 'hc-black', slot: 'hairColor', name: 'Black', rarity: 'common', unlock: free, style: 'color', c1: '#2a211c' },
@@ -62,6 +87,9 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'hc-blue', slot: 'hairColor', name: 'Electric blue', rarity: 'rare', unlock: chest, style: 'color', c1: '#3b82f6' },
   { id: 'hc-pink', slot: 'hairColor', name: 'Bubblegum', rarity: 'rare', unlock: chest, style: 'color', c1: '#f472b6' },
   { id: 'hc-mint', slot: 'hairColor', name: 'Mint', rarity: 'epic', unlock: chest, style: 'color', c1: '#5eead4' },
+  { id: 'hc-red', slot: 'hairColor', name: 'Cherry red', rarity: 'rare', unlock: shop(150), style: 'color', c1: '#dc2626' },
+  { id: 'hc-purple', slot: 'hairColor', name: 'Purple', rarity: 'rare', unlock: chest, style: 'color', c1: '#8b5cf6' },
+  { id: 'hc-snow', slot: 'hairColor', name: 'Snow', rarity: 'epic', unlock: chest, style: 'color', c1: '#f8fafc' },
 
   // Outfits
   { id: 'out-tee', slot: 'outfit', name: 'White tee', rarity: 'common', unlock: free, style: 'tee', c1: '#f1f5f9', c2: '#cbd5e1' },
@@ -76,6 +104,20 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'out-armor', slot: 'outfit', name: 'Knight armor', rarity: 'epic', unlock: streak(14), style: 'armor', c1: '#cbd5e1', c2: '#64748b' },
   { id: 'out-flame', slot: 'outfit', name: 'Inferno hoodie', rarity: 'legendary', unlock: chest, style: 'flame', c1: '#ea580c', c2: '#7f1d1d' },
   { id: 'out-robe', slot: 'outfit', name: 'Royal robe', rarity: 'legendary', unlock: level(20), style: 'robe', c1: '#b91c1c', c2: '#facc15' },
+  { id: 'out-denim', slot: 'outfit', name: 'Denim jacket', rarity: 'common', unlock: free, style: 'denim', c1: '#3b6ea8', c2: '#f1f5f9' },
+  { id: 'out-stripes', slot: 'outfit', name: 'Striped sweater', rarity: 'common', unlock: free, style: 'stripes', c1: '#1e3a8a', c2: '#f8fafc' },
+  { id: 'out-flannel', slot: 'outfit', name: 'Flannel shirt', rarity: 'common', unlock: shop(120), style: 'flannel', c1: '#b91c1c', c2: '#1f2937' },
+  { id: 'out-overalls', slot: 'outfit', name: 'Overalls', rarity: 'common', unlock: shop(140), style: 'overalls', c1: '#2563eb', c2: '#facc15' },
+  { id: 'out-chef', slot: 'outfit', name: 'Chef jacket', rarity: 'common', unlock: shop(140), style: 'chef', c1: '#f8fafc', c2: '#dc2626' },
+  { id: 'out-puffer', slot: 'outfit', name: 'Puffer jacket', rarity: 'rare', unlock: shop(240), style: 'puffer', c1: '#0f766e', c2: '#134e4a' },
+  { id: 'out-varsity', slot: 'outfit', name: 'Varsity jacket', rarity: 'rare', unlock: level(3), style: 'varsity', c1: '#7f1d1d', c2: '#f8fafc' },
+  { id: 'out-leather', slot: 'outfit', name: 'Leather jacket', rarity: 'rare', unlock: shop(320), style: 'leather', c1: '#18181b', c2: '#a1a1aa' },
+  { id: 'out-lab', slot: 'outfit', name: 'Lab coat', rarity: 'rare', unlock: level(7), style: 'lab', c1: '#f8fafc', c2: '#60a5fa' },
+  { id: 'out-hawaii', slot: 'outfit', name: 'Hawaiian shirt', rarity: 'rare', unlock: chest, style: 'hawaii', c1: '#0d9488', c2: '#fde047' },
+  { id: 'out-hero', slot: 'outfit', name: 'Superhero suit', rarity: 'epic', unlock: chest, style: 'hero', c1: '#1d4ed8', c2: '#dc2626' },
+  { id: 'out-pirate', slot: 'outfit', name: 'Pirate coat', rarity: 'epic', unlock: chest, style: 'pirate', c1: '#7f1d1d', c2: '#facc15' },
+  { id: 'out-galaxy', slot: 'outfit', name: 'Galaxy hoodie', rarity: 'legendary', unlock: chest, style: 'galaxyhoodie', c1: '#312e81', c2: '#a855f7' },
+  { id: 'out-dragon', slot: 'outfit', name: 'Dragon scale armor', rarity: 'legendary', unlock: streak(60), style: 'dragonarmor', c1: '#7f1d1d', c2: '#facc15' },
 
   // Headwear
   { id: 'hw-none', slot: 'headwear', name: 'None', rarity: 'common', unlock: free, style: 'none' },
@@ -89,6 +131,16 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'hw-wizard', slot: 'headwear', name: 'Wizard hat', rarity: 'epic', unlock: chest, style: 'wizard', c1: '#4c1d95', c2: '#fde047' },
   { id: 'hw-crown', slot: 'headwear', name: 'Crown', rarity: 'legendary', unlock: streak(30), style: 'crown' },
   { id: 'hw-halo', slot: 'headwear', name: 'Halo', rarity: 'legendary', unlock: chest, style: 'halo' },
+  { id: 'hw-party', slot: 'headwear', name: 'Party hat', rarity: 'common', unlock: free, style: 'party', c1: '#ec4899', c2: '#facc15' },
+  { id: 'hw-bucket', slot: 'headwear', name: 'Bucket hat', rarity: 'common', unlock: shop(90), style: 'bucket', c1: '#a3e635', c2: '#65a30d' },
+  { id: 'hw-beret', slot: 'headwear', name: 'Beret', rarity: 'common', unlock: shop(90), style: 'beret', c1: '#be123c' },
+  { id: 'hw-chef', slot: 'headwear', name: 'Chef hat', rarity: 'common', unlock: shop(100), style: 'chefhat' },
+  { id: 'hw-cowboy', slot: 'headwear', name: 'Cowboy hat', rarity: 'rare', unlock: shop(240), style: 'cowboy', c1: '#a16207', c2: '#713f12' },
+  { id: 'hw-tophat', slot: 'headwear', name: 'Top hat', rarity: 'rare', unlock: level(6), style: 'tophat', c1: '#111827', c2: '#dc2626' },
+  { id: 'hw-propeller', slot: 'headwear', name: 'Propeller cap', rarity: 'rare', unlock: chest, style: 'propeller' },
+  { id: 'hw-bunny', slot: 'headwear', name: 'Bunny ears', rarity: 'rare', unlock: chest, style: 'bunny', c1: '#f8fafc' },
+  { id: 'hw-pirate', slot: 'headwear', name: 'Pirate hat', rarity: 'epic', unlock: chest, style: 'piratehat' },
+  { id: 'hw-devil', slot: 'headwear', name: 'Devil horns', rarity: 'epic', unlock: chest, style: 'devil' },
 
   // Eyewear
   { id: 'face-none', slot: 'face', name: 'None', rarity: 'common', unlock: free, style: 'none' },
@@ -98,6 +150,11 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'face-monocle', slot: 'face', name: 'Monocle', rarity: 'epic', unlock: level(15), style: 'monocle' },
   { id: 'face-pixel', slot: 'face', name: 'Pixel shades', rarity: 'epic', unlock: shop(400), style: 'pixel' },
   { id: 'face-visor', slot: 'face', name: 'Cyber visor', rarity: 'legendary', unlock: chest, style: 'visor' },
+  { id: 'face-nerd', slot: 'face', name: 'Thick frames', rarity: 'common', unlock: free, style: 'nerd' },
+  { id: 'face-3d', slot: 'face', name: '3D glasses', rarity: 'common', unlock: shop(90), style: '3d' },
+  { id: 'face-goggles', slot: 'face', name: 'Ski goggles', rarity: 'rare', unlock: shop(220), style: 'goggles' },
+  { id: 'face-hearts', slot: 'face', name: 'Heart glasses', rarity: 'rare', unlock: chest, style: 'hearts' },
+  { id: 'face-patch', slot: 'face', name: 'Eye patch', rarity: 'rare', unlock: chest, style: 'patch' },
 
   // Backdrops
   { id: 'bg-midnight', slot: 'backdrop', name: 'Midnight', rarity: 'common', unlock: free, style: 'gradient', c1: '#334155', c2: '#0f172a' },
@@ -108,6 +165,12 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'bg-galaxy', slot: 'backdrop', name: 'Galaxy', rarity: 'epic', unlock: level(8), style: 'galaxy' },
   { id: 'bg-neon', slot: 'backdrop', name: 'Neon grid', rarity: 'epic', unlock: chest, style: 'neon' },
   { id: 'bg-gold', slot: 'backdrop', name: 'Hall of fame', rarity: 'legendary', unlock: level(25), style: 'gold' },
+  { id: 'bg-sky', slot: 'backdrop', name: 'Blue sky', rarity: 'common', unlock: free, style: 'sky' },
+  { id: 'bg-beach', slot: 'backdrop', name: 'Beach', rarity: 'common', unlock: shop(100), style: 'beach' },
+  { id: 'bg-mountains', slot: 'backdrop', name: 'Mountains', rarity: 'common', unlock: shop(100), style: 'mountains' },
+  { id: 'bg-city', slot: 'backdrop', name: 'City lights', rarity: 'rare', unlock: shop(220), style: 'city' },
+  { id: 'bg-lava', slot: 'backdrop', name: 'Lava', rarity: 'epic', unlock: level(18), style: 'lava' },
+  { id: 'bg-aurora', slot: 'backdrop', name: 'Aurora', rarity: 'legendary', unlock: chest, style: 'aurora' },
 
   // Pets (sit on your shoulder)
   { id: 'pet-none', slot: 'pet', name: 'None', rarity: 'common', unlock: free, style: 'none' },
@@ -117,21 +180,29 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'pet-robot', slot: 'pet', name: 'Robo buddy', rarity: 'epic', unlock: level(12), style: 'robot' },
   { id: 'pet-slime', slot: 'pet', name: 'Slime', rarity: 'epic', unlock: chest, style: 'slime', c1: '#4ade80' },
   { id: 'pet-dragon', slot: 'pet', name: 'Baby dragon', rarity: 'legendary', unlock: chest, style: 'dragon', c1: '#8b5cf6' },
+  { id: 'pet-frog', slot: 'pet', name: 'Frog', rarity: 'common', unlock: shop(200), style: 'frog', c1: '#4ade80' },
+  { id: 'pet-bunny', slot: 'pet', name: 'Bunny', rarity: 'rare', unlock: shop(300), style: 'bunnypet', c1: '#f1f5f9' },
+  { id: 'pet-penguin', slot: 'pet', name: 'Penguin', rarity: 'rare', unlock: shop(300), style: 'penguin' },
+  { id: 'pet-fox', slot: 'pet', name: 'Fox', rarity: 'rare', unlock: chest, style: 'fox', c1: '#f97316' },
+  { id: 'pet-ghost', slot: 'pet', name: 'Ghost', rarity: 'epic', unlock: chest, style: 'ghost' },
+  { id: 'pet-phoenix', slot: 'pet', name: 'Phoenix', rarity: 'legendary', unlock: chest, style: 'phoenix', c1: '#f97316' },
 ];
 
 export const AVATAR_SLOTS: Array<{ id: AvatarSlot; label: string; icon: string }> = [
   { id: 'outfit', label: 'Outfit', icon: '👕' },
+  { id: 'expression', label: 'Face', icon: '😊' },
   { id: 'hair', label: 'Hair', icon: '✂' },
   { id: 'hairColor', label: 'Color', icon: '🎨' },
   { id: 'headwear', label: 'Hats', icon: '👑' },
   { id: 'face', label: 'Eyewear', icon: '🕶' },
   { id: 'pet', label: 'Pets', icon: '🐶' },
   { id: 'backdrop', label: 'Scene', icon: '🌅' },
-  { id: 'skin', label: 'Skin', icon: '😊' },
+  { id: 'skin', label: 'Skin', icon: '🙌' },
 ];
 
 export const DEFAULT_LOOK: Character = {
   skin: 'skin-2',
+  expression: 'exp-happy',
   hair: 'hair-short',
   hairColor: 'hc-brown',
   outfit: 'out-hoodie-gray',
@@ -145,7 +216,7 @@ export const RARITY: Record<Rarity, { label: string; text: string; border: strin
   common: { label: 'Common', text: 'text-slate-300', border: 'border-slate-500/40', glow: '', bg: 'bg-slate-500/10', hex: '#94a3b8', weight: 50 },
   rare: { label: 'Rare', text: 'text-sky-300', border: 'border-sky-400/60', glow: 'shadow-[0_0_18px_-4px_rgba(56,189,248,0.6)]', bg: 'bg-sky-500/10', hex: '#38bdf8', weight: 30 },
   epic: { label: 'Epic', text: 'text-violet-300', border: 'border-violet-400/70', glow: 'shadow-[0_0_20px_-4px_rgba(167,139,250,0.7)]', bg: 'bg-violet-500/10', hex: '#a78bfa', weight: 15 },
-  legendary: { label: 'Legendary', text: 'text-amber-300', border: 'border-amber-400/80', glow: 'shadow-[0_0_24px_-4px_rgba(251,191,36,0.8)]', bg: 'bg-amber-500/10', hex: '#fbbf24', weight: 5 },
+  legendary: { label: 'Legendary', text: 'text-yellow-300', border: 'border-yellow-400/80', glow: 'shadow-[0_0_24px_-4px_rgba(251,191,36,0.8)]', bg: 'bg-yellow-500/10', hex: '#fbbf24', weight: 5 },
 };
 
 const BY_ID = new Map(AVATAR_ITEMS.map((i) => [i.id, i]));

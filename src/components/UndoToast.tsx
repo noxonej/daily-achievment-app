@@ -17,7 +17,7 @@ export function UndoToast() {
       <div
         key={undoToast.id}
         role="status"
-        className="pointer-events-auto relative overflow-hidden flex items-center gap-3 rounded-2xl bg-[#1b2038] border border-white/10 shadow-2xl pl-4 pr-2 py-2 max-w-sm w-full animate-pop-in"
+        className="pointer-events-auto relative overflow-hidden flex items-center gap-3 rounded-2xl bg-raised border border-white/10 shadow-2xl pl-4 pr-2 py-2 max-w-sm w-full animate-pop-in"
       >
         <span className="flex-1 text-sm text-slate-200 truncate">{undoToast.message}</span>
         <button onClick={undo} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-amber-300 hover:bg-white/5">

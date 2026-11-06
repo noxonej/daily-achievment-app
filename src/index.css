@@ -37,6 +37,47 @@
 }
 
 
+/* Theme surfaces: change with the Background setting (data-bg on <html>). */
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+}
+
+:root {
+  --bg: #0c0d11;
+  --surface: #15171d;
+  --raised: #1d2027;
+}
+:root[data-bg='midnight'] {
+  --bg: #0b0e17;
+  --surface: #121629;
+  --raised: #1b2038;
+}
+:root[data-bg='black'] {
+  --bg: #000000;
+  --surface: #0f1013;
+  --raised: #18191d;
+}
+
+/* Accent colour: every amber-* utility follows the chosen accent (data-accent on <html>). */
+:root[data-accent='ocean'] {
+  --color-amber-50: #eff6ff; --color-amber-100: #dbeafe; --color-amber-200: #bfdbfe; --color-amber-300: #93c5fd;
+  --color-amber-400: #60a5fa; --color-amber-500: #3b82f6; --color-amber-600: #2563eb; --color-amber-900: #1e3a8a;
+}
+:root[data-accent='emerald'] {
+  --color-amber-50: #ecfdf5; --color-amber-100: #d1fae5; --color-amber-200: #a7f3d0; --color-amber-300: #6ee7b7;
+  --color-amber-400: #34d399; --color-amber-500: #10b981; --color-amber-600: #059669; --color-amber-900: #064e3b;
+}
+:root[data-accent='violet'] {
+  --color-amber-50: #f5f3ff; --color-amber-100: #ede9fe; --color-amber-200: #ddd6fe; --color-amber-300: #c4b5fd;
+  --color-amber-400: #a78bfa; --color-amber-500: #8b5cf6; --color-amber-600: #7c3aed; --color-amber-900: #4c1d95;
+}
+:root[data-accent='rose'] {
+  --color-amber-50: #fff1f2; --color-amber-100: #ffe4e6; --color-amber-200: #fecdd3; --color-amber-300: #fda4af;
+  --color-amber-400: #fb7185; --color-amber-500: #f43f5e; --color-amber-600: #e11d48; --color-amber-900: #881337;
+}
+
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -56,7 +97,7 @@ html, body, #root {
 
 body {
   margin: 0;
-  background: #0b0e17;
+  background: var(--bg);
   color: #e7e9f4;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -131,6 +172,10 @@ body {
 }
 
 .bg-grid {
+  background-color: var(--bg);
+}
+/* The dotted pattern is part of the Midnight look only; Graphite and Black stay clean. */
+:root[data-bg='midnight'] .bg-grid {
   background-image:
     radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0);
   background-size: 28px 28px;

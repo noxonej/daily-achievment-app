@@ -20,7 +20,7 @@ export function WildcardQuestCard({ quest, completed, onToggle, periodKey }: Wil
       <button
         onClick={onToggle}
         className={`w-full flex items-center gap-3 rounded-[15px] px-4 py-3.5 text-left transition-all active:scale-[0.99] ${
-          completed ? 'bg-emerald-500/10' : 'bg-[#0f1220]'
+          completed ? 'bg-emerald-500/10' : 'bg-canvas'
         }`}
       >
         <div

@@ -12,7 +12,7 @@ export function InstallCard({ always = false }: { always?: boolean }) {
   const os = platform();
 
   return (
-    <div className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-sky-500/10 to-indigo-500/10 p-4">
+    <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       {!always && (
         <button
           onClick={() => {
@@ -35,7 +35,7 @@ export function InstallCard({ always = false }: { always?: boolean }) {
       {canPrompt ? (
         <button
           onClick={() => void prompt()}
-          className="mt-3.5 w-full rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold py-2.5 text-sm"
+          className="mt-3.5 w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-bold py-2.5 text-sm"
         >
           Install app
         </button>
@@ -43,18 +43,18 @@ export function InstallCard({ always = false }: { always?: boolean }) {
         <ol className="mt-3.5 space-y-2 text-sm text-slate-200">
           <li className="flex items-center gap-2.5">
             <Step n={1} />
-            Tap <Icon name="📤" size={16} className="text-sky-300" /> <b>Share</b> at the bottom of Safari
+            Tap <Icon name="📤" size={16} className="text-amber-300" /> <b>Share</b> at the bottom of Safari
           </li>
           <li className="flex items-center gap-2.5">
             <Step n={2} />
-            Choose <Icon name="➕" size={16} className="text-sky-300" /> <b>Add to Home Screen</b>
+            Choose <Icon name="➕" size={16} className="text-amber-300" /> <b>Add to Home Screen</b>
           </li>
         </ol>
       ) : (
         <ol className="mt-3.5 space-y-2 text-sm text-slate-200">
           <li className="flex items-center gap-2.5">
             <Step n={1} />
-            Open the browser menu <Icon name="⋮" size={16} className="text-sky-300" />
+            Open the browser menu <Icon name="⋮" size={16} className="text-amber-300" />
           </li>
           <li className="flex items-center gap-2.5">
             <Step n={2} />

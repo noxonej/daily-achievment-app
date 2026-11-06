@@ -70,7 +70,7 @@ export function PlanView() {
       {weekIsEmpty ? (
         <button
           onClick={() => setStarterOpen(true)}
-          className="w-full flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-4 py-3.5 text-left hover:border-amber-400/60 transition"
+          className="w-full flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-500/[0.06] px-4 py-3.5 text-left hover:border-amber-400/60 transition"
         >
           <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><Icon name="✨" size={20} /></span>
           <span className="flex-1 min-w-0">

@@ -16,11 +16,13 @@ import { UndoToast } from './components/UndoToast';
 import { Wardrobe } from './components/Wardrobe';
 import { useApp } from './store/AppContext';
 import { focusTimer } from './lib/focusTimer';
+import { useApplyAppearance } from './lib/theme';
 
 const VIEW_ORDER: ViewId[] = ['today', 'plan', 'money', 'quests', 'you'];
 
 export default function App() {
   const { state } = useApp();
+  useApplyAppearance(state.appearance);
   // The launch animation is for returning users; someone finishing setup has just seen the logo.
   const [launchedOnboarded] = useState(() => state.onboarded);
   // Home-screen shortcuts open straight into a tab (?view=plan) or the focus timer (?focus=1).

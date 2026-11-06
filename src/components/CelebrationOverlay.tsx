@@ -21,7 +21,7 @@ export function CelebrationOverlay() {
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={dismissCelebration} />
         <Confetti count={48} />
-        <div className="relative bg-gradient-to-b from-[#241a10] to-[#121629] border border-amber-500/40 rounded-2xl shadow-2xl shadow-amber-900/50 px-8 py-8 text-center max-w-xs w-full animate-celebrate">
+        <div className="relative bg-gradient-to-b from-[#241a10] to-surface border border-amber-500/40 rounded-2xl shadow-2xl shadow-amber-900/50 px-8 py-8 text-center max-w-xs w-full animate-celebrate">
           <div className="flex justify-center mb-3 text-amber-300"><Icon name="🎉" size={60} strokeWidth={1.6} /></div>
           <p className="text-xs uppercase tracking-[0.2em] text-amber-300 font-bold mb-1">Level Up</p>
           <p className="font-display text-4xl font-extrabold text-white mb-1">{current.level}</p>
@@ -41,7 +41,7 @@ export function CelebrationOverlay() {
     <div className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none">
       <button
         onClick={dismissCelebration}
-        className="pointer-events-auto animate-celebrate flex items-center gap-3 bg-[#161a2e] border border-amber-400/30 shadow-xl shadow-black/40 rounded-2xl px-4 py-3 max-w-sm"
+        className="pointer-events-auto animate-celebrate flex items-center gap-3 bg-raised border border-amber-400/30 shadow-xl shadow-black/40 rounded-2xl px-4 py-3 max-w-sm"
       >
         <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><Icon name={current.icon} size={22} /></span>
         <span className="text-left min-w-0">

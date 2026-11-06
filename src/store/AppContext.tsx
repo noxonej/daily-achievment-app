@@ -276,6 +276,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
+/** Today's mood check-in (1–5) if there is one; safe to call outside the provider. */
+export function useTodayMood(): number | undefined {
+  const ctx = useContext(AppContext);
+  return ctx?.state.moods?.[todayKey()];
+}
+
 export function useApp(): AppContextValue {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useApp must be used within AppProvider');

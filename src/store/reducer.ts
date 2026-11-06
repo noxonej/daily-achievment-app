@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -29,6 +29,7 @@ export function createInitialState(): AppState {
     profile: { name: '', focusAreas: [], wakeTime: '07:00', bedTime: '22:30' },
     moods: {},
     focusMinutes: {},
+    appearance: { accent: 'amber', background: 'graphite' },
     createdAt: new Date().toISOString(),
   };
 }
@@ -148,6 +149,7 @@ export type Action =
     }
   | { type: 'SET_PROFILE'; profile: Partial<Profile> }
   | { type: 'SET_MOOD'; date: string; mood: Mood | null }
+  | { type: 'SET_APPEARANCE'; appearance: Partial<Appearance> }
   | { type: 'ADD_FOCUS_MINUTES'; date: string; minutes: number }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
@@ -650,6 +652,9 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'SET_PROFILE':
       return { ...state, profile: { ...state.profile, ...action.profile } };
+
+    case 'SET_APPEARANCE':
+      return { ...state, appearance: { ...(state.appearance ?? { accent: 'amber', background: 'graphite' }), ...action.appearance } };
 
     case 'SET_MOOD': {
       const moods = { ...(state.moods ?? {}) };

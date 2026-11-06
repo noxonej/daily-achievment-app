@@ -22,7 +22,7 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
   const activeIndex = Math.max(0, TABS.findIndex((t) => t.id === active));
 
   return (
-    <nav className="sticky bottom-0 z-30 bg-[#0d0f19]/95 backdrop-blur border-t border-white/[0.06] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.5)]">
+    <nav className="sticky bottom-0 z-30 bg-canvas/95 backdrop-blur border-t border-white/[0.06] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.5)]">
       <div className="max-w-2xl mx-auto relative px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         <div
           className="absolute top-1.5 bottom-[max(0.375rem,env(safe-area-inset-bottom))] rounded-xl bg-amber-500/10 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
@@ -44,7 +44,7 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
                     <span className={`relative block rounded-[8px] ring-2 ${isActive ? 'ring-amber-400' : 'ring-transparent'}`}>
                       <Avatar look={state.character} size={22} />
                       {stats.chestsAvailable > 0 && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-[#0d0f19]" />
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-canvas" />
                       )}
                     </span>
                   ) : (

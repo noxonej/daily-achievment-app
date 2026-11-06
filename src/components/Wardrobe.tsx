@@ -74,7 +74,7 @@ export function Wardrobe() {
   const canBuy = preview?.unlock.kind === 'shop' && !previewOwned && stats.availableShards >= preview.unlock.cost;
 
   return (
-    <div data-overlay className="fixed inset-0 z-[75] bg-[#0b0e17] flex flex-col backdrop-in">
+    <div data-overlay className="fixed inset-0 z-[75] bg-canvas flex flex-col backdrop-in">
       {/* top bar */}
       <div className="flex items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
         <button onClick={() => wardrobe.close()} aria-label="Close" className="w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
@@ -134,7 +134,7 @@ export function Wardrobe() {
           )}
 
           {/* slot tabs */}
-          <div className="sticky top-0 z-10 -mx-4 px-4 pt-4 pb-3 bg-[#0b0e17]">
+          <div className="sticky top-0 z-10 -mx-4 px-4 pt-4 pb-3 bg-canvas">
             <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
               {AVATAR_SLOTS.map((s) => (
                 <button
@@ -169,12 +169,12 @@ export function Wardrobe() {
                   <div className="relative">
                     <Avatar look={{ ...look, [item.slot]: item.id }} size={84} className={isOwnedItem ? '' : 'saturate-[.7] brightness-90'} />
                     {!isOwnedItem && (
-                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0b0e17] border border-white/15 flex items-center justify-center text-slate-200">
+                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-canvas border border-white/15 flex items-center justify-center text-slate-200">
                         <Icon name={item.unlock.kind === 'chest' ? '🎁' : '🔒'} size={12} />
                       </span>
                     )}
                     {equipped && (
-                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 border-2 border-[#0b0e17] flex items-center justify-center text-white">
+                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 border-2 border-canvas flex items-center justify-center text-white">
                         <Icon name="✓" size={12} strokeWidth={3} className="animate-check" />
                       </span>
                     )}
@@ -212,7 +212,7 @@ export function Wardrobe() {
       </div>
 
       {preview && (
-        <div className="border-t border-white/10 bg-[#121629]/95 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sheet-in">
+        <div className="border-t border-white/10 bg-surface/95 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sheet-in">
           <div className="max-w-xl mx-auto flex items-center gap-3">
             <Avatar look={shown} size={52} />
             <div className="flex-1 min-w-0">

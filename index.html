@@ -7,7 +7,15 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Plan your week, build habits, track your money and savings goals, and level up every day." />
-    <meta name="theme-color" content="#0b0e17" />
+    <meta name="theme-color" content="#0c0d11" />
+    <script>
+      // Apply the saved theme before the app draws, so there's no flash of the wrong colours.
+      try {
+        var a = JSON.parse(localStorage.getItem('dayforge-appearance') || '{}');
+        if (a.accent) document.documentElement.dataset.accent = a.accent;
+        if (a.background) document.documentElement.dataset.bg = a.background;
+      } catch (e) {}
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

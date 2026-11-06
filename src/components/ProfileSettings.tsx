@@ -5,6 +5,7 @@ import type { FocusArea } from '../lib/types';
 import { InstallCard } from './InstallCard';
 import { Icon } from './Icon';
 import { Logo, Wordmark } from './Logo';
+import { ACCENTS, BACKGROUNDS } from '../lib/theme';
 
 export function ProfileSettings() {
   const { state, dispatch } = useApp();
@@ -51,6 +52,59 @@ export function ProfileSettings() {
                 >
                   <Icon name={a.icon} size={14} />
                   {a.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
+        <p className="text-sm font-semibold text-white">
+          <Icon name="🎨" size="1.15em" className="icon-inline text-amber-300" />
+          Appearance
+        </p>
+        <div>
+          <span className="text-xs font-semibold text-slate-400">Accent colour</span>
+          <div className="flex gap-3 mt-2" role="radiogroup" aria-label="Accent colour">
+            {ACCENTS.map((a) => {
+              const on = (state.appearance?.accent ?? 'amber') === a.id;
+              return (
+                <button
+                  key={a.id}
+                  role="radio"
+                  aria-checked={on}
+                  aria-label={a.label}
+                  title={a.label}
+                  onClick={() => dispatch({ type: 'SET_APPEARANCE', appearance: { accent: a.id } })}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition ${on ? 'ring-2 ring-white ring-offset-2 ring-offset-canvas scale-110' : 'hover:scale-105'}`}
+                  style={{ background: a.hex }}
+                >
+                  {on && <Icon name="✓" size={16} strokeWidth={3} className="text-white animate-check" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div>
+          <span className="text-xs font-semibold text-slate-400">Background</span>
+          <div className="grid grid-cols-3 gap-2 mt-2" role="radiogroup" aria-label="Background">
+            {BACKGROUNDS.map((b) => {
+              const on = (state.appearance?.background ?? 'graphite') === b.id;
+              return (
+                <button
+                  key={b.id}
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => dispatch({ type: 'SET_APPEARANCE', appearance: { background: b.id } })}
+                  className={`rounded-xl border-2 p-1.5 text-left transition ${on ? 'border-amber-400' : 'border-white/10 hover:border-white/25'}`}
+                >
+                  <span className="block h-12 rounded-lg p-1.5 space-y-1" style={{ background: b.bg }}>
+                    <span className="block h-2.5 w-3/4 rounded" style={{ background: b.surface }} />
+                    <span className="block h-2.5 w-1/2 rounded" style={{ background: b.surface }} />
+                  </span>
+                  <span className="block text-xs font-bold text-white mt-1.5 px-0.5">{b.label}</span>
+                  <span className="block text-[10px] text-slate-500 px-0.5 leading-tight">{b.hint}</span>
                 </button>
               );
             })}

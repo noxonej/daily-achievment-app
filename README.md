@@ -18,12 +18,16 @@ unlockable achievements.
   focus minutes show up in Stats.
 - **Mood insights** — mood this week, and once there's enough data, what
   seems to lift it (finishing your quests, focus time).
-- **Avatar & wardrobe** — a drawn character with 70+ items across skin,
-  hair, hair colour, outfits, hats, eyewear, scenes and shoulder pets,
+- **Avatar & wardrobe** — a drawn character with 139 items across faces &
+  expressions (including "Match my mood", which follows your daily mood
+  check-in), skin, hair, hair colour, outfits, hats, eyewear, scenes and
+  shoulder pets,
   each Common, Rare, Epic or Legendary. Try anything on, buy with shards
   (earned from XP), unlock milestone gear through levels and streaks, and
   win chest-only items from reward chests (one per perfect day, perfect
   week and level-up).
+- **Appearance** — five accent colours and three backgrounds (Graphite,
+  Midnight, true Black) in Settings, applied before first paint.
 - **Five tabs** — Today, Plan, Money, Quests (weekly quests + long-term
   goals) and You (profile, stats, badges, settings).
 - **Undo** for deletes, **offline support** and an **install guide** for

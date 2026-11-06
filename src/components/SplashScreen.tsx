@@ -35,7 +35,7 @@ export function SplashScreen() {
   if (phase === 'gone') return null;
   return (
     <div
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0b0e17] ${phase === 'leaving' ? 'splash-out' : ''}`}
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-canvas ${phase === 'leaving' ? 'splash-out' : ''}`}
       onClick={() => setPhase('gone')}
       aria-hidden="true"
     >

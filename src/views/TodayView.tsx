@@ -166,7 +166,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <button
         onClick={() => onNavigate('quests')}
-        className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-gradient-to-r from-sky-500/10 to-indigo-500/10 px-4 py-3.5 text-left hover:border-white/20 transition"
+        className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left hover:border-white/20 transition"
       >
         <span className="flex items-center gap-3">
           <span className="shrink-0 w-10 h-10 rounded-xl bg-white/5 text-sky-300 flex items-center justify-center"><Icon name="🗡" size={20} /></span>
