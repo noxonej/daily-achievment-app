@@ -4,6 +4,7 @@ import { useApp } from '../store/AppContext';
 import { QUEST_LIBRARY, type LibraryQuest } from '../data/questLibrary';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import type { Frequency } from '../lib/types';
+import { Icon } from './Icon';
 
 interface QuestLibraryModalProps {
   open: boolean;
@@ -89,7 +90,7 @@ export function QuestLibraryModal({ open, onClose }: QuestLibraryModalProps) {
                         : 'border-white/10 bg-white/[0.03] hover:border-white/20'
                     }`}
                   >
-                    <span className="text-lg shrink-0">{item.icon}</span>
+                    <Icon name={item.icon} size={19} className="shrink-0 text-slate-300" />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold text-white truncate">{item.title}</span>
                       <span className="block text-xs text-slate-400 truncate">{item.description}</span>

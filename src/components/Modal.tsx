@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Icon } from './Icon';
 
 interface ModalProps {
   open: boolean;
@@ -20,7 +21,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
             className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition"
             aria-label="Close"
           >
-            ✕
+            <Icon name="✕" size={18} />
           </button>
         </div>
         <div className="p-5">{children}</div>

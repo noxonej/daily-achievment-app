@@ -1,5 +1,6 @@
 import { useApp } from '../store/AppContext';
 import { checkedPlanIds, formatPlanTime, planCategory, planItemsForDay, todayWeekday, weekdayLabel } from '../lib/weekPlan';
+import { Icon } from './Icon';
 
 /** Today's slice of the Week Plan, so the routine is visible the moment the app opens. */
 export function TodayPlanCard({ onOpen }: { onOpen: () => void }) {
@@ -16,7 +17,7 @@ export function TodayPlanCard({ onOpen }: { onOpen: () => void }) {
         className="w-full flex items-center justify-between rounded-2xl border border-dashed border-white/15 px-4 py-3.5 text-left hover:border-white/30 transition"
       >
         <span className="flex items-center gap-3">
-          <span className="text-xl">📅</span>
+          <span className="shrink-0 w-10 h-10 rounded-xl bg-white/5 text-amber-300 flex items-center justify-center"><Icon name="📅" size={20} /></span>
           <span>
             <span className="block text-sm font-semibold text-white">Plan your {weekdayLabel(day)}</span>
             <span className="block text-xs text-slate-400">Set up a Monday–Sunday routine in the Plan tab</span>
@@ -31,7 +32,7 @@ export function TodayPlanCard({ onOpen }: { onOpen: () => void }) {
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <div className="flex items-center justify-between mb-2.5">
         <p className="text-sm font-semibold text-white">
-          📅 {weekdayLabel(day)} plan{' '}
+          <Icon name="📅" size="1.15em" className="icon-inline text-amber-300" />{weekdayLabel(day)} plan{' '}
           <span className="text-slate-500 font-medium">
             · {doneCount}/{items.length}
           </span>
@@ -54,7 +55,7 @@ export function TodayPlanCard({ onOpen }: { onOpen: () => void }) {
                     done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/20'
                   }`}
                 >
-                  {done && '✓'}
+                  {done && <Icon name="✓" size={13} strokeWidth={3} />}
                 </span>
                 <span className={`shrink-0 w-16 text-xs font-bold tabular-nums ${done ? 'text-slate-600' : 'text-amber-300'}`}>
                   {item.time ? formatPlanTime(item.time) : '—'}

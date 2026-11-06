@@ -25,6 +25,7 @@ import {
 import { MoneyDonut } from '../components/MoneyDonut';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Icon, IconGrid } from '../components/Icon';
 
 const inputClass =
   'w-full rounded-xl bg-white/5 border border-white/10 px-3 h-11 text-[15px] text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 focus:bg-white/[0.07] transition';
@@ -123,7 +124,7 @@ function SetupCard() {
 
   return (
     <div className={`${card} p-5`}>
-      <p className="text-3xl mb-2">💰</p>
+      <div className="flex mb-2 text-amber-300"><Icon name="💰" size={34} strokeWidth={1.8} /></div>
       <h2 className="font-display text-xl font-bold text-white">Let's count your money</h2>
       <p className="text-sm text-slate-400 mt-1">
         Type how much you have right now. A rough number is fine, and you can change it any time.
@@ -196,14 +197,14 @@ function OverviewCard() {
       />
       <div className="grid grid-cols-2 gap-2.5 mt-4">
         <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-3">
-          <p className="text-xs font-bold text-emerald-300">✅ Can spend</p>
+          <p className="text-xs font-bold text-emerald-300"><Icon name="✅" size="1.15em" className="icon-inline" />Can spend</p>
           <p className={`font-display text-xl font-extrabold tabular-nums mt-1 ${spending < 0 ? 'text-red-300' : 'text-white'}`}>
             {fmt(spending, true)}
           </p>
           <p className="text-[11px] text-slate-400 mt-0.5">Your spending money</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <p className="text-xs font-bold text-slate-300">🔒 Don't touch</p>
+          <p className="text-xs font-bold text-slate-300"><Icon name="🔒" size="1.15em" className="icon-inline" />Don't touch</p>
           <p className="font-display text-xl font-extrabold text-white tabular-nums mt-1">{fmt(savings + investing, true)}</p>
           <p className="text-[11px] text-slate-400 mt-0.5">Savings + investments</p>
         </div>
@@ -267,7 +268,7 @@ function TodayCard({
             </div>
             {daysItLasts !== null && (
               <p className="text-xs text-slate-400 mt-2">
-                ⏳ At this limit, your spending money lasts about{' '}
+                <Icon name="⏳" size="1.15em" className="icon-inline" />At this limit, your spending money lasts about{' '}
                 <span className="font-bold text-white">
                   {daysItLasts} {daysItLasts === 1 ? 'day' : 'days'}
                 </span>
@@ -289,7 +290,8 @@ function TodayCard({
               <div key={c.id}>
                 <div className="flex items-baseline justify-between gap-2 text-sm">
                   <span className="text-slate-200 font-semibold">
-                    {c.icon} {c.name}
+                    <Icon name={c.icon} size="1.1em" className="icon-inline text-cyan-300" />
+                    {c.name}
                   </span>
                   <span className={`tabular-nums text-xs ${over ? 'text-red-300 font-bold' : 'text-slate-400'}`}>
                     {fmt(s)} / {fmt(c.dailyLimit)}
@@ -327,7 +329,7 @@ function TodayCard({
             const cat = money.categories.find((c) => c.id === e.categoryId);
             return (
               <li key={e.id} className="flex items-center gap-3 px-5 py-2.5">
-                <span className="text-lg">{cat?.icon ?? '💸'}</span>
+                <span className="shrink-0 w-9 h-9 rounded-lg bg-white/5 text-cyan-300 flex items-center justify-center"><Icon name={cat?.icon ?? '💸'} size={18} /></span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm text-slate-200 truncate">{e.note || cat?.name || 'Expense'}</span>
                   {e.note && <span className="block text-xs text-slate-500">{cat?.name}</span>}
@@ -339,7 +341,7 @@ function TodayCard({
                   title="Remove (puts the money back)"
                   className="shrink-0 w-8 h-8 -mr-2 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-white/5"
                 >
-                  ✕
+                  <Icon name="✕" size={15} />
                 </button>
               </li>
             );
@@ -370,7 +372,7 @@ function GoalsCard({
         onClick={onAdd}
         className="w-full flex items-center gap-3 rounded-2xl border border-dashed border-emerald-400/30 bg-emerald-500/[0.04] px-4 py-4 text-left hover:border-emerald-400/60 transition"
       >
-        <span className="text-3xl">🚗</span>
+        <span className="shrink-0 w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center"><Icon name="🚗" size={26} /></span>
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-bold text-white">Saving up for something?</span>
           <span className="block text-xs text-slate-400">Add a goal, like a car, and watch it fill up as you save</span>
@@ -383,7 +385,7 @@ function GoalsCard({
   return (
     <div className={card}>
       <div className="flex items-center justify-between px-5 pt-4 pb-1">
-        <p className="text-sm font-semibold text-white">🎯 Savings goals</p>
+        <p className="text-sm font-semibold text-white"><Icon name="🎯" size="1.15em" className="icon-inline text-emerald-300" />Savings goals</p>
         <button onClick={onAdd} className={`${secondaryBtn} px-2.5 py-1.5 text-xs`}>
           + Goal
         </button>
@@ -395,7 +397,7 @@ function GoalsCard({
           return (
             <div key={g.id} className="px-5 py-4">
               <div className="flex items-start gap-3">
-                <span className="text-4xl leading-none">{g.icon}</span>
+                <span className="shrink-0 w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center"><Icon name={g.icon} size={26} /></span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="font-display text-lg font-bold text-white truncate">{g.name}</p>
@@ -414,7 +416,7 @@ function GoalsCard({
               </div>
               <p className="text-xs text-slate-400 mt-2">
                 {p.reached ? (
-                  <span className="font-bold text-emerald-300">🎉 You did it! You've saved enough for your {g.name.toLowerCase()}.</span>
+                  <span className="font-bold text-emerald-300"><Icon name="🎉" size="1.15em" className="icon-inline" />You did it! You've saved enough for your {g.name.toLowerCase()}.</span>
                 ) : (
                   <>
                     <span className="font-bold text-white">{fmt(p.remaining, true)}</span> to go
@@ -547,7 +549,7 @@ function AccountsCard({
                 <span className="text-[15px] text-slate-200">{a.name}</span>
                 <span className="flex items-center gap-2">
                   <span className={`font-bold tabular-nums ${a.amount < 0 ? 'text-red-300' : 'text-white'}`}>{fmt(a.amount)}</span>
-                  <span className="text-slate-500 text-sm">✎</span>
+                  <Icon name="✎" size={14} className="text-slate-500" />
                 </span>
               </button>
             ))}
@@ -659,7 +661,8 @@ function ExpenseModal({ open, onClose }: { open: boolean; onClose: () => void })
                   }`}
                 >
                   <span className="block text-sm font-semibold text-white">
-                    {c.icon} {c.name}
+                    <Icon name={c.icon} size="1.1em" className="icon-inline text-cyan-300" />
+                    {c.name}
                   </span>
                   {c.dailyLimit > 0 && (
                     <span className={`block text-[11px] tabular-nums ${left < 0 ? 'text-red-300' : 'text-slate-400'}`}>
@@ -674,7 +677,7 @@ function ExpenseModal({ open, onClose }: { open: boolean; onClose: () => void })
 
         {wouldExceed && (
           <p className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-            ⚠️ This goes {fmt(cents - Math.max(catLeft, 0))} over your {cat!.name} limit for today
+            <Icon name="⚠" size="1.15em" className="icon-inline" />This goes {fmt(cents - Math.max(catLeft, 0))} over your {cat!.name} limit for today
             {totalLeft - cents < 0 ? ' and over your whole daily limit' : ''}. Do you really need it?
           </p>
         )}
@@ -785,27 +788,21 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
                     name === p.name ? 'bg-emerald-500/15 border-emerald-400/60 text-emerald-100' : 'bg-white/5 border-white/10 text-slate-300'
                   }`}
                 >
-                  {p.icon} {p.name}
+                  <Icon name={p.icon} size="1.15em" className="icon-inline" />
+                  {p.name}
                 </button>
               ))}
             </div>
           )}
 
           <div className="flex gap-2">
-            <select
-              value={icon}
-              onChange={(e) => setIcon(e.target.value)}
-              aria-label="Icon"
-              className="shrink-0 w-16 h-11 rounded-xl bg-white/5 border border-white/10 text-xl text-center focus:outline-none"
-            >
-              {Array.from(new Set([icon, ...GOAL_ICONS])).map((ic) => (
-                <option key={ic} value={ic}>
-                  {ic}
-                </option>
-              ))}
-            </select>
+            <span className="shrink-0 w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center">
+              <Icon name={icon} size={22} />
+            </span>
             <input value={name} onChange={(e) => setName(e.target.value)} aria-label="Goal name" placeholder="What are you saving for?" className={inputClass} />
           </div>
+
+          <IconGrid options={Array.from(new Set([icon, ...GOAL_ICONS]))} value={icon} onChange={setIcon} size="sm" />
 
           <Field label="How much does it cost?" hint="For a car, add a bit extra for insurance, tax and the first repairs.">
             <AmountInput value={target} onChange={setTarget} autoFocus={!existing} invalid={target !== '' && !targetCents} />
@@ -843,7 +840,7 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
 
           {preview && !preview.reached && preview.weeksLeft !== null && preview.eta && (
             <p className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2.5 text-sm text-emerald-100">
-              📅 You'll have it in about <span className="font-bold">{formatWeeks(preview.weeksLeft)}</span>, around{' '}
+              <Icon name="📅" size="1.15em" className="icon-inline" />You'll have it in about <span className="font-bold">{formatWeeks(preview.weeksLeft)}</span>, around{' '}
               <span className="font-bold">{preview.eta.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>.
             </p>
           )}
@@ -881,6 +878,7 @@ function LimitsModal({ open, onClose }: { open: boolean; onClose: () => void }) 
   const { money, dispatch, fmt } = useMoney();
   const [cats, setCats] = useState<Array<SpendCategory & { input: string }>>([]);
   const [days, setDays] = useState('7');
+  const [picking, setPicking] = useState<number | null>(null);
   const spendable = Math.max(0, totalByKind(money.accounts, 'spending'));
 
   useEffect(() => {
@@ -919,7 +917,7 @@ function LimitsModal({ open, onClose }: { open: boolean; onClose: () => void }) 
     <Modal open={open} onClose={onClose} title="Daily limit">
       <div className="space-y-5">
         <section className="rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] p-4">
-          <p className="text-sm font-bold text-white">🧮 Work it out for me</p>
+          <p className="text-sm font-bold text-white"><Icon name="🧮" size="1.15em" className="icon-inline text-cyan-300" />Work it out for me</p>
           <p className="text-xs text-slate-400 mt-0.5">
             You have <span className="font-bold text-slate-200">{fmt(spendable)}</span> spending money. How many days until you
             get more (allowance, pay day)?
@@ -956,19 +954,19 @@ function LimitsModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           </div>
           <div className="space-y-2">
             {cats.map((c, i) => (
-              <div key={c.id} className="flex items-center gap-2">
-                <select
-                  value={c.icon}
-                  onChange={(e) => update(i, { icon: e.target.value })}
-                  aria-label="Icon"
-                  className="shrink-0 w-14 h-11 rounded-xl bg-white/5 border border-white/10 text-lg text-center focus:outline-none"
+              <div key={c.id}>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPicking(picking === i ? null : i)}
+                  aria-label={`Change icon for ${c.name}`}
+                  aria-expanded={picking === i}
+                  className={`shrink-0 w-11 h-11 rounded-xl border flex items-center justify-center transition ${
+                    picking === i ? 'border-amber-400 bg-amber-500/15 text-amber-200' : 'border-white/10 bg-white/5 text-cyan-300 hover:border-white/25'
+                  }`}
                 >
-                  {Array.from(new Set([c.icon, ...ICON_CHOICES])).map((ic) => (
-                    <option key={ic} value={ic}>
-                      {ic}
-                    </option>
-                  ))}
-                </select>
+                  <Icon name={c.icon} size={19} />
+                </button>
                 <input
                   value={c.name}
                   onChange={(e) => update(i, { name: e.target.value })}
@@ -990,8 +988,22 @@ function LimitsModal({ open, onClose }: { open: boolean; onClose: () => void }) 
                   aria-label={`Remove ${c.name}`}
                   className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 disabled:opacity-20"
                 >
-                  ✕
+                  <Icon name="✕" size={15} />
                 </button>
+              </div>
+              {picking === i && (
+                <div className="mt-2 mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
+                  <IconGrid
+                    options={Array.from(new Set([c.icon, ...ICON_CHOICES]))}
+                    value={c.icon}
+                    onChange={(ic) => {
+                      update(i, { icon: ic });
+                      setPicking(null);
+                    }}
+                    size="sm"
+                  />
+                </div>
+              )}
               </div>
             ))}
           </div>

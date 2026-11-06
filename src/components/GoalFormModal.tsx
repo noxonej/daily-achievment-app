@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
 import type { GoalTimeframe, LongTermGoal } from '../lib/types';
+import { IconGrid } from './Icon';
 
 const ICONS = ['🎯', '📚', '💪', '🧘', '💰', '🎨', '🎵', '🌍', '💻', '🏃', '✍️', '🌱'];
 
@@ -48,17 +49,7 @@ export function GoalFormModal({ open, onClose, onSubmit, initial }: GoalFormModa
         <div>
           <label className="block text-xs font-semibold text-slate-400 mb-1.5">Icon</label>
           <div className="flex flex-wrap gap-2">
-            {ICONS.map((i) => (
-              <button
-                key={i}
-                onClick={() => setIcon(i)}
-                className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg border transition ${
-                  icon === i ? 'border-amber-400 bg-amber-500/20' : 'border-white/10 bg-white/5 hover:border-white/20'
-                }`}
-              >
-                {i}
-              </button>
-            ))}
+            <IconGrid options={ICONS} value={icon} onChange={setIcon} size="sm" />
           </div>
         </div>
 

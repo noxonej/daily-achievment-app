@@ -2,6 +2,7 @@ import type { Quest } from '../lib/types';
 import { FloatingReward } from './FloatingReward';
 import { useCompletionFx } from '../lib/useCompletionFx';
 import { questReward } from '../lib/rewards';
+import { Icon } from './Icon';
 
 interface WildcardQuestCardProps {
   quest: Quest;
@@ -27,12 +28,12 @@ export function WildcardQuestCard({ quest, completed, onToggle, periodKey }: Wil
             completed ? 'bg-emerald-500/20' : 'bg-white/5'
           } ${justCompleted ? 'animate-pop-in' : ''}`}
         >
-          {completed ? '✅' : quest.icon}
+          {completed ? <Icon name="✅" size={20} className="text-emerald-300" /> : <Icon name={quest.icon} size={19} className="text-slate-200" />}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-wide text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-full px-2 py-0.5">
-              🎲 Today's Wildcard
+              <Icon name="🎲" size="1.15em" className="icon-inline" />Today's Wildcard
             </span>
           </div>
           <p

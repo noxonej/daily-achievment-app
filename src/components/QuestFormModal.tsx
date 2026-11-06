@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Modal } from './Modal';
 import type { Difficulty, Frequency, Quest } from '../lib/types';
 import { DIFFICULTY_LABEL, DIFFICULTY_XP } from '../lib/xp';
+import { Icon, IconGrid } from './Icon';
+
 
 const ICONS = ['🎯', '📖', '🧘', '🏃', '💧', '🙏', '🥗', '🧹', '📚', '💪', '☎️', '🗓️', '🚀', '💻', '🎨', '🎵'];
 
@@ -65,17 +67,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
         <div>
           <label className="block text-xs font-semibold text-slate-400 mb-1.5">Icon</label>
           <div className="flex flex-wrap gap-2">
-            {ICONS.map((i) => (
-              <button
-                key={i}
-                onClick={() => setIcon(i)}
-                className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg border transition ${
-                  icon === i ? 'border-amber-400 bg-amber-500/20' : 'border-white/10 bg-white/5 hover:border-white/20'
-                }`}
-              >
-                {i}
-              </button>
-            ))}
+            <IconGrid options={ICONS} value={icon} onChange={setIcon} size="sm" />
           </div>
         </div>
 
@@ -170,7 +162,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
             className="w-4 h-4 accent-amber-500"
           />
           <span className="text-xs text-slate-300">
-            📝 Ask for a written note — writing something is what completes it
+            <Icon name="📝" size="1.15em" className="icon-inline text-amber-300" />Ask for a written note — writing something is what completes it
           </span>
         </label>
 

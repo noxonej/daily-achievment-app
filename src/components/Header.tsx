@@ -6,6 +6,7 @@ import { levelFromTotalXp } from '../lib/xp';
 import { useCountUp } from '../lib/useCountUp';
 import { CharacterAvatar } from './CharacterAvatar';
 import { CharacterModal } from './CharacterModal';
+import { Icon } from './Icon';
 
 export function Header() {
   const { state, stats } = useApp();
@@ -65,7 +66,7 @@ export function Header() {
                 streakTier >= 3 ? 'badge-shine' : ''
               }`}
             >
-              <span className={`leading-none ${streakTier >= 2 ? 'text-lg' : 'text-base'}`}>🔥</span>
+              <Icon name="🔥" size={streakTier >= 2 ? 18 : 16} className="text-orange-400" fill={streakTier >= 1 ? 'currentColor' : 'none'} />
               <span className="font-display font-bold text-orange-300 text-sm leading-none">
                 {stats.currentStreak}
               </span>

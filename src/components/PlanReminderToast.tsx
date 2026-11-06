@@ -1,6 +1,7 @@
 import { useApp } from '../store/AppContext';
 import { useLivePlanReminders } from '../lib/planReminders';
 import { formatPlanTime } from '../lib/weekPlan';
+import { Icon } from './Icon';
 
 export function PlanReminderToast() {
   const { state, dispatch } = useApp();
@@ -13,7 +14,7 @@ export function PlanReminderToast() {
         className="pointer-events-auto w-full max-w-md rounded-2xl border border-amber-400/40 bg-[#171b30]/95 backdrop-blur shadow-2xl p-4 animate-pop-in"
       >
         <div className="flex items-start gap-3">
-          <span className="text-2xl leading-none">🔔</span>
+          <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><Icon name="🔔" size={22} /></span>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-amber-300 tabular-nums">{formatPlanTime(reminder.time)} · Time for</p>
             <p className="text-white font-semibold break-words">{reminder.text}</p>
@@ -33,7 +34,7 @@ export function PlanReminderToast() {
             }}
             className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-sm font-bold text-white py-2 transition"
           >
-            ✓ Done
+            <Icon name="✓" size="1.15em" className="icon-inline" />Done
           </button>
         </div>
       </div>

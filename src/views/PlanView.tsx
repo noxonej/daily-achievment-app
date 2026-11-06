@@ -21,6 +21,7 @@ import {
 } from '../lib/planReminders';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Icon } from '../components/Icon';
 
 type Mode = 'day' | 'week';
 
@@ -71,7 +72,7 @@ export function PlanView() {
           onClick={() => setStarterOpen(true)}
           className="w-full flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-4 py-3.5 text-left hover:border-amber-400/60 transition"
         >
-          <span className="text-2xl">✨</span>
+          <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><Icon name="✨" size={20} /></span>
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-bold text-white">Start with a ready-made routine</span>
             <span className="block text-xs text-slate-400">Fills your week with a sample plan you can change however you like</span>
@@ -80,8 +81,8 @@ export function PlanView() {
         </button>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <ToolbarButton onClick={() => setRemindersOpen(true)}>🔔 Reminders</ToolbarButton>
-          {emptyDays.length > 0 && <ToolbarButton onClick={() => setStarterOpen(true)}>✨ Fill empty days</ToolbarButton>}
+          <ToolbarButton onClick={() => setRemindersOpen(true)}><Icon name="🔔" size="1.15em" className="icon-inline" />Reminders</ToolbarButton>
+          {emptyDays.length > 0 && <ToolbarButton onClick={() => setStarterOpen(true)}><Icon name="✨" size="1.15em" className="icon-inline" />Fill empty days</ToolbarButton>}
           <CategoryLegend />
         </div>
       )}
@@ -205,7 +206,7 @@ function RemindersModal({ open, onClose }: { open: boolean; onClose: () => void 
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="🔔 Reminders">
+    <Modal open={open} onClose={onClose} title="Reminders">
       <div className="space-y-5">
         <section>
           <p className="text-sm font-bold text-white">Phone alarms (recommended)</p>
@@ -362,7 +363,7 @@ function DayPanel({ day, isToday, checked }: { day: WeekdayId; isToday: boolean;
 
       {items.length === 0 ? (
         <div className="px-4 py-8 text-center">
-          <p className="text-3xl mb-2">🗓️</p>
+          <div className="flex justify-center mb-2 text-slate-500"><Icon name="🗓" size={30} strokeWidth={1.8} /></div>
           <p className="text-sm text-slate-300 font-semibold">Plan your {weekdayLabel(day)}</p>
           <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
             Add a time and what you'll do — like <span className="text-slate-300">7:00 Wake up</span>, then{' '}
@@ -419,7 +420,7 @@ function Checkbox({ done, onToggle, small }: { done: boolean; onToggle: () => vo
           done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/25 hover:border-white/50'
         }`}
       >
-        {done && '✓'}
+        {done && <Icon name="✓" size={small ? 11 : 14} strokeWidth={3} />}
       </span>
     </button>
   );
@@ -462,7 +463,7 @@ function ItemRow({
         aria-label="Edit"
         className="shrink-0 w-8 h-8 -mr-1.5 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
       >
-        ✎
+        <Icon name="✎" size={15} />
       </button>
     </li>
   );
@@ -669,7 +670,7 @@ function CopyDayModal({ open, from, onClose }: { open: boolean; from: WeekdayId;
                   on ? 'bg-amber-500 border-amber-500 text-white' : 'border-white/25'
                 }`}
               >
-                {on && '✓'}
+                {on && <Icon name="✓" size={13} strokeWidth={3} />}
               </span>
               {w.long}
             </button>

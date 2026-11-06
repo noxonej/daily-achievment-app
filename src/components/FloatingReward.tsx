@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Icon } from './Icon';
 
 interface FloatingRewardProps {
   xp: number;
@@ -16,7 +17,7 @@ export function FloatingReward({ xp, crit }: FloatingRewardProps) {
 
   return (
     <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 z-10 flex items-center gap-1.5 animate-float-up">
-      {crit && <span className="text-sm">⚡</span>}
+      {crit && <Icon name="⚡" size={15} className="text-amber-300" fill="currentColor" />}
       <span className={`font-display font-extrabold text-sm whitespace-nowrap ${crit ? 'text-amber-300' : 'text-emerald-300'}`}>
         +{xp} XP{crit ? ' CRIT!' : ''}
       </span>

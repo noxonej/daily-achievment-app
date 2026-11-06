@@ -8,6 +8,7 @@ import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { Confetti } from '../components/Confetti';
 import type { ViewId } from '../components/NavTabs';
+import { Icon } from '../components/Icon';
 
 export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch } = useApp();
@@ -58,12 +59,12 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
           </span>
           {isPerfect && (
             <span className="text-xs font-bold text-sky-300 bg-sky-500/10 border border-sky-500/30 rounded-full px-2.5 py-1">
-              🛡️ Perfect week
+              <Icon name="🛡" size="1.15em" className="icon-inline" />Perfect week
             </span>
           )}
         </div>
         <ProgressBar value={doneCount} max={Math.max(activeWeekly.length, 1)} />
-        <p className="text-[11px] text-slate-500 mt-2">🔄 New quests in {resetLabel}</p>
+        <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />New quests in {resetLabel}</p>
       </div>
 
       {wildcard && (
@@ -77,7 +78,7 @@ export function WeeklyView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
 
       {activeWeekly.length === 0 ? (
         <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
-          <p className="text-3xl mb-2">🏔️</p>
+          <div className="flex justify-center mb-2 text-slate-400"><Icon name="🏔" size={30} strokeWidth={1.8} /></div>
           <p className="text-white font-semibold mb-1">No weekly quests yet</p>
           <p className="text-slate-400 text-sm mb-4 px-6">
             Add a bigger challenge you can chip away at all week.

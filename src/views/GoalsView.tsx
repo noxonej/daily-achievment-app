@@ -3,6 +3,7 @@ import { useApp } from '../store/AppContext';
 import { ProgressBar } from '../components/ProgressBar';
 import { GoalFormModal } from '../components/GoalFormModal';
 import type { LongTermGoal } from '../lib/types';
+import { Icon } from '../components/Icon';
 
 const TIMEFRAME_LABEL: Record<string, string> = {
   weekly: 'This Week',
@@ -45,7 +46,7 @@ export function GoalsView() {
 
       {active.length === 0 && completed.length === 0 && (
         <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
-          <p className="text-3xl mb-2">🏆</p>
+          <div className="flex justify-center mb-2 text-amber-300"><Icon name="🏆" size={30} strokeWidth={1.8} /></div>
           <p className="text-white font-semibold mb-1">No goals yet</p>
           <p className="text-slate-400 text-sm mb-4 px-6">
             Set something big to work toward across weeks, months, or the year.
@@ -82,20 +83,20 @@ export function GoalsView() {
                 key={g.id}
                 className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
               >
-                <span className="text-xl">{g.icon}</span>
+                <Icon name={g.icon} size={20} className="shrink-0 text-emerald-300" />
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm font-semibold text-emerald-200 truncate">{g.title}</span>
                   <span className="block text-xs text-slate-400">
                     {g.target} {g.unit} · completed
                   </span>
                 </span>
-                <span className="text-lg">🏆</span>
+                <Icon name="🏆" size={18} className="text-amber-300" />
                 <button
                   onClick={() => dispatch({ type: 'DELETE_GOAL', goalId: g.id })}
                   className="text-slate-500 hover:text-red-400 text-sm px-1"
                   aria-label="Delete goal"
                 >
-                  ✕
+                  <Icon name="✕" size={15} />
                 </button>
               </div>
             ))}
@@ -133,7 +134,7 @@ function GoalCard({
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <div className="flex items-start gap-3">
-        <span className="text-2xl shrink-0">{goal.icon}</span>
+        <span className="shrink-0 w-10 h-10 rounded-xl bg-white/5 text-amber-300 flex items-center justify-center"><Icon name={goal.icon} size={20} /></span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-white text-[15px]">{goal.title}</p>
@@ -145,10 +146,10 @@ function GoalCard({
         </div>
         <div className="shrink-0 flex items-center gap-1">
           <button onClick={onEdit} className="text-slate-500 hover:text-white text-sm p-1" aria-label="Edit goal">
-            ✎
+            <Icon name="✎" size={15} />
           </button>
           <button onClick={onDelete} className="text-slate-500 hover:text-red-400 text-sm p-1" aria-label="Delete goal">
-            ✕
+            <Icon name="✕" size={15} />
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { todayKey } from '../lib/date';
+import { Icon } from './Icon';
 
 export function DailyNoteBox() {
   const { state, dispatch } = useApp();
@@ -25,7 +26,7 @@ export function DailyNoteBox() {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-sm font-semibold text-white mb-2.5">📓 Today's Note</p>
+      <p className="text-sm font-semibold text-white mb-2.5"><Icon name="📓" size="1.15em" className="icon-inline text-amber-300" />Today's Note</p>
       <textarea
         value={text}
         onChange={(e) => handleChange(e.target.value)}

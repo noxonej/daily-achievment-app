@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SyncSettings } from '../components/SyncSettings';
 import type { Frequency, Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
+import { Icon } from '../components/Icon';
 
 export function ManageView() {
   const { state, dispatch } = useApp();
@@ -70,7 +71,7 @@ export function ManageView() {
           onClick={() => setLibraryOpen(true)}
           className="shrink-0 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm px-3.5 py-2 transition"
         >
-          📚 Library
+          <Icon name="📚" size="1.15em" className="icon-inline" />Library
         </button>
       </div>
 
@@ -95,7 +96,7 @@ export function ManageView() {
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-white">🎲 Wildcard Quests</p>
+            <p className="text-sm font-semibold text-white"><Icon name="🎲" size="1.15em" className="icon-inline text-rose-300" />Wildcard Quests</p>
             <p className="text-xs text-slate-400 mt-0.5">
               Bonus surprise quests — one rotates daily, one rotates weekly. Don't count toward your streak.
             </p>
@@ -128,13 +129,13 @@ export function ManageView() {
             onClick={handleExport}
             className="flex-1 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm py-2.5 transition"
           >
-            ⬇ Export Backup
+            <Icon name="⬇" size="1.15em" className="icon-inline" />Export Backup
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex-1 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm py-2.5 transition"
           >
-            ⬆ Import Backup
+            <Icon name="⬆" size="1.15em" className="icon-inline" />Import Backup
           </button>
           <input
             ref={fileInputRef}
@@ -273,7 +274,7 @@ function QuestRow({
         quest.archived ? 'border-white/5 bg-white/[0.01] opacity-60' : 'border-white/10 bg-white/[0.03]'
       }`}
     >
-      <span className="text-lg shrink-0">{quest.icon}</span>
+      <Icon name={quest.icon} size={19} className="shrink-0 text-slate-300" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-white truncate">{quest.title}</p>
         <div className="flex items-center gap-1.5 mt-0.5">
@@ -285,18 +286,18 @@ function QuestRow({
       </div>
       <div className="shrink-0 flex items-center gap-1">
         <button onClick={onEdit} className="text-slate-500 hover:text-white text-sm p-1.5" aria-label="Edit">
-          ✎
+          <Icon name="✎" size={15} />
         </button>
         <button
           onClick={onArchiveToggle}
           className="text-slate-500 hover:text-white text-sm p-1.5"
           aria-label={quest.archived ? 'Unarchive' : 'Archive'}
         >
-          {quest.archived ? '↩' : '📦'}
+          {quest.archived ? <Icon name="🔄" size={15} /> : <Icon name="📦" size={15} />}
         </button>
         {quest.custom && (
           <button onClick={onDelete} className="text-slate-500 hover:text-red-400 text-sm p-1.5" aria-label="Delete">
-            ✕
+            <Icon name="✕" size={15} />
           </button>
         )}
       </div>

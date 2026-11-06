@@ -1,6 +1,7 @@
 import { useApp } from '../store/AppContext';
 import { HeatmapCalendar } from '../components/HeatmapCalendar';
 import { JournalHistory } from '../components/JournalHistory';
+import { Icon } from '../components/Icon';
 
 export function StatsView() {
   const { state, stats } = useApp();
@@ -32,7 +33,7 @@ export function StatsView() {
         {tiles.map((t) => (
           <div key={t.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">{t.icon}</span>
+              <Icon name={t.icon} size={17} className="text-amber-300" />
               <span className="text-xs text-slate-400 font-medium">{t.label}</span>
             </div>
             <p className="font-display text-2xl font-bold text-white">{t.value}</p>

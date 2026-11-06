@@ -1,3 +1,5 @@
+import { Icon } from './Icon';
+
 export type ViewId = 'today' | 'plan' | 'money' | 'weekly' | 'goals' | 'achievements' | 'stats' | 'manage';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
@@ -37,8 +39,8 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
                   isActive ? 'text-amber-300' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                <span className={`text-lg leading-none ${isActive ? 'scale-110' : ''} transition-transform`}>
-                  {tab.icon}
+                <span className={`leading-none ${isActive ? 'scale-110' : ''} transition-transform`}>
+                  <Icon name={tab.icon} size={20} strokeWidth={isActive ? 2.3 : 1.9} />
                 </span>
                 {tab.label}
               </button>

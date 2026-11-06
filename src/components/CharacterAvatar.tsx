@@ -1,5 +1,6 @@
 import type { Character } from '../lib/types';
 import { findCosmetic } from '../data/cosmetics';
+import { Icon } from './Icon';
 
 interface CharacterAvatarProps {
   character: Character;
@@ -39,19 +40,16 @@ export function CharacterAvatar({ character, size = 96 }: CharacterAvatarProps) 
           style={{ width: size * 0.16, height: Math.max(2, size * 0.03), top: '56%' }}
         />
         {hat?.value && (
-          <span
-            className="absolute leading-none select-none"
-            style={{ top: -size * 0.24, fontSize: size * 0.36 }}
-          >
-            {hat.value}
+          <span className="absolute leading-none select-none text-amber-200 drop-shadow" style={{ top: -size * 0.3 }}>
+            <Icon name={hat.value} size={size * 0.36} strokeWidth={2.2} />
           </span>
         )}
         {accessory?.value && (
           <span
-            className="absolute leading-none select-none"
-            style={{ bottom: -size * 0.06, right: -size * 0.1, fontSize: size * 0.26 }}
+            className="absolute leading-none select-none text-white drop-shadow rounded-full bg-[#0b0e17]/70 p-[3px]"
+            style={{ bottom: -size * 0.08, right: -size * 0.12 }}
           >
-            {accessory.value}
+            <Icon name={accessory.value} size={size * 0.22} strokeWidth={2.2} />
           </span>
         )}
       </div>

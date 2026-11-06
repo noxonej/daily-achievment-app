@@ -1,5 +1,6 @@
 import type { DayLog, Quest, WeekLog } from '../lib/types';
 import { formatShortDate } from '../lib/date';
+import { Icon } from './Icon';
 
 interface JournalEntry {
   sortKey: string;
@@ -69,7 +70,7 @@ export function JournalHistory({ dayLogs, weekLogs, quests }: JournalHistoryProp
         {recent.map((e, i) => (
           <div key={i} className="rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2.5">
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-sm">{e.icon}</span>
+              <Icon name={e.icon} size={14} className="text-slate-400" />
               <span className="text-xs font-semibold text-slate-300">{e.source}</span>
               <span className="text-[10px] text-slate-500 ml-auto">{e.dateLabel}</span>
             </div>

@@ -159,3 +159,11 @@ body {
     animation: none;
   }
 }
+
+/* Line icon sitting inline with text (replaces inline emoji). */
+.icon-inline {
+  display: inline-block;
+  vertical-align: -0.17em;
+  margin-right: 0.4em;
+  flex-shrink: 0;
+}

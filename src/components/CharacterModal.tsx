@@ -4,6 +4,7 @@ import { CharacterAvatar } from './CharacterAvatar';
 import { useApp } from '../store/AppContext';
 import { COSMETICS, type CosmeticItem } from '../data/cosmetics';
 import type { CosmeticSlot } from '../lib/types';
+import { Icon } from './Icon';
 
 const SLOT_TABS: Array<{ id: CosmeticSlot; label: string }> = [
   { id: 'outfit', label: 'Outfit' },
@@ -27,7 +28,7 @@ export function CharacterModal({ open, onClose }: CharacterModalProps) {
       <div className="flex flex-col items-center mb-4">
         <CharacterAvatar character={state.character} size={132} />
         <div className="mt-3 flex items-center gap-1.5 text-amber-300 font-display font-bold text-lg">
-          <span>💎</span>
+          <Icon name="💎" size={18} />
           <span>{stats.availableShards}</span>
           <span className="text-xs font-medium text-slate-400 font-sans">Shards</span>
         </div>
@@ -103,7 +104,7 @@ function CosmeticCard({
       ) : owned ? (
         <span className="text-[10px] font-bold text-slate-400">Equip</span>
       ) : (
-        <span className="text-[10px] font-bold text-amber-300">💎 {item.cost}</span>
+        <span className="text-[10px] font-bold text-amber-300"><Icon name="💎" size="1.1em" className="icon-inline !mr-0.5" />{item.cost}</span>
       )}
     </button>
   );
@@ -125,7 +126,7 @@ function ItemSwatch({ item }: { item: CosmeticItem }) {
   }
   return (
     <div className="w-8 h-8 flex items-center justify-center text-xl">
-      {item.value || <span className="text-white/20 text-xs">—</span>}
+      {item.value ? <Icon name={item.value} size={22} className="text-amber-200" /> : <span className="text-white/20 text-xs">—</span>}
     </div>
   );
 }

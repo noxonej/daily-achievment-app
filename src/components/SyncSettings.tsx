@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { ConfirmDialog } from './ConfirmDialog';
+import { Icon } from './Icon';
 
 export function SyncSettings() {
   const { syncConfig, syncStatus, syncMessage, connectSync, disconnectSync, syncNow, restoreFromGithub } = useApp();
@@ -24,7 +25,7 @@ export function SyncSettings() {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
       <div>
-        <p className="text-sm font-semibold text-white">☁️ Cloud Sync</p>
+        <p className="text-sm font-semibold text-white"><Icon name="☁" size="1.15em" className="icon-inline text-sky-300" />Cloud Sync</p>
         <p className="text-xs text-slate-400 mt-0.5">
           Save your progress to a private file in your own GitHub repo, so it follows you across
           devices and browsers — with full version history for free.

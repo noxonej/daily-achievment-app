@@ -1,6 +1,7 @@
 import type { Achievement } from '../lib/types';
 import { TIER_STYLES } from '../lib/achievementTiers';
 import { formatShortDate } from '../lib/date';
+import { Icon } from './Icon';
 
 interface AchievementBadgeProps {
   achievement: Achievement;
@@ -27,11 +28,11 @@ export function AchievementBadge({ achievement, unlockedAt, current, shineDelay 
             className={`badge-shine relative w-full h-full rounded-full flex items-center justify-center overflow-hidden ${tier.glow}`}
             style={{ background: tier.gradient, ['--shine-delay' as string]: `${shineDelay}s` }}
           >
-            <span className="text-2xl drop-shadow-sm">{achievement.icon}</span>
+            <Icon name={achievement.icon} size={28} strokeWidth={2.2} className="text-white drop-shadow" />
           </div>
         ) : (
           <div className="w-full h-full rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-            <span className="text-2xl grayscale opacity-30">{achievement.icon}</span>
+            <Icon name={achievement.icon} size={26} className="text-slate-600" />
           </div>
         )}
       </div>

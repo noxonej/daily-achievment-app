@@ -61,5 +61,5 @@ static files (Netlify, Vercel, GitHub Pages, etc).
 
 ## Tech
 
-React + TypeScript + Vite + Tailwind CSS. No backend — everything runs
+React + TypeScript + Vite + Tailwind CSS, with Lucide line icons. No backend — everything runs
 client-side and persists to `localStorage`.

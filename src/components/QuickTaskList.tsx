@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { todayKey } from '../lib/date';
+import { Icon } from './Icon';
 
 export function QuickTaskList() {
   const { state, dispatch } = useApp();
@@ -16,7 +17,7 @@ export function QuickTaskList() {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-sm font-semibold text-white mb-3">📋 Quick Tasks</p>
+      <p className="text-sm font-semibold text-white mb-3"><Icon name="📋" size="1.15em" className="icon-inline text-amber-300" />Quick Tasks</p>
 
       {tasks.length > 0 && (
         <div className="space-y-2 mb-3">
@@ -36,7 +37,7 @@ export function QuickTaskList() {
                   t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/20'
                 }`}
               >
-                {t.done && '✓'}
+                {t.done && <Icon name="✓" size={13} strokeWidth={3} />}
               </span>
               <span className={`flex-1 text-sm ${t.done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
                 {t.text}
@@ -49,7 +50,7 @@ export function QuickTaskList() {
                 className="shrink-0 text-slate-500 hover:text-red-400 text-xs px-1"
                 aria-label="Remove"
               >
-                ✕
+                <Icon name="✕" size={14} />
               </button>
             </div>
           ))}

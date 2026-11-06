@@ -12,6 +12,7 @@ import { DailyInsight } from '../components/DailyInsight';
 import { Confetti } from '../components/Confetti';
 import { TodayPlanCard } from '../components/TodayPlanCard';
 import type { ViewId } from '../components/NavTabs';
+import { Icon } from '../components/Icon';
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch, stats } = useApp();
@@ -59,7 +60,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           </span>
           {isPerfect && (
             <span className="text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1">
-              ✨ Perfect day
+              <Icon name="✨" size="1.15em" className="icon-inline" />Perfect day
             </span>
           )}
         </div>
@@ -68,7 +69,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           max={Math.max(activeDaily.length, 1)}
           colorClass="bg-gradient-to-r from-emerald-500 to-teal-400"
         />
-        <p className="text-[11px] text-slate-500 mt-2">🔄 New quests in {resetLabel}</p>
+        <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />New quests in {resetLabel}</p>
       </div>
 
       <TodayPlanCard onOpen={() => onNavigate('plan')} />
@@ -119,7 +120,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-gradient-to-r from-sky-500/10 to-indigo-500/10 px-4 py-3.5 text-left hover:border-white/20 transition"
       >
         <span className="flex items-center gap-3">
-          <span className="text-xl">🗡️</span>
+          <span className="shrink-0 w-10 h-10 rounded-xl bg-white/5 text-sky-300 flex items-center justify-center"><Icon name="🗡" size={20} /></span>
           <span>
             <span className="block text-sm font-semibold text-white">Weekly quests</span>
             <span className="block text-xs text-slate-400">Bigger goals, a whole week to finish</span>
@@ -138,7 +139,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 function EmptyState({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   return (
     <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
-      <p className="text-3xl mb-2">🗺️</p>
+      <div className="flex justify-center mb-2 text-slate-400"><Icon name="🗺" size={30} strokeWidth={1.8} /></div>
       <p className="text-white font-semibold mb-1">No daily quests yet</p>
       <p className="text-slate-400 text-sm mb-4 px-6">Add one to start building your streak.</p>
       <button

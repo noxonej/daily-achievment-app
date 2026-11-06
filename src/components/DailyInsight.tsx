@@ -1,5 +1,6 @@
 import { useApp } from '../store/AppContext';
 import { getDailyInsight } from '../lib/insights';
+import { Icon } from './Icon';
 
 interface DailyInsightProps {
   activeDailyCount: number;
@@ -18,7 +19,7 @@ export function DailyInsight({ activeDailyCount, doneCount }: DailyInsightProps)
 
   return (
     <div className={`rounded-2xl border bg-gradient-to-r ${TONE_CLASS[insight.tone]} px-4 py-3 flex items-center gap-3`}>
-      <span className="text-xl shrink-0">{insight.icon}</span>
+      <span className="shrink-0 w-9 h-9 rounded-lg bg-white/5 text-amber-300 flex items-center justify-center"><Icon name={insight.icon} size={19} /></span>
       <p className="text-sm text-slate-200 leading-snug">{insight.text}</p>
     </div>
   );

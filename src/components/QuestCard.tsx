@@ -4,6 +4,7 @@ import { InfoDisclosure } from './InfoDisclosure';
 import { FloatingReward } from './FloatingReward';
 import { useCompletionFx } from '../lib/useCompletionFx';
 import { questReward } from '../lib/rewards';
+import { Icon } from './Icon';
 
 interface QuestCardProps {
   quest: Quest;
@@ -30,7 +31,7 @@ export function QuestCard({ quest, completed, onToggle, periodKey }: QuestCardPr
             completed ? 'bg-emerald-500/20' : 'bg-white/5 group-hover:bg-white/10'
           } ${justCompleted ? 'animate-pop-in' : ''}`}
         >
-          {completed ? '✅' : quest.icon}
+          {completed ? <Icon name="✅" size={20} className="text-emerald-300" /> : <Icon name={quest.icon} size={19} className="text-slate-200" />}
         </div>
         <div className="min-w-0 flex-1">
           <p
