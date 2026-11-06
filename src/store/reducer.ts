@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -7,6 +7,7 @@ import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
 import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
 import { computeDerivedStats } from '../lib/stats';
+import { checkNote } from '../lib/questRules';
 import { createEmptyMoney, moneyId } from '../lib/money';
 
 export function createInitialState(): AppState {
@@ -29,7 +30,9 @@ export function createInitialState(): AppState {
     profile: { name: '', focusAreas: [], wakeTime: '07:00', bedTime: '22:30' },
     moods: {},
     focusMinutes: {},
-    appearance: { accent: 'amber', background: 'graphite' },
+    runs: [],
+    contentVersion: CONTENT_VERSION,
+    appearance: { accent: 'cyber', background: 'nebula' },
     createdAt: new Date().toISOString(),
   };
 }
@@ -151,6 +154,10 @@ export type Action =
   | { type: 'SET_MOOD'; date: string; mood: Mood | null }
   | { type: 'SET_APPEARANCE'; appearance: Partial<Appearance> }
   | { type: 'ADD_FOCUS_MINUTES'; date: string; minutes: number }
+  /** Sets today's (or this week's) total on a number-based quest; completes it at the target. */
+  | { type: 'SET_PROGRESS'; questId: string; value: number }
+  | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
+  | { type: 'DELETE_RUN'; runId: string }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
 
@@ -163,6 +170,9 @@ export interface NewQuestInput {
   category: string;
   promptForNote?: boolean;
   details?: string;
+  noteList?: number;
+  noteMinWords?: number;
+  measure?: QuestMeasure;
 }
 
 export interface NewGoalInput {
@@ -214,6 +224,56 @@ function recomputeWeeklyLog(quests: Quest[], completedQuestIds: string[], existi
   };
 }
 
+export const CONTENT_VERSION = 3;
+
+function mondayKey(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return todayKey(d);
+}
+
+export function currentProgress(state: AppState, quest: Quest): number {
+  const log = quest.frequency === 'daily' ? state.dayLogs[todayKey()] : state.weekLogs[weekKey()];
+  return log?.progress?.[quest.id] ?? 0;
+}
+
+/** Stores a number-quest total for the current day/week and completes (or un-completes) it against its target. */
+function withProgress(state: AppState, quest: Quest, total: number): AppState {
+  const target = quest.measure?.target ?? Infinity;
+  if (quest.frequency === 'daily') {
+    const key = todayKey();
+    const existing = state.dayLogs[key];
+    const completed = (existing?.completedQuestIds ?? []).filter((id) => id !== quest.id);
+    if (total >= target) completed.push(quest.id);
+    const progress = { ...(existing?.progress ?? {}), [quest.id]: total };
+    return { ...state, dayLogs: { ...state.dayLogs, [key]: recomputeDailyLog(state.quests, completed, { ...existing, progress }) } };
+  }
+  const key = weekKey();
+  const existing = state.weekLogs[key];
+  const completed = (existing?.completedQuestIds ?? []).filter((id) => id !== quest.id);
+  if (total >= target) completed.push(quest.id);
+  const progress = { ...(existing?.progress ?? {}), [quest.id]: total };
+  return { ...state, weekLogs: { ...state.weekLogs, [key]: recomputeWeeklyLog(state.quests, completed, { ...existing, progress }) } };
+}
+
+/**
+ * One-time upgrades for saves made before newer built-in content existed:
+ * v2 adds a daily steps quest and a weekly running quest, and turns the water quest into a glass counter.
+ */
+export function migrateContent(state: AppState): AppState {
+  const version = state.contentVersion ?? 1;
+  if (version >= CONTENT_VERSION) return state;
+  let quests = version >= 2 ? state.quests : state.quests.map((q) =>
+    !q.custom && q.title === 'Drink 2L of water' && !q.measure ? { ...q, measure: { unit: 'glasses' as const, target: 8 } } : q,
+  );
+  for (const extra of version >= 2 ? [] : buildDefaultQuests().filter((q) => q.id === 'default-steps' || q.id === 'default-run')) {
+    if (!quests.some((q) => q.id === extra.id)) quests = [...quests, extra];
+  }
+  // v3: the futuristic Nebula look becomes the default, unless a theme was picked by hand.
+  const appearance = state.appearance?.chosen ? state.appearance : { accent: 'cyber' as const, background: 'nebula' as const };
+  return { ...state, quests, runs: state.runs ?? [], appearance, contentVersion: CONTENT_VERSION };
+}
+
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'TOGGLE_QUEST': {
@@ -244,7 +304,9 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'SET_QUEST_NOTE': {
       const quest = state.quests.find((q) => q.id === action.questId);
       if (!quest) return state;
-      const hasContent = action.note.trim().length > 0;
+      // Only a real answer completes it (e.g. three different things for "Gratitude x3"), but whatever was typed is kept.
+      const hasText = action.note.trim().length > 0;
+      const hasContent = checkNote(quest, action.note).done;
 
       if (quest.frequency === 'daily') {
         const key = todayKey();
@@ -254,7 +316,7 @@ export function reducer(state: AppState, action: Action): AppState {
         if (hasContent && idx < 0) completed.push(quest.id);
         if (!hasContent && idx >= 0) completed.splice(idx, 1);
         const notes = { ...(existing?.notes ?? {}) };
-        if (hasContent) notes[quest.id] = action.note;
+        if (hasText) notes[quest.id] = action.note;
         else delete notes[quest.id];
         const newLog = recomputeDailyLog(state.quests, completed, { ...existing, notes });
         return { ...state, dayLogs: { ...state.dayLogs, [key]: newLog } };
@@ -266,7 +328,7 @@ export function reducer(state: AppState, action: Action): AppState {
         if (hasContent && idx < 0) completed.push(quest.id);
         if (!hasContent && idx >= 0) completed.splice(idx, 1);
         const notes = { ...(existing?.notes ?? {}) };
-        if (hasContent) notes[quest.id] = action.note;
+        if (hasText) notes[quest.id] = action.note;
         else delete notes[quest.id];
         const newLog = recomputeWeeklyLog(state.quests, completed, { ...existing, notes });
         return { ...state, weekLogs: { ...state.weekLogs, [key]: newLog } };
@@ -326,6 +388,9 @@ export function reducer(state: AppState, action: Action): AppState {
         createdAt: new Date().toISOString(),
         promptForNote: action.quest.promptForNote,
         details: action.quest.details,
+        noteList: action.quest.noteList,
+        noteMinWords: action.quest.noteMinWords,
+        measure: action.quest.measure,
       };
       return { ...state, quests: [...state.quests, q] };
     }
@@ -654,13 +719,44 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, profile: { ...state.profile, ...action.profile } };
 
     case 'SET_APPEARANCE':
-      return { ...state, appearance: { ...(state.appearance ?? { accent: 'amber', background: 'graphite' }), ...action.appearance } };
+      return { ...state, appearance: { ...(state.appearance ?? { accent: 'cyber', background: 'nebula' }), ...action.appearance, chosen: true } };
 
     case 'SET_MOOD': {
       const moods = { ...(state.moods ?? {}) };
       if (action.mood === null) delete moods[action.date];
       else moods[action.date] = action.mood;
       return { ...state, moods };
+    }
+
+    case 'SET_PROGRESS': {
+      const quest = state.quests.find((q) => q.id === action.questId);
+      if (!quest?.measure) return state;
+      return withProgress(state, quest, Math.max(0, action.value));
+    }
+
+    case 'ADD_RUN': {
+      if (!(action.km > 0)) return state;
+      const km = Math.round(action.km * 100) / 100;
+      const run: RunRecord = { id: `run-${Date.now()}`, date: todayKey(), km, seconds: Math.max(0, Math.round(action.seconds)), source: action.source };
+      let next: AppState = { ...state, runs: [...(state.runs ?? []), run] };
+      // A run counts toward every active distance quest, daily and weekly.
+      for (const q of next.quests.filter((x) => x.measure?.unit === 'km' && !x.archived)) {
+        next = withProgress(next, q, currentProgress(next, q) + km);
+      }
+      return next;
+    }
+
+    case 'DELETE_RUN': {
+      const run = (state.runs ?? []).find((r) => r.id === action.runId);
+      if (!run) return state;
+      let next: AppState = { ...state, runs: (state.runs ?? []).filter((r) => r.id !== action.runId) };
+      if (run.date === todayKey() || run.date >= mondayKey()) {
+        for (const q of next.quests.filter((x) => x.measure?.unit === 'km' && !x.archived)) {
+          const applies = q.frequency === 'weekly' ? run.date >= mondayKey() : run.date === todayKey();
+          if (applies) next = withProgress(next, q, Math.max(0, currentProgress(next, q) - run.km));
+        }
+      }
+      return next;
     }
 
     case 'ADD_FOCUS_MINUTES': {
@@ -672,8 +768,8 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'IMPORT_STATE': {
       // Backups from before first-run setup existed belong to existing users, so never re-run setup for them.
-      const merged = { ...createInitialState(), ...action.state, onboarded: action.state.onboarded ?? true };
-      return { ...merged, character: normalizeLook(merged.character) };
+      const merged = { ...createInitialState(), ...action.state, onboarded: action.state.onboarded ?? true, contentVersion: action.state.contentVersion ?? 1 };
+      return migrateContent({ ...merged, character: normalizeLook(merged.character) });
     }
 
     case 'RESET_ALL': {

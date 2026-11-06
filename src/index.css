@@ -45,6 +45,11 @@
 }
 
 :root {
+  --bg: #05060b;
+  --surface: #0f1220;
+  --raised: #171b2e;
+}
+:root[data-bg='graphite'] {
   --bg: #0c0d11;
   --surface: #15171d;
   --raised: #1d2027;
@@ -61,6 +66,10 @@
 }
 
 /* Accent colour: every amber-* utility follows the chosen accent (data-accent on <html>). */
+:root[data-accent='cyber'] {
+  --color-amber-50: #ecfeff; --color-amber-100: #cffafe; --color-amber-200: #a5f3fc; --color-amber-300: #67e8f9;
+  --color-amber-400: #22d3ee; --color-amber-500: #0891b2; --color-amber-600: #0e7490; --color-amber-900: #164e63;
+}
 :root[data-accent='ocean'] {
   --color-amber-50: #eff6ff; --color-amber-100: #dbeafe; --color-amber-200: #bfdbfe; --color-amber-300: #93c5fd;
   --color-amber-400: #60a5fa; --color-amber-500: #3b82f6; --color-amber-600: #2563eb; --color-amber-900: #1e3a8a;
@@ -80,7 +89,7 @@
 
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk", "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 .font-display {
@@ -174,6 +183,25 @@ body {
 .bg-grid {
   background-color: var(--bg);
 }
+/* Nebula (the default look): soft cyan and violet glows fixed behind the content. */
+:root:not([data-bg]) .bg-grid::before,
+:root[data-bg='nebula'] .bg-grid::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 0% 0%, rgba(34, 211, 238, 0.2), transparent 70%),
+    radial-gradient(55% 36% at 100% 4%, rgba(168, 85, 247, 0.22), transparent 70%),
+    radial-gradient(70% 45% at 50% 105%, rgba(59, 130, 246, 0.12), transparent 70%);
+}
+/* A faint neon glow on primary buttons in the Nebula look. */
+:root:not([data-bg]) .bg-amber-500:not(:disabled),
+:root[data-bg='nebula'] .bg-amber-500:not(:disabled) {
+  box-shadow: 0 8px 26px -12px var(--color-amber-400);
+}
+
 /* The dotted pattern is part of the Midnight look only; Graphite and Black stay clean. */
 :root[data-bg='midnight'] .bg-grid {
   background-image:
@@ -384,3 +412,10 @@ body {
 }
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.animate-pin-shake { animation: pin-shake 0.4s ease-in-out; }

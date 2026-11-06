@@ -1,3 +1,10 @@
+export type MeasureUnit = 'steps' | 'km' | 'glasses' | 'reps' | 'minutes' | 'pages';
+
+export interface QuestMeasure {
+  unit: MeasureUnit;
+  target: number;
+}
+
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'epic';
 
 export type Frequency = 'daily' | 'weekly';
@@ -22,6 +29,12 @@ export interface Quest {
   promptForNote?: boolean;
   /** Longer clarifying explanation, hidden behind a tap/click "more info" affordance on the card. */
   details?: string;
+  /** Written quests: number of separate entries required (e.g. 3 for "Gratitude x3"). */
+  noteList?: number;
+  /** Written quests: minimum number of real words. */
+  noteMinWords?: number;
+  /** Number-based quests (steps, km, glasses…): completes when today's/this week's total reaches the target. */
+  measure?: QuestMeasure;
 }
 
 export type GoalTimeframe = 'weekly' | 'monthly' | 'yearly' | 'custom';
@@ -57,6 +70,8 @@ export interface DayLog {
   freeNote?: string;
   /** One-off, non-recurring to-dos for the day. */
   quickTasks?: QuickTask[];
+  /** Progress on number-based quests, keyed by quest id. */
+  progress?: Record<string, number>;
 }
 
 export interface WeekLog {
@@ -66,6 +81,7 @@ export interface WeekLog {
   perfectWeek: boolean;
   weeklyQuestCount: number;
   notes?: Record<string, string>;
+  progress?: Record<string, number>;
 }
 
 export interface UnlockedAchievement {
@@ -150,11 +166,21 @@ export interface MoneyState {
   goals: SavingsGoal[];
 }
 
-export type Accent = 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose';
-export type BgTheme = 'graphite' | 'midnight' | 'black';
+export interface RunRecord {
+  id: string;
+  date: string;
+  km: number;
+  seconds: number;
+  source: 'gps' | 'manual';
+}
+
+export type Accent = 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose';
+export type BgTheme = 'nebula' | 'graphite' | 'midnight' | 'black';
 export interface Appearance {
   accent: Accent;
   background: BgTheme;
+  /** True once the user picked a theme themselves (so new defaults don't override it). */
+  chosen?: boolean;
 }
 
 export type FocusArea = 'health' | 'mind' | 'study' | 'money' | 'work' | 'sleep';
@@ -194,6 +220,10 @@ export interface AppState {
   moods: Record<string, Mood>;
   /** Minutes of focus-timer time completed, keyed by YYYY-MM-DD. */
   focusMinutes: Record<string, number>;
+  /** Runs recorded with the run tracker (or added by hand). */
+  runs: RunRecord[];
+  /** Bumped when built-in content changes, so existing saves get new default quests once. */
+  contentVersion: number;
   appearance: Appearance;
   createdAt: string;
 }

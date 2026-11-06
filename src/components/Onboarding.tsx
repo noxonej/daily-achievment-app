@@ -14,10 +14,11 @@ const timeInput =
 
 /** First-run setup: a few questions, then a personal week plan is built and the app opens. */
 export function Onboarding() {
-  const { dispatch } = useApp();
-  const [step, setStep] = useState<Step>('welcome');
+  const { state, dispatch } = useApp();
+  // If the name was already given when the account was created, skip straight to the goals.
+  const [step, setStep] = useState<Step>(() => (state.profile?.name ? 'focus' : 'welcome'));
   const [dir, setDir] = useState<'right' | 'left'>('right');
-  const [name, setName] = useState('');
+  const [name, setName] = useState(state.profile?.name ?? '');
   const [areas, setAreas] = useState<FocusArea[]>([]);
   const [wake, setWake] = useState('07:00');
   const [bed, setBed] = useState('22:30');
@@ -54,7 +55,7 @@ export function Onboarding() {
         {step !== 'welcome' && (
           <div className="flex items-center gap-3 mb-6">
             <button
-              onClick={() => go(STEPS[index - 1])}
+              onClick={() => go(STEPS[Math.max(0, index - 1)])}
               aria-label="Back"
               className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10"
             >

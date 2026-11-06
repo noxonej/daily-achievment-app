@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Header } from './components/Header';
 import { NavTabs, type ViewId } from './components/NavTabs';
 import { NewDayBanner } from './components/NewDayBanner';
@@ -10,19 +10,45 @@ import { QuestsView } from './views/QuestsView';
 import { YouView } from './views/YouView';
 import { PlanReminderToast } from './components/PlanReminderToast';
 import { SplashScreen } from './components/SplashScreen';
-import { Onboarding } from './components/Onboarding';
 import { FocusTimer } from './components/FocusTimer';
+import { RunTracker } from './components/RunTracker';
 import { UndoToast } from './components/UndoToast';
-import { Wardrobe } from './components/Wardrobe';
 import { useApp } from './store/AppContext';
+import { useAuth } from './store/AuthContext';
 import { focusTimer } from './lib/focusTimer';
 import { useApplyAppearance } from './lib/theme';
+import { useWardrobeOpen } from './lib/wardrobe';
+
+// Loaded only when needed, so the app opens faster.
+const Onboarding = lazy(() => import('./components/Onboarding').then((m) => ({ default: m.Onboarding })));
+const Wardrobe = lazy(() => import('./components/Wardrobe').then((m) => ({ default: m.Wardrobe })));
 
 const VIEW_ORDER: ViewId[] = ['today', 'plan', 'money', 'quests', 'you'];
 
 export default function App() {
-  const { state } = useApp();
+  const { state, stats } = useApp();
+  const auth = useAuth();
+  // Keep the account picker's picture, name and level current.
+  const lookKey = JSON.stringify(state.character);
+  useEffect(() => {
+    if (!auth) return;
+    const { account } = auth;
+    const name = state.profile?.name?.trim();
+    if (JSON.stringify(account.look) !== lookKey || account.level !== stats.level || (name && name !== account.name)) {
+      auth.update({ look: state.character, level: stats.level, ...(name ? { name } : {}) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookKey, stats.level, state.profile?.name]);
   useApplyAppearance(state.appearance);
+  const wardrobeOpen = useWardrobeOpen();
+  // Fetch the lazy screens in the background so they're cached for offline use.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      void import('./components/Wardrobe');
+      void import('./components/Onboarding');
+    }, 2500);
+    return () => clearTimeout(t);
+  }, []);
   // The launch animation is for returning users; someone finishing setup has just seen the logo.
   const [launchedOnboarded] = useState(() => state.onboarded);
   // Home-screen shortcuts open straight into a tab (?view=plan) or the focus timer (?focus=1).
@@ -63,9 +89,20 @@ export default function App() {
       <CelebrationOverlay />
       <PlanReminderToast />
       <FocusTimer />
+      <RunTracker />
       <UndoToast />
-      <Wardrobe />
-      {!state.onboarded ? <Onboarding /> : launchedOnboarded ? <SplashScreen /> : null}
+      {wardrobeOpen && (
+        <Suspense fallback={null}>
+          <Wardrobe />
+        </Suspense>
+      )}
+      {!state.onboarded ? (
+        <Suspense fallback={<div className="fixed inset-0 z-[90] bg-canvas" />}>
+          <Onboarding />
+        </Suspense>
+      ) : launchedOnboarded ? (
+        <SplashScreen />
+      ) : null}
     </div>
   );
 }

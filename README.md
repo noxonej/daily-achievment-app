@@ -18,7 +18,7 @@ unlockable achievements.
   focus minutes show up in Stats.
 - **Mood insights** — mood this week, and once there's enough data, what
   seems to lift it (finishing your quests, focus time).
-- **Avatar & wardrobe** — a drawn character with 139 items across faces &
+- **Avatar & wardrobe** — a drawn character with 149 items across faces &
   expressions (including "Match my mood", which follows your daily mood
   check-in), skin, hair, hair colour, outfits, hats, eyewear, scenes and
   shoulder pets,
@@ -26,10 +26,23 @@ unlockable achievements.
   (earned from XP), unlock milestone gear through levels and streaks, and
   win chest-only items from reward chests (one per perfect day, perfect
   week and level-up).
-- **Appearance** — five accent colours and three backgrounds (Graphite,
-  Midnight, true Black) in Settings, applied before first paint.
+- **Appearance** — the futuristic Nebula look by default (with a Space
+  Grotesk heading font), six accent colours and four backgrounds (Nebula,
+  Graphite, Midnight, true Black) in Settings, applied before first paint.
 - **Five tabs** — Today, Plan, Money, Quests (weekly quests + long-term
   goals) and You (profile, stats, badges, settings).
+- **Accounts on the device** — create an account with an optional 4-digit
+  PIN, "remember me", several accounts per phone (each with its own data),
+  switch / sign out / delete. Existing saves move into the first account.
+- **Number quests & running** — step, water, push-up, page and minute
+  goals that complete at their target, plus a GPS run tracker (distance,
+  time, pace, keeps the screen awake, filters GPS jumps) that feeds
+  distance quests; runs can also be added by hand.
+- **Real answers for written quests** — "Gratitude x3" needs three
+  different answers with real words, journals need 10 real words, so a
+  "." no longer completes them.
+- **Weekly recap** — your week in numbers in Stats, and last week's recap
+  on Today every Monday.
 - **Undo** for deletes, **offline support** and an **install guide** for
   putting the app on your home screen, plus home-screen shortcuts.
 

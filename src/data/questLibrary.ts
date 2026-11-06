@@ -1,4 +1,4 @@
-import type { Difficulty, Frequency } from '../lib/types';
+import type { Difficulty, Frequency, QuestMeasure } from '../lib/types';
 
 export interface LibraryQuest {
   title: string;
@@ -8,9 +8,18 @@ export interface LibraryQuest {
   icon: string;
   category: string;
   promptForNote?: boolean;
+  measure?: QuestMeasure;
+  noteList?: number;
 }
 
 export const QUEST_LIBRARY: LibraryQuest[] = [
+  // Number goals: log progress and they complete at the target
+  { title: 'Walk 10,000 steps', description: "Enter today's total from your phone's Health app.", frequency: 'daily', difficulty: 'hard', icon: '👟', category: 'Body', measure: { unit: 'steps', target: 10000 } },
+  { title: 'Run 2 km', description: 'Track it with GPS or add it by hand.', frequency: 'daily', difficulty: 'hard', icon: '🏃', category: 'Body', measure: { unit: 'km', target: 2 } },
+  { title: 'Do 50 push-ups', description: 'Spread them across the day if you need to.', frequency: 'daily', difficulty: 'medium', icon: '💪', category: 'Body', measure: { unit: 'reps', target: 50 } },
+  { title: 'Read 20 pages', description: 'Any book counts.', frequency: 'daily', difficulty: 'medium', icon: '📖', category: 'Mind', measure: { unit: 'pages', target: 20 } },
+  { title: 'Run 15 km this week', description: 'Every tracked run counts toward it.', frequency: 'weekly', difficulty: 'epic', icon: '🏃', category: 'Body', measure: { unit: 'km', target: 15 } },
+  { title: '150 active minutes', description: 'The weekly amount doctors recommend.', frequency: 'weekly', difficulty: 'hard', icon: '🤸', category: 'Body', measure: { unit: 'minutes', target: 150 } },
   // Daily — Mind
   { title: 'Digital sunset', description: 'No screens for the hour before bed.', frequency: 'daily', difficulty: 'medium', icon: '🌙', category: 'Mind' },
   { title: 'Read the news for 10 minutes', description: 'Stay informed, then stop.', frequency: 'daily', difficulty: 'easy', icon: '📰', category: 'Mind' },

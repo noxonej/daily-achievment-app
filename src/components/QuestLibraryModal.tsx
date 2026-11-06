@@ -80,6 +80,8 @@ export function QuestLibraryModal({ open, onClose }: QuestLibraryModalProps) {
                           icon: item.icon,
                           category: item.category,
                           promptForNote: item.promptForNote,
+                          measure: item.measure,
+                          noteList: item.noteList,
                         },
                       });
                     }}

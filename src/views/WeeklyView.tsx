@@ -4,6 +4,7 @@ import { weekKey } from '../lib/date';
 import { useWeeklyResetLabel } from '../lib/useResetCountdown';
 import { QuestCard } from '../components/QuestCard';
 import { NoteQuestCard } from '../components/NoteQuestCard';
+import { MeasureQuestCard } from '../components/MeasureQuestCard';
 import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { Confetti } from '../components/Confetti';
@@ -99,7 +100,16 @@ export function WeeklyView({ onNavigate, embedded = false }: { onNavigate: (v: V
       ) : (
         <div className="space-y-2.5 rows-stagger">
           {sorted.map((quest) =>
-            quest.promptForNote ? (
+            quest.measure ? (
+              <MeasureQuestCard
+                key={quest.id}
+                quest={quest}
+                value={log?.progress?.[quest.id] ?? 0}
+                completed={completed.includes(quest.id)}
+                onSet={(value) => dispatch({ type: 'SET_PROGRESS', questId: quest.id, value })}
+                periodKey={key}
+              />
+            ) : quest.promptForNote ? (
               <NoteQuestCard
                 key={quest.id}
                 quest={quest}

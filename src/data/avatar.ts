@@ -60,6 +60,16 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'exp-cat', slot: 'expression', name: 'Cat face', rarity: 'epic', unlock: chest, style: 'cat' },
   { id: 'exp-robot', slot: 'expression', name: 'Robot eyes', rarity: 'epic', unlock: chest, style: 'robot' },
   { id: 'exp-fire', slot: 'expression', name: 'Fire eyes', rarity: 'legendary', unlock: streak(21), style: 'fire' },
+  { id: 'exp-sideeye', slot: 'expression', name: 'Side-eye', rarity: 'common', unlock: free, style: 'sideeye' },
+  { id: 'exp-bruh', slot: 'expression', name: 'Bruh', rarity: 'common', unlock: free, style: 'bruh' },
+  { id: 'exp-nerd', slot: 'expression', name: 'Nerd', rarity: 'common', unlock: shop(100), style: 'nerd' },
+  { id: 'exp-unbothered', slot: 'expression', name: 'Unbothered', rarity: 'common', unlock: shop(120), style: 'unbothered' },
+  { id: 'exp-sigma', slot: 'expression', name: 'Sigma', rarity: 'rare', unlock: shop(250), style: 'sigma' },
+  { id: 'exp-pleading', slot: 'expression', name: 'Pleading', rarity: 'rare', unlock: shop(220), style: 'pleading' },
+  { id: 'exp-rizz', slot: 'expression', name: 'Rizz', rarity: 'rare', unlock: chest, style: 'rizz' },
+  { id: 'exp-crylaugh', slot: 'expression', name: 'Crying laughing', rarity: 'rare', unlock: chest, style: 'crylaugh' },
+  { id: 'exp-dead', slot: 'expression', name: "I'm dead", rarity: 'epic', unlock: chest, style: 'dead' },
+  { id: 'exp-main', slot: 'expression', name: 'Main character', rarity: 'epic', unlock: level(15), style: 'maincharacter' },
 
   // Hair styles
   { id: 'hair-short', slot: 'hair', name: 'Classic', rarity: 'common', unlock: free, style: 'short' },

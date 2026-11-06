@@ -3,6 +3,7 @@ import { useApp } from '../store/AppContext';
 import { FOCUS_AREAS } from '../lib/routine';
 import type { FocusArea } from '../lib/types';
 import { InstallCard } from './InstallCard';
+import { AccountSettings } from './AccountSettings';
 import { Icon } from './Icon';
 import { Logo, Wordmark } from './Logo';
 import { ACCENTS, BACKGROUNDS } from '../lib/theme';
@@ -19,6 +20,8 @@ export function ProfileSettings() {
 
   return (
     <div className="space-y-4">
+      <AccountSettings />
+
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
         <p className="text-sm font-semibold text-white">
           <Icon name="👨" size="1.15em" className="icon-inline text-amber-300" />
@@ -68,7 +71,7 @@ export function ProfileSettings() {
           <span className="text-xs font-semibold text-slate-400">Accent colour</span>
           <div className="flex gap-3 mt-2" role="radiogroup" aria-label="Accent colour">
             {ACCENTS.map((a) => {
-              const on = (state.appearance?.accent ?? 'amber') === a.id;
+              const on = (state.appearance?.accent ?? 'cyber') === a.id;
               return (
                 <button
                   key={a.id}
@@ -90,7 +93,7 @@ export function ProfileSettings() {
           <span className="text-xs font-semibold text-slate-400">Background</span>
           <div className="grid grid-cols-3 gap-2 mt-2" role="radiogroup" aria-label="Background">
             {BACKGROUNDS.map((b) => {
-              const on = (state.appearance?.background ?? 'graphite') === b.id;
+              const on = (state.appearance?.background ?? 'nebula') === b.id;
               return (
                 <button
                   key={b.id}

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState, useCallback, type ReactNode } from 'react';
 import type { AppState } from '../lib/types';
-import { reducer, createInitialState, type Action } from './reducer';
+import { reducer, createInitialState, migrateContent, type Action } from './reducer';
 import { normalizeLook } from '../data/avatar';
 import { computeDerivedStats } from '../lib/stats';
 import { ACHIEVEMENTS } from '../data/achievements';
@@ -14,11 +14,12 @@ import {
   type SyncConfig,
 } from '../lib/githubSync';
 
-const STORAGE_KEY = 'daily-quest-app-state-v1';
+/** Where an account's data lives; the original (pre-accounts) key is kept for the first account so nothing moves. */
+export const LEGACY_STORAGE_KEY = 'daily-quest-app-state-v1';
 
-function loadState(): AppState {
+function loadState(storageKey: string): AppState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return createInitialState();
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.quests)) {
@@ -27,9 +28,9 @@ function loadState(): AppState {
     // Merge over fresh defaults so saves from before a schema change (new
     // fields like character/wildcardEnabled) don't crash on load.
     // Saves from before first-run setup existed are existing users: mark them onboarded.
-    const merged = { ...createInitialState(), onboarded: true, ...parsed } as AppState;
+    const merged = { ...createInitialState(), onboarded: true, contentVersion: 1, ...parsed } as AppState;
     // Older saves used a different character format; map them onto the current avatar slots.
-    return { ...merged, character: normalizeLook(merged.character) };
+    return migrateContent({ ...merged, character: normalizeLook(merged.character) });
   } catch {
     return createInitialState();
   }
@@ -66,8 +67,8 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, loadState);
+export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { children: ReactNode; storageKey?: string }) {
+  const [state, dispatch] = useReducer(reducer, storageKey, loadState);
   const stats = useMemo(() => computeDerivedStats(state), [state]);
 
   const [celebrations, setCelebrations] = useState<Celebration[]>([]);
@@ -168,11 +169,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(storageKey, JSON.stringify(state));
     } catch {
       // storage full or unavailable; ignore, in-memory state still works this session
     }
-  }, [state]);
+  }, [state, storageKey]);
 
   // Level-up celebration
   useEffect(() => {

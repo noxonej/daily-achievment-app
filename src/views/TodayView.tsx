@@ -4,6 +4,7 @@ import { todayKey, formatDisplayDate } from '../lib/date';
 import { useDailyResetLabel } from '../lib/useResetCountdown';
 import { QuestCard } from '../components/QuestCard';
 import { NoteQuestCard } from '../components/NoteQuestCard';
+import { MeasureQuestCard } from '../components/MeasureQuestCard';
 import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { QuickTaskList } from '../components/QuickTaskList';
@@ -16,7 +17,11 @@ import { Icon } from '../components/Icon';
 import { NowNextCard } from '../components/NowNextCard';
 import { MoodCheckIn } from '../components/MoodCheckIn';
 import { InstallCard } from '../components/InstallCard';
+import { WeekRecap } from '../components/WeekRecap';
+
+const RECAP_KEY = 'dayforge-recap-dismissed';
 import { focusTimer } from '../lib/focusTimer';
+import { runTracker } from '../lib/runTracker';
 import { setIntent } from '../lib/intents';
 
 function greeting(d: Date = new Date()): string {
@@ -44,6 +49,14 @@ function QuickAction({ icon, label, onClick }: { icon: string; label: string; on
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch, stats } = useApp();
   const resetLabel = useDailyResetLabel();
+  // Every Monday, last week's recap sits at the top of Today until dismissed.
+  const [showRecap, setShowRecap] = useState(() => {
+    try {
+      return new Date().getDay() === 1 && localStorage.getItem(RECAP_KEY) !== todayKey() && Object.keys(state.dayLogs).length > 0;
+    } catch {
+      return false;
+    }
+  });
   const key = todayKey();
   const log = state.dayLogs[key];
   const completed = log?.completedQuestIds ?? [];
@@ -84,19 +97,35 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <InstallCard />
 
+      {showRecap && (
+        <WeekRecap
+          offset={-1}
+          dismissible
+          onDismiss={() => {
+            try {
+              localStorage.setItem(RECAP_KEY, key);
+            } catch {
+              // ignore
+            }
+            setShowRecap(false);
+          }}
+        />
+      )}
+
       <NowNextCard onOpenPlan={() => onNavigate('plan')} />
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <QuickAction icon="⏱" label="Focus" onClick={() => focusTimer.open()} />
+        <QuickAction icon="🏃" label="Run" onClick={() => runTracker.open()} />
         <QuickAction
           icon="💸"
-          label="Log spending"
+          label="Spent"
           onClick={() => {
             setIntent('add-expense');
             onNavigate('money');
           }}
         />
-        <QuickAction icon="📅" label="Week plan" onClick={() => onNavigate('plan')} />
+        <QuickAction icon="📅" label="Plan" onClick={() => onNavigate('plan')} />
       </div>
 
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -139,7 +168,16 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       ) : (
         <div className="space-y-2.5 rows-stagger">
           {sorted.map((quest) =>
-            quest.promptForNote ? (
+            quest.measure ? (
+              <MeasureQuestCard
+                key={quest.id}
+                quest={quest}
+                value={log?.progress?.[quest.id] ?? 0}
+                completed={completed.includes(quest.id)}
+                onSet={(value) => dispatch({ type: 'SET_PROGRESS', questId: quest.id, value })}
+                periodKey={key}
+              />
+            ) : quest.promptForNote ? (
               <NoteQuestCard
                 key={quest.id}
                 quest={quest}

@@ -3,6 +3,8 @@ import { Modal } from './Modal';
 import type { Difficulty, Frequency, Quest } from '../lib/types';
 import { DIFFICULTY_LABEL, DIFFICULTY_XP } from '../lib/xp';
 import { Icon, IconGrid } from './Icon';
+import { UNIT_META } from '../lib/measure';
+import type { MeasureUnit, QuestMeasure } from '../lib/types';
 
 
 const ICONS = ['🎯', '📖', '🧘', '🏃', '💧', '🙏', '🥗', '🧹', '📚', '💪', '☎️', '🗓️', '🚀', '💻', '🎨', '🎵'];
@@ -19,6 +21,7 @@ interface QuestFormModalProps {
     category: string;
     promptForNote?: boolean;
     details?: string;
+    measure?: QuestMeasure;
   }) => void;
   initial?: Quest;
   defaultFrequency?: Frequency;
@@ -32,7 +35,10 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
   const [difficulty, setDifficulty] = useState<Difficulty>(initial?.difficulty ?? 'easy');
   const [icon, setIcon] = useState(initial?.icon ?? '🎯');
   const [category, setCategory] = useState(initial?.category ?? 'Custom');
-  const [promptForNote, setPromptForNote] = useState(initial?.promptForNote ?? false);
+  const [kind, setKind] = useState<'check' | 'note' | 'number'>(initial?.measure ? 'number' : initial?.promptForNote ? 'note' : 'check');
+  const [unit, setUnit] = useState<MeasureUnit>(initial?.measure?.unit ?? 'reps');
+  const [target, setTarget] = useState(initial?.measure ? String(initial.measure.target) : '');
+  const targetNum = Number(target.replace(',', '.'));
 
   function reset() {
     setTitle('');
@@ -42,11 +48,14 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
     setDifficulty('easy');
     setIcon('🎯');
     setCategory('Custom');
-    setPromptForNote(false);
+    setKind('check');
+    setTarget('');
   }
 
+  const numberInvalid = kind === 'number' && !(targetNum > 0);
+
   function handleSubmit() {
-    if (!title.trim()) return;
+    if (!title.trim() || numberInvalid) return;
     onSubmit({
       title: title.trim(),
       description: description.trim() || undefined,
@@ -54,8 +63,9 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
       difficulty,
       icon,
       category: category.trim() || 'Custom',
-      promptForNote,
+      promptForNote: kind === 'note',
       details: details.trim() || undefined,
+      measure: kind === 'number' ? { unit, target: targetNum } : undefined,
     });
     if (!initial) reset();
     onClose();
@@ -154,21 +164,55 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
           </div>
         </div>
 
-        <label className="flex items-center gap-2.5 rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={promptForNote}
-            onChange={(e) => setPromptForNote(e.target.checked)}
-            className="w-4 h-4 accent-amber-500"
-          />
-          <span className="text-xs text-slate-300">
-            <Icon name="📝" size="1.15em" className="icon-inline text-amber-300" />Ask for a written note — writing something is what completes it
-          </span>
-        </label>
+        <div>
+          <label className="block text-xs font-semibold text-slate-400 mb-1.5">How is it completed?</label>
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                ['check', '✓', 'Tick it off'],
+                ['note', '📝', 'Write something'],
+                ['number', '📊', 'Reach a number'],
+              ] as const
+            ).map(([k, ic, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                aria-pressed={kind === k}
+                className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-[11px] font-semibold transition ${
+                  kind === k ? 'border-amber-400 bg-amber-500/15 text-white' : 'border-white/10 bg-white/5 text-slate-400'
+                }`}
+              >
+                <Icon name={ic} size={16} />
+                {label}
+              </button>
+            ))}
+          </div>
+          {kind === 'note' && <p className="text-[11px] text-slate-500 mt-1.5">Needs real words to count. Put a number in the title like "x3" or "top 3" to ask for that many separate answers.</p>}
+          {kind === 'number' && (
+            <div className="flex gap-2 mt-2">
+              <input
+                inputMode="decimal"
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                placeholder="Target, e.g. 50"
+                aria-label="Target"
+                className={`flex-1 min-w-0 rounded-lg bg-white/5 border px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 ${target && numberInvalid ? 'border-red-400/60' : 'border-white/10'}`}
+              />
+              <select value={unit} onChange={(e) => setUnit(e.target.value as MeasureUnit)} aria-label="Unit" className="rounded-lg bg-white/5 border border-white/10 px-2 py-2 text-sm text-white focus:outline-none">
+                {(Object.keys(UNIT_META) as MeasureUnit[]).map((u) => (
+                  <option key={u} value={u}>
+                    {UNIT_META[u].label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
 
         <button
           onClick={handleSubmit}
-          disabled={!title.trim()}
+          disabled={!title.trim() || numberInvalid}
           className="w-full rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 active:scale-95 transition-all"
         >
           {initial ? 'Save Changes' : 'Create Quest'}

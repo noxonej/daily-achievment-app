@@ -3,8 +3,8 @@ import { DIFFICULTY_XP } from '../lib/xp';
 
 type SeedQuest = Pick<
   Quest,
-  'title' | 'description' | 'frequency' | 'difficulty' | 'icon' | 'category' | 'promptForNote' | 'details'
->;
+  'title' | 'description' | 'frequency' | 'difficulty' | 'icon' | 'category' | 'promptForNote' | 'details' | 'measure' | 'noteList' | 'noteMinWords'
+> & { id?: string };
 
 const seeds: SeedQuest[] = [
   // Daily quests
@@ -18,6 +18,7 @@ const seeds: SeedQuest[] = [
   },
   {
     title: 'Journal',
+    noteMinWords: 10,
     description: 'Write a few lines about your day, thoughts, or plans.',
     frequency: 'daily',
     difficulty: 'easy',
@@ -47,6 +48,7 @@ const seeds: SeedQuest[] = [
   },
   {
     title: 'Drink 2L of water',
+    measure: { unit: 'glasses', target: 8 },
     description: 'Stay hydrated throughout the day.',
     frequency: 'daily',
     difficulty: 'easy',
@@ -57,6 +59,7 @@ const seeds: SeedQuest[] = [
   },
   {
     title: 'Gratitude x3',
+    noteList: 3,
     description: 'List three things you are grateful for today.',
     frequency: 'daily',
     difficulty: 'easy',
@@ -132,12 +135,33 @@ const seeds: SeedQuest[] = [
     icon: '🚀',
     category: 'Mind',
   },
+  // Added later; explicit ids keep the index-based ids above stable.
+  {
+    id: 'default-steps',
+    title: 'Walk 8,000 steps',
+    description: "Check your phone's Health or Fitness app and enter today's steps.",
+    frequency: 'daily',
+    difficulty: 'medium',
+    icon: '👟',
+    category: 'Body',
+    measure: { unit: 'steps', target: 8000 },
+  },
+  {
+    id: 'default-run',
+    title: 'Run 5 km this week',
+    description: 'Track runs with GPS in the app, or add a treadmill run by hand.',
+    frequency: 'weekly',
+    difficulty: 'hard',
+    icon: '🏃',
+    category: 'Body',
+    measure: { unit: 'km', target: 5 },
+  },
 ];
 
 export function buildDefaultQuests(): Quest[] {
   const now = new Date().toISOString();
   return seeds.map((s, i) => ({
-    id: `default-${i}`,
+    id: s.id ?? `default-${i}`,
     title: s.title,
     description: s.description,
     frequency: s.frequency,
@@ -150,5 +174,8 @@ export function buildDefaultQuests(): Quest[] {
     createdAt: now,
     promptForNote: s.promptForNote,
     details: s.details,
+    measure: s.measure,
+    noteList: s.noteList,
+    noteMinWords: s.noteMinWords,
   }));
 }

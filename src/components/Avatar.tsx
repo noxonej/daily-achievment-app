@@ -873,11 +873,38 @@ function heart(cx: number, cy: number, s: number): string {
   return `M${cx} ${cy + s * 0.9} C${cx - s * 1.6} ${cy - s * 0.1} ${cx - s * 0.9} ${cy - s * 1.3} ${cx} ${cy - s * 0.45} C${cx + s * 0.9} ${cy - s * 1.3} ${cx + s * 1.6} ${cy - s * 0.1} ${cx} ${cy + s * 0.9}Z`;
 }
 
-type EyeKind = 'open' | 'round' | 'happy' | 'closed' | 'half' | 'star' | 'heart' | 'dizzy' | 'robot' | 'fire';
+type EyeKind = 'open' | 'round' | 'happy' | 'closed' | 'half' | 'star' | 'heart' | 'dizzy' | 'robot' | 'fire' | 'side' | 'x' | 'sparkle' | 'puppy';
 
 function Eye({ cx, kind, x }: { cx: number; kind: EyeKind; x: Ctx }) {
   const cy = EYE_Y;
   switch (kind) {
+    case 'side':
+      return (
+        <g>
+          <ellipse cx={cx} cy={cy} rx="3.2" ry="2.6" fill="#fff" />
+          <circle cx={cx + 1.6} cy={cy + 0.2} r="1.7" fill={INK} />
+          <path d={`M${cx - 3.6} ${cy - 1.4} Q${cx} ${cy - 3.2} ${cx + 3.6} ${cy - 1.4}`} stroke={x.skinDark} strokeWidth="1.3" fill="none" />
+        </g>
+      );
+    case 'x':
+      return <path d={`M${cx - 2.4} ${cy - 2.4} L${cx + 2.4} ${cy + 2.4} M${cx + 2.4} ${cy - 2.4} L${cx - 2.4} ${cy + 2.4}`} stroke={INK} strokeWidth="1.6" strokeLinecap="round" />;
+    case 'sparkle':
+      return (
+        <g>
+          <ellipse cx={cx} cy={cy} rx="2.6" ry="3.2" fill={INK} />
+          <path d={star(cx + 0.7, cy - 1, 1.5, 0.5, 4)} fill="#fff" />
+          <circle cx={cx - 0.9} cy={cy + 1.3} r=".5" fill="#fff" />
+        </g>
+      );
+    case 'puppy':
+      return (
+        <g>
+          <ellipse cx={cx} cy={cy + 0.3} rx="3.2" ry="3.8" fill={INK} />
+          <circle cx={cx + 1} cy={cy - 1} r="1.4" fill="#fff" />
+          <circle cx={cx - 1} cy={cy + 1.6} r=".7" fill="#fff" />
+          <path d={`M${cx - 2.6} ${cy + 3.6} Q${cx} ${cy + 4.8} ${cx + 2.6} ${cy + 3.6}`} stroke="#7dd3fc" strokeWidth=".9" fill="none" />
+        </g>
+      );
     case 'round':
       return (
         <g>
@@ -937,7 +964,7 @@ function Eye({ cx, kind, x }: { cx: number; kind: EyeKind; x: Ctx }) {
   }
 }
 
-type BrowKind = 'normal' | 'raised' | 'angry' | 'sad' | 'flat' | 'none';
+type BrowKind = 'normal' | 'raised' | 'angry' | 'sad' | 'flat' | 'one' | 'none';
 function Brows({ kind, x }: { kind: BrowKind; x: Ctx }) {
   const paths: Record<Exclude<BrowKind, 'none'>, string> = {
     normal: 'M39.3 39.6 q3.2 -1.7 6.4 0 M54.3 39.6 q3.2 -1.7 6.4 0',
@@ -945,12 +972,13 @@ function Brows({ kind, x }: { kind: BrowKind; x: Ctx }) {
     angry: 'M39.3 38.2 L45.7 40.6 M60.7 38.2 L54.3 40.6',
     sad: 'M39.3 40.6 L45.7 38.6 M60.7 40.6 L54.3 38.6',
     flat: 'M39.5 39.8 H45.5 M54.5 39.8 H60.5',
+    one: 'M39.5 40 H45.5 M54.3 38.2 q3.2 -3 6.4 -1',
   };
   if (kind === 'none') return null;
   return <path d={paths[kind]} stroke={x.hairDark} strokeWidth={kind === 'angry' ? 1.7 : 1.3} fill="none" strokeLinecap="round" />;
 }
 
-type MouthKind = 'smile' | 'grin' | 'soft' | 'sad' | 'frown' | 'o' | 'smirk' | 'laugh' | 'cat' | 'robot' | 'grit' | 'small';
+type MouthKind = 'smile' | 'grin' | 'soft' | 'sad' | 'frown' | 'o' | 'smirk' | 'laugh' | 'cat' | 'robot' | 'grit' | 'small' | 'flat' | 'buck' | 'pout';
 function Mouth({ kind }: { kind: MouthKind }) {
   switch (kind) {
     case 'grin':
@@ -998,6 +1026,18 @@ function Mouth({ kind }: { kind: MouthKind }) {
       );
     case 'small':
       return <path d="M48 53.4 H52" stroke={LIP} strokeWidth="1.4" strokeLinecap="round" />;
+    case 'flat':
+      return <path d="M45.5 53.6 H54.5" stroke={LIP} strokeWidth="1.5" strokeLinecap="round" />;
+    case 'buck':
+      return (
+        <g>
+          <path d="M44.6 51.8 Q50 57 55.4 51.8 Z" fill="#5b2320" />
+          <rect x="47.6" y="51.8" width="2.2" height="3" rx=".5" fill="#fff" />
+          <rect x="50.2" y="51.8" width="2.2" height="3" rx=".5" fill="#fff" />
+        </g>
+      );
+    case 'pout':
+      return <path d="M47 54.4 Q50 52.6 53 54.4" stroke={LIP} strokeWidth="1.5" fill="none" strokeLinecap="round" />;
     default:
       return <path d="M45 52.4 Q50 57.2 55 52.4" stroke={LIP} strokeWidth="1.5" fill="none" strokeLinecap="round" />;
   }
@@ -1012,6 +1052,7 @@ interface ExpressionSpec {
   whiskers?: boolean;
   zzz?: boolean;
   sweat?: boolean;
+  tears2?: boolean;
 }
 
 const EXPRESSIONS: Record<string, ExpressionSpec> = {
@@ -1032,6 +1073,16 @@ const EXPRESSIONS: Record<string, ExpressionSpec> = {
   cat: { eyes: ['happy', 'happy'], brows: 'normal', mouth: 'cat', blush: true, whiskers: true },
   robot: { eyes: ['robot', 'robot'], brows: 'none', mouth: 'robot' },
   fire: { eyes: ['fire', 'fire'], brows: 'angry', mouth: 'smirk' },
+  sigma: { eyes: ['half', 'half'], brows: 'one', mouth: 'smirk' },
+  sideeye: { eyes: ['side', 'side'], brows: 'flat', mouth: 'flat' },
+  rizz: { eyes: ['half', 'happy'], brows: 'one', mouth: 'smirk', blush: true },
+  bruh: { eyes: ['half', 'half'], brows: 'flat', mouth: 'flat' },
+  unbothered: { eyes: ['closed', 'closed'], brows: 'one', mouth: 'smirk' },
+  nerd: { eyes: ['open', 'open'], brows: 'raised', mouth: 'buck', blush: true },
+  crylaugh: { eyes: ['happy', 'happy'], brows: 'sad', mouth: 'laugh', tear: true, tears2: true },
+  pleading: { eyes: ['puppy', 'puppy'], brows: 'sad', mouth: 'pout', blush: true },
+  dead: { eyes: ['x', 'x'], brows: 'flat', mouth: 'o' },
+  maincharacter: { eyes: ['sparkle', 'sparkle'], brows: 'one', mouth: 'smirk', blush: true },
 };
 
 /** Maps today's mood check-in (1–5) to an expression for the "Match my mood" face. */
@@ -1056,6 +1107,7 @@ function Face({ x, style, mood }: { x: Ctx; style: string; mood?: number }) {
         </>
       )}
       {e.tear && <path d="M39.2 48.6 q-1.4 2.4 0 3.4 q1.4 -1 0 -3.4Z" fill="#7dd3fc" />}
+      {e.tears2 && <path d="M60.8 48.6 q-1.4 2.4 0 3.4 q1.4 -1 0 -3.4Z" fill="#7dd3fc" />}
       {e.sweat && <path d="M66.5 36 q-1.6 2.6 0 3.8 q1.6 -1.2 0 -3.8Z" fill="#7dd3fc" />}
       {e.whiskers && <path d="M33 50 l-5 -1 M33 52 l-5 1 M67 50 l5 -1 M67 52 l5 1" stroke={INK} strokeWidth=".6" opacity=".6" />}
       {e.zzz && (

@@ -3,6 +3,7 @@ import { HeatmapCalendar } from '../components/HeatmapCalendar';
 import { JournalHistory } from '../components/JournalHistory';
 import { Icon } from '../components/Icon';
 import { MoodInsights } from '../components/MoodInsights';
+import { WeekRecap } from '../components/WeekRecap';
 import { todayKey } from '../lib/date';
 
 export function StatsView({ embedded = false }: { embedded?: boolean } = {}) {
@@ -36,6 +37,8 @@ export function StatsView({ embedded = false }: { embedded?: boolean } = {}) {
         <p className="text-sm font-semibold text-white mb-3">Activity</p>
         <HeatmapCalendar dayLogs={state.dayLogs} />
       </div>
+
+      <WeekRecap />
 
       <MoodInsights />
 
