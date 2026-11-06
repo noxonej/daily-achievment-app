@@ -29,16 +29,18 @@ export function MoodCheckIn() {
           return (
             <button
               key={m.value}
+              type="button"
               role="radio"
               aria-checked={on}
               aria-label={t(`mood.${m.value}` as 'mood.1')}
+              // Tap a face to pick it; tap the picked one again to clear it.
               onClick={() => dispatch({ type: 'SET_MOOD', date: key, mood: on ? null : m.value })}
-              className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 transition ${
-                on ? 'border-white/30 bg-white/10' : mood ? 'border-transparent opacity-40 hover:opacity-80' : 'border-white/10 hover:border-white/25'
+              className={`flex flex-col items-center gap-1 rounded-xl border-2 py-2.5 transition-[transform,opacity,background-color,border-color,box-shadow,filter] duration-200 [-webkit-tap-highlight-color:transparent] ${
+                on ? `${m.chosen} -translate-y-0.5` : mood ? 'border-transparent opacity-45 grayscale-[60%]' : 'border-white/10'
               }`}
             >
-              <Icon name={m.icon} size={26} className={`${m.color} ${on ? 'animate-check' : ''}`} />
-              <span className="text-[10px] font-semibold text-slate-400">{t(`mood.${m.value}` as 'mood.1')}</span>
+              <Icon name={m.icon} size={26} className={`${m.color} ${on ? 'animate-check' : ''}`} strokeWidth={on ? 2.4 : 2} />
+              <span className={`text-[10px] font-semibold ${on ? 'text-white' : 'text-slate-400'}`}>{t(`mood.${m.value}` as 'mood.1')}</span>
             </button>
           );
         })}

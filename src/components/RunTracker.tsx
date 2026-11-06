@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useNoDoubleTap } from '../lib/noDoubleTap';
+import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { formatDuration, formatPace, runTracker, useElapsedMs, useRunState, type GpsQuality } from '../lib/runTracker';
 import { Icon } from './Icon';
@@ -16,6 +18,8 @@ const GPS_LABEL: Record<GpsQuality, { text: string; color: string }> = {
 export function RunTracker() {
   const { dispatch } = useApp();
   const s = useRunState();
+  useBackToClose(s.open, () => runTracker.close());
+  const noDoubleTap = useNoDoubleTap();
   const elapsed = useElapsedMs(s);
   const [manual, setManual] = useState(false);
   const [km, setKm] = useState('');
@@ -52,7 +56,7 @@ export function RunTracker() {
   }
 
   return (
-    <div data-overlay className="fixed inset-0 z-[70] bg-canvas flex flex-col backdrop-in">
+    <div data-overlay onClickCapture={noDoubleTap} className="fixed inset-0 z-[70] bg-canvas flex flex-col backdrop-in">
       <div className="flex items-center justify-between px-4 pt-[max(1rem,env(safe-area-inset-top))]">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Run</p>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { useAuth } from '../store/AuthContext';
 import { settings, useSettingsPage, type SettingsPage } from '../lib/settingsNav';
@@ -45,19 +46,15 @@ export function SettingsScreen() {
 
   useEffect(() => {
     if (!page) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      if (page === 'home') settings.close();
-      else settings.open('home');
-    };
-    window.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
   }, [page]);
+
+  // Phone Back button / Escape: from a sub-page go back to the list, from the list close Settings.
+  useBackToClose(!!page, () => (page === 'home' ? settings.close() : settings.open('home')));
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {

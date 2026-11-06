@@ -32,18 +32,18 @@ export function AchievementBadge({ achievement, unlockedAt, current, shineDelay 
           </div>
         ) : (
           <div className="w-full h-full rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-            <Icon name={achievement.icon} size={26} className="text-slate-600" />
+            <Icon name={achievement.icon} size={26} className="text-slate-500" />
           </div>
         )}
       </div>
 
-      <p className={`text-[10px] font-bold uppercase tracking-wide ${isUnlocked ? tier.labelColor : 'text-slate-600'}`}>
+      <p className={`text-[10px] font-bold uppercase tracking-wide ${isUnlocked ? tier.labelColor : 'text-slate-500'}`}>
         {tier.label}
       </p>
-      <p className={`text-[13px] font-bold leading-tight mt-0.5 ${isUnlocked ? 'text-white' : 'text-slate-500'}`}>
+      <p className={`text-[13px] font-bold leading-tight mt-0.5 ${isUnlocked ? 'text-white' : 'text-slate-400'}`}>
         {achievement.title}
       </p>
-      <p className={`text-[11px] mt-1 leading-snug ${isUnlocked ? 'text-slate-400' : 'text-slate-600'}`}>
+      <p className={`text-[11px] mt-1 leading-snug ${isUnlocked ? 'text-slate-400' : 'text-slate-500'}`}>
         {achievement.description}
       </p>
 
@@ -54,7 +54,7 @@ export function AchievementBadge({ achievement, unlockedAt, current, shineDelay 
           <div className="h-1 rounded-full bg-white/10 overflow-hidden">
             <div className="h-1 rounded-full bg-white/25 bar-in" style={{ width: `${pct}%` }} />
           </div>
-          <p className="text-[10px] text-slate-600 mt-1">
+          <p className="text-[10px] text-slate-500 mt-1">
             {clampedCurrent} / {achievement.target}
           </p>
         </div>

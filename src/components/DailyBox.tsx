@@ -1,4 +1,5 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
+import { useBackToClose } from '../lib/backstack';
 import { t } from '../lib/prefs';
 import { doneByHand } from '../store/reducer';
 import { useApp } from '../store/AppContext';
@@ -170,11 +171,7 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
   const [reward, setReward] = useState<BoxReward | null>(null);
   const busy = phase === 'shake' || phase === 'burst';
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !busy && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [busy, onClose]);
+  useBackToClose(true, () => !busy && onClose());
 
   function open() {
     if (phase !== 'closed') return;

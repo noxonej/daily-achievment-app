@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { todayKey } from '../lib/date';
 import { focusTimer, formatClock, playChime, useFocusState, useTimeLeft } from '../lib/focusTimer';
@@ -13,6 +14,7 @@ const C = 2 * Math.PI * R;
 export function FocusTimer() {
   const { state, dispatch } = useApp();
   const s = useFocusState();
+  useBackToClose(s.open, () => focusTimer.close());
   const left = useTimeLeft(s);
   const running = s.endAt !== null;
   const paused = s.pausedLeftMs !== null;

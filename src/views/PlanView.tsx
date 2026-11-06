@@ -320,9 +320,9 @@ function DayPicker({
                 : 'bg-white/[0.03] border-white/10 text-slate-300 hover:border-white/25'
             }`}
           >
-            <span className={`text-[11px] font-bold ${active ? 'text-amber-100' : 'text-slate-400'}`}>{weekdayShort(w.id)}</span>
+            <span className={`text-[11px] font-bold ${active ? 'text-white/85' : 'text-slate-400'}`}>{weekdayShort(w.id)}</span>
             <span className="font-display text-[17px] font-extrabold leading-tight tabular-nums">{date.getDate()}</span>
-            <span className={`text-[10px] font-semibold tabular-nums ${active ? 'text-amber-100' : 'text-slate-500'}`}>
+            <span className={`text-[10px] font-semibold tabular-nums ${active ? 'text-white/85' : 'text-slate-500'}`}>
               {count > 0 ? count : '–'}
             </span>
             {hasEvent && (

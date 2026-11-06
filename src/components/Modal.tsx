@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useNoDoubleTap } from '../lib/noDoubleTap';
+import { useBackToClose } from '../lib/backstack';
 import { Icon } from './Icon';
 
 interface ModalProps {
@@ -33,14 +35,9 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  // Phone Back button / Escape closes the sheet (only the top one).
+  useBackToClose(open, onClose);
+  const noDoubleTap = useNoDoubleTap();
 
   if (!mounted) return null;
   const shown = open ? { title, children } : last.current;
@@ -51,6 +48,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label={shown.title}
+        onClickCapture={noDoubleTap}
         className={`relative w-full sm:max-w-md bg-surface border border-white/10 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto ${
           closing ? 'sheet-out' : 'sheet-in'
         }`}

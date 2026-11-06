@@ -8,13 +8,13 @@ export const TIER_STYLES: Record<
     gradient: 'linear-gradient(145deg, #e0a565, #8a4a1f)',
     glow: 'shadow-[0_0_16px_-3px_rgba(201,132,68,0.65)]',
     label: 'Bronze',
-    labelColor: 'text-[#e0a565]',
+    labelColor: 'text-orange-300',
   },
   silver: {
     gradient: 'linear-gradient(145deg, #eef1f5, #8b95a3)',
     glow: 'shadow-[0_0_16px_-3px_rgba(203,210,220,0.6)]',
     label: 'Silver',
-    labelColor: 'text-[#d3d9e0]',
+    labelColor: 'text-slate-300',
   },
   gold: {
     gradient: 'linear-gradient(145deg, #ffe28f, #b8790f)',

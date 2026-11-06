@@ -22,11 +22,22 @@ import { AmountInput, Field, card, inputClass, primaryBtn, secondaryBtn, useMone
 
 const STALE_MS = 5 * 60 * 1000;
 
+/** Dark text on bright coin colours (like Bitcoin orange), white on dark ones, so it's always readable. */
+function readableOn(hex: string): string {
+  const n = parseInt(hex.replace('#', ''), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  const lum = 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  return lum > 0.3 ? '#111827' : '#ffffff';
+}
+
 function CoinBadge({ symbol, color, size = 40 }: { symbol: string; color: string; size?: number }) {
   return (
     <span
-      className="shrink-0 rounded-full flex items-center justify-center font-display font-extrabold text-[#fff]"
-      style={{ width: size, height: size, background: color, fontSize: symbol.length > 3 ? size * 0.26 : size * 0.32 }}
+      className="shrink-0 rounded-full flex items-center justify-center font-display font-extrabold"
+      style={{ width: size, height: size, background: color, color: readableOn(color), fontSize: symbol.length > 3 ? size * 0.26 : size * 0.32 }}
     >
       {symbol.slice(0, 4)}
     </span>

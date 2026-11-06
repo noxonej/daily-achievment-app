@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { ownership } from '../store/reducer';
 import type { AvatarSlot, Character } from '../lib/types';
@@ -37,6 +38,7 @@ function unlockLabel(item: AvatarItem): string {
 /** Full-screen avatar customisation: try anything on, buy with shards, win from chests. */
 export function Wardrobe() {
   const open = useWardrobeOpen();
+  useBackToClose(open, () => wardrobe.close());
   const { state, stats, dispatch } = useApp();
   const [slot, setSlot] = useState<AvatarSlot>('outfit');
   const [preview, setPreview] = useState<AvatarItem | null>(null);
@@ -258,6 +260,7 @@ const SKIP_PASS_CHANCE = 0.06;
 
 function ChestOpening({ onClose }: { onClose: () => void }) {
   const { state, stats, dispatch } = useApp();
+  useBackToClose(true, onClose);
   const [phase, setPhase] = useState<'closed' | 'opening' | 'reveal'>('closed');
   // undefined = not opened yet, null = shards (everything owned), 'skip' = a Skip Pass.
   const [prize, setPrize] = useState<AvatarItem | null | 'skip' | undefined>(undefined);

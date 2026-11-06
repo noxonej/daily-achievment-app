@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { dayCountsForStreak } from '../lib/stats';
 import { todayKey } from '../lib/date';
@@ -84,15 +85,13 @@ function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean
   useEffect(() => {
     const a = setTimeout(() => setRolled(true), 550);
     const b = setTimeout(() => setTodayLit(true), 900);
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
-      window.removeEventListener('keydown', onKey);
     };
   }, [onClose]);
 
+  useBackToClose(true, onClose);
   const shielded = new Set(state.shieldedDates ?? []);
   const milestone = MILESTONES[streak];
   const prev = Math.max(0, streak - 1);
