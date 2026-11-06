@@ -35,7 +35,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-[#0b0e17]/90 backdrop-blur border-b border-white/10">
+      <header className="sticky top-0 z-30 bg-[#0b0e17]/90 backdrop-blur border-b border-white/10 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <div className="max-w-2xl mx-auto px-4 pt-3 pb-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -61,12 +61,12 @@ export function Header() {
               </div>
               <button
                 onClick={() => setCharacterOpen(true)}
-                className="relative shrink-0 rounded-xl"
+                className="relative shrink-0 rounded-xl p-1.5 -m-1.5"
                 aria-label="Customize your character"
               >
                 <CharacterAvatar character={state.character} size={38} />
                 <span
-                  className={`absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full bg-amber-500 border-2 border-[#0b0e17] flex items-center justify-center text-[9px] font-display font-bold text-white ${
+                  className={`absolute bottom-0.5 right-0.5 w-[18px] h-[18px] rounded-full bg-amber-500 border-2 border-[#0b0e17] flex items-center justify-center text-[9px] font-display font-bold text-white ${
                     levelBump ? 'animate-pop-in' : ''
                   }`}
                 >

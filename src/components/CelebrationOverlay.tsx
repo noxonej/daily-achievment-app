@@ -38,7 +38,7 @@ export function CelebrationOverlay() {
   }
 
   return (
-    <div className="fixed top-3 left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none">
+    <div className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none">
       <button
         onClick={dismissCelebration}
         className="pointer-events-auto animate-celebrate flex items-center gap-3 bg-[#161a2e] border border-amber-400/30 shadow-xl shadow-black/40 rounded-2xl px-4 py-3 max-w-sm"

@@ -8,7 +8,7 @@ export function PlanReminderToast() {
   const { reminder, dismiss } = useLivePlanReminders(state);
   if (!reminder) return null;
   return (
-    <div className="fixed inset-x-0 top-3 z-[60] px-4 flex justify-center pointer-events-none">
+    <div className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[60] px-4 flex justify-center pointer-events-none">
       <div
         role="alert"
         className="pointer-events-auto w-full max-w-md rounded-2xl border border-amber-400/40 bg-[#171b30]/95 backdrop-blur shadow-2xl p-4 animate-pop-in"
