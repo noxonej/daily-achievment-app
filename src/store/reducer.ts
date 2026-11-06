@@ -1,13 +1,14 @@
 import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
-import { todayKey, weekKey } from '../lib/date';
+import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
 import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../lib/wildcard';
 import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
-import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
+import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, boxPool, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
 import { computeDerivedStats } from '../lib/stats';
 import { checkNote } from '../lib/questRules';
+import type { BoxReward } from '../lib/dailyBox';
 import { createEmptyMoney, moneyId } from '../lib/money';
 
 export function createInitialState(): AppState {
@@ -33,6 +34,11 @@ export function createInitialState(): AppState {
     runs: [],
     contentVersion: CONTENT_VERSION,
     appearance: { accent: 'cyber', background: 'nebula' },
+    dailyBox: { lastOpened: null, lastReward: null },
+    questSwaps: 0,
+    streakShields: 0,
+    shieldedDates: [],
+    bonusChests: 0,
     createdAt: new Date().toISOString(),
   };
 }
@@ -157,6 +163,10 @@ export type Action =
   /** Sets today's (or this week's) total on a number-based quest; completes it at the target. */
   | { type: 'SET_PROGRESS'; questId: string; value: number }
   | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
+  | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
+  | { type: 'USE_QUEST_SWAP'; questId: string; replacement: { title: string; description?: string; icon: string } }
+  /** Spends Streak Shields on missed days right before today, if that keeps an existing streak alive. */
+  | { type: 'CHECK_STREAK_SHIELDS' }
   | { type: 'DELETE_RUN'; runId: string }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
@@ -199,7 +209,7 @@ function recomputeDailyLog(quests: Quest[], completedQuestIds: string[], existin
     ...existing,
     date: dateKey,
     completedQuestIds,
-    xpEarned,
+    xpEarned: Math.round(xpEarned * (existing?.xpBoost ?? 1)),
     perfectDay,
     dailyQuestCount: activeDaily.length,
   };
@@ -757,6 +767,72 @@ export function reducer(state: AppState, action: Action): AppState {
         }
       }
       return next;
+    }
+
+    case 'OPEN_DAILY_BOX': {
+      const today = todayKey();
+      const log = state.dayLogs[today];
+      if (state.dailyBox?.lastOpened === today || !log || log.completedQuestIds.length === 0) return state;
+      let next: AppState = { ...state, dailyBox: { lastOpened: today, lastReward: action.reward } };
+      const r = action.reward;
+      switch (r.kind) {
+        case 'shards':
+          next = { ...next, bonusShards: (next.bonusShards ?? 0) + Math.max(0, Math.min(500, r.amount)) };
+          break;
+        case 'xpBoost': {
+          const boost = Math.max(log.xpBoost ?? 1, Math.min(2, r.multiplier));
+          next = { ...next, dayLogs: { ...next.dayLogs, [today]: recomputeDailyLog(next.quests, log.completedQuestIds, { ...log, xpBoost: boost }) } };
+          break;
+        }
+        case 'swap':
+          next = { ...next, questSwaps: (next.questSwaps ?? 0) + 1 };
+          break;
+        case 'shield':
+          next = { ...next, streakShields: (next.streakShields ?? 0) + 1 };
+          break;
+        case 'chest':
+          next = { ...next, bonusChests: (next.bonusChests ?? 0) + 1 };
+          break;
+        case 'cosmetic': {
+          const stats = computeDerivedStats(state);
+          if (!boxPool(ownership(state, stats)).some((i) => i.id === r.itemId)) return state;
+          next = { ...next, wonCosmeticIds: [...(next.wonCosmeticIds ?? []), r.itemId] };
+          break;
+        }
+      }
+      return next;
+    }
+
+    case 'USE_QUEST_SWAP': {
+      const quest = state.quests.find((q) => q.id === action.questId);
+      const today = todayKey();
+      const log = state.dayLogs[today];
+      if (!quest || quest.frequency !== 'daily' || (state.questSwaps ?? 0) <= 0) return state;
+      if (log?.completedQuestIds.includes(quest.id) || log?.swaps?.[quest.id]) return state;
+      const swaps = { ...(log?.swaps ?? {}), [quest.id]: action.replacement };
+      return {
+        ...state,
+        questSwaps: (state.questSwaps ?? 0) - 1,
+        dayLogs: { ...state.dayLogs, [today]: recomputeDailyLog(state.quests, log?.completedQuestIds ?? [], { ...log, swaps }) },
+      };
+    }
+
+    case 'CHECK_STREAK_SHIELDS': {
+      let shields = state.streakShields ?? 0;
+      if (shields <= 0) return state;
+      const shielded = new Set(state.shieldedDates ?? []);
+      const good = (k: string) => shielded.has(k) || (!!state.dayLogs[k]?.perfectDay && (state.dayLogs[k]?.dailyQuestCount ?? 0) > 0);
+      // Walk back over missed days (yesterday first), as far as the shields go.
+      const missed: string[] = [];
+      let cursor = addDaysToKey(todayKey(), -1);
+      while (!good(cursor) && missed.length < shields && missed.length < 7) {
+        missed.push(cursor);
+        cursor = addDaysToKey(cursor, -1);
+      }
+      // Only spend shields if there's a streak behind the gap to protect.
+      if (missed.length === 0 || !good(cursor)) return state;
+      shields -= missed.length;
+      return { ...state, streakShields: shields, shieldedDates: [...(state.shieldedDates ?? []), ...missed] };
     }
 
     case 'ADD_FOCUS_MINUTES': {

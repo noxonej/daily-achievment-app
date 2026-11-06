@@ -18,6 +18,8 @@ import { NowNextCard } from '../components/NowNextCard';
 import { MoodCheckIn } from '../components/MoodCheckIn';
 import { InstallCard } from '../components/InstallCard';
 import { WeekRecap } from '../components/WeekRecap';
+import { DailyBoxCard } from '../components/DailyBox';
+import { QuestSwapModal } from '../components/QuestSwapModal';
 
 const RECAP_KEY = 'dayforge-recap-dismissed';
 import { focusTimer } from '../lib/focusTimer';
@@ -79,6 +81,9 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
     wasPerfectRef.current = isPerfect;
   }, [isPerfect]);
 
+  const boost = log?.xpBoost ?? 1;
+  const swaps = log?.swaps ?? {};
+  const [swapOpen, setSwapOpen] = useState(false);
   const sorted = [...activeDaily].sort((a, b) => {
     const ac = completed.includes(a.id) ? 1 : 0;
     const bc = completed.includes(b.id) ? 1 : 0;
@@ -128,6 +133,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <QuickAction icon="📅" label="Plan" onClick={() => onNavigate('plan')} />
       </div>
 
+      <DailyBoxCard />
+
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         {showConfetti && <Confetti count={36} />}
         <div className="flex items-center justify-between mb-2">
@@ -146,6 +153,28 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           colorClass="bg-gradient-to-r from-emerald-500 to-teal-400"
         />
         <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />New quests in {resetLabel}</p>
+        {(boost > 1 || (state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0) && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {boost > 1 && (
+              <span className="flex items-center gap-1 rounded-full bg-yellow-400/10 border border-yellow-400/30 px-2.5 py-1 text-[11px] font-bold text-yellow-200">
+                <Icon name="⚡" size={12} />
+                {boost >= 2 ? 'Double XP today' : '+50% XP today'}
+              </span>
+            )}
+            {(state.streakShields ?? 0) > 0 && (
+              <span className="flex items-center gap-1 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-1 text-[11px] font-bold text-emerald-200" title="Protects your streak if you miss a day">
+                <Icon name="🛡" size={12} />
+                {state.streakShields} streak {state.streakShields === 1 ? 'shield' : 'shields'}
+              </span>
+            )}
+            {(state.questSwaps ?? 0) > 0 && (
+              <button onClick={() => setSwapOpen(true)} className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/40 hover:bg-sky-400/20 px-2.5 py-1 text-[11px] font-bold text-sky-200">
+                <Icon name="🔁" size={12} />
+                Swap a quest ({state.questSwaps})
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <TodayPlanCard onOpen={() => onNavigate('plan')} />
@@ -167,8 +196,13 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <EmptyState onNavigate={onNavigate} />
       ) : (
         <div className="space-y-2.5 rows-stagger">
-          {sorted.map((quest) =>
-            quest.measure ? (
+          {sorted.map((original) => {
+            // A swapped quest shows its replacement for today; completing it still counts for the original slot.
+            const swap = swaps[original.id];
+            const quest = swap
+              ? { ...original, ...swap, promptForNote: false, measure: undefined, noteList: undefined, noteMinWords: undefined, details: undefined }
+              : original;
+            return quest.measure ? (
               <MeasureQuestCard
                 key={quest.id}
                 quest={quest}
@@ -194,8 +228,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
                 periodKey={key}
               />
-            ),
-          )}
+            );
+          })}
         </div>
       )}
 
@@ -219,6 +253,16 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <div className="text-center text-xs text-slate-500 pt-1">
         Level {stats.level} · {stats.totalQuestsCompleted} quests completed all-time
       </div>
+
+      <QuestSwapModal
+        open={swapOpen}
+        onClose={() => setSwapOpen(false)}
+        candidates={activeDaily.filter((q) => !completed.includes(q.id) && !swaps[q.id])}
+        onSwap={(questId, replacement) => {
+          dispatch({ type: 'USE_QUEST_SWAP', questId, replacement });
+          setSwapOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -29,6 +29,8 @@ function unlockLabel(item: AvatarItem): string {
       return `${item.unlock.days}-day streak`;
     case 'chest':
       return 'Chest only';
+    case 'box':
+      return 'Daily box only';
   }
 }
 
@@ -170,7 +172,7 @@ export function Wardrobe() {
                     <Avatar look={{ ...look, [item.slot]: item.id }} size={84} className={isOwnedItem ? '' : 'saturate-[.7] brightness-90'} />
                     {!isOwnedItem && (
                       <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-canvas border border-white/15 flex items-center justify-center text-slate-200">
-                        <Icon name={item.unlock.kind === 'chest' ? '🎁' : '🔒'} size={12} />
+                        <Icon name={item.unlock.kind === 'chest' ? '🎁' : item.unlock.kind === 'box' ? '📦' : '🔒'} size={12} />
                       </span>
                     )}
                     {equipped && (
@@ -219,7 +221,7 @@ export function Wardrobe() {
               <p className={`text-[10px] font-black uppercase tracking-wider ${RARITY[preview.rarity].text}`}>{RARITY[preview.rarity].label}</p>
               <p className="font-display font-bold text-white truncate">{preview.name}</p>
               <p className="text-xs text-slate-400 truncate">
-                {previewOwned ? 'You own this' : preview.unlock.kind === 'chest' ? 'Win it from a reward chest' : unlockLabel(preview)}
+                {previewOwned ? 'You own this' : preview.unlock.kind === 'chest' ? 'Win it from a reward chest' : preview.unlock.kind === 'box' ? 'Very rare prize from the daily box' : unlockLabel(preview)}
               </p>
             </div>
             {preview.unlock.kind === 'shop' && !previewOwned ? (

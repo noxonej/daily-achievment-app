@@ -238,6 +238,11 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
     dispatch({ type: 'SYNC_WILDCARD' });
   }, [state.wildcardEnabled]);
 
+  // A Streak Shield quietly covers a missed yesterday when the app opens on a new day.
+  useEffect(() => {
+    dispatch({ type: 'CHECK_STREAK_SHIELDS' });
+  }, [state.lastOpenedDate]);
+
   const [undoToast, setUndoToast] = useState<{ id: number; message: string; prev: AppState } | null>(null);
   const undoable = useCallback(
     (action: Action, message: string) => {

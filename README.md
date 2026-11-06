@@ -18,7 +18,7 @@ unlockable achievements.
   focus minutes show up in Stats.
 - **Mood insights** — mood this week, and once there's enough data, what
   seems to lift it (finishing your quests, focus time).
-- **Avatar & wardrobe** — a drawn character with 149 items across faces &
+- **Avatar & wardrobe** — a drawn character with 155 items across faces &
   expressions (including "Match my mood", which follows your daily mood
   check-in), skin, hair, hair colour, outfits, hats, eyewear, scenes and
   shoulder pets,
@@ -41,6 +41,10 @@ unlockable achievements.
 - **Real answers for written quests** — "Gratitude x3" needs three
   different answers with real words, journals need 10 real words, so a
   "." no longer completes them.
+- **Daily box** — unlocks after your first quest of the day, opens once a
+  day: shards, an XP boost for the day (+50% or double), a Quest Swap
+  token, a Streak Shield (covers a missed day automatically), a bonus
+  chest, or (about 2%) a Mythic daily-box-exclusive cosmetic.
 - **Weekly recap** — your week in numbers in Stats, and last week's recap
   on Today every Monday.
 - **Undo** for deletes, **offline support** and an **install guide** for

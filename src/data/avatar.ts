@@ -1,6 +1,6 @@
 import type { AvatarSlot, Character } from '../lib/types';
 
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
 /** How an item is obtained. Chest items are the best ones: they can only be won. */
 export type Unlock =
@@ -8,7 +8,9 @@ export type Unlock =
   | { kind: 'shop'; cost: number }
   | { kind: 'level'; level: number }
   | { kind: 'streak'; days: number }
-  | { kind: 'chest' };
+  | { kind: 'chest' }
+  /** Only from the daily box, at a very small chance. */
+  | { kind: 'box' };
 
 export interface AvatarItem {
   id: string;
@@ -28,6 +30,7 @@ const shop = (cost: number) => ({ kind: 'shop', cost }) as const;
 const level = (l: number) => ({ kind: 'level', level: l }) as const;
 const streak = (days: number) => ({ kind: 'streak', days }) as const;
 const chest = { kind: 'chest' } as const;
+const box = { kind: 'box' } as const;
 
 export const AVATAR_ITEMS: AvatarItem[] = [
   // Skin
@@ -196,6 +199,14 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'pet-fox', slot: 'pet', name: 'Fox', rarity: 'rare', unlock: chest, style: 'fox', c1: '#f97316' },
   { id: 'pet-ghost', slot: 'pet', name: 'Ghost', rarity: 'epic', unlock: chest, style: 'ghost' },
   { id: 'pet-phoenix', slot: 'pet', name: 'Phoenix', rarity: 'legendary', unlock: chest, style: 'phoenix', c1: '#f97316' },
+
+  // Mythic: daily-box exclusives
+  { id: 'out-holo', slot: 'outfit', name: 'Holo hoodie', rarity: 'mythic', unlock: box, style: 'holo' },
+  { id: 'hw-crystal', slot: 'headwear', name: 'Crystal crown', rarity: 'mythic', unlock: box, style: 'crystalcrown' },
+  { id: 'bg-blackhole', slot: 'backdrop', name: 'Black hole', rarity: 'mythic', unlock: box, style: 'blackhole' },
+  { id: 'pet-goldphoenix', slot: 'pet', name: 'Golden phoenix', rarity: 'mythic', unlock: box, style: 'phoenix', c1: '#facc15' },
+  { id: 'exp-cosmic', slot: 'expression', name: 'Cosmic eyes', rarity: 'mythic', unlock: box, style: 'cosmic' },
+  { id: 'skin-prism', slot: 'skin', name: 'Prism', rarity: 'mythic', unlock: box, style: 'skin', c1: '#d8b4fe' },
 ];
 
 export const AVATAR_SLOTS: Array<{ id: AvatarSlot; label: string; icon: string }> = [
@@ -226,6 +237,7 @@ export const RARITY: Record<Rarity, { label: string; text: string; border: strin
   common: { label: 'Common', text: 'text-slate-300', border: 'border-slate-500/40', glow: '', bg: 'bg-slate-500/10', hex: '#94a3b8', weight: 50 },
   rare: { label: 'Rare', text: 'text-sky-300', border: 'border-sky-400/60', glow: 'shadow-[0_0_18px_-4px_rgba(56,189,248,0.6)]', bg: 'bg-sky-500/10', hex: '#38bdf8', weight: 30 },
   epic: { label: 'Epic', text: 'text-violet-300', border: 'border-violet-400/70', glow: 'shadow-[0_0_20px_-4px_rgba(167,139,250,0.7)]', bg: 'bg-violet-500/10', hex: '#a78bfa', weight: 15 },
+  mythic: { label: 'Mythic', text: 'text-fuchsia-300', border: 'border-fuchsia-400/80', glow: 'shadow-[0_0_28px_-4px_rgba(232,121,249,0.85)]', bg: 'bg-fuchsia-500/10', hex: '#e879f9', weight: 0 },
   legendary: { label: 'Legendary', text: 'text-yellow-300', border: 'border-yellow-400/80', glow: 'shadow-[0_0_24px_-4px_rgba(251,191,36,0.8)]', bg: 'bg-yellow-500/10', hex: '#fbbf24', weight: 5 },
 };
 
@@ -289,3 +301,8 @@ export function rollChest(ctx: OwnershipContext, rand: () => number = Math.rando
 }
 
 export const CHEST_DUPLICATE_SHARDS = 150;
+
+/** Daily-box exclusives the player doesn't own yet. */
+export function boxPool(ctx: OwnershipContext): AvatarItem[] {
+  return AVATAR_ITEMS.filter((i) => i.unlock.kind === 'box' && !isOwned(i, ctx));
+}

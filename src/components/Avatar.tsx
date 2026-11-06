@@ -257,6 +257,33 @@ function Backdrop({ item, x }: { item: AvatarItem; x: Ctx }) {
         </>
       );
       break;
+    case 'blackhole':
+      defs = (
+        <radialGradient id={g} cx=".5" cy=".42" r=".75">
+          <stop offset="0" stopColor="#000" />
+          <stop offset=".22" stopColor="#000" />
+          <stop offset=".3" stopColor="#f97316" />
+          <stop offset=".38" stopColor="#7c3aed" />
+          <stop offset=".7" stopColor="#0b0420" />
+          <stop offset="1" stopColor="#020008" />
+        </radialGradient>
+      );
+      extra = (
+        <>
+          <ellipse cx="50" cy="42" rx="46" ry="7" fill="none" stroke="#fdba74" strokeWidth="2.4" opacity=".7" transform="rotate(-12 50 42)" />
+          <ellipse cx="50" cy="42" rx="40" ry="4" fill="none" stroke="#fff" strokeWidth=".8" opacity=".6" transform="rotate(-12 50 42)" />
+          {[
+            [10, 12],
+            [86, 16],
+            [14, 78],
+            [90, 70],
+            [72, 90],
+          ].map(([cx, cy]) => (
+            <circle key={`${cx}${cy}`} cx={cx} cy={cy} r=".8" fill="#fff" />
+          ))}
+        </>
+      );
+      break;
     default:
       defs = grad(item.c1 ?? '#334155', item.c2 ?? '#0f172a');
       extra = <circle cx="50" cy="30" r="40" fill="#fff" opacity=".05" />;
@@ -857,6 +884,26 @@ function Outfit({ item, x }: { item: AvatarItem; x: Ctx }) {
           <circle cx="49" cy="88" r="1.3" fill="#fde047" />
         </g>
       );
+    case 'holo':
+      return (
+        <g>
+          <defs>
+            <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#67e8f9" />
+              <stop offset=".35" stopColor="#a78bfa" />
+              <stop offset=".7" stopColor="#f0abfc" />
+              <stop offset="1" stopColor="#fde68a" />
+            </linearGradient>
+          </defs>
+          <path d={TORSO} fill={`url(#${g})`} />
+          <path d="M20 100 L34 76 M30 100 L44 78 M58 100 L70 78 M70 100 L80 82" stroke="#fff" strokeOpacity=".35" strokeWidth="2.2" />
+          <path d="M34 76 Q50 64 66 76 L61 82 Q50 75 39 82 Z" fill="#312e81" opacity=".85" />
+          <path d="M45.5 80 L44.5 91 M54.5 80 L55.5 91" stroke="#fff" strokeWidth="1.1" strokeLinecap="round" />
+          <circle cx="44.5" cy="91.5" r="1.1" fill="#fff" />
+          <circle cx="55.5" cy="91.5" r="1.1" fill="#fff" />
+          <path d={TORSO} fill="none" stroke="#fff" strokeOpacity=".45" strokeWidth=".6" />
+        </g>
+      );
     default:
       return <path d={TORSO} fill={c1} />;
   }
@@ -873,7 +920,7 @@ function heart(cx: number, cy: number, s: number): string {
   return `M${cx} ${cy + s * 0.9} C${cx - s * 1.6} ${cy - s * 0.1} ${cx - s * 0.9} ${cy - s * 1.3} ${cx} ${cy - s * 0.45} C${cx + s * 0.9} ${cy - s * 1.3} ${cx + s * 1.6} ${cy - s * 0.1} ${cx} ${cy + s * 0.9}Z`;
 }
 
-type EyeKind = 'open' | 'round' | 'happy' | 'closed' | 'half' | 'star' | 'heart' | 'dizzy' | 'robot' | 'fire' | 'side' | 'x' | 'sparkle' | 'puppy';
+type EyeKind = 'open' | 'round' | 'happy' | 'closed' | 'half' | 'star' | 'heart' | 'dizzy' | 'robot' | 'fire' | 'side' | 'x' | 'sparkle' | 'puppy' | 'cosmic';
 
 function Eye({ cx, kind, x }: { cx: number; kind: EyeKind; x: Ctx }) {
   const cy = EYE_Y;
@@ -884,6 +931,15 @@ function Eye({ cx, kind, x }: { cx: number; kind: EyeKind; x: Ctx }) {
           <ellipse cx={cx} cy={cy} rx="3.2" ry="2.6" fill="#fff" />
           <circle cx={cx + 1.6} cy={cy + 0.2} r="1.7" fill={INK} />
           <path d={`M${cx - 3.6} ${cy - 1.4} Q${cx} ${cy - 3.2} ${cx + 3.6} ${cy - 1.4}`} stroke={x.skinDark} strokeWidth="1.3" fill="none" />
+        </g>
+      );
+    case 'cosmic':
+      return (
+        <g>
+          <ellipse cx={cx} cy={cy} rx="3.6" ry="4" fill="#a855f7" opacity=".35" />
+          <ellipse cx={cx} cy={cy} rx="2.6" ry="3" fill="#4c1d95" />
+          <circle cx={cx - 0.6} cy={cy + 0.8} r=".9" fill="#22d3ee" />
+          <path d={star(cx + 0.6, cy - 0.6, 1.6, 0.5, 4)} fill="#fff" />
         </g>
       );
     case 'x':
@@ -1090,6 +1146,7 @@ const EXPRESSIONS: Record<string, ExpressionSpec> = {
   pleading: { eyes: ['puppy', 'puppy'], brows: 'sad', mouth: 'pout', blush: true },
   dead: { eyes: ['x', 'x'], brows: 'flat', mouth: 'o' },
   maincharacter: { eyes: ['sparkle', 'sparkle'], brows: 'one', mouth: 'smirk', blush: true },
+  cosmic: { eyes: ['cosmic', 'cosmic'], brows: 'normal', mouth: 'soft' },
 };
 
 /** Maps today's mood check-in (1–5) to an expression for the "Match my mood" face. */
@@ -1466,6 +1523,24 @@ function Headwear({ item, x }: { item: AvatarItem; x: Ctx }) {
           <path d="M33 27 C30 20 31 13 35 8 C35 15 38 20 41 23 Z" fill="#dc2626" />
           <path d="M67 27 C70 20 69 13 65 8 C65 15 62 20 59 23 Z" fill="#dc2626" />
           <path d="M34 24 C33 19 33.5 14 35 10" stroke="#fca5a5" strokeWidth=".8" fill="none" />
+        </g>
+      );
+    case 'crystalcrown':
+      return (
+        <g>
+          <defs>
+            <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#ecfeff" />
+              <stop offset=".5" stopColor="#a5f3fc" />
+              <stop offset="1" stopColor="#c084fc" />
+            </linearGradient>
+          </defs>
+          <path d="M32 28 L33 12 L41 20 L45 4 L50 16 L55 4 L59 20 L67 12 L68 28 Z" fill={`url(#${g})`} stroke="#e9d5ff" strokeWidth=".9" strokeLinejoin="round" />
+          <path d="M45 4 L47 18 M55 4 L53 18 M33 12 L38 24 M67 12 L62 24" stroke="#fff" strokeOpacity=".6" strokeWidth=".7" />
+          <rect x="32" y="25.5" width="36" height="5" rx="1.5" fill="#c4b5fd" stroke="#e9d5ff" strokeWidth=".7" />
+          <path d={star(50, 28, 2.2, 0.9, 4)} fill="#fff" />
+          <circle cx="40" cy="28" r="1.2" fill="#22d3ee" />
+          <circle cx="60" cy="28" r="1.2" fill="#f0abfc" />
         </g>
       );
     default:

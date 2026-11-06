@@ -72,6 +72,10 @@ export interface DayLog {
   quickTasks?: QuickTask[];
   /** Progress on number-based quests, keyed by quest id. */
   progress?: Record<string, number>;
+  /** XP multiplier for today from a daily-box boost (e.g. 1.5 or 2). */
+  xpBoost?: number;
+  /** Daily quests swapped for something else today (Quest Swap), keyed by the original quest id. */
+  swaps?: Record<string, { title: string; description?: string; icon: string }>;
 }
 
 export interface WeekLog {
@@ -225,6 +229,14 @@ export interface AppState {
   /** Bumped when built-in content changes, so existing saves get new default quests once. */
   contentVersion: number;
   appearance: Appearance;
+  /** Daily box: last date it was opened, and what it gave. */
+  dailyBox: { lastOpened: string | null; lastReward: unknown };
+  questSwaps: number;
+  streakShields: number;
+  /** Days a Streak Shield covered; they count as perfect for the streak only. */
+  shieldedDates: string[];
+  /** Extra reward chests won from the daily box. */
+  bonusChests: number;
   createdAt: string;
 }
 

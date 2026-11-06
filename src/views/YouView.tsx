@@ -47,6 +47,22 @@ export function YouView() {
             <Stat icon="💎" value={stats.availableShards} label="Shards" color="text-amber-300" />
             <Stat icon="🎁" value={stats.chestsAvailable} label="Chests" color="text-violet-300" pulse={stats.chestsAvailable > 0} />
           </div>
+          {((state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0) && (
+            <div className="flex gap-2 mt-2 text-[11px] font-semibold">
+              {(state.streakShields ?? 0) > 0 && (
+                <span className="flex items-center gap-1 rounded-full bg-emerald-400/10 border border-emerald-400/25 px-2.5 py-1 text-emerald-200">
+                  <Icon name="🛡" size={12} />
+                  {state.streakShields} streak {state.streakShields === 1 ? 'shield' : 'shields'}
+                </span>
+              )}
+              {(state.questSwaps ?? 0) > 0 && (
+                <span className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/25 px-2.5 py-1 text-sky-200">
+                  <Icon name="🔁" size={12} />
+                  {state.questSwaps} quest {state.questSwaps === 1 ? 'swap' : 'swaps'}
+                </span>
+              )}
+            </div>
+          )}
           <button
             onClick={() => wardrobe.open()}
             className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl bg-white text-slate-900 font-bold py-3 hover:bg-amber-50"

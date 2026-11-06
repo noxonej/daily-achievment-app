@@ -3,15 +3,16 @@ import { addDaysToKey, daysBetween, todayKey } from './date';
 import { levelFromTotalXp } from './xp';
 import { findItem, itemCost } from '../data/avatar';
 
-function computeStreaks(dayLogs: Record<string, DayLog>): { current: number; longest: number } {
-  const keys = Object.keys(dayLogs).sort();
+function computeStreaks(dayLogs: Record<string, DayLog>, shielded: Set<string> = new Set()): { current: number; longest: number } {
+  // Days saved by a Streak Shield count toward the streak (not toward perfect days).
+  const keys = Array.from(new Set([...Object.keys(dayLogs), ...shielded])).sort();
 
   let longest = 0;
   let run = 0;
   let prevKey: string | null = null;
   for (const k of keys) {
     const log = dayLogs[k];
-    const isPerfect = log.perfectDay && log.dailyQuestCount > 0;
+    const isPerfect = shielded.has(k) || (!!log && log.perfectDay && log.dailyQuestCount > 0);
     if (isPerfect) {
       run = prevKey && daysBetween(prevKey, k) === 1 ? run + 1 : 1;
       longest = Math.max(longest, run);
@@ -28,7 +29,7 @@ function computeStreaks(dayLogs: Record<string, DayLog>): { current: number; lon
   // any earlier day that isn't perfect breaks the chain.
   while (true) {
     const log = dayLogs[cursor];
-    const isPerfect = !!log && log.perfectDay && log.dailyQuestCount > 0;
+    const isPerfect = shielded.has(cursor) || (!!log && log.perfectDay && log.dailyQuestCount > 0);
     if (isPerfect) {
       current += 1;
       cursor = addDaysToKey(cursor, -1);
@@ -57,12 +58,12 @@ export function computeDerivedStats(state: AppState): DerivedStats {
   const daysActive = dayLogsArr.filter((l) => l.completedQuestIds.length > 0).length;
   const goalsCompleted = state.goals.filter((g) => !!g.completedAt).length;
   const { level } = levelFromTotalXp(totalXp);
-  const { current, longest } = computeStreaks(state.dayLogs);
+  const { current, longest } = computeStreaks(state.dayLogs, new Set(state.shieldedDates ?? []));
   // Items that no longer exist cost nothing, so shards spent on retired items are refunded automatically.
   const shardsSpent = (state.unlockedCosmeticIds ?? []).reduce((sum, id) => sum + itemCost(findItem(id)), 0);
   const availableShards = Math.max(0, totalXp + (state.bonusShards ?? 0) - shardsSpent);
   const perfectWeeks = weekLogsArr.filter((l) => l.perfectWeek && l.weeklyQuestCount > 0).length;
-  const chestsEarned = totalPerfectDays + perfectWeeks + (level - 1);
+  const chestsEarned = totalPerfectDays + perfectWeeks + (level - 1) + (state.bonusChests ?? 0);
   const chestsAvailable = Math.max(0, chestsEarned - (state.chestsOpened ?? 0));
 
   return {
