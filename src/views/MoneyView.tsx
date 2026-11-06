@@ -1,15 +1,18 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApp } from '../store/AppContext';
-import type { MoneyAccount, MoneyKind, SpendCategory } from '../lib/types';
+import type { MoneyAccount, MoneyKind, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, parseKey } from '../lib/date';
 import {
   CURRENCIES,
+  GOAL_PRESETS,
   MONEY_KINDS,
   centsToInput,
   createEmptyMoney,
   dailyLimit,
   expensesOn,
   formatMoney,
+  formatWeeks,
+  goalProgress,
   guessCurrency,
   kindMeta,
   lastNDays,
@@ -42,8 +45,9 @@ export function MoneyView() {
   const { money, dispatch } = useMoney();
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [limitsOpen, setLimitsOpen] = useState(false);
-  const [transferOpen, setTransferOpen] = useState<null | { fromKind?: MoneyKind; toKind?: MoneyKind; amount?: number }>(null);
+  const [transferOpen, setTransferOpen] = useState<TransferPreset | null>(null);
   const [editing, setEditing] = useState<MoneyAccount | 'new' | null>(null);
+  const [editingGoal, setEditingGoal] = useState<SavingsGoal | 'new' | null>(null);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
@@ -78,6 +82,11 @@ export function MoneyView() {
             onEditLimits={() => setLimitsOpen(true)}
             onSaveLeftover={(amount) => setTransferOpen({ fromKind: 'spending', toKind: 'savings', amount })}
           />
+          <GoalsCard
+            onAdd={() => setEditingGoal('new')}
+            onEdit={(g) => setEditingGoal(g)}
+            onAddMoney={(g) => setTransferOpen({ fromKind: 'spending', toId: g.accountId })}
+          />
           <HistoryCard />
           <AccountsCard
             onEdit={(a) => setEditing(a)}
@@ -95,6 +104,7 @@ export function MoneyView() {
       <LimitsModal open={limitsOpen} onClose={() => setLimitsOpen(false)} />
       <TransferModal preset={transferOpen} onClose={() => setTransferOpen(null)} />
       <AccountModal account={editing} onClose={() => setEditing(null)} />
+      <GoalModal goal={editingGoal} onClose={() => setEditingGoal(null)} />
     </div>
   );
 }
@@ -336,6 +346,103 @@ function TodayCard({
           })}
         </ul>
       )}
+    </div>
+  );
+}
+
+/* ---------------- Savings goals ---------------- */
+
+function GoalsCard({
+  onAdd,
+  onEdit,
+  onAddMoney,
+}: {
+  onAdd: () => void;
+  onEdit: (g: SavingsGoal) => void;
+  onAddMoney: (g: SavingsGoal) => void;
+}) {
+  const { money, fmt } = useMoney();
+  const goals = money.goals.filter((g) => money.accounts.some((a) => a.id === g.accountId));
+
+  if (goals.length === 0) {
+    return (
+      <button
+        onClick={onAdd}
+        className="w-full flex items-center gap-3 rounded-2xl border border-dashed border-emerald-400/30 bg-emerald-500/[0.04] px-4 py-4 text-left hover:border-emerald-400/60 transition"
+      >
+        <span className="text-3xl">🚗</span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-bold text-white">Saving up for something?</span>
+          <span className="block text-xs text-slate-400">Add a goal, like a car, and watch it fill up as you save</span>
+        </span>
+        <span className="text-emerald-300 font-bold">+</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className={card}>
+      <div className="flex items-center justify-between px-5 pt-4 pb-1">
+        <p className="text-sm font-semibold text-white">🎯 Savings goals</p>
+        <button onClick={onAdd} className={`${secondaryBtn} px-2.5 py-1.5 text-xs`}>
+          + Goal
+        </button>
+      </div>
+      <div className="divide-y divide-white/[0.06]">
+        {goals.map((g) => {
+          const account = money.accounts.find((a) => a.id === g.accountId)!;
+          const p = goalProgress(account.amount, g.target, g.weekly);
+          return (
+            <div key={g.id} className="px-5 py-4">
+              <div className="flex items-start gap-3">
+                <span className="text-4xl leading-none">{g.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="font-display text-lg font-bold text-white truncate">{g.name}</p>
+                    <p className="text-sm font-bold text-emerald-300 tabular-nums">{Math.floor(p.pct)}%</p>
+                  </div>
+                  <p className="text-sm text-slate-400 tabular-nums">
+                    <span className="font-bold text-white">{fmt(p.saved, true)}</span> of {fmt(g.target, true)}
+                  </p>
+                </div>
+              </div>
+              <div className="h-3 rounded-full bg-white/[0.07] mt-3 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700"
+                  style={{ width: `${p.pct}%` }}
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-2">
+                {p.reached ? (
+                  <span className="font-bold text-emerald-300">🎉 You did it! You've saved enough for your {g.name.toLowerCase()}.</span>
+                ) : (
+                  <>
+                    <span className="font-bold text-white">{fmt(p.remaining, true)}</span> to go
+                    {p.weeksLeft !== null && p.eta && g.weekly ? (
+                      <>
+                        {' '}
+                        · saving {fmt(g.weekly, true)}/week gets you there in about{' '}
+                        <span className="font-bold text-white">{formatWeeks(p.weeksLeft)}</span> (
+                        {p.eta.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })})
+                      </>
+                    ) : (
+                      <> · set how much you'll save per week to see when you'll get there</>
+                    )}
+                  </>
+                )}
+              </p>
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => onAddMoney(g)} className={`${primaryBtn} flex-1 py-2.5 text-sm`}>
+                  + Add money
+                </button>
+                <button onClick={() => onEdit(g)} className={`${secondaryBtn} px-4`}>
+                  Edit
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -601,6 +708,173 @@ function ExpenseModal({ open, onClose }: { open: boolean; onClose: () => void })
   );
 }
 
+const GOAL_ICONS = ['🚗', '🏍️', '🛟', '📱', '💻', '✈️', '🏠', '🎓', '🎮', '👟', '⌚', '🎸', '💍', '🎯'];
+
+function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClose: () => void }) {
+  const { money, dispatch, fmt } = useMoney();
+  const existing = goal && goal !== 'new' ? goal : null;
+  const savingsAccounts = money.accounts.filter((a) => a.kind === 'savings');
+  const [name, setName] = useState('');
+  const [icon, setIcon] = useState('🚗');
+  const [target, setTarget] = useState('');
+  const [weekly, setWeekly] = useState('');
+  const [where, setWhere] = useState<string>('new');
+  const [start, setStart] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    if (!goal) return;
+    if (goal === 'new') {
+      setName('Car');
+      setIcon('🚗');
+      setTarget('');
+      setWeekly('');
+      setWhere('new');
+      setStart('');
+    } else {
+      setName(goal.name);
+      setIcon(goal.icon);
+      setTarget(centsToInput(goal.target));
+      setWeekly(goal.weekly ? centsToInput(goal.weekly) : '');
+      setWhere(goal.accountId);
+    }
+  }, [goal]);
+
+  const targetCents = parseMoney(target);
+  const weeklyCents = weekly ? parseMoney(weekly) : 0;
+  const startCents = start ? parseMoney(start) : 0;
+  const moveFrom = savingsAccounts[0];
+  const tooMuch = !!moveFrom && startCents !== null && startCents > Math.max(0, moveFrom.amount);
+  const valid =
+    !!targetCents && targetCents > 0 && weeklyCents !== null && startCents !== null && !tooMuch && name.trim() !== '';
+  const savedNow = where === 'new' ? (startCents ?? 0) : (money.accounts.find((a) => a.id === where)?.amount ?? 0);
+  const preview = targetCents ? goalProgress(savedNow, targetCents, weeklyCents ?? undefined) : null;
+
+  function save() {
+    if (!valid) return;
+    dispatch({
+      type: 'MONEY_UPSERT_GOAL',
+      goal: { id: existing?.id, name, icon, target: targetCents!, weekly: weeklyCents || undefined, accountId: where === 'new' ? undefined : where },
+      newAccount:
+        where === 'new' ? { name: `${name.trim()} fund`, amount: startCents ?? 0, fromAccountId: moveFrom?.id } : undefined,
+    });
+    onClose();
+  }
+
+  return (
+    <>
+      <Modal open={!!goal && !confirmDelete} onClose={onClose} title={existing ? `Edit ${existing.name} goal` : 'New savings goal'}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+          className="space-y-4"
+        >
+          {!existing && (
+            <div className="flex flex-wrap gap-2">
+              {GOAL_PRESETS.map((p) => (
+                <button
+                  type="button"
+                  key={p.name}
+                  onClick={() => {
+                    setName(p.name);
+                    setIcon(p.icon);
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    name === p.name ? 'bg-emerald-500/15 border-emerald-400/60 text-emerald-100' : 'bg-white/5 border-white/10 text-slate-300'
+                  }`}
+                >
+                  {p.icon} {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <select
+              value={icon}
+              onChange={(e) => setIcon(e.target.value)}
+              aria-label="Icon"
+              className="shrink-0 w-16 h-11 rounded-xl bg-white/5 border border-white/10 text-xl text-center focus:outline-none"
+            >
+              {Array.from(new Set([icon, ...GOAL_ICONS])).map((ic) => (
+                <option key={ic} value={ic}>
+                  {ic}
+                </option>
+              ))}
+            </select>
+            <input value={name} onChange={(e) => setName(e.target.value)} aria-label="Goal name" placeholder="What are you saving for?" className={inputClass} />
+          </div>
+
+          <Field label="How much does it cost?" hint="For a car, add a bit extra for insurance, tax and the first repairs.">
+            <AmountInput value={target} onChange={setTarget} autoFocus={!existing} invalid={target !== '' && !targetCents} />
+          </Field>
+
+          {!existing && (
+            <div>
+              <p className="text-sm font-semibold text-slate-300 mb-1.5">Where will you keep this money?</p>
+              <select value={where} onChange={(e) => setWhere(e.target.value)} className={inputClass}>
+                <option value="new">A new “{name.trim() || 'Goal'} fund” in savings</option>
+                {savingsAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} ({fmt(a.amount)})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-1.5">
+                A separate fund is best: you can see exactly how much is for the {name.trim().toLowerCase() || 'goal'}.
+              </p>
+            </div>
+          )}
+
+          {!existing && where === 'new' && (
+            <Field
+              label={moveFrom ? 'Move some savings into it now (optional)' : 'Already saved for it (optional)'}
+              hint={moveFrom ? `Taken out of ${moveFrom.name} (${fmt(moveFrom.amount)}), so nothing is counted twice.` : undefined}
+            >
+              <AmountInput value={start} onChange={setStart} invalid={startCents === null || tooMuch} />
+            </Field>
+          )}
+
+          <Field label="How much can you save per week? (optional)" hint="Used to work out when you'll reach your goal.">
+            <AmountInput value={weekly} onChange={setWeekly} invalid={weeklyCents === null} />
+          </Field>
+
+          {preview && !preview.reached && preview.weeksLeft !== null && preview.eta && (
+            <p className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2.5 text-sm text-emerald-100">
+              📅 You'll have it in about <span className="font-bold">{formatWeeks(preview.weeksLeft)}</span>, around{' '}
+              <span className="font-bold">{preview.eta.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>.
+            </p>
+          )}
+
+          <button type="submit" disabled={!valid} className={`${primaryBtn} w-full py-3`}>
+            {existing ? 'Save goal' : 'Create goal'}
+          </button>
+          {existing && (
+            <button type="button" onClick={() => setConfirmDelete(true)} className="w-full text-sm font-semibold text-red-300 hover:text-red-200 py-1">
+              Delete goal
+            </button>
+          )}
+        </form>
+      </Modal>
+      <ConfirmDialog
+        open={confirmDelete}
+        title={`Delete the ${existing?.name ?? ''} goal?`}
+        message="Only the goal is removed. The money you saved stays in your savings."
+        confirmLabel="Delete goal"
+        danger
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          if (existing) dispatch({ type: 'MONEY_DELETE_GOAL', goalId: existing.id });
+          setConfirmDelete(false);
+          onClose();
+        }}
+      />
+    </>
+  );
+}
+
 const ICON_CHOICES = ['🍔', '☕', '🚌', '⛽', '🎮', '🎬', '🛍️', '👕', '📱', '🎁', '💊', '📚', '🏋️', '🐶', '💸'];
 
 function LimitsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -738,13 +1012,9 @@ function LimitsModal({ open, onClose }: { open: boolean; onClose: () => void }) 
   );
 }
 
-function TransferModal({
-  preset,
-  onClose,
-}: {
-  preset: null | { fromKind?: MoneyKind; toKind?: MoneyKind; amount?: number };
-  onClose: () => void;
-}) {
+type TransferPreset = { fromKind?: MoneyKind; toKind?: MoneyKind; toId?: string; amount?: number };
+
+function TransferModal({ preset, onClose }: { preset: TransferPreset | null; onClose: () => void }) {
   const { money, dispatch, fmt } = useMoney();
   const [fromId, setFromId] = useState('');
   const [toId, setToId] = useState('');
@@ -753,8 +1023,12 @@ function TransferModal({
 
   useEffect(() => {
     if (!preset) return;
-    const from = money.accounts.find((a) => a.kind === (preset.fromKind ?? 'spending')) ?? money.accounts[0];
+    const fixedTo = preset.toId ? money.accounts.find((a) => a.id === preset.toId) : undefined;
+    const from =
+      money.accounts.find((a) => a.kind === (preset.fromKind ?? 'spending') && a.id !== fixedTo?.id) ??
+      money.accounts.find((a) => a.id !== fixedTo?.id);
     const to =
+      fixedTo ??
       money.accounts.find((a) => a.kind === (preset.toKind ?? 'savings') && a.id !== from?.id) ??
       money.accounts.find((a) => a.id !== from?.id);
     setFromId(from?.id ?? '');
@@ -890,9 +1164,12 @@ function AccountModal({ account, onClose }: { account: MoneyAccount | 'new' | nu
         open={confirmDelete}
         title={`Delete ${existing?.name ?? ''}?`}
         message={
-          money.accounts.length <= 1
+          (money.accounts.length <= 1
             ? 'This is your only account. Your expenses stay in the history.'
-            : 'It will be removed from your total. Your expenses stay in the history.'
+            : 'It will be removed from your total. Your expenses stay in the history.') +
+          (existing && money.goals.some((g) => g.accountId === existing.id)
+            ? ' The savings goal that uses it will be removed too.'
+            : '')
         }
         confirmLabel="Delete"
         danger

@@ -131,12 +131,26 @@ export interface Expense {
   createdAt: string;
 }
 
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  icon: string;
+  /** Target amount in cents. */
+  target: number;
+  /** The savings account that holds this goal's money; progress is that account's balance. */
+  accountId: string;
+  /** Optional planned saving per week, in cents, used to estimate when the goal is reached. */
+  weekly?: number;
+  createdAt: string;
+}
+
 export interface MoneyState {
   currency: string;
   setupDone: boolean;
   accounts: MoneyAccount[];
   categories: SpendCategory[];
   expenses: Expense[];
+  goals: SavingsGoal[];
 }
 
 export interface AppState {

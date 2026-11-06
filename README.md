@@ -24,6 +24,9 @@ unlockable achievements.
   split across categories like food, transport, and fun; log what you
   spend and see what's left today, a warning before you go over, a
   7-day history, and a one-tap "move today's leftover to savings".
+  Savings goals (like a car) each get their own fund in savings, with a
+  progress bar and an estimate of when you'll reach them at your weekly
+  saving rate.
 - **Weekly quests** — bigger challenges you have all week to finish.
 - **Long-term goals** — track progress toward yearly/monthly/custom
   targets (books read, meditation days, savings, anything with a number).

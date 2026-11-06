@@ -40,7 +40,14 @@ export const DEFAULT_SPEND_CATEGORIES: SpendCategory[] = [
 const DEFAULT_WEIGHTS: Record<string, number> = { food: 50, transport: 20, fun: 20, other: 10 };
 
 export function createEmptyMoney(): MoneyState {
-  return { currency: 'USD', setupDone: false, accounts: [], categories: DEFAULT_SPEND_CATEGORIES.map((c) => ({ ...c })), expenses: [] };
+  return {
+    currency: 'USD',
+    setupDone: false,
+    accounts: [],
+    categories: DEFAULT_SPEND_CATEGORIES.map((c) => ({ ...c })),
+    expenses: [],
+    goals: [],
+  };
 }
 
 export function moneyId(prefix: string): string {
@@ -108,4 +115,40 @@ export function splitDailyLimit(categories: SpendCategory[], total: number): Spe
   const amounts = weights.map((w) => Math.floor((total * w) / weightSum));
   amounts[0] += total - amounts.reduce((a, b) => a + b, 0);
   return categories.map((c, i) => ({ ...c, dailyLimit: amounts[i] }));
+}
+
+export const GOAL_PRESETS: Array<{ name: string; icon: string }> = [
+  { name: 'Car', icon: '🚗' },
+  { name: 'Emergency fund', icon: '🛟' },
+  { name: 'Phone', icon: '📱' },
+  { name: 'Laptop', icon: '💻' },
+  { name: 'Trip', icon: '✈️' },
+];
+
+export interface GoalProgress {
+  saved: number;
+  remaining: number;
+  pct: number;
+  reached: boolean;
+  /** Weeks left at the planned weekly amount, if one is set. */
+  weeksLeft: number | null;
+  eta: Date | null;
+}
+
+export function goalProgress(saved: number, target: number, weekly: number | undefined, now: Date = new Date()): GoalProgress {
+  const remaining = Math.max(0, target - saved);
+  const pct = target > 0 ? Math.min(100, Math.max(0, (saved / target) * 100)) : 0;
+  const reached = target > 0 && saved >= target;
+  const weeksLeft = !reached && weekly && weekly > 0 ? Math.ceil(remaining / weekly) : null;
+  const eta = weeksLeft !== null ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + weeksLeft * 7) : null;
+  return { saved, remaining, pct, reached, weeksLeft, eta };
+}
+
+export function formatWeeks(weeks: number): string {
+  if (weeks < 9) return `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
+  const months = Math.round(weeks / 4.345);
+  if (months < 24) return `${months} months`;
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  return rest ? `${years} years ${rest} months` : `${years} years`;
 }

@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, MoneyKind, MoneyState, SpendCategory } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -63,6 +63,7 @@ function normalizeMoney(money: MoneyState | undefined): MoneyState {
     accounts: Array.isArray(money.accounts) ? money.accounts : [],
     categories: Array.isArray(money.categories) ? money.categories : empty.categories,
     expenses: Array.isArray(money.expenses) ? money.expenses : [],
+    goals: Array.isArray(money.goals) ? money.goals : [],
   };
 }
 
@@ -115,6 +116,13 @@ export type Action =
   | { type: 'MONEY_ADD_EXPENSE'; amount: number; categoryId: string; accountId?: string; note?: string }
   | { type: 'MONEY_DELETE_EXPENSE'; expenseId: string }
   | { type: 'MONEY_SET_CATEGORIES'; categories: SpendCategory[] }
+  | {
+      type: 'MONEY_UPSERT_GOAL';
+      goal: Omit<SavingsGoal, 'id' | 'createdAt' | 'accountId'> & { id?: string; accountId?: string };
+      /** When set, a new savings account is created to hold the goal's money, starting at this many cents. */
+      newAccount?: { name: string; amount: number; fromAccountId?: string };
+    }
+  | { type: 'MONEY_DELETE_GOAL'; goalId: string }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
 
@@ -516,7 +524,11 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'MONEY_DELETE_ACCOUNT':
-      return withMoney(state, (m) => ({ ...m, accounts: m.accounts.filter((a) => a.id !== action.accountId) }));
+      return withMoney(state, (m) => ({
+        ...m,
+        accounts: m.accounts.filter((a) => a.id !== action.accountId),
+        goals: m.goals.filter((g) => g.accountId !== action.accountId),
+      }));
 
     case 'MONEY_TRANSFER': {
       if (action.amount <= 0 || action.fromId === action.toId) return state;
@@ -557,6 +569,35 @@ export function reducer(state: AppState, action: Action): AppState {
         };
       });
     }
+
+    case 'MONEY_UPSERT_GOAL': {
+      return withMoney(state, (m) => {
+        let accounts = m.accounts;
+        let accountId = action.goal.accountId;
+        if (action.newAccount) {
+          accountId = moneyId('acct');
+          // Money moved in from an existing account leaves that account, so the total isn't counted twice.
+          if (action.newAccount.fromAccountId) {
+            accounts = adjustAccount(accounts, action.newAccount.fromAccountId, -Math.max(0, action.newAccount.amount));
+          }
+          accounts = [
+            ...accounts,
+            { id: accountId, name: action.newAccount.name.trim() || 'Goal fund', kind: 'savings', amount: Math.max(0, action.newAccount.amount) },
+          ];
+        }
+        if (!accountId || !accounts.some((a) => a.id === accountId)) return m;
+        const { id, ...rest } = action.goal;
+        const goal = { ...rest, name: rest.name.trim() || 'Goal', accountId };
+        const goals = id
+          ? m.goals.map((g) => (g.id === id ? { ...g, ...goal } : g))
+          : [...m.goals, { ...goal, id: moneyId('goal'), createdAt: new Date().toISOString() }];
+        return { ...m, accounts, goals };
+      });
+    }
+
+    case 'MONEY_DELETE_GOAL':
+      // The money itself stays in its savings account; only the goal is removed.
+      return withMoney(state, (m) => ({ ...m, goals: m.goals.filter((g) => g.id !== action.goalId) }));
 
     case 'MONEY_SET_CATEGORIES':
       return withMoney(state, (m) => ({ ...m, categories: action.categories }));
