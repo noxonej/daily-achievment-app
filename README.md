@@ -46,6 +46,14 @@ unlockable achievements.
   a new phone. Needs an OAuth web client ID: set `GOOGLE_CLIENT_ID_DEFAULT` in
   `src/lib/google.ts` (or `VITE_GOOGLE_CLIENT_ID` at build time); without it
   the buttons show "coming soon".
+- **Friends** — add friends by code or invite link, see what they finish
+  (quests, runs, streaks, levels, badges) with pop-up notifications, a weekly
+  XP leaderboard and 👏 cheers. You choose what's shared; money, plans, diary
+  and notes are never shared. Runs on Firebase (setup in
+  `SETUP-GOOGLE-AND-FRIENDS.md`, rules in `firestore.rules`).
+- **Daily streak like Duolingo** — one quest a day keeps the streak; the
+  first quest each day shows a full-screen fire with the number rolling up
+  and the week filling in (milestones at 3, 7, 14, 30, 50, 100, 365 days).
 - **Easy for first-timers** — Simple mode (on by default, switch in
   Settings) keeps each screen to its main cards. New users start with 4
   daily quests matched to their goals (the rest can be switched on in

@@ -13,7 +13,8 @@ import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { Toggle } from './AuthGate';
 import { AccountSettings } from './AccountSettings';
-import { GoogleCard } from './GoogleConnect';
+import { GoogleCard, GoogleG } from './GoogleConnect';
+import { googleConfigured } from '../lib/google';
 import { AboutCard, AccentPicker, BackgroundPicker, ProfileCard } from './ProfileSettings';
 import { InstallCard } from './InstallCard';
 import { ManageView } from '../views/ManageView';
@@ -144,6 +145,22 @@ function Home() {
         </span>
         <Icon name="›" size={20} className="text-slate-500" />
       </button>
+
+      {auth && !auth.account.google && googleConfigured() && (
+        <button
+          onClick={() => settings.open('account')}
+          className="w-full flex items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-500/[0.07] p-3.5 text-left hover:border-sky-400/60"
+        >
+          <span className="shrink-0 w-10 h-10 rounded-full bg-[#fff] flex items-center justify-center">
+            <GoogleG size={20} />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-white">Save your progress</span>
+            <span className="block text-xs text-slate-400">Connect Google to keep it safe and use it on any phone.</span>
+          </span>
+          <Icon name="›" size={18} className="text-slate-500" />
+        </button>
+      )}
 
       <Group>
         <SwitchRow label={t('settings.simple')} hint={t('settings.simpleHint')} on={prefs.simple} onChange={(v) => setPrefs({ simple: v })} />
@@ -406,13 +423,13 @@ function SoundsPage() {
 const HELP: Array<{ icon: string; title: string; text: string }> = [
   { icon: '🎯', title: 'Quests', text: 'Small things to do every day (daily quests) or during the week (weekly quests). Tap one when you have done it. Daily quests start fresh every midnight, weekly ones every Monday.' },
   { icon: '⚡', title: 'XP and levels', text: 'Every quest gives XP (points). Harder quests give more. Collect enough XP and you reach the next level.' },
-  { icon: '🔥', title: 'Streak', text: 'How many days in a row you finished all your daily quests. Miss a day and it starts again from zero, so keep your quest list small and doable.' },
+  { icon: '🔥', title: 'Streak', text: 'How many days in a row you finished at least one quest. Do one quest every day to keep the fire going. Finish all of them for a perfect day, which also wins you a chest.' },
   { icon: '🎁', title: 'Chests', text: 'You win a chest for every perfect day, every perfect week and every new level. Open them in the wardrobe (tap your character) to win clothes, faces and more.' },
   { icon: '💎', title: 'Shards', text: 'The app\'s coins. You get them from chests and the daily box, and spend them on items in the wardrobe.' },
   { icon: '📦', title: 'Daily box', text: 'Finish one quest and the daily box on Today unlocks. Open it once a day for a prize. Very rarely it has a Mythic item you can\'t get anywhere else.' },
   { icon: '🔁', title: 'Quest Swap', text: 'Trade one of today\'s quests for a different one. Back to normal tomorrow.' },
   { icon: '🛡', title: 'Streak Shield', text: 'Saves your streak automatically if you miss a day.' },
-  { icon: '⏭', title: 'Skip Pass', text: 'A rare prize. Skip one quest on a busy or sick day: it counts for your streak but gives no XP.' },
+  { icon: '⏭', title: 'Skip Pass', text: 'A rare prize. Skip one quest on a busy or sick day: it counts as done (also for your streak) but gives no XP.' },
   { icon: '📅', title: 'Week Plan', text: 'Your routine from Monday to Sunday, like 7:00 Wake up. It repeats every week. Choose "Only once" for one-time things like a dentist visit; they disappear after the day.' },
   { icon: '💰', title: 'Money', text: 'Type in how much you have. Each time you buy something, tap "I spent money". The daily limit shows how much you can still spend today. Add goals (like a car) to save for.' },
   { icon: '📕', title: 'Diary', text: 'In the You tab. A private page for every day, plus notes. Nobody else can see it.' },

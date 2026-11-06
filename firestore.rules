@@ -1,0 +1,48 @@
+rules_version = '2';
+
+// Dayforge friends. Only what the app shares is ever stored here: name, character, level,
+// streak, weekly XP and finished quests / runs / badges. Money, plans, diary and notes never
+// leave the phone.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    // `owner` has added the signed-in user as a friend.
+    function friendOf(owner) { return exists(/databases/$(db)/documents/friends/$(owner)/list/$(me())); }
+    function requested(to, from) { return exists(/databases/$(db)/documents/requests/$(to)/from/$(from)); }
+
+    // Public card: needed to find someone by their friend code.
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && me() == uid;
+    }
+
+    // Friend requests: written by the sender, read / removed by either side.
+    match /requests/{to}/from/{from} {
+      allow read, delete: if signedIn() && (me() == to || me() == from);
+      allow create, update: if signedIn() && me() == from && to != from;
+    }
+
+    // Friend lists. Accepting a request writes both sides.
+    match /friends/{uid}/list/{fid} {
+      allow read: if signedIn() && me() == uid;
+      allow create, update: if signedIn() && (
+        (me() == uid && requested(uid, fid)) ||
+        (me() == fid && requested(fid, uid))
+      );
+      allow delete: if signedIn() && (me() == uid || me() == fid);
+    }
+
+    // What you did (quests, runs, streaks…): visible to you and your friends only.
+    match /activity/{uid}/items/{id} {
+      allow read: if signedIn() && (me() == uid || friendOf(uid));
+      allow create, delete: if signedIn() && me() == uid;
+    }
+
+    // Cheers from friends.
+    match /cheers/{uid}/items/{id} {
+      allow read, delete: if signedIn() && me() == uid;
+      allow create: if signedIn() && friendOf(uid) && request.resource.data.fromUid == me();
+    }
+  }
+}

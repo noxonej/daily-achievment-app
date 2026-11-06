@@ -8,18 +8,22 @@ import { Icon } from '../components/Icon';
 import { StatsView } from './StatsView';
 import { AchievementsView } from './AchievementsView';
 import { DiaryView } from './DiaryView';
+import { FriendsView } from './FriendsView';
+import { takeIntent } from '../lib/intents';
+import { useFriends } from '../lib/friends';
 import { settings } from '../lib/settingsNav';
 import { t } from '../lib/prefs';
 import { wardrobe } from '../lib/wardrobe';
 import { levelFromTotalXp, titleForLevel } from '../lib/xp';
 
-type Section = 'stats' | 'badges' | 'diary';
+type Section = 'stats' | 'badges' | 'friends' | 'diary';
 
 /** Profile hub: your character and level up top, then stats, badges and your diary. Settings open from the gear. */
 export function YouView() {
   const { state, stats } = useApp();
-  const [section, setSection] = useState<Section>('stats');
+  const [section, setSection] = useState<Section>(() => (takeIntent('you-friends') ? 'friends' : 'stats'));
   const { xpIntoLevel, xpForNextLevel } = levelFromTotalXp(stats.totalXp);
+  const friendRequests = useFriends().requests.length;
   const name = state.profile?.name;
 
   return (
@@ -100,6 +104,7 @@ export function YouView() {
           options={[
             { id: 'stats', label: t('you.stats'), icon: '📊' },
             { id: 'badges', label: t('you.badges'), icon: '🎖' },
+            { id: 'friends', label: 'Friends', icon: '🤝', badge: friendRequests },
             { id: 'diary', label: t('you.diary'), icon: '📕' },
           ]}
         />
@@ -108,6 +113,11 @@ export function YouView() {
         {section === 'stats' && <StatsView embedded />}
         {section === 'badges' && <AchievementsView embedded />}
         {section === 'diary' && <DiaryView />}
+        {section === 'friends' && (
+          <div className="max-w-2xl mx-auto px-4 py-4">
+            <FriendsView />
+          </div>
+        )}
       </div>
     </div>
   );

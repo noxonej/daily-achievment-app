@@ -227,6 +227,15 @@ export interface NoteEntry {
   updatedAt: string;
 }
 
+/** Which of your activity friends see (all on by default). */
+export interface Sharing {
+  quests: boolean;
+  runs: boolean;
+  streak: boolean;
+  level: boolean;
+  badges: boolean;
+}
+
 export interface Prefs {
   language: string;
   theme: 'dark' | 'light' | 'system';
@@ -271,6 +280,8 @@ export interface AppState {
   character: Character;
   /** Avatar items bought with shards. */
   unlockedCosmeticIds: string[];
+  /** Shards paid for each bought item, so later price changes don't change your balance. */
+  purchases?: Record<string, number>;
   /** Avatar items won from reward chests. */
   wonCosmeticIds: string[];
   chestsOpened: number;
@@ -300,6 +311,10 @@ export interface AppState {
   skipPasses: number;
   /** Getting-started progress and tab explainers already seen (e.g. "visit:plan", "hint:money"). */
   guide?: string[];
+  /** Last day the streak pop-up was shown (once a day, on the first quest). */
+  streakPopDate?: string;
+  /** What friends can see. Money, plans, diary and notes are never shared. */
+  sharing?: Sharing;
   streakShields: number;
   /** Days a Streak Shield covered; they count as perfect for the streak only. */
   shieldedDates: string[];

@@ -1,5 +1,6 @@
 import { settings } from '../lib/settingsNav';
 import { GettingStarted } from '../components/Guide';
+import { FriendsPeek } from '../components/FriendsPeek';
 import { useFlip } from '../lib/useFlip';
 import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
@@ -145,6 +146,13 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       </div>
 
       <DailyBoxCard />
+
+      <FriendsPeek
+        onOpen={() => {
+          setIntent('you-friends');
+          onNavigate('you');
+        }}
+      />
 
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         {showConfetti && <Confetti count={36} />}

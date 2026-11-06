@@ -643,3 +643,37 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
   transform: translateX(-100%); animation: complete-sweep 0.7s var(--ease-out) forwards;
 }
 @keyframes complete-sweep { to { transform: translateX(100%); } }
+
+/* ---- Daily streak pop-up ---- */
+@keyframes flame-dance {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  25% { transform: scale(1.03, 0.97) skewX(-2deg); }
+  50% { transform: scale(0.98, 1.04) skewX(1.5deg); }
+  75% { transform: scale(1.02, 0.98) skewX(-1deg); }
+}
+.flame-dance { animation: flame-dance 1.6s ease-in-out infinite; transform-box: view-box; }
+@keyframes flame-core {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.92, 1.06); }
+}
+.flame-core { animation: flame-core 1.1s ease-in-out infinite; transform-box: view-box; }
+@keyframes streak-flame-in {
+  0% { transform: scale(0.2) translateY(40px); opacity: 0; }
+  60% { transform: scale(1.12) translateY(-6px); opacity: 1; }
+  100% { transform: none; }
+}
+.streak-flame-in { animation: streak-flame-in 0.7s var(--ease-spring) both; }
+@keyframes streak-day-pop {
+  0% { transform: scale(0.6); }
+  55% { transform: scale(1.25); box-shadow: 0 0 22px rgba(249, 115, 22, 0.9); }
+  100% { transform: scale(1); box-shadow: 0 0 12px rgba(249, 115, 22, 0.5); }
+}
+.streak-day-pop { animation: streak-day-pop 0.55s var(--ease-spring) both; }
+
+/* ---- Friends ---- */
+@keyframes friends-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.friends-bob { animation: friends-bob 2.4s ease-in-out infinite; }
+@keyframes cheer-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25) rotate(-8deg); } 100% { transform: scale(1); } }
+.cheer-pop { animation: cheer-pop 0.45s var(--ease-spring); }
+@keyframes toast-drop { from { opacity: 0; transform: translateY(-16px) scale(0.96); } to { opacity: 1; transform: none; } }
+.toast-drop { animation: toast-drop 0.35s var(--ease-spring) both; }

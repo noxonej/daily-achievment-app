@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { NavTabs, type ViewId } from './components/NavTabs';
 import { NewDayBanner } from './components/NewDayBanner';
 import { CelebrationOverlay } from './components/CelebrationOverlay';
+import { StreakCelebration } from './components/StreakCelebration';
 import { TodayView } from './views/TodayView';
 import { PlanView } from './views/PlanView';
 import { MoneyView } from './views/MoneyView';
@@ -20,6 +21,9 @@ import { useApplyAppearance } from './lib/theme';
 import { useWardrobeOpen } from './lib/wardrobe';
 import { useApplyPrefs } from './lib/prefs';
 import { useGoogleAutoBackup } from './components/GoogleConnect';
+import { rememberInvite, useFriendsEngine } from './lib/friends';
+import { FriendToasts } from './components/FriendToasts';
+import { setIntent } from './lib/intents';
 import { SettingsScreen } from './components/SettingsScreen';
 
 // Loaded only when needed, so the app opens faster.
@@ -45,6 +49,14 @@ export default function App() {
   useApplyAppearance(state.appearance);
   useApplyPrefs(state.prefs);
   useGoogleAutoBackup();
+  useFriendsEngine({
+    accountId: auth?.account.id ?? null,
+    name: state.profile?.name || auth?.account.name || 'Friend',
+    picture: auth?.account.google?.picture,
+    state,
+    level: stats.level,
+    streak: stats.currentStreak,
+  });
   const wardrobeOpen = useWardrobeOpen();
   // Fetch the lazy screens in the background so they're cached for offline use.
   useEffect(() => {
@@ -64,7 +76,14 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('focus') === '1') focusTimer.open();
-    if (params.has('view') || params.has('focus') || params.has('source')) {
+    // Opened from a friend's invite link: remember their code and show Friends.
+    const invite = params.get('invite');
+    if (invite) {
+      rememberInvite(invite);
+      setIntent('you-friends');
+      setViewState('you');
+    }
+    if (params.has('view') || params.has('focus') || params.has('source') || invite) {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
@@ -93,11 +112,18 @@ export default function App() {
       </main>
       <NavTabs active={view} onChange={setView} />
       <CelebrationOverlay />
+      <StreakCelebration />
       <PlanReminderToast />
       <FocusTimer />
       <RunTracker />
       <SettingsScreen />
       <UndoToast />
+      <FriendToasts
+        onOpen={() => {
+          setIntent('you-friends');
+          setView('you');
+        }}
+      />
       {wardrobeOpen && (
         <Suspense fallback={null}>
           <Wardrobe />

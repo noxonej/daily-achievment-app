@@ -22,7 +22,7 @@ export function NewDayBanner() {
           <p className="text-xs text-slate-400">
             {stats.currentStreak > 0
               ? `Keep your ${stats.currentStreak} day streak alive.`
-              : 'Complete every daily quest to start a streak.'}
+              : 'Finish one quest to start a streak.'}
           </p>
         </div>
         <button

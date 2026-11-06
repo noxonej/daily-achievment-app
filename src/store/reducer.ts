@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing } from '../lib/types';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -6,7 +6,7 @@ import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../l
 import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
 import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, boxPool, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
-import { computeDerivedStats } from '../lib/stats';
+import { computeDerivedStats, dayCountsForStreak } from '../lib/stats';
 import { checkNote } from '../lib/questRules';
 import type { BoxReward } from '../lib/dailyBox';
 import { DEFAULT_PREFS, guessLanguage } from '../lib/i18n';
@@ -179,6 +179,8 @@ export type Action =
   | { type: 'USE_SKIP_PASS'; questId: string }
   | { type: 'PRUNE_PLAN_EVENTS'; today: string }
   | { type: 'GUIDE_MARK'; key: string }
+  | { type: 'SET_STREAK_POP'; date: string }
+  | { type: 'SET_SHARING'; sharing: Partial<Sharing> }
   | { type: 'MONEY_UPSERT_CRYPTO'; holding: Omit<CryptoHolding, 'id'> & { id?: string } }
   | { type: 'MONEY_DELETE_CRYPTO'; holdingId: string }
   | { type: 'MONEY_SET_CRYPTO_PRICES'; prices: NonNullable<MoneyState['cryptoPrices']> }
@@ -533,6 +535,12 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'MARK_DAY_OPENED':
       return { ...state, lastOpenedDate: action.date };
 
+    case 'SET_SHARING':
+      return { ...state, sharing: { ...{ quests: true, runs: true, streak: true, level: true, badges: true }, ...(state.sharing ?? {}), ...action.sharing } };
+
+    case 'SET_STREAK_POP':
+      return { ...state, streakPopDate: action.date };
+
     case 'GUIDE_MARK':
       return (state.guide ?? []).includes(action.key) ? state : { ...state, guide: [...(state.guide ?? []), action.key] };
 
@@ -581,7 +589,11 @@ export function reducer(state: AppState, action: Action): AppState {
       if (!item || item.unlock.kind !== 'shop') return state;
       const stats = computeDerivedStats(state);
       if (isOwned(item, ownership(state, stats)) || stats.availableShards < item.unlock.cost) return state;
-      return { ...state, unlockedCosmeticIds: [...state.unlockedCosmeticIds, action.itemId] };
+      return {
+        ...state,
+        unlockedCosmeticIds: [...state.unlockedCosmeticIds, action.itemId],
+        purchases: { ...(state.purchases ?? {}), [action.itemId]: item.unlock.cost },
+      };
     }
 
     case 'EQUIP_COSMETIC': {
@@ -993,7 +1005,7 @@ export function reducer(state: AppState, action: Action): AppState {
       let shields = state.streakShields ?? 0;
       if (shields <= 0) return state;
       const shielded = new Set(state.shieldedDates ?? []);
-      const good = (k: string) => shielded.has(k) || (!!state.dayLogs[k]?.perfectDay && (state.dayLogs[k]?.dailyQuestCount ?? 0) > 0);
+      const good = (k: string) => shielded.has(k) || dayCountsForStreak(state.dayLogs[k]);
       // Walk back over missed days (yesterday first), as far as the shields go.
       const missed: string[] = [];
       let cursor = addDaysToKey(todayKey(), -1);

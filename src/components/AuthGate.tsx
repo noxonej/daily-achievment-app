@@ -293,7 +293,7 @@ function CreateAccount({
         </>
       )}
       <p className="text-center text-[11px] text-slate-500 mt-3 leading-relaxed">
-        {existing ? 'Your account is saved on this device.' : 'With Google, your progress is backed up and comes back on any phone.'}
+        {existing ? 'Your account is saved on this device.' : 'Already have an account? Continue with Google to get it back.'}
       </p>
     </Shell>
   );
