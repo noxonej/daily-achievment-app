@@ -1,5 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { useApp } from '../store/AppContext';
+import { useEffect, useState } from 'react';
 import type { MoneyAccount, MoneyKind, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, parseKey } from '../lib/date';
 import {
@@ -7,10 +6,8 @@ import {
   GOAL_PRESETS,
   MONEY_KINDS,
   centsToInput,
-  createEmptyMoney,
   dailyLimit,
   expensesOn,
-  formatMoney,
   formatWeeks,
   goalProgress,
   guessCurrency,
@@ -23,6 +20,13 @@ import {
   totalByKind,
 } from '../lib/money';
 import { MoneyDonut } from '../components/MoneyDonut';
+import { Segmented } from '../components/Segmented';
+import { CryptoPanel } from '../components/money/CryptoPanel';
+import { TipsPanel, TipCard } from '../components/money/TipsPanel';
+import { BillsCard, MonthCard } from '../components/money/BillsCard';
+import { cryptoTotal } from '../lib/crypto';
+import { lessonOfTheDay, smartTips } from '../lib/moneyTips';
+import { AmountInput, Field, card, inputClass, primaryBtn, secondaryBtn, useMoney } from '../components/money/ui';
 import { useCountUp } from '../lib/useCountUp';
 import { takeIntent } from '../lib/intents';
 import { Modal } from '../components/Modal';
@@ -30,24 +34,9 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon, IconGrid } from '../components/Icon';
 import { locale } from '../lib/locale';
 
-const inputClass =
-  'w-full rounded-xl bg-white/5 border border-white/10 px-3 h-11 text-[15px] text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 focus:bg-white/[0.07] transition';
-const card = 'rounded-2xl border border-white/10 bg-white/[0.03]';
-const primaryBtn =
-  'rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-white font-bold transition active:scale-[0.98]';
-const secondaryBtn =
-  'rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm font-semibold text-slate-200 transition';
-
 /** A money amount that counts up when it first appears and when it changes. */
 function CountUp({ value, format }: { value: number; format: (cents: number) => string }) {
   return <>{format(useCountUp(value, 800, 0))}</>;
-}
-
-function useMoney() {
-  const { state, dispatch, undoable } = useApp();
-  const money = state.money ?? createEmptyMoney();
-  const fmt = (cents: number, compact = false) => formatMoney(cents, money.currency, { compact });
-  return { money, dispatch, fmt, undoable };
 }
 
 export function MoneyView() {
@@ -57,6 +46,7 @@ export function MoneyView() {
   const [transferOpen, setTransferOpen] = useState<TransferPreset | null>(null);
   const [editing, setEditing] = useState<MoneyAccount | 'new' | null>(null);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | 'new' | null>(null);
+  const [tab, setTab] = useState<'overview' | 'crypto' | 'tips'>('overview');
   useEffect(() => {
     if (takeIntent('add-expense') && money.setupDone) setExpenseOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,7 +79,27 @@ export function MoneyView() {
         <SetupCard />
       ) : (
         <>
+          <Segmented
+            value={tab}
+            onChange={setTab}
+            options={[
+              { id: 'overview', label: 'Overview', icon: '💰' },
+              { id: 'crypto', label: 'Crypto', icon: '₿' },
+              { id: 'tips', label: 'Tips', icon: '💡' },
+            ]}
+          />
+          {tab === 'crypto' ? (
+            <div className="animate-view-in">
+              <CryptoPanel />
+            </div>
+          ) : tab === 'tips' ? (
+            <div className="animate-view-in">
+              <TipsPanel />
+            </div>
+          ) : (
+          <>
           <OverviewCard />
+          <TopTip onMore={() => setTab('tips')} />
           <TodayCard
             onAddExpense={() => setExpenseOpen(true)}
             onEditLimits={() => setLimitsOpen(true)}
@@ -101,6 +111,8 @@ export function MoneyView() {
             onAddMoney={(g) => setTransferOpen({ fromKind: 'spending', toId: g.accountId })}
           />
           <HistoryCard />
+          <MonthCard />
+          <BillsCard />
           <AccountsCard
             onEdit={(a) => setEditing(a)}
             onAdd={() => setEditing('new')}
@@ -108,8 +120,10 @@ export function MoneyView() {
           />
           <p className="text-center text-xs text-slate-500 px-6 pb-2">
             Your money info stays on this device. It's only saved somewhere else if you export a backup or turn on sync in
-            Manage.
+            Settings.
           </p>
+          </>
+          )}
         </>
       )}
 
@@ -196,7 +210,8 @@ function OverviewCard() {
   const { money, fmt } = useMoney();
   const spending = totalByKind(money.accounts, 'spending');
   const savings = totalByKind(money.accounts, 'savings');
-  const investing = totalByKind(money.accounts, 'investing');
+  const crypto = cryptoTotal(money);
+  const investing = totalByKind(money.accounts, 'investing') + crypto;
 
   return (
     <div className={`${card} p-5`}>
@@ -219,10 +234,22 @@ function OverviewCard() {
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
           <p className="text-xs font-bold text-slate-300"><Icon name="🔒" size="1.15em" className="icon-inline" />Don't touch</p>
           <p className="font-display text-xl font-extrabold text-white tabular-nums mt-1"><CountUp value={savings + investing} format={(v) => fmt(v, true)} /></p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Savings + investments</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Savings + investments{crypto > 0 ? ' + crypto' : ''}</p>
         </div>
       </div>
     </div>
+  );
+}
+
+/** The most useful tip right now (or the lesson of the day), with a link to all tips. */
+function TopTip({ onMore }: { onMore: () => void }) {
+  const { money } = useMoney();
+  const tip = smartTips(money)[0];
+  const lesson = lessonOfTheDay();
+  return (
+    <button onClick={onMore} className="block w-full text-left" aria-label="Open money tips">
+      <TipCard tip={tip ?? { id: 'lesson', icon: lesson.icon, title: lesson.title, text: lesson.text, tone: 'idea' }} />
+    </button>
   );
 }
 
@@ -574,45 +601,6 @@ function AccountsCard({
 }
 
 /* ---------------- Modals ---------------- */
-
-function AmountInput({
-  value,
-  onChange,
-  autoFocus,
-  big,
-  invalid,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  autoFocus?: boolean;
-  big?: boolean;
-  invalid?: boolean;
-}) {
-  const { money } = useMoney();
-  return (
-    <div className="relative">
-      <input
-        autoFocus={autoFocus}
-        inputMode="decimal"
-        placeholder="0"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`${inputClass} pr-14 ${big ? '!h-14 !text-2xl font-bold' : ''} ${invalid ? '!border-red-400/60' : ''}`}
-      />
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500">{money.currency}</span>
-    </div>
-  );
-}
-
-function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
-  return (
-    <label className="block">
-      <span className="text-sm font-semibold text-slate-300">{label}</span>
-      {hint && <span className="block text-xs text-slate-500">{hint}</span>}
-      <div className="mt-1.5">{children}</div>
-    </label>
-  );
-}
 
 function ExpenseModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { money, dispatch, fmt } = useMoney();

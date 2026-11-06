@@ -76,6 +76,8 @@ export interface DayLog {
   xpBoost?: number;
   /** Daily quests swapped for something else today (Quest Swap), keyed by the original quest id. */
   swaps?: Record<string, { title: string; description?: string; icon: string }>;
+  /** Daily quests skipped with a Skip Pass: they count as done for streaks and perfect days, but give no XP. */
+  skipped?: string[];
 }
 
 export interface WeekLog {
@@ -109,6 +111,10 @@ export interface PlanItem {
   /** Optional "HH:MM" (24h) start time; items without one sort after timed ones. */
   time?: string;
   text: string;
+  /** Set on one-time items ("YYYY-MM-DD"): they show up on that date only and disappear afterwards. */
+  date?: string;
+  /** Optional short note, e.g. an address or what to bring. */
+  note?: string;
 }
 
 /** A reusable Monday–Sunday routine. Not tied to any date — the same plan repeats every week. */
@@ -117,6 +123,8 @@ export interface WeekPlan {
   /** Ticks only count for this ISO week; they clear automatically when a new week starts. */
   checkedWeekKey: string;
   checkedIds: string[];
+  /** One-time items (dentist, exam, birthday…), each with a date. Past ones are removed automatically. */
+  events?: PlanItem[];
 }
 
 export type MoneyKind = 'spending' | 'savings' | 'investing';
@@ -168,6 +176,37 @@ export interface MoneyState {
   categories: SpendCategory[];
   expenses: Expense[];
   goals: SavingsGoal[];
+  /** Crypto you hold; values come from live prices (or a price you type in). */
+  crypto?: CryptoHolding[];
+  /** Last prices fetched, per coin id, in the money currency. Kept so values show offline. */
+  cryptoPrices?: { currency: string; fetchedAt: string; prices: Record<string, { price: number; change24h?: number }> };
+  /** Bills and subscriptions that come out every month. */
+  bills?: Bill[];
+}
+
+export interface CryptoHolding {
+  id: string;
+  /** CoinGecko id, e.g. "bitcoin". */
+  coinId: string;
+  symbol: string;
+  name: string;
+  /** How many coins (can be a fraction). */
+  amount: number;
+  /** What you paid in total, in cents (optional, for profit / loss). */
+  invested?: number;
+  /** Price per coin in cents, used when live prices aren't available. */
+  manualPrice?: number;
+}
+
+export interface Bill {
+  id: string;
+  name: string;
+  icon: string;
+  /** Monthly amount in cents. */
+  amount: number;
+  /** Day of the month it's paid (1–31). */
+  day: number;
+  kind: 'bill' | 'subscription';
 }
 
 export interface RunRecord {
@@ -255,6 +294,8 @@ export interface AppState {
   /** Daily box: last date it was opened, and what it gave. */
   dailyBox: { lastOpened: string | null; lastReward: unknown };
   questSwaps: number;
+  /** Skip Passes (rare chest / daily box prize): skip one daily quest without breaking the streak. */
+  skipPasses: number;
   streakShields: number;
   /** Days a Streak Shield covered; they count as perfect for the streak only. */
   shieldedDates: string[];

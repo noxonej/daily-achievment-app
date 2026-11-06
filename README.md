@@ -39,6 +39,21 @@ unlockable achievements.
 - **Diary & notes** — a private ruled diary page for every day (with writing
   prompts, word count and your mood), past pages by month, and free notes
   with colours, pinning, search and undo for deletes.
+- **Skip Pass** — a rare prize (6% in reward chests, 3% in the daily box)
+  that skips one daily quest: it counts as done for your streak and perfect
+  day, but gives no XP and doesn't unlock the daily box.
+- **One-time events** — add an appointment, test or birthday for a specific
+  date ("Only once"); it shows on that day, appears in a "Coming up" list,
+  goes into the calendar file as a single event, and disappears by itself
+  once the day is over. The day picker shows this week's dates.
+- **Money tips, bills and crypto** — the Money tab has Overview, Crypto and
+  Tips. Tips come from your own numbers (top category, small buys, limits,
+  savings cushion, subscriptions, crypto share), plus 16 money lessons, a
+  "watch your money grow" compound calculator and an "is it worth it?"
+  calculator. Overview adds this month's spending by category and a bills &
+  subscriptions tracker with due dates. Crypto tracks 22 popular coins (or
+  any coin with a typed price) with live prices from CoinGecko, 24h change,
+  profit/loss and the basics to know before buying.
 - **Five tabs** — Today, Plan, Money, Quests (weekly quests + long-term
   goals) and You (profile, stats, badges, diary).
 - **Accounts on the device** — create an account with an optional 4-digit

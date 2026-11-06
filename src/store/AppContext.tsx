@@ -233,6 +233,19 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
     dispatch({ type: 'MARK_DAY_OPENED', date: todayKey() });
   }
 
+  // One-time plan items (appointments) disappear once their day is over: check on open and when the app comes back.
+  useEffect(() => {
+    const prune = () => dispatch({ type: 'PRUNE_PLAN_EVENTS', today: todayKey() });
+    prune();
+    const onVisible = () => document.visibilityState === 'visible' && prune();
+    document.addEventListener('visibilitychange', onVisible);
+    const t = setInterval(prune, 60 * 60 * 1000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(t);
+    };
+  }, []);
+
   // Ensure today's wildcard quest exists (or prune it if the feature is off).
   useEffect(() => {
     dispatch({ type: 'SYNC_WILDCARD' });

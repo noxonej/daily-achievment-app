@@ -6,6 +6,7 @@ export type BoxReward =
   | { kind: 'xpBoost'; multiplier: number }
   | { kind: 'swap' }
   | { kind: 'shield' }
+  | { kind: 'skip' }
   | { kind: 'chest' }
   | { kind: 'cosmetic'; itemId: string };
 
@@ -16,13 +17,14 @@ interface Entry {
 
 /** Odds out of 100. The box-only cosmetic is deliberately rare (~2%). */
 export const BOX_TABLE: Entry[] = [
-  { weight: 30, reward: { kind: 'shards', amount: 25 } },
+  { weight: 27, reward: { kind: 'shards', amount: 25 } },
   { weight: 18, reward: { kind: 'shards', amount: 50 } },
   { weight: 7, reward: { kind: 'shards', amount: 100 } },
   { weight: 14, reward: { kind: 'xpBoost', multiplier: 1.5 } },
   { weight: 5, reward: { kind: 'xpBoost', multiplier: 2 } },
   { weight: 12, reward: { kind: 'swap' } },
   { weight: 8, reward: { kind: 'shield' } },
+  { weight: 3, reward: { kind: 'skip' } },
   { weight: 4, reward: { kind: 'chest' } },
   { weight: 2, reward: { kind: 'cosmetic', itemId: '' } },
 ];
@@ -59,6 +61,8 @@ export function rewardInfo(r: BoxReward): { title: string; text: string; icon: s
       return { title: 'Quest Swap', text: "Trade one of today's daily quests for a different one.", icon: '🔁', tone: 'text-sky-300' };
     case 'shield':
       return { title: 'Streak Shield', text: 'If you miss a day, it saves your streak automatically.', icon: '🛡', tone: 'text-emerald-300' };
+    case 'skip':
+      return { title: 'Skip Pass', text: 'Skip one daily quest on a busy day. Your streak stays safe (no XP for it).', icon: '⏭', tone: 'text-teal-300' };
     case 'chest':
       return { title: 'Bonus reward chest', text: 'Open it in the wardrobe.', icon: '🎁', tone: 'text-violet-300' };
     case 'cosmetic':

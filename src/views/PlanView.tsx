@@ -7,13 +7,19 @@ import {
   STARTER_ROUTINE,
   WEEKDAYS,
   checkedPlanIds,
+  dateOfWeekday,
+  formatEventDate,
   formatPlanTime,
   planCategory,
   planItemsForDay,
   todayWeekday,
+  upcomingEvents,
   weekdayLabel,
+  weekdayOfDate,
   weekdayShort,
 } from '../lib/weekPlan';
+import { addDaysToKey, parseKey, todayKey } from '../lib/date';
+import { locale } from '../lib/locale';
 import {
   countTimedItems,
   downloadPlanIcs,
@@ -38,6 +44,7 @@ export function PlanView() {
   const checked = checkedPlanIds(state);
   const [remindersOpen, setRemindersOpen] = useState(false);
   const [starterOpen, setStarterOpen] = useState(false);
+  const [eventOpen, setEventOpen] = useState(false);
   const emptyDays = WEEKDAYS.filter((w) => (state.weekPlan?.days?.[w.id]?.length ?? 0) === 0);
   const weekIsEmpty = emptyDays.length === WEEKDAYS.length;
 
@@ -83,6 +90,7 @@ export function PlanView() {
         </button>
       ) : (
         <div className="flex flex-wrap gap-2">
+          <ToolbarButton onClick={() => setEventOpen(true)}><Icon name="📆" size="1.15em" className="icon-inline" />One-time event</ToolbarButton>
           <ToolbarButton onClick={() => setRemindersOpen(true)}><Icon name="🔔" size="1.15em" className="icon-inline" />Reminders</ToolbarButton>
           {emptyDays.length > 0 && <ToolbarButton onClick={() => setStarterOpen(true)}><Icon name="✨" size="1.15em" className="icon-inline" />Fill empty days</ToolbarButton>}
           <CategoryLegend />
@@ -97,6 +105,9 @@ export function PlanView() {
       ) : (
         <WeekOverview today={today} checked={checked} onOpenDay={openDay} />
       )}
+
+      <UpcomingCard onAdd={() => setEventOpen(true)} onOpenDay={openDay} />
+      <EventModal open={eventOpen} onClose={() => setEventOpen(false)} defaultDate={dateOfWeekday(day) >= todayKey() ? dateOfWeekday(day) : todayKey()} />
 
       <RemindersModal open={remindersOpen} onClose={() => setRemindersOpen(false)} />
       <StarterModal open={starterOpen} emptyDays={emptyDays.map((w) => w.id)} onClose={() => setStarterOpen(false)} />
@@ -289,7 +300,10 @@ function DayPicker({
   return (
     <div className="grid grid-cols-7 gap-1.5">
       {WEEKDAYS.map((w) => {
-        const count = state.weekPlan?.days?.[w.id]?.length ?? 0;
+        const items = planItemsForDay(state, w.id);
+        const count = items.length;
+        const hasEvent = items.some((i) => i.date);
+        const date = parseKey(dateOfWeekday(w.id));
         const active = w.id === selected;
         return (
           <button
@@ -302,10 +316,14 @@ function DayPicker({
                 : 'bg-white/[0.03] border-white/10 text-slate-300 hover:border-white/25'
             }`}
           >
-            <span className="text-[13px] font-bold">{weekdayShort(w.id)}</span>
+            <span className={`text-[11px] font-bold ${active ? 'text-amber-100' : 'text-slate-400'}`}>{weekdayShort(w.id)}</span>
+            <span className="font-display text-[17px] font-extrabold leading-tight tabular-nums">{date.getDate()}</span>
             <span className={`text-[10px] font-semibold tabular-nums ${active ? 'text-amber-100' : 'text-slate-500'}`}>
               {count > 0 ? count : '–'}
             </span>
+            {hasEvent && (
+              <span className={`absolute bottom-1 left-1 w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-rose-400'}`} aria-label="One-time event" />
+            )}
             {w.id === today && (
               <span
                 className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-amber-400'}`}
@@ -333,6 +351,9 @@ function DayPanel({ day, isToday, checked }: { day: WeekdayId; isToday: boolean;
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="font-display text-xl font-bold text-white">{weekdayLabel(day)}</h2>
+            <span className="text-sm text-slate-500 font-semibold">
+              {parseKey(dateOfWeekday(day)).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })}
+            </span>
             {isToday && (
               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
                 Today
@@ -454,10 +475,19 @@ function ItemRow({
         >
           {item.time ? formatPlanTime(item.time) : <span className="text-slate-600 font-medium">Any time</span>}
         </span>
-        <span
-          className={`flex-1 min-w-0 text-[15px] break-words ${done ? 'text-slate-500 line-through' : 'text-slate-100'}`}
-        >
-          {item.text}
+        <span className="flex-1 min-w-0">
+          <span className={`block text-[15px] break-words ${done ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{item.text}</span>
+          {(item.date || item.note) && (
+            <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
+              {item.date && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 border border-rose-400/30 px-1.5 py-px font-bold text-rose-300">
+                  <Icon name="📆" size={11} />
+                  Only once
+                </span>
+              )}
+              {item.note && <span className="text-slate-400 break-words">{item.note}</span>}
+            </span>
+          )}
         </span>
       </button>
       <button
@@ -476,10 +506,12 @@ function EditRow({ day, item, onDone }: { day: WeekdayId; item: PlanItem; onDone
   const [time, setTime] = useState(item.time ?? '');
   const [text, setText] = useState(item.text);
   const [category, setCategory] = useState<PlanCategory | undefined>(item.category);
+  const [date, setDate] = useState(item.date ?? '');
+  const [note, setNote] = useState(item.note ?? '');
 
   function save() {
     if (!text.trim()) return;
-    dispatch({ type: 'PLAN_UPDATE', day, itemId: item.id, text, time, category });
+    dispatch({ type: 'PLAN_UPDATE', day, itemId: item.id, text, time, category, note, date: item.date ? date || item.date : undefined });
     onDone();
   }
 
@@ -511,6 +543,14 @@ function EditRow({ day, item, onDone }: { day: WeekdayId; item: PlanItem; onDone
             className={`${inputClass} flex-1 min-w-0`}
           />
         </div>
+        {item.date && (
+          <label className="flex items-center gap-2 text-sm text-slate-300">
+            <Icon name="📆" size={15} className="text-rose-300" />
+            Only on
+            <input type="date" value={date} min={todayKey()} onChange={(e) => setDate(e.target.value)} className={`${inputClass} flex-1 min-w-0`} />
+          </label>
+        )}
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional), e.g. address or what to bring" aria-label="Note" maxLength={120} className={`${inputClass} w-full`} />
         <CategoryPicker value={category} onChange={setCategory} />
         <div className="flex items-center gap-2">
           <button
@@ -568,11 +608,14 @@ function AddRow({ day }: { day: WeekdayId }) {
   const [time, setTime] = useState(() => suggestNextTime(items));
   const [text, setText] = useState('');
   const [category, setCategory] = useState<PlanCategory | undefined>();
+  const [once, setOnce] = useState(false);
+  const thisWeek = dateOfWeekday(day);
+  const [date, setDate] = useState(() => (thisWeek >= todayKey() ? thisWeek : addDaysToKey(thisWeek, 7)));
   const textRef = useRef<HTMLInputElement>(null);
 
   function add() {
     if (!text.trim()) return;
-    dispatch({ type: 'PLAN_ADD', day, text, time, category });
+    dispatch({ type: 'PLAN_ADD', day, text, time, category, date: once ? date : undefined });
     setText('');
     // Next suggestion builds on what was just added.
     if (time) setTime(suggestNextTime([...items, { id: '', text, time }].sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''))));
@@ -613,6 +656,38 @@ function AddRow({ day }: { day: WeekdayId }) {
           +
         </button>
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 rounded-lg bg-white/5 border border-white/10 p-0.5 text-xs font-bold" role="radiogroup" aria-label="Repeat">
+          {([false, true] as const).map((v) => (
+            <button
+              key={String(v)}
+              type="button"
+              role="radio"
+              aria-checked={once === v}
+              onClick={() => setOnce(v)}
+              className={`flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 transition ${once === v ? 'bg-amber-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <Icon name={v ? '📆' : '🔁'} size={13} />
+              {v ? 'Only once' : 'Every week'}
+            </button>
+          ))}
+        </div>
+        {once && (
+          <input
+            type="date"
+            value={date}
+            min={todayKey()}
+            onChange={(e) => e.target.value && setDate(e.target.value)}
+            aria-label="Date"
+            className="rounded-lg bg-white/5 border border-white/10 px-2.5 h-9 text-sm text-white focus:outline-none focus:border-amber-400/60"
+          />
+        )}
+      </div>
+      {once && (
+        <p className="text-[11px] text-slate-500 -mt-1">
+          Shows on {formatEventDate(date)}{weekdayOfDate(date) !== day ? ` (${weekdayLabel(weekdayOfDate(date))})` : ''}, then disappears by itself.
+        </p>
+      )}
       <CategoryPicker value={category} onChange={setCategory} />
     </form>
   );
@@ -751,6 +826,7 @@ function WeekOverview({
                           />
                         )}
                         {item.text}
+                        {item.date && <Icon name="📆" size={12} className="inline ml-1 -mt-0.5 text-rose-300" aria-label="Only once" />}
                       </span>
                     </li>
                   );
@@ -761,5 +837,135 @@ function WeekOverview({
         );
       })}
     </div>
+  );
+}
+
+/** One-time things coming up (dentist, exams, birthdays): they vanish after their day. */
+function UpcomingCard({ onAdd, onOpenDay }: { onAdd: () => void; onOpenDay: (d: WeekdayId) => void }) {
+  const { state, undoable } = useApp();
+  const events = upcomingEvents(state);
+  const today = todayKey();
+  const weekEnd = dateOfWeekday('sun');
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03]">
+      <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2">
+        <div>
+          <p className="text-sm font-bold text-white">
+            <Icon name="📆" size="1.1em" className="icon-inline text-rose-300" />
+            Coming up
+          </p>
+          <p className="text-xs text-slate-500 mt-0.5">One-time things. They disappear once the day is over.</p>
+        </div>
+        <button onClick={onAdd} className="shrink-0 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-semibold text-slate-200 px-2.5 py-1.5">
+          + Add
+        </button>
+      </div>
+      {events.length === 0 ? (
+        <p className="px-4 pb-4 text-sm text-slate-400">
+          Nothing yet. Add things like <span className="text-slate-200">Dentist, Thu 15:30</span> or a test at school.
+        </p>
+      ) : (
+        <ul className="px-2 pb-2">
+          {events.map((e) => {
+            const d = parseKey(e.date!);
+            const soon = e.date! <= weekEnd;
+            return (
+              <li key={e.id} className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/[0.03]">
+                <button
+                  onClick={() => soon && onOpenDay(weekdayOfDate(e.date!))}
+                  className="flex-1 min-w-0 flex items-center gap-3 text-left"
+                  disabled={!soon}
+                >
+                  <span className={`w-11 shrink-0 rounded-xl border text-center py-1 ${e.date === today ? 'border-amber-400/60 bg-amber-500/10' : 'border-white/10 bg-white/[0.03]'}`}>
+                    <span className="block text-[10px] font-bold uppercase text-slate-500">{d.toLocaleDateString(locale(), { month: 'short' })}</span>
+                    <span className="block font-display text-lg font-extrabold text-white leading-none pb-0.5">{d.getDate()}</span>
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[15px] font-semibold text-slate-100 truncate">{e.text}</span>
+                    <span className="block text-xs text-slate-400 truncate">
+                      {formatEventDate(e.date!)}
+                      {e.time ? ` · ${formatPlanTime(e.time)}` : ''}
+                      {e.note ? ` · ${e.note}` : ''}
+                    </span>
+                  </span>
+                </button>
+                <button
+                  onClick={() => undoable({ type: 'PLAN_DELETE', day: weekdayOfDate(e.date!), itemId: e.id }, `${e.text} removed`)}
+                  aria-label={`Remove ${e.text}`}
+                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-300 hover:bg-red-500/10"
+                >
+                  <Icon name="🗑" size={16} />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+const EVENT_IDEAS = ['Dentist', 'Doctor', 'Haircut', 'Test at school', 'Birthday party', 'Job interview', 'Driving lesson', 'Pay a bill'];
+
+function EventModal({ open, onClose, defaultDate }: { open: boolean; onClose: () => void; defaultDate: string }) {
+  const { dispatch } = useApp();
+  const [text, setText] = useState('');
+  const [date, setDate] = useState(defaultDate);
+  const [time, setTime] = useState('');
+  const [note, setNote] = useState('');
+  const [category, setCategory] = useState<PlanCategory | undefined>('personal');
+
+  useEffect(() => {
+    if (!open) return;
+    setText('');
+    setDate(defaultDate);
+    setTime('');
+    setNote('');
+    setCategory('personal');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  function save() {
+    if (!text.trim() || !date) return;
+    dispatch({ type: 'PLAN_ADD', day: weekdayOfDate(date), text, time, category, date, note });
+    onClose();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="One-time event">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          save();
+        }}
+        className="space-y-3"
+      >
+        <p className="text-sm text-slate-400">For things that happen once, like an appointment. It shows on that day and then disappears.</p>
+        <input autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="What is it?" aria-label="What" maxLength={80} className={`${inputClass} w-full`} />
+        <div className="flex flex-wrap gap-1.5">
+          {EVENT_IDEAS.map((idea) => (
+            <button key={idea} type="button" onClick={() => setText(idea)} className="rounded-full bg-white/5 border border-white/10 hover:border-white/25 px-2.5 py-1 text-xs font-semibold text-slate-300">
+              {idea}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="block">
+            <span className="text-xs font-semibold text-slate-400">Date</span>
+            <input type="date" value={date} min={todayKey()} onChange={(e) => e.target.value && setDate(e.target.value)} className={`${inputClass} w-full mt-1`} />
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold text-slate-400">Time (optional)</span>
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={`${inputClass} w-full mt-1`} />
+          </label>
+        </div>
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional): address, what to bring…" aria-label="Note" maxLength={120} className={`${inputClass} w-full`} />
+        <CategoryPicker value={category} onChange={setCategory} />
+        <button type="submit" disabled={!text.trim()} className="w-full rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-white font-bold py-3">
+          Add for {formatEventDate(date)}
+        </button>
+      </form>
+    </Modal>
   );
 }

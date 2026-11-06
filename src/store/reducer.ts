@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill } from '../lib/types';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -39,6 +39,7 @@ export function createInitialState(): AppState {
     prefs: { ...DEFAULT_PREFS, language: guessLanguage() },
     notes: [],
     questSwaps: 0,
+    skipPasses: 0,
     streakShields: 0,
     shieldedDates: [],
     bonusChests: 0,
@@ -75,6 +76,7 @@ function normalizePlan(plan: WeekPlan | undefined): WeekPlan {
     days: { ...empty.days, ...(plan.days ?? {}) },
     checkedWeekKey: plan.checkedWeekKey ?? empty.checkedWeekKey,
     checkedIds: Array.isArray(plan.checkedIds) ? plan.checkedIds : [],
+    events: Array.isArray(plan.events) ? plan.events : [],
   };
 }
 
@@ -93,6 +95,9 @@ function normalizeMoney(money: MoneyState | undefined): MoneyState {
     categories: Array.isArray(money.categories) ? money.categories : empty.categories,
     expenses: Array.isArray(money.expenses) ? money.expenses : [],
     goals: Array.isArray(money.goals) ? money.goals : [],
+    crypto: Array.isArray(money.crypto) ? money.crypto : [],
+    cryptoPrices: money.cryptoPrices,
+    bills: Array.isArray(money.bills) ? money.bills : [],
   };
 }
 
@@ -126,14 +131,14 @@ export type Action =
   | { type: 'UNLOCK_COSMETIC'; itemId: string }
   | { type: 'EQUIP_COSMETIC'; slot: CosmeticSlot; itemId: string }
   /** itemId is the rolled prize, or null when everything is owned (gives bonus shards instead). */
-  | { type: 'OPEN_CHEST'; itemId: string | null }
+  | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
   | { type: 'SET_FREE_NOTE'; note: string }
   | { type: 'ADD_QUICK_TASK'; text: string }
   | { type: 'TOGGLE_QUICK_TASK'; taskId: string }
   | { type: 'DELETE_QUICK_TASK'; taskId: string }
-  | { type: 'PLAN_ADD'; day: WeekdayId; text: string; time?: string; category?: PlanCategory }
-  | { type: 'PLAN_UPDATE'; day: WeekdayId; itemId: string; text: string; time?: string; category?: PlanCategory }
+  | { type: 'PLAN_ADD'; day: WeekdayId; text: string; time?: string; category?: PlanCategory; date?: string; note?: string }
+  | { type: 'PLAN_UPDATE'; day: WeekdayId; itemId: string; text: string; time?: string; category?: PlanCategory; date?: string; note?: string }
   | { type: 'PLAN_LOAD_STARTER'; days: Record<WeekdayId, Array<Omit<PlanItem, 'id'>>> }
   | { type: 'PLAN_DELETE'; day: WeekdayId; itemId: string }
   | { type: 'PLAN_TOGGLE'; itemId: string }
@@ -171,6 +176,13 @@ export type Action =
   | { type: 'SET_PROGRESS'; questId: string; value: number }
   | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
   | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
+  | { type: 'USE_SKIP_PASS'; questId: string }
+  | { type: 'PRUNE_PLAN_EVENTS'; today: string }
+  | { type: 'MONEY_UPSERT_CRYPTO'; holding: Omit<CryptoHolding, 'id'> & { id?: string } }
+  | { type: 'MONEY_DELETE_CRYPTO'; holdingId: string }
+  | { type: 'MONEY_SET_CRYPTO_PRICES'; prices: NonNullable<MoneyState['cryptoPrices']> }
+  | { type: 'MONEY_UPSERT_BILL'; bill: Omit<Bill, 'id'> & { id?: string } }
+  | { type: 'MONEY_DELETE_BILL'; billId: string }
   | { type: 'USE_QUEST_SWAP'; questId: string; replacement: { title: string; description?: string; icon: string } }
   /** Spends Streak Shields on missed days right before today, if that keeps an existing streak alive. */
   | { type: 'CHECK_STREAK_SHIELDS' }
@@ -203,11 +215,15 @@ export interface NewGoalInput {
 
 // Both recompute functions spread over `existing` first so fields they don't
 // touch (notes, freeNote, quickTasks, ...) survive every recompute untouched.
-function recomputeDailyLog(quests: Quest[], completedQuestIds: string[], existing?: Partial<DayLog>): DayLog {
+function recomputeDailyLog(quests: Quest[], completedIds: string[], existing?: Partial<DayLog>): DayLog {
   // The wildcard quest is a bonus and doesn't count toward the "perfect day" requirement.
   const activeDaily = quests.filter((q) => q.frequency === 'daily' && !q.archived && !q.wildcardDate);
   const dateKey = todayKey();
+  // Skipped quests (Skip Pass) always stay done for today, but earn nothing.
+  const skipped = existing?.skipped ?? [];
+  const completedQuestIds = skipped.length ? [...new Set([...completedIds, ...skipped])] : completedIds;
   const xpEarned = completedQuestIds.reduce((sum, id) => {
+    if (skipped.includes(id)) return sum;
     const q = quests.find((x) => x.id === id);
     return sum + (q ? questReward(dateKey, id, q.xp).xp : 0);
   }, 0);
@@ -239,6 +255,13 @@ function recomputeWeeklyLog(quests: Quest[], completedQuestIds: string[], existi
     perfectWeek,
     weeklyQuestCount: activeWeekly.length,
   };
+}
+
+/** Quests finished for real today (Skip Pass skips don't count, e.g. for unlocking the daily box). */
+export function doneByHand(log: DayLog | undefined): number {
+  if (!log) return 0;
+  const skipped = new Set(log.skipped ?? []);
+  return log.completedQuestIds.filter((id) => !skipped.has(id)).length;
 }
 
 export const CONTENT_VERSION = 3;
@@ -486,8 +509,17 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, unlockedAchievements: [...state.unlockedAchievements, ...newOnes] };
     }
 
-    case 'MARK_DAY_OPENED': {
+    case 'MARK_DAY_OPENED':
       return { ...state, lastOpenedDate: action.date };
+
+    case 'PRUNE_PLAN_EVENTS': {
+      // One-time plan items vanish once their day is over.
+      const plan = normalizePlan(state.weekPlan);
+      const all = plan.events ?? [];
+      const events = all.filter((e) => (e.date ?? '') >= action.today);
+      if (events.length === all.length) return state;
+      const gone = new Set(all.filter((e) => !events.includes(e)).map((e) => e.id));
+      return { ...state, weekPlan: { ...plan, events, checkedIds: plan.checkedIds.filter((id) => !gone.has(id)) } };
     }
 
     case 'SYNC_WILDCARD': {
@@ -539,6 +571,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const stats = computeDerivedStats(state);
       if (stats.chestsAvailable <= 0) return state;
       const chestsOpened = (state.chestsOpened ?? 0) + 1;
+      if (action.skip) return { ...state, chestsOpened, skipPasses: (state.skipPasses ?? 0) + 1 };
       if (action.itemId === null) {
         return { ...state, chestsOpened, bonusShards: (state.bonusShards ?? 0) + CHEST_DUPLICATE_SHARDS };
       }
@@ -551,24 +584,43 @@ export function reducer(state: AppState, action: Action): AppState {
       const text = action.text.trim();
       if (!text) return state;
       const plan = normalizePlan(state.weekPlan);
-      return withPlanDay(state, action.day, [...plan.days[action.day], { id: planId(), text, time: cleanTime(action.time), category: action.category }]);
+      const note = action.note?.trim() || undefined;
+      if (action.date && /^\d{4}-\d{2}-\d{2}$/.test(action.date)) {
+        const event: PlanItem = { id: planId(), text, time: cleanTime(action.time), category: action.category, date: action.date, note };
+        return { ...state, weekPlan: { ...plan, events: [...(plan.events ?? []), event] } };
+      }
+      return withPlanDay(state, action.day, [...plan.days[action.day], { id: planId(), text, time: cleanTime(action.time), category: action.category, note }]);
     }
 
     case 'PLAN_UPDATE': {
       const text = action.text.trim();
       if (!text) return state;
       const plan = normalizePlan(state.weekPlan);
+      const note = action.note?.trim() || undefined;
+      if ((plan.events ?? []).some((e) => e.id === action.itemId)) {
+        const events = (plan.events ?? []).map((e) =>
+          e.id === action.itemId ? { ...e, text, time: cleanTime(action.time), category: action.category, note, date: action.date || e.date } : e,
+        );
+        return { ...state, weekPlan: { ...plan, events } };
+      }
       return withPlanDay(
         state,
         action.day,
-        plan.days[action.day].map((i) => (i.id === action.itemId ? { ...i, text, time: cleanTime(action.time), category: action.category } : i)),
+        plan.days[action.day].map((i) => (i.id === action.itemId ? { ...i, text, time: cleanTime(action.time), category: action.category, note } : i)),
       );
     }
 
     case 'PLAN_DELETE': {
       const plan = normalizePlan(state.weekPlan);
       const next = withPlanDay(state, action.day, plan.days[action.day].filter((i) => i.id !== action.itemId));
-      return { ...next, weekPlan: { ...next.weekPlan, checkedIds: next.weekPlan.checkedIds.filter((id) => id !== action.itemId) } };
+      return {
+        ...next,
+        weekPlan: {
+          ...next.weekPlan,
+          events: (plan.events ?? []).filter((e) => e.id !== action.itemId),
+          checkedIds: next.weekPlan.checkedIds.filter((id) => id !== action.itemId),
+        },
+      };
     }
 
     case 'PLAN_TOGGLE': {
@@ -814,7 +866,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'OPEN_DAILY_BOX': {
       const today = todayKey();
       const log = state.dayLogs[today];
-      if (state.dailyBox?.lastOpened === today || !log || log.completedQuestIds.length === 0) return state;
+      if (state.dailyBox?.lastOpened === today || !log || doneByHand(log) === 0) return state;
       let next: AppState = { ...state, dailyBox: { lastOpened: today, lastReward: action.reward } };
       const r = action.reward;
       switch (r.kind) {
@@ -831,6 +883,9 @@ export function reducer(state: AppState, action: Action): AppState {
           break;
         case 'shield':
           next = { ...next, streakShields: (next.streakShields ?? 0) + 1 };
+          break;
+        case 'skip':
+          next = { ...next, skipPasses: (next.skipPasses ?? 0) + 1 };
           break;
         case 'chest':
           next = { ...next, bonusChests: (next.bonusChests ?? 0) + 1 };
@@ -858,6 +913,51 @@ export function reducer(state: AppState, action: Action): AppState {
         dayLogs: { ...state.dayLogs, [today]: recomputeDailyLog(state.quests, log?.completedQuestIds ?? [], { ...log, swaps }) },
       };
     }
+
+    case 'USE_SKIP_PASS': {
+      const quest = state.quests.find((q) => q.id === action.questId);
+      const today = todayKey();
+      const log = state.dayLogs[today];
+      if (!quest || quest.frequency !== 'daily' || quest.archived || (state.skipPasses ?? 0) <= 0) return state;
+      if (log?.completedQuestIds.includes(quest.id)) return state;
+      const skipped = [...(log?.skipped ?? []), quest.id];
+      return {
+        ...state,
+        skipPasses: (state.skipPasses ?? 0) - 1,
+        dayLogs: { ...state.dayLogs, [today]: recomputeDailyLog(state.quests, log?.completedQuestIds ?? [], { ...log, skipped }) },
+      };
+    }
+
+    case 'MONEY_UPSERT_CRYPTO': {
+      const h = action.holding;
+      if (!h.coinId || !(h.amount >= 0)) return state;
+      return withMoney(state, (m) => {
+        const list = m.crypto ?? [];
+        const id = h.id ?? moneyId('coin');
+        const item = { ...h, id };
+        return { ...m, crypto: list.some((c) => c.id === id) ? list.map((c) => (c.id === id ? item : c)) : [...list, item] };
+      });
+    }
+
+    case 'MONEY_DELETE_CRYPTO':
+      return withMoney(state, (m) => ({ ...m, crypto: (m.crypto ?? []).filter((c) => c.id !== action.holdingId) }));
+
+    case 'MONEY_SET_CRYPTO_PRICES':
+      return withMoney(state, (m) => ({ ...m, cryptoPrices: action.prices }));
+
+    case 'MONEY_UPSERT_BILL': {
+      const b = action.bill;
+      if (!b.name.trim() || !(b.amount > 0)) return state;
+      return withMoney(state, (m) => {
+        const list = m.bills ?? [];
+        const id = b.id ?? moneyId('bill');
+        const item = { ...b, id, name: b.name.trim(), day: Math.min(31, Math.max(1, Math.round(b.day || 1))) };
+        return { ...m, bills: list.some((x) => x.id === id) ? list.map((x) => (x.id === id ? item : x)) : [...list, item] };
+      });
+    }
+
+    case 'MONEY_DELETE_BILL':
+      return withMoney(state, (m) => ({ ...m, bills: (m.bills ?? []).filter((x) => x.id !== action.billId) }));
 
     case 'CHECK_STREAK_SHIELDS': {
       let shields = state.streakShields ?? 0;

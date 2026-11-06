@@ -52,7 +52,7 @@ export function computeDerivedStats(state: AppState): DerivedStats {
   const totalXp =
     dayLogsArr.reduce((s, l) => s + l.xpEarned, 0) + weekLogsArr.reduce((s, l) => s + l.xpEarned, 0);
   const totalQuestsCompleted =
-    dayLogsArr.reduce((s, l) => s + l.completedQuestIds.length, 0) +
+    dayLogsArr.reduce((s, l) => s + l.completedQuestIds.length - (l.skipped?.length ?? 0), 0) +
     weekLogsArr.reduce((s, l) => s + l.completedQuestIds.length, 0);
   const totalPerfectDays = dayLogsArr.filter((l) => l.perfectDay && l.dailyQuestCount > 0).length;
   const daysActive = dayLogsArr.filter((l) => l.completedQuestIds.length > 0).length;

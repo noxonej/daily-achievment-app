@@ -55,8 +55,8 @@ export function YouView() {
             <Stat icon="💎" value={stats.availableShards} label={t('you.shards')} color="text-amber-300" />
             <Stat icon="🎁" value={stats.chestsAvailable} label={t('you.chests')} color="text-violet-300" pulse={stats.chestsAvailable > 0} />
           </div>
-          {((state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0) && (
-            <div className="flex gap-2 mt-2 text-[11px] font-semibold">
+          {((state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0 || (state.skipPasses ?? 0) > 0) && (
+            <div className="flex flex-wrap gap-2 mt-2 text-[11px] font-semibold">
               {(state.streakShields ?? 0) > 0 && (
                 <span className="flex items-center gap-1 rounded-full bg-emerald-400/10 border border-emerald-400/25 px-2.5 py-1 text-emerald-200">
                   <Icon name="🛡" size={12} />
@@ -67,6 +67,12 @@ export function YouView() {
                 <span className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/25 px-2.5 py-1 text-sky-200">
                   <Icon name="🔁" size={12} />
                   {state.questSwaps} quest {state.questSwaps === 1 ? 'swap' : 'swaps'}
+                </span>
+              )}
+              {(state.skipPasses ?? 0) > 0 && (
+                <span className="flex items-center gap-1 rounded-full bg-teal-400/10 border border-teal-400/25 px-2.5 py-1 text-teal-200">
+                  <Icon name="⏭" size={12} />
+                  {state.skipPasses} skip {state.skipPasses === 1 ? 'pass' : 'passes'}
                 </span>
               )}
             </div>

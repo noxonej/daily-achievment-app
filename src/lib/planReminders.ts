@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppState, WeekdayId } from './types';
-import { WEEKDAYS, checkedPlanIds, formatPlanTime, planItemsForDay, todayWeekday } from './weekPlan';
+import { WEEKDAYS, checkedPlanIds, formatPlanTime, planItemsForDay, recurringItemsForDay, todayWeekday, upcomingEvents } from './weekPlan';
 import { todayKey } from './date';
 import { showSystemNotification } from './notify';
 
@@ -44,7 +44,10 @@ function fold(line: string): string {
 }
 
 export function countTimedItems(state: AppState): number {
-  return WEEKDAYS.reduce((n, w) => n + planItemsForDay(state, w.id).filter((i) => i.time).length, 0);
+  return (
+    WEEKDAYS.reduce((n, w) => n + recurringItemsForDay(state, w.id).filter((i) => i.time).length, 0) +
+    upcomingEvents(state).filter((e) => e.time).length
+  );
 }
 
 /**
@@ -64,7 +67,7 @@ export function buildPlanIcs(state: AppState, minutesBefore: number, now: Date =
   const todayIndex = (now.getDay() + 6) % 7;
 
   WEEKDAYS.forEach((w, index) => {
-    const timed = planItemsForDay(state, w.id).filter((i) => i.time);
+    const timed = recurringItemsForDay(state, w.id).filter((i) => i.time);
     timed.forEach((item, i) => {
       const [h, m] = item.time!.split(':').map(Number);
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + ((index - todayIndex + 7) % 7), h, m);
@@ -94,6 +97,30 @@ export function buildPlanIcs(state: AppState, minutesBefore: number, now: Date =
       );
     });
   });
+
+  // One-time items (appointments) are single events on their date.
+  for (const e of upcomingEvents(state, todayKey(now)).filter((x) => x.time)) {
+    const [y, mo, d] = e.date!.split('-').map(Number);
+    const [h, m] = e.time!.split(':').map(Number);
+    const start = new Date(y, mo - 1, d, h, m);
+    const end = new Date(start.getTime() + 60 * 60000);
+    const summary = escapeText(e.text);
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:${e.id}@quest-log-week-plan`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART:${icsLocal(start)}`,
+      `DTEND:${icsLocal(end)}`,
+      fold(`SUMMARY:${summary}`),
+      ...(e.note ? [fold(`DESCRIPTION:${escapeText(e.note)}`)] : []),
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      fold(`DESCRIPTION:${summary}`),
+      `TRIGGER:${minutesBefore > 0 ? `-PT${minutesBefore}M` : 'PT0S'}`,
+      'END:VALARM',
+      'END:VEVENT',
+    );
+  }
 
   lines.push('END:VCALENDAR');
   return lines.join('\r\n') + '\r\n';

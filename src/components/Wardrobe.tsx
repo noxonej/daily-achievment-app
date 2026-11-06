@@ -251,17 +251,22 @@ export function Wardrobe() {
   );
 }
 
+const SKIP_PASS_CHANCE = 0.06;
+
 function ChestOpening({ onClose }: { onClose: () => void }) {
   const { state, stats, dispatch } = useApp();
   const [phase, setPhase] = useState<'closed' | 'opening' | 'reveal'>('closed');
-  const [prize, setPrize] = useState<AvatarItem | null | undefined>(undefined);
+  // undefined = not opened yet, null = shards (everything owned), 'skip' = a Skip Pass.
+  const [prize, setPrize] = useState<AvatarItem | null | 'skip' | undefined>(undefined);
   const look = normalizeLook(state.character);
   const ctx = useMemo(() => ownership(state, stats), [state, stats]);
 
   function openIt() {
     if (phase !== 'closed') return;
-    const won = rollChest(ctx);
-    setPrize(won);
+    // A small chance (6%) of a Skip Pass instead of an item.
+    const skip = Math.random() < SKIP_PASS_CHANCE;
+    const won = skip ? null : rollChest(ctx);
+    setPrize(skip ? 'skip' : won);
     setPhase('opening');
     try {
       navigator.vibrate?.([30, 40, 30, 40, 80]);
@@ -269,16 +274,17 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
       // optional
     }
     setTimeout(() => {
-      dispatch({ type: 'OPEN_CHEST', itemId: won?.id ?? null });
+      dispatch({ type: 'OPEN_CHEST', itemId: won?.id ?? null, skip });
       setPhase('reveal');
     }, 900);
   }
 
-  const r = prize ? RARITY[prize.rarity] : RARITY.legendary;
+  const item = prize && prize !== 'skip' ? prize : null;
+  const r = item ? RARITY[item.rarity] : prize === 'skip' ? { ...RARITY.epic, hex: '#14b8a6', text: 'text-teal-300', label: 'Rare drop' } : RARITY.legendary;
   const remaining = stats.chestsAvailable;
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center px-6 backdrop-in">
+    <div className="theme-dark fixed inset-0 z-[80] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center px-6 backdrop-in">
       <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
         <Icon name="✕" size={20} />
       </button>
@@ -289,28 +295,38 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
             <ChestArt size={210} open={phase === 'opening'} glow={r.hex} />
           </div>
           <p className="mt-6 font-display text-2xl font-extrabold text-white">{phase === 'closed' ? 'Tap to open' : 'Opening…'}</p>
-          <p className="text-sm text-slate-400 mt-1">Could be common, rare, epic… or legendary</p>
+          <p className="text-sm text-slate-400 mt-1">Could be common, rare, epic, legendary… or a Skip Pass</p>
         </button>
       ) : (
         <div className="flex flex-col items-center text-center">
           <div className="relative">
             <div className="absolute inset-[-60px] rounded-full prize-rays" style={{ ['--ray' as string]: r.hex }} />
-            <div className="relative rounded-[28%] p-1.5 animate-prize-in" style={{ background: r.hex, boxShadow: `0 0 60px -6px ${r.hex}` }}>
-              <Avatar look={prize ? { ...look, [prize.slot]: prize.id } : look} size={180} />
-            </div>
+            {prize === 'skip' ? (
+              <div className="relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-br from-teal-400 to-emerald-600" style={{ boxShadow: `0 0 60px -6px ${r.hex}` }}>
+                <Icon name="⏭" size={96} strokeWidth={1.6} className="text-[#fff]" />
+              </div>
+            ) : (
+              <div className="relative rounded-[28%] p-1.5 animate-prize-in" style={{ background: r.hex, boxShadow: `0 0 60px -6px ${r.hex}` }}>
+                <Avatar look={item ? { ...look, [item.slot]: item.id } : look} size={180} />
+              </div>
+            )}
           </div>
-          <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text} fade-up`}>{prize ? r.label : 'Bonus'}</p>
+          <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text} fade-up`}>{item ? r.label : prize === 'skip' ? 'Rare drop' : 'Bonus'}</p>
           <p className="font-display text-3xl font-extrabold text-white mt-1 fade-up [animation-delay:.1s]">
-            {prize ? prize.name : `+${CHEST_DUPLICATE_SHARDS} shards`}
+            {item ? item.name : prize === 'skip' ? 'Skip Pass' : `+${CHEST_DUPLICATE_SHARDS} shards`}
           </p>
-          <p className="text-sm text-slate-400 mt-1 fade-up [animation-delay:.15s]">
-            {prize ? `New ${AVATAR_SLOTS.find((s) => s.id === prize.slot)?.label.toLowerCase()} added to your wardrobe` : "You've collected everything a chest can give!"}
+          <p className="text-sm text-slate-400 mt-1 fade-up [animation-delay:.15s] max-w-xs">
+            {item
+              ? `New ${AVATAR_SLOTS.find((s) => s.id === item.slot)?.label.toLowerCase()} added to your wardrobe`
+              : prize === 'skip'
+                ? 'Skip one daily quest on a busy day without losing your streak. Use it from the Today screen.'
+                : "You've collected everything a chest can give!"}
           </p>
           <div className="flex gap-2.5 mt-7 fade-up [animation-delay:.2s]">
-            {prize && (
+            {item && (
               <button
                 onClick={() => {
-                  dispatch({ type: 'EQUIP_COSMETIC', slot: prize.slot, itemId: prize.id });
+                  dispatch({ type: 'EQUIP_COSMETIC', slot: item.slot, itemId: item.id });
                   onClose();
                 }}
                 className="rounded-2xl bg-amber-500 hover:bg-amber-400 text-white font-bold px-5 py-3"

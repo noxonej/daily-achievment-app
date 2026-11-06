@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { t } from '../lib/prefs';
+import { doneByHand } from '../store/reducer';
 import { useApp } from '../store/AppContext';
 import { ownership } from '../store/reducer';
 import { todayKey } from '../lib/date';
@@ -58,7 +59,7 @@ export function DailyBoxCard() {
   const [opening, setOpening] = useState(false);
   const resetLabel = useDailyResetLabel();
   const today = todayKey();
-  const doneToday = state.dayLogs[today]?.completedQuestIds.length ?? 0;
+  const doneToday = doneByHand(state.dayLogs[today]);
   const opened = state.dailyBox?.lastOpened === today;
   const ready = !opened && doneToday > 0;
   const last = opened ? (state.dailyBox.lastReward as BoxReward | null) : null;
@@ -144,7 +145,7 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
   const mythic = RARITY.mythic;
 
   return (
-    <div data-overlay className="fixed inset-0 z-[80] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center px-6 backdrop-in">
+    <div data-overlay className="theme-dark fixed inset-0 z-[80] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center px-6 backdrop-in">
       {phase !== 'opening' && (
         <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
           <Icon name="✕" size={20} />

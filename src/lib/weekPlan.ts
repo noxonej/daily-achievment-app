@@ -1,5 +1,5 @@
 import type { AppState, PlanCategory, PlanItem, WeekdayId } from './types';
-import { weekKey } from './date';
+import { addDaysToKey, parseKey, todayKey, weekKey } from './date';
 import { hour12, locale, weekdayName } from './locale';
 
 export const WEEKDAYS: Array<{ id: WeekdayId; short: string; long: string }> = [
@@ -30,12 +30,51 @@ function capitalize(s: string): string {
   return s.charAt(0).toLocaleUpperCase(locale()) + s.slice(1);
 }
 
-/** Items for a day, timed ones first in clock order, then untimed ones in the order they were added. */
-export function planItemsForDay(state: AppState, day: WeekdayId): PlanItem[] {
-  const items = state.weekPlan?.days?.[day] ?? [];
+function sortItems(items: PlanItem[]): PlanItem[] {
   const timed = items.filter((i) => i.time).sort((a, b) => a.time!.localeCompare(b.time!));
   const untimed = items.filter((i) => !i.time);
   return [...timed, ...untimed];
+}
+
+/** The date ("YYYY-MM-DD") of a weekday in the current Monday–Sunday week. */
+export function dateOfWeekday(day: WeekdayId, today: string = todayKey()): string {
+  const d = parseKey(today);
+  const offset = WEEKDAYS.findIndex((w) => w.id === day) - ((d.getDay() + 6) % 7);
+  return addDaysToKey(today, offset);
+}
+
+export function weekdayOfDate(date: string): WeekdayId {
+  return todayWeekday(parseKey(date));
+}
+
+/** The repeating routine for a weekday only (no one-time items). */
+export function recurringItemsForDay(state: AppState, day: WeekdayId): PlanItem[] {
+  return sortItems(state.weekPlan?.days?.[day] ?? []);
+}
+
+/** One-time items that haven't happened yet (today included), soonest first. */
+export function upcomingEvents(state: AppState, today: string = todayKey()): PlanItem[] {
+  return (state.weekPlan?.events ?? [])
+    .filter((e) => e.date && e.date >= today)
+    .sort((a, b) => (a.date! === b.date! ? (a.time ?? '99').localeCompare(b.time ?? '99') : a.date!.localeCompare(b.date!)));
+}
+
+/**
+ * Everything planned for a weekday this week: the routine plus one-time items on that date.
+ * Timed ones first in clock order, then untimed ones in the order they were added. Days already
+ * over this week don't show their one-time items any more.
+ */
+export function planItemsForDay(state: AppState, day: WeekdayId): PlanItem[] {
+  const date = dateOfWeekday(day);
+  const once = date >= todayKey() ? (state.weekPlan?.events ?? []).filter((e) => e.date === date) : [];
+  return sortItems([...(state.weekPlan?.days?.[day] ?? []), ...once]);
+}
+
+/** "Fri 14 Nov" style label for a one-time item's date, with "Today" / "Tomorrow". */
+export function formatEventDate(date: string, today: string = todayKey()): string {
+  if (date === today) return 'Today';
+  if (date === addDaysToKey(today, 1)) return 'Tomorrow';
+  return parseKey(date).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 /** Ids ticked off this week. Last week's ticks are ignored, so every week starts fresh. */

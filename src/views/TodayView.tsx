@@ -86,6 +86,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const boost = log?.xpBoost ?? 1;
   const swaps = log?.swaps ?? {};
   const [swapOpen, setSwapOpen] = useState(false);
+  const [skipOpen, setSkipOpen] = useState(false);
+  const skipped = log?.skipped ?? [];
   const sorted = [...activeDaily].sort((a, b) => {
     const ac = completed.includes(a.id) ? 1 : 0;
     const bc = completed.includes(b.id) ? 1 : 0;
@@ -155,7 +157,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           colorClass="bg-gradient-to-r from-emerald-500 to-teal-400"
         />
         <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />{t('today.newQuestsIn', { t: resetLabel })}</p>
-        {(boost > 1 || (state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0) && (
+        {(boost > 1 || (state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0 || (state.skipPasses ?? 0) > 0) && (
           <div className="flex flex-wrap gap-2 mt-3">
             {boost > 1 && (
               <span className="flex items-center gap-1 rounded-full bg-yellow-400/10 border border-yellow-400/30 px-2.5 py-1 text-[11px] font-bold text-yellow-200">
@@ -173,6 +175,12 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
               <button onClick={() => setSwapOpen(true)} className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/40 hover:bg-sky-400/20 px-2.5 py-1 text-[11px] font-bold text-sky-200">
                 <Icon name="🔁" size={12} />
                 Swap a quest ({state.questSwaps})
+              </button>
+            )}
+            {(state.skipPasses ?? 0) > 0 && (
+              <button onClick={() => setSkipOpen(true)} className="flex items-center gap-1 rounded-full bg-teal-400/10 border border-teal-400/40 hover:bg-teal-400/20 px-2.5 py-1 text-[11px] font-bold text-teal-200">
+                <Icon name="⏭" size={12} />
+                Skip a quest ({state.skipPasses})
               </button>
             )}
           </div>
@@ -200,6 +208,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <div className="space-y-2.5 rows-stagger">
           {sorted.map((original) => {
             // A swapped quest shows its replacement for today; completing it still counts for the original slot.
+            if (skipped.includes(original.id)) return <SkippedQuest key={original.id} quest={original} />;
             const swap = swaps[original.id];
             const quest = swap
               ? { ...original, ...swap, promptForNote: false, measure: undefined, noteList: undefined, noteMinWords: undefined, details: undefined }
@@ -257,6 +266,16 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       </div>
 
       <QuestSwapModal
+        mode="skip"
+        open={skipOpen}
+        onClose={() => setSkipOpen(false)}
+        candidates={activeDaily.filter((q) => !completed.includes(q.id))}
+        onSwap={(questId) => {
+          dispatch({ type: 'USE_SKIP_PASS', questId });
+          setSkipOpen(false);
+        }}
+      />
+      <QuestSwapModal
         open={swapOpen}
         onClose={() => setSwapOpen(false)}
         candidates={activeDaily.filter((q) => !completed.includes(q.id) && !swaps[q.id])}
@@ -283,6 +302,20 @@ function EmptyState() {
       >
         Add a quest
       </button>
+    </div>
+  );
+}
+
+function SkippedQuest({ quest }: { quest: { title: string; icon: string } }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-dashed border-teal-400/30 bg-teal-500/[0.04] px-4 py-3">
+      <span className="shrink-0 w-10 h-10 rounded-xl bg-teal-500/10 text-teal-300 flex items-center justify-center">
+        <Icon name="⏭" size={18} />
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-[15px] font-semibold text-slate-400 line-through truncate">{quest.title}</span>
+        <span className="block text-xs text-teal-300">Skipped with a Skip Pass · streak safe</span>
+      </span>
     </div>
   );
 }
