@@ -8,6 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Plan your week, build habits, track your money and savings goals, and level up every day." />
     <meta name="theme-color" content="#05060b" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Dayforge" />
+    <meta name="application-name" content="Dayforge" />
+    <title>Dayforge: Planner, Habits &amp; Money</title>
     <script>
       // Apply the saved theme before the app draws, so there's no flash of the wrong colours.
       try {
@@ -15,14 +21,17 @@
         document.documentElement.dataset.accent = a.accent || 'cyber';
         if (a.accent === 'amber') delete document.documentElement.dataset.accent;
         if (a.background) document.documentElement.dataset.bg = a.background;
+        var t = localStorage.getItem('dayforge-theme');
+        if (t === 'light' || (t === 'system' && window.matchMedia && !matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.dataset.theme = 'light';
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f3f5fa');
+          // Dark status-bar text on the light theme (read by iPhone when the app starts).
+          document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').setAttribute('content', 'default');
+        }
+        var l = localStorage.getItem('dayforge-lang');
+        if (l) document.documentElement.lang = l;
       } catch (e) {}
     </script>
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Dayforge" />
-    <meta name="application-name" content="Dayforge" />
-    <title>Dayforge: Planner, Habits &amp; Money</title>
   </head>
   <body>
     <div id="root"></div>

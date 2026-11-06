@@ -49,9 +49,14 @@ function unlockAudio() {
   }
 }
 
+let soundsOn = true;
+export function setSoundsEnabled(on: boolean) {
+  soundsOn = on;
+}
+
 export function playChime() {
   try {
-    if (!audio) return;
+    if (!audio || !soundsOn) return;
     const now = audio.currentTime;
     [659.25, 783.99, 1046.5].forEach((freq, i) => {
       const o = audio!.createOscillator();

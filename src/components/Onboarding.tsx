@@ -177,7 +177,7 @@ export function Onboarding() {
                     onClick={() => setHasBusy(!hasBusy)}
                     className={`shrink-0 w-12 h-7 rounded-full p-0.5 transition ${hasBusy ? 'bg-amber-500' : 'bg-white/15'}`}
                   >
-                    <span className={`block w-6 h-6 rounded-full bg-white shadow transition-transform ${hasBusy ? 'translate-x-5' : ''}`} />
+                    <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform ${hasBusy ? 'translate-x-5' : ''}`} />
                   </button>
                 </div>
                 {hasBusy && (

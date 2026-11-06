@@ -28,6 +28,7 @@ import { takeIntent } from '../lib/intents';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon, IconGrid } from '../components/Icon';
+import { locale } from '../lib/locale';
 
 const inputClass =
   'w-full rounded-xl bg-white/5 border border-white/10 px-3 h-11 text-[15px] text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 focus:bg-white/[0.07] transition';
@@ -437,7 +438,7 @@ function GoalsCard({
                         {' '}
                         · saving {fmt(g.weekly, true)}/week gets you there in about{' '}
                         <span className="font-bold text-white">{formatWeeks(p.weeksLeft)}</span> (
-                        {p.eta.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })})
+                        {p.eta.toLocaleDateString(locale(), { month: 'short', year: 'numeric' })})
                       </>
                     ) : (
                       <> · set how much you'll save per week to see when you'll get there</>
@@ -506,7 +507,7 @@ function HistoryCard() {
         {values.map((v, i) => (
           <div key={days[i]} className="text-center">
             <p className="text-[10px] font-semibold text-slate-400">
-              {i === 6 ? 'Today' : parseKey(days[i]).toLocaleDateString(undefined, { weekday: 'short' })}
+              {i === 6 ? 'Today' : parseKey(days[i]).toLocaleDateString(locale(), { weekday: 'short' })}
             </p>
             <p className="text-[10px] text-slate-300 tabular-nums">{v > 0 ? fmt(v, true) : '–'}</p>
           </div>
@@ -853,7 +854,7 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
           {preview && !preview.reached && preview.weeksLeft !== null && preview.eta && (
             <p className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2.5 text-sm text-emerald-100">
               <Icon name="📅" size="1.15em" className="icon-inline" />You'll have it in about <span className="font-bold">{formatWeeks(preview.weeksLeft)}</span>, around{' '}
-              <span className="font-bold">{preview.eta.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>.
+              <span className="font-bold">{preview.eta.toLocaleDateString(locale(), { month: 'long', year: 'numeric' })}</span>.
             </p>
           )}
 

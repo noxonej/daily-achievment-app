@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Icon } from './Icon';
+import { locale } from '../lib/locale';
 
 export function SyncSettings() {
   const { syncConfig, syncStatus, syncMessage, connectSync, disconnectSync, syncNow, restoreFromGithub } = useApp();
@@ -41,7 +42,7 @@ export function SyncSettings() {
             <p className="text-slate-500 mt-0.5">{syncConfig.path}</p>
             {syncConfig.lastSyncedAt && (
               <p className="text-slate-500 mt-0.5">
-                Last synced {new Date(syncConfig.lastSyncedAt).toLocaleString()}
+                Last synced {new Date(syncConfig.lastSyncedAt).toLocaleString(locale())}
               </p>
             )}
           </div>

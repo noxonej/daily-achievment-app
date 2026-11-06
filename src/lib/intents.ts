@@ -1,5 +1,5 @@
 /** One-shot hand-offs between screens, e.g. the Today "Log spending" button opening the expense form on Money. */
-export type Intent = 'add-expense' | 'you-settings' | 'quests-goals';
+export type Intent = 'add-expense' | 'quests-goals';
 let pending: Intent | null = null;
 
 export function setIntent(i: Intent) {

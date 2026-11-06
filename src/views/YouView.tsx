@@ -6,17 +6,18 @@ import { ProgressBar } from '../components/ProgressBar';
 import { Icon } from '../components/Icon';
 import { StatsView } from './StatsView';
 import { AchievementsView } from './AchievementsView';
-import { ManageView } from './ManageView';
+import { DiaryView } from './DiaryView';
+import { settings } from '../lib/settingsNav';
+import { t } from '../lib/prefs';
 import { wardrobe } from '../lib/wardrobe';
 import { levelFromTotalXp, titleForLevel } from '../lib/xp';
-import { takeIntent } from '../lib/intents';
 
-type Section = 'stats' | 'badges' | 'settings';
+type Section = 'stats' | 'badges' | 'diary';
 
-/** Profile hub: your character and level up top, then stats, badges and settings. */
+/** Profile hub: your character and level up top, then stats, badges and your diary. Settings open from the gear. */
 export function YouView() {
   const { state, stats } = useApp();
-  const [section, setSection] = useState<Section>(() => (takeIntent('you-settings') ? 'settings' : 'stats'));
+  const [section, setSection] = useState<Section>('stats');
   const { xpIntoLevel, xpForNextLevel } = levelFromTotalXp(stats.totalXp);
   const name = state.profile?.name;
 
@@ -24,6 +25,13 @@ export function YouView() {
     <div>
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+          <button
+            onClick={() => settings.open()}
+            aria-label={t('settings.title')}
+            className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10"
+          >
+            <Icon name="⚙" size={20} />
+          </button>
           <div className="flex items-center gap-4">
             <button onClick={() => wardrobe.open()} className="relative shrink-0 rounded-[28%]" aria-label="Open wardrobe">
               <Avatar look={state.character} size={104} className="drop-shadow-[0_14px_30px_rgba(0,0,0,0.5)]" />
@@ -31,7 +39,7 @@ export function YouView() {
                 LV {stats.level}
               </span>
             </button>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pr-8">
               <p className="font-display text-xl font-extrabold text-white truncate">{name || 'Your profile'}</p>
               <p className="text-sm text-amber-300 font-semibold">{titleForLevel(stats.level)}</p>
               <div className="mt-2">
@@ -43,9 +51,9 @@ export function YouView() {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-4">
-            <Stat icon="🔥" value={stats.currentStreak} label="Streak" color="text-orange-400" />
-            <Stat icon="💎" value={stats.availableShards} label="Shards" color="text-amber-300" />
-            <Stat icon="🎁" value={stats.chestsAvailable} label="Chests" color="text-violet-300" pulse={stats.chestsAvailable > 0} />
+            <Stat icon="🔥" value={stats.currentStreak} label={t('you.streak')} color="text-orange-400" />
+            <Stat icon="💎" value={stats.availableShards} label={t('you.shards')} color="text-amber-300" />
+            <Stat icon="🎁" value={stats.chestsAvailable} label={t('you.chests')} color="text-violet-300" pulse={stats.chestsAvailable > 0} />
           </div>
           {((state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0) && (
             <div className="flex gap-2 mt-2 text-[11px] font-semibold">
@@ -68,7 +76,7 @@ export function YouView() {
             className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl bg-white text-slate-900 font-bold py-3 hover:bg-amber-50"
           >
             <Icon name="👕" size={18} />
-            {stats.chestsAvailable > 0 ? `Customize · open ${stats.chestsAvailable} ${stats.chestsAvailable === 1 ? 'chest' : 'chests'}` : 'Customize character'}
+            {stats.chestsAvailable > 0 ? `Customize · open ${stats.chestsAvailable} ${stats.chestsAvailable === 1 ? 'chest' : 'chests'}` : t('you.customize')}
           </button>
         </div>
 
@@ -76,16 +84,16 @@ export function YouView() {
           value={section}
           onChange={setSection}
           options={[
-            { id: 'stats', label: 'Stats', icon: '📊' },
-            { id: 'badges', label: 'Badges', icon: '🎖' },
-            { id: 'settings', label: 'Settings', icon: '⚙' },
+            { id: 'stats', label: t('you.stats'), icon: '📊' },
+            { id: 'badges', label: t('you.badges'), icon: '🎖' },
+            { id: 'diary', label: t('you.diary'), icon: '📕' },
           ]}
         />
       </div>
       <div key={section} className="animate-view-right">
         {section === 'stats' && <StatsView embedded />}
         {section === 'badges' && <AchievementsView embedded />}
-        {section === 'settings' && <ManageView embedded />}
+        {section === 'diary' && <DiaryView />}
       </div>
     </div>
   );

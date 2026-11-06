@@ -107,7 +107,7 @@ html, body, #root {
 body {
   margin: 0;
   background: var(--bg);
-  color: #e7e9f4;
+  color: var(--fg, #e7e9f4);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
@@ -419,3 +419,97 @@ body {
   40%, 80% { transform: translateX(8px); }
 }
 .animate-pin-shake { animation: pin-shake 0.4s ease-in-out; }
+
+/* ===================== Light theme (data-theme="light" on <html>) =====================
+ * Generated: white surfaces, dark text. "white" utilities become the ink colour, the slate scale
+ * flips, and the pale tints used for coloured text on dark become their deep shades. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f3f5fa; --surface: #ffffff; --raised: #ffffff; --fg: #0f172a;
+  --color-white: #0f172a;
+  --color-slate-50: #0f172a; --color-slate-100: #0f172a; --color-slate-200: #1e293b; --color-slate-300: #334155; --color-slate-400: #526075; --color-slate-500: #64748b; --color-slate-600: #94a3b8; --color-slate-700: #cbd5e1; --color-slate-800: #e2e8f0; --color-slate-900: #eef1f6; --color-slate-950: #f8fafc;
+  --color-red-50: #991b1b; --color-red-100: #991b1b; --color-red-200: #b91c1c; --color-red-300: #b91c1c; --color-red-400: #dc2626;
+  --color-orange-50: #9a3412; --color-orange-100: #9a3412; --color-orange-200: #c2410c; --color-orange-300: #c2410c; --color-orange-400: #ea580c;
+  --color-yellow-50: #854d0e; --color-yellow-100: #854d0e; --color-yellow-200: #a16207; --color-yellow-300: #a16207; --color-yellow-400: #ca8a04;
+  --color-lime-50: #3f6212; --color-lime-100: #3f6212; --color-lime-200: #4d7c0f; --color-lime-300: #4d7c0f; --color-lime-400: #65a30d;
+  --color-green-50: #166534; --color-green-100: #166534; --color-green-200: #15803d; --color-green-300: #15803d; --color-green-400: #16a34a;
+  --color-emerald-50: #065f46; --color-emerald-100: #065f46; --color-emerald-200: #047857; --color-emerald-300: #047857; --color-emerald-400: #059669;
+  --color-teal-50: #115e59; --color-teal-100: #115e59; --color-teal-200: #0f766e; --color-teal-300: #0f766e; --color-teal-400: #0d9488;
+  --color-cyan-50: #155e75; --color-cyan-100: #155e75; --color-cyan-200: #0e7490; --color-cyan-300: #0e7490; --color-cyan-400: #0891b2;
+  --color-sky-50: #075985; --color-sky-100: #075985; --color-sky-200: #0369a1; --color-sky-300: #0369a1; --color-sky-400: #0284c7;
+  --color-blue-50: #1e40af; --color-blue-100: #1e40af; --color-blue-200: #1d4ed8; --color-blue-300: #1d4ed8; --color-blue-400: #2563eb;
+  --color-violet-50: #5b21b6; --color-violet-100: #5b21b6; --color-violet-200: #6d28d9; --color-violet-300: #6d28d9; --color-violet-400: #7c3aed;
+  --color-purple-50: #6b21a8; --color-purple-100: #6b21a8; --color-purple-200: #7e22ce; --color-purple-300: #7e22ce; --color-purple-400: #9333ea;
+  --color-fuchsia-50: #86198f; --color-fuchsia-100: #86198f; --color-fuchsia-200: #a21caf; --color-fuchsia-300: #a21caf; --color-fuchsia-400: #c026d3;
+  --color-pink-50: #9d174d; --color-pink-100: #9d174d; --color-pink-200: #be185d; --color-pink-300: #be185d; --color-pink-400: #db2777;
+  --color-rose-50: #9f1239; --color-rose-100: #9f1239; --color-rose-200: #be123c; --color-rose-300: #be123c; --color-rose-400: #e11d48;
+}
+:root[data-theme='light']:not([data-accent]) { --color-amber-50: #92400e; --color-amber-100: #92400e; --color-amber-200: #b45309; --color-amber-300: #b45309; --color-amber-400: #d97706; --color-amber-500: #d97706; --color-amber-600: #b45309; }
+:root[data-theme='light'][data-accent='cyber'] { --color-amber-50: #155e75; --color-amber-100: #155e75; --color-amber-200: #0e7490; --color-amber-300: #0e7490; --color-amber-400: #0891b2; --color-amber-500: #0891b2; --color-amber-600: #0e7490; }
+:root[data-theme='light'][data-accent='ocean'] { --color-amber-50: #1e40af; --color-amber-100: #1e40af; --color-amber-200: #1d4ed8; --color-amber-300: #1d4ed8; --color-amber-400: #2563eb; --color-amber-500: #2563eb; --color-amber-600: #1d4ed8; }
+:root[data-theme='light'][data-accent='emerald'] { --color-amber-50: #065f46; --color-amber-100: #065f46; --color-amber-200: #047857; --color-amber-300: #047857; --color-amber-400: #059669; --color-amber-500: #059669; --color-amber-600: #047857; }
+:root[data-theme='light'][data-accent='violet'] { --color-amber-50: #5b21b6; --color-amber-100: #5b21b6; --color-amber-200: #6d28d9; --color-amber-300: #6d28d9; --color-amber-400: #7c3aed; --color-amber-500: #7c3aed; --color-amber-600: #6d28d9; }
+:root[data-theme='light'][data-accent='rose'] { --color-amber-50: #9f1239; --color-amber-100: #9f1239; --color-amber-200: #be123c; --color-amber-300: #be123c; --color-amber-400: #e11d48; --color-amber-500: #e11d48; --color-amber-600: #be123c; }
+:root[data-theme='light'] :is(.bg-amber-500, .bg-amber-600, .bg-emerald-500, .bg-emerald-600, .bg-rose-500, .bg-red-500, .bg-sky-500, .bg-violet-500, .bg-orange-500, .bg-cyan-500, .bg-fuchsia-500, .bg-blue-500) { --color-white: #ffffff; }
+:root[data-theme='light'] .theme-dark {
+  color-scheme: dark; color: #e7e9f4;
+  --color-white: #ffffff;
+  --color-slate-50: #f8fafc; --color-slate-100: #f1f5f9; --color-slate-200: #e2e8f0; --color-slate-300: #cbd5e1; --color-slate-400: #94a3b8; --color-slate-500: #64748b; --color-slate-600: #475569; --color-slate-700: #334155; --color-slate-800: #1e293b; --color-slate-900: #0f172a; --color-slate-950: #020617;
+  --color-red-50: #fef2f2; --color-red-100: #fee2e2; --color-red-200: #fecaca; --color-red-300: #fca5a5; --color-red-400: #f87171;
+  --color-orange-50: #fff7ed; --color-orange-100: #ffedd5; --color-orange-200: #fed7aa; --color-orange-300: #fdba74; --color-orange-400: #fb923c;
+  --color-yellow-50: #fefce8; --color-yellow-100: #fef9c3; --color-yellow-200: #fef08a; --color-yellow-300: #fde047; --color-yellow-400: #facc15;
+  --color-lime-50: #f7fee7; --color-lime-100: #ecfccb; --color-lime-200: #d9f99d; --color-lime-300: #bef264; --color-lime-400: #a3e635;
+  --color-green-50: #f0fdf4; --color-green-100: #dcfce7; --color-green-200: #bbf7d0; --color-green-300: #86efac; --color-green-400: #4ade80;
+  --color-emerald-50: #ecfdf5; --color-emerald-100: #d1fae5; --color-emerald-200: #a7f3d0; --color-emerald-300: #6ee7b7; --color-emerald-400: #34d399;
+  --color-teal-50: #f0fdfa; --color-teal-100: #ccfbf1; --color-teal-200: #99f6e4; --color-teal-300: #5eead4; --color-teal-400: #2dd4bf;
+  --color-cyan-50: #ecfeff; --color-cyan-100: #cffafe; --color-cyan-200: #a5f3fc; --color-cyan-300: #67e8f9; --color-cyan-400: #22d3ee;
+  --color-sky-50: #f0f9ff; --color-sky-100: #e0f2fe; --color-sky-200: #bae6fd; --color-sky-300: #7dd3fc; --color-sky-400: #38bdf8;
+  --color-blue-50: #eff6ff; --color-blue-100: #dbeafe; --color-blue-200: #bfdbfe; --color-blue-300: #93c5fd; --color-blue-400: #60a5fa;
+  --color-violet-50: #f5f3ff; --color-violet-100: #ede9fe; --color-violet-200: #ddd6fe; --color-violet-300: #c4b5fd; --color-violet-400: #a78bfa;
+  --color-purple-50: #faf5ff; --color-purple-100: #f3e8ff; --color-purple-200: #e9d5ff; --color-purple-300: #d8b4fe; --color-purple-400: #c084fc;
+  --color-fuchsia-50: #fdf4ff; --color-fuchsia-100: #fae8ff; --color-fuchsia-200: #f5d0fe; --color-fuchsia-300: #f0abfc; --color-fuchsia-400: #e879f9;
+  --color-pink-50: #fdf2f8; --color-pink-100: #fce7f3; --color-pink-200: #fbcfe8; --color-pink-300: #f9a8d4; --color-pink-400: #f472b6;
+  --color-rose-50: #fff1f2; --color-rose-100: #ffe4e6; --color-rose-200: #fecdd3; --color-rose-300: #fda4af; --color-rose-400: #fb7185;
+}
+:root[data-theme='light']:not([data-accent]) .theme-dark { --color-amber-50: #fffbeb; --color-amber-100: #fef3c7; --color-amber-200: #fde68a; --color-amber-300: #fcd34d; --color-amber-400: #fbbf24; --color-amber-500: #f59e0b; --color-amber-600: #d97706; }
+:root[data-theme='light'][data-accent='cyber'] .theme-dark { --color-amber-50: #ecfeff; --color-amber-100: #cffafe; --color-amber-200: #a5f3fc; --color-amber-300: #67e8f9; --color-amber-400: #22d3ee; --color-amber-500: #0891b2; --color-amber-600: #0e7490; }
+:root[data-theme='light'][data-accent='ocean'] .theme-dark { --color-amber-50: #eff6ff; --color-amber-100: #dbeafe; --color-amber-200: #bfdbfe; --color-amber-300: #93c5fd; --color-amber-400: #60a5fa; --color-amber-500: #3b82f6; --color-amber-600: #2563eb; }
+:root[data-theme='light'][data-accent='emerald'] .theme-dark { --color-amber-50: #ecfdf5; --color-amber-100: #d1fae5; --color-amber-200: #a7f3d0; --color-amber-300: #6ee7b7; --color-amber-400: #34d399; --color-amber-500: #10b981; --color-amber-600: #059669; }
+:root[data-theme='light'][data-accent='violet'] .theme-dark { --color-amber-50: #f5f3ff; --color-amber-100: #ede9fe; --color-amber-200: #ddd6fe; --color-amber-300: #c4b5fd; --color-amber-400: #a78bfa; --color-amber-500: #8b5cf6; --color-amber-600: #7c3aed; }
+:root[data-theme='light'][data-accent='rose'] .theme-dark { --color-amber-50: #fff1f2; --color-amber-100: #ffe4e6; --color-amber-200: #fecdd3; --color-amber-300: #fda4af; --color-amber-400: #fb7185; --color-amber-500: #f43f5e; --color-amber-600: #e11d48; }
+:root[data-theme='light'] .bg-grid::before {
+  background:
+    radial-gradient(60% 40% at 0% 0%, color-mix(in oklab, var(--color-amber-400) 14%, transparent), transparent 70%),
+    radial-gradient(55% 36% at 100% 4%, rgba(168, 85, 247, 0.1), transparent 70%) !important;
+}
+:root[data-theme='light'][data-bg='midnight'] .bg-grid { background-image: radial-gradient(circle at 1px 1px, rgba(15,23,42,0.06) 1px, transparent 0); }
+:root[data-theme='light'] ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+/* Cards get a soft shadow instead of glowing borders on white. */
+:root[data-theme='light'] .bg-surface, :root[data-theme='light'] .bg-raised { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px -6px rgba(15, 23, 42, 0.08); }
+/* "Reduce motion" switch in Settings. */
+:root[data-motion='reduce'] *, :root[data-motion='reduce'] *::before, :root[data-motion='reduce'] *::after {
+  animation-duration: 0.01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important; scroll-behavior: auto !important;
+}
+/* Cards: solid white with a soft shadow on the light theme. */
+:root[data-theme='light'] :is(.bg-white\/\[0\.03\], .bg-white\/\[0\.04\], .bg-white\/\[0\.02\]) {
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px -8px rgba(15, 23, 42, 0.1);
+}
+:root[data-theme='light'] .theme-dark :is(.bg-white\/\[0\.03\], .bg-white\/\[0\.04\], .bg-white\/\[0\.02\]) {
+  background-color: rgba(255, 255, 255, 0.03);
+  box-shadow: none;
+}
+
+/* Diary page: faint ruled lines that scroll with the text. */
+.diary-paper {
+  background-image: linear-gradient(to bottom, transparent calc(2rem - 1px), color-mix(in oklab, var(--color-white) 8%, transparent) calc(2rem - 1px));
+  background-size: 100% 2rem;
+  background-position: 0 0.3rem;
+  background-attachment: local;
+}
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Inset tiles (bg-black/20) are a soft grey on white instead of a heavy shade. */
+:root[data-theme='light'] .bg-black\/20 { background-color: rgba(15, 23, 42, 0.04); }

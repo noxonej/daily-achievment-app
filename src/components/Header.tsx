@@ -8,6 +8,8 @@ import { Avatar } from './Avatar';
 import { wardrobe } from '../lib/wardrobe';
 import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
+import { settings } from '../lib/settingsNav';
+import { t } from '../lib/prefs';
 
 export function Header() {
   const { state, stats } = useApp();
@@ -58,6 +60,13 @@ export function Header() {
                   {stats.currentStreak}
                 </span>
               </div>
+              <button
+                onClick={() => settings.open()}
+                aria-label={t('settings.title')}
+                className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-white/10"
+              >
+                <Icon name="⚙" size={20} />
+              </button>
               <button
                 onClick={() => wardrobe.open()}
                 className="relative shrink-0 rounded-xl p-1.5 -m-1.5"

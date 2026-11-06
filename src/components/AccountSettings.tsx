@@ -6,6 +6,7 @@ import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Toggle } from './AuthGate';
+import { locale } from '../lib/locale';
 
 /** Account card in Settings: PIN, remember-me, switch / sign out, delete. */
 export function AccountSettings() {
@@ -23,7 +24,7 @@ export function AccountSettings() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white truncate">{account.name}</p>
           <p className="text-xs text-slate-400">
-            Account on this device · {account.pinHash ? 'PIN on' : 'No PIN'} · since {new Date(account.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+            Account on this device · {account.pinHash ? 'PIN on' : 'No PIN'} · since {new Date(account.createdAt).toLocaleDateString(locale(), { month: 'short', year: 'numeric' })}
           </p>
         </div>
       </div>

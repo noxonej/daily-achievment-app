@@ -1,4 +1,5 @@
 import { useApp } from '../store/AppContext';
+import { t } from '../lib/prefs';
 import { todayKey } from '../lib/date';
 import { MOODS } from '../lib/mood';
 import { Icon } from './Icon';
@@ -19,7 +20,7 @@ export function MoodCheckIn() {
             Feeling <span className={picked.color}>{picked.label.toLowerCase()}</span> today
           </>
         ) : (
-          'How are you feeling today?'
+          t('mood.question')
         )}
       </p>
       <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Mood">
@@ -30,14 +31,14 @@ export function MoodCheckIn() {
               key={m.value}
               role="radio"
               aria-checked={on}
-              aria-label={m.label}
+              aria-label={t(`mood.${m.value}` as 'mood.1')}
               onClick={() => dispatch({ type: 'SET_MOOD', date: key, mood: on ? null : m.value })}
               className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 transition ${
                 on ? 'border-white/30 bg-white/10' : mood ? 'border-transparent opacity-40 hover:opacity-80' : 'border-white/10 hover:border-white/25'
               }`}
             >
               <Icon name={m.icon} size={26} className={`${m.color} ${on ? 'animate-check' : ''}`} />
-              <span className="text-[10px] font-semibold text-slate-400">{m.label}</span>
+              <span className="text-[10px] font-semibold text-slate-400">{t(`mood.${m.value}` as 'mood.1')}</span>
             </button>
           );
         })}

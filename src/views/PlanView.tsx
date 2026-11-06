@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { t } from '../lib/prefs';
 import { useApp } from '../store/AppContext';
 import type { PlanCategory, PlanItem, WeekdayId } from '../lib/types';
 import {
@@ -11,6 +12,7 @@ import {
   planItemsForDay,
   todayWeekday,
   weekdayLabel,
+  weekdayShort,
 } from '../lib/weekPlan';
 import {
   countTimedItems,
@@ -50,7 +52,7 @@ export function PlanView() {
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="text-slate-400 text-sm">Your routine</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Week Plan</h1>
+          <h1 className="font-display text-2xl font-bold text-white mt-0.5">{t('plan.title')}</h1>
         </div>
         <div className="shrink-0 grid grid-cols-2 rounded-xl bg-white/5 border border-white/10 p-1 text-sm font-semibold">
           {(['day', 'week'] as const).map((m) => (
@@ -61,7 +63,7 @@ export function PlanView() {
                 mode === m ? 'bg-amber-500 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
-              {m === 'day' ? 'Day' : 'Week'}
+              {m === 'day' ? t('plan.day') : t('plan.week')}
             </button>
           ))}
         </div>
@@ -265,7 +267,7 @@ function RemindersModal({ open, onClose }: { open: boolean; onClose: () => void 
               onClick={toggleLive}
               className={`shrink-0 mt-0.5 w-12 h-7 rounded-full p-0.5 transition ${live ? 'bg-emerald-500' : 'bg-white/15'}`}
             >
-              <span className={`block w-6 h-6 rounded-full bg-white shadow transition-transform ${live ? 'translate-x-5' : ''}`} />
+              <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform ${live ? 'translate-x-5' : ''}`} />
             </button>
           </div>
         </section>
@@ -300,7 +302,7 @@ function DayPicker({
                 : 'bg-white/[0.03] border-white/10 text-slate-300 hover:border-white/25'
             }`}
           >
-            <span className="text-[13px] font-bold">{w.short}</span>
+            <span className="text-[13px] font-bold">{weekdayShort(w.id)}</span>
             <span className={`text-[10px] font-semibold tabular-nums ${active ? 'text-amber-100' : 'text-slate-500'}`}>
               {count > 0 ? count : '–'}
             </span>
@@ -672,7 +674,7 @@ function CopyDayModal({ open, from, onClose }: { open: boolean; from: WeekdayId;
               >
                 {on && <Icon name="✓" size={13} strokeWidth={3} className="animate-check" />}
               </span>
-              {w.long}
+              {weekdayLabel(w.id)}
             </button>
           );
         })}
@@ -718,7 +720,7 @@ function WeekOverview({
               className="flex items-center justify-between gap-2 px-3.5 pt-3 pb-2 text-left hover:bg-white/[0.03] rounded-t-2xl transition"
             >
               <span className="flex items-center gap-2">
-                <span className="font-display font-bold text-white">{w.long}</span>
+                <span className="font-display font-bold text-white">{weekdayLabel(w.id)}</span>
                 {isToday && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-label="Today" />}
               </span>
               <span className="text-xs font-semibold text-slate-500">Edit →</span>
@@ -728,7 +730,7 @@ function WeekOverview({
                 onClick={() => onOpenDay(w.id)}
                 className="mx-3.5 mb-3.5 rounded-xl border border-dashed border-white/10 py-4 text-xs text-slate-500 hover:text-slate-300 hover:border-white/25 transition"
               >
-                + Add to {w.short}
+                + {weekdayShort(w.id)}
               </button>
             ) : (
               <ul className="px-3.5 pb-3 space-y-1.5">

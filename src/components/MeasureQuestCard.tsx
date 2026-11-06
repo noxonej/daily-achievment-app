@@ -8,10 +8,11 @@ import { runTracker } from '../lib/runTracker';
 import { FloatingReward } from './FloatingReward';
 import { InfoDisclosure } from './InfoDisclosure';
 import { Icon } from './Icon';
+import { locale } from '../lib/locale';
 
 
 function fmt(n: number, decimals?: boolean) {
-  return decimals ? (Math.round(n * 100) / 100).toLocaleString(undefined, { maximumFractionDigits: 2 }) : Math.round(n).toLocaleString();
+  return decimals ? (Math.round(n * 100) / 100).toLocaleString(locale(), { maximumFractionDigits: 2 }) : Math.round(n).toLocaleString(locale());
 }
 
 /** A quest with a number goal (steps, km, glasses of water…): log progress, it completes at the target. */

@@ -1,5 +1,6 @@
 import type { AppState, PlanCategory, PlanItem, WeekdayId } from './types';
 import { weekKey } from './date';
+import { hour12, locale, weekdayName } from './locale';
 
 export const WEEKDAYS: Array<{ id: WeekdayId; short: string; long: string }> = [
   { id: 'mon', short: 'Mon', long: 'Monday' },
@@ -16,7 +17,17 @@ export function todayWeekday(d: Date = new Date()): WeekdayId {
 }
 
 export function weekdayLabel(id: WeekdayId): string {
-  return WEEKDAYS.find((w) => w.id === id)?.long ?? id;
+  const i = WEEKDAYS.findIndex((w) => w.id === id);
+  return i >= 0 ? capitalize(weekdayName(i, 'long')) : id;
+}
+
+export function weekdayShort(id: WeekdayId): string {
+  const i = WEEKDAYS.findIndex((w) => w.id === id);
+  return i >= 0 ? capitalize(weekdayName(i, 'short')).replace(/\.$/, '') : id;
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toLocaleUpperCase(locale()) + s.slice(1);
 }
 
 /** Items for a day, timed ones first in clock order, then untimed ones in the order they were added. */
@@ -37,7 +48,7 @@ export function checkedPlanIds(state: AppState): Set<string> {
 /** "07:15" → "7:15 AM" or "07:15" depending on the device's clock preference. */
 export function formatPlanTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
-  return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return new Date(2000, 0, 1, h, m).toLocaleTimeString(locale(), { hour: 'numeric', minute: '2-digit', hour12: hour12() });
 }
 
 export const PLAN_CATEGORIES: Array<{ id: PlanCategory; label: string; dot: string; text: string; bar: string; chip: string }> = [

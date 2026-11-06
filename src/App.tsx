@@ -18,6 +18,8 @@ import { useAuth } from './store/AuthContext';
 import { focusTimer } from './lib/focusTimer';
 import { useApplyAppearance } from './lib/theme';
 import { useWardrobeOpen } from './lib/wardrobe';
+import { useApplyPrefs } from './lib/prefs';
+import { SettingsScreen } from './components/SettingsScreen';
 
 // Loaded only when needed, so the app opens faster.
 const Onboarding = lazy(() => import('./components/Onboarding').then((m) => ({ default: m.Onboarding })));
@@ -40,6 +42,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lookKey, stats.level, state.profile?.name]);
   useApplyAppearance(state.appearance);
+  useApplyPrefs(state.prefs);
   const wardrobeOpen = useWardrobeOpen();
   // Fetch the lazy screens in the background so they're cached for offline use.
   useEffect(() => {
@@ -90,6 +93,7 @@ export default function App() {
       <PlanReminderToast />
       <FocusTimer />
       <RunTracker />
+      <SettingsScreen />
       <UndoToast />
       {wardrobeOpen && (
         <Suspense fallback={null}>
@@ -100,7 +104,7 @@ export default function App() {
         <Suspense fallback={<div className="fixed inset-0 z-[90] bg-canvas" />}>
           <Onboarding />
         </Suspense>
-      ) : launchedOnboarded ? (
+      ) : launchedOnboarded && state.prefs?.splash !== false ? (
         <SplashScreen />
       ) : null}
     </div>

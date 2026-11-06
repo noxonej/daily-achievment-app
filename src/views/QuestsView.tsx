@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../lib/prefs';
 import { Segmented } from '../components/Segmented';
 import { WeeklyView } from './WeeklyView';
 import { GoalsView } from './GoalsView';
@@ -19,8 +20,8 @@ export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
           value={section}
           onChange={setSection}
           options={[
-            { id: 'weekly', label: 'This week', icon: '🗡' },
-            { id: 'goals', label: 'Long-term goals', icon: '🏆' },
+            { id: 'weekly', label: t('quests.week'), icon: '🗡' },
+            { id: 'goals', label: t('quests.goals'), icon: '🏆' },
           ]}
         />
       </div>

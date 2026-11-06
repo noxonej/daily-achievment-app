@@ -29,7 +29,7 @@ export function useApplyAppearance(appearance: Appearance | undefined) {
     else root.dataset.accent = accent;
     root.dataset.bg = background;
     const bg = BACKGROUNDS.find((b) => b.id === background)?.bg ?? '#05060b';
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
+    if (root.dataset.theme !== 'light') document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
     try {
       localStorage.setItem(KEY, JSON.stringify({ accent, background }));
     } catch {

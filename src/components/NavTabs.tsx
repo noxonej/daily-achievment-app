@@ -1,4 +1,5 @@
 import { Icon } from './Icon';
+import { t } from '../lib/prefs';
 import { Avatar } from './Avatar';
 import { useApp } from '../store/AppContext';
 
@@ -51,7 +52,7 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
                     <Icon name={tab.icon} size={20} strokeWidth={isActive ? 2.3 : 1.9} />
                   )}
                 </span>
-                {tab.label}
+                {t(`nav.${tab.id}` as 'nav.today')}
               </button>
             );
           })}

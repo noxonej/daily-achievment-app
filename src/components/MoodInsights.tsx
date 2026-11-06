@@ -3,6 +3,7 @@ import { lastNDays } from '../lib/money';
 import { parseKey } from '../lib/date';
 import { MOODS } from '../lib/mood';
 import { Icon } from './Icon';
+import { locale } from '../lib/locale';
 
 function avg(xs: number[]) {
   return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
@@ -45,7 +46,7 @@ export function MoodInsights() {
                 {m && <Icon name={m.icon} size={20} className={m.color} />}
               </span>
               <span className="text-[10px] font-semibold text-slate-500">
-                {i === 6 ? 'Today' : parseKey(d).toLocaleDateString(undefined, { weekday: 'short' })}
+                {i === 6 ? 'Today' : parseKey(d).toLocaleDateString(locale(), { weekday: 'short' })}
               </span>
             </div>
           );

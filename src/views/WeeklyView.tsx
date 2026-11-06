@@ -1,3 +1,5 @@
+import { settings } from '../lib/settingsNav';
+import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { weekKey } from '../lib/date';
@@ -9,10 +11,9 @@ import { WildcardQuestCard } from '../components/WildcardQuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { Confetti } from '../components/Confetti';
 import type { ViewId } from '../components/NavTabs';
-import { setIntent } from '../lib/intents';
 import { Icon } from '../components/Icon';
 
-export function WeeklyView({ onNavigate, embedded = false }: { onNavigate: (v: ViewId) => void; embedded?: boolean }) {
+export function WeeklyView({ embedded = false }: { onNavigate?: (v: ViewId) => void; embedded?: boolean }) {
   const { state, dispatch } = useApp();
   const resetLabel = useWeeklyResetLabel();
   const key = weekKey();
@@ -68,7 +69,7 @@ export function WeeklyView({ onNavigate, embedded = false }: { onNavigate: (v: V
           )}
         </div>
         <ProgressBar value={doneCount} max={Math.max(activeWeekly.length, 1)} />
-        <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />New quests in {resetLabel}</p>
+        <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />{t('today.newQuestsIn', { t: resetLabel })}</p>
       </div>
 
       {wildcard && (
@@ -89,8 +90,7 @@ export function WeeklyView({ onNavigate, embedded = false }: { onNavigate: (v: V
           </p>
           <button
             onClick={() => {
-              setIntent('you-settings');
-              onNavigate('you');
+              settings.open('quests');
             }}
             className="rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-4 py-2 transition"
           >

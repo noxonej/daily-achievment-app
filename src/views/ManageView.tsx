@@ -4,12 +4,12 @@ import { QuestFormModal } from '../components/QuestFormModal';
 import { QuestLibraryModal } from '../components/QuestLibraryModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SyncSettings } from '../components/SyncSettings';
-import { ProfileSettings } from '../components/ProfileSettings';
 import type { Frequency, Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { Icon } from '../components/Icon';
 
-export function ManageView({ embedded = false }: { embedded?: boolean } = {}) {
+/** Quest lists (part="quests") or backups and sync (part="data"), shown inside Settings. */
+export function ManageView({ part }: { part: 'quests' | 'data' }) {
   const { state, dispatch, undoable } = useApp();
   const [formOpen, setFormOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -62,16 +62,11 @@ export function ManageView({ embedded = false }: { embedded?: boolean } = {}) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 space-y-6 stagger">
+    <div className="space-y-6">
+      {part === 'quests' && (
+      <>
       <div className="flex items-center justify-between gap-3">
-        {embedded ? (
-          <p className="text-sm text-slate-400">Your quests, profile and app settings.</p>
-        ) : (
-          <div>
-            <p className="text-slate-400 text-sm">Quests, profile & settings</p>
-            <h1 className="font-display text-2xl font-bold text-white mt-0.5">Manage</h1>
-          </div>
-        )}
+        <p className="text-sm text-slate-400">Add, edit or pause the quests you do every day and week.</p>
         <button
           onClick={() => setLibraryOpen(true)}
           className="shrink-0 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm px-3.5 py-2 transition"
@@ -114,7 +109,7 @@ export function ManageView({ embedded = false }: { embedded?: boolean } = {}) {
             aria-label="Toggle daily wildcard quest"
           >
             <span
-              className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${
+              className={`absolute top-1 w-5 h-5 rounded-full bg-[#fff] transition-transform ${
                 state.wildcardEnabled ? 'translate-x-6' : 'translate-x-1'
               }`}
             />
@@ -122,8 +117,11 @@ export function ManageView({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       </div>
 
-      <ProfileSettings />
+      </>
+      )}
 
+      {part === 'data' && (
+      <>
       <SyncSettings />
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
@@ -165,6 +163,8 @@ export function ManageView({ embedded = false }: { embedded?: boolean } = {}) {
           Reset All Progress
         </button>
       </div>
+      </>
+      )}
 
       <QuestFormModal
         open={formOpen}

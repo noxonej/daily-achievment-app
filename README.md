@@ -29,8 +29,18 @@ unlockable achievements.
 - **Appearance** — the futuristic Nebula look by default (with a Space
   Grotesk heading font), six accent colours and four backgrounds (Nebula,
   Graphite, Midnight, true Black) in Settings, applied before first paint.
+  A **light (white) theme** and an **Automatic** mode that follows the phone.
+- **Settings** — opened from the gear in the header or on the You tab, laid
+  out like a phone's settings app: profile, appearance, language, plan
+  reminders, sounds & vibration, reduce motion, launch animation, quests,
+  account, data & backup, install and about.
+- **29 languages** — every screen's main words are translated, and dates,
+  weekdays, times and money follow the chosen language (12/24-hour switch).
+- **Diary & notes** — a private ruled diary page for every day (with writing
+  prompts, word count and your mood), past pages by month, and free notes
+  with colours, pinning, search and undo for deletes.
 - **Five tabs** — Today, Plan, Money, Quests (weekly quests + long-term
-  goals) and You (profile, stats, badges, settings).
+  goals) and You (profile, stats, badges, diary).
 - **Accounts on the device** — create an account with an optional 4-digit
   PIN, "remember me", several accounts per phone (each with its own data),
   switch / sign out / delete. Existing saves move into the first account.

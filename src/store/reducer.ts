@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory } from '../lib/types';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -9,6 +9,7 @@ import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, boxPool, chestPool, findItem, isO
 import { computeDerivedStats } from '../lib/stats';
 import { checkNote } from '../lib/questRules';
 import type { BoxReward } from '../lib/dailyBox';
+import { DEFAULT_PREFS, guessLanguage } from '../lib/i18n';
 import { createEmptyMoney, moneyId } from '../lib/money';
 
 export function createInitialState(): AppState {
@@ -35,6 +36,8 @@ export function createInitialState(): AppState {
     contentVersion: CONTENT_VERSION,
     appearance: { accent: 'cyber', background: 'nebula' },
     dailyBox: { lastOpened: null, lastReward: null },
+    prefs: { ...DEFAULT_PREFS, language: guessLanguage() },
+    notes: [],
     questSwaps: 0,
     streakShields: 0,
     shieldedDates: [],
@@ -159,6 +162,10 @@ export type Action =
   | { type: 'SET_PROFILE'; profile: Partial<Profile> }
   | { type: 'SET_MOOD'; date: string; mood: Mood | null }
   | { type: 'SET_APPEARANCE'; appearance: Partial<Appearance> }
+  | { type: 'SET_PREFS'; prefs: Partial<Prefs> }
+  | { type: 'SET_DIARY'; date: string; text: string }
+  | { type: 'UPSERT_NOTE'; note: Partial<NoteEntry> & { id?: string } }
+  | { type: 'DELETE_NOTE'; noteId: string }
   | { type: 'ADD_FOCUS_MINUTES'; date: string; minutes: number }
   /** Sets today's (or this week's) total on a number-based quest; completes it at the target. */
   | { type: 'SET_PROGRESS'; questId: string; value: number }
@@ -727,6 +734,41 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'SET_PROFILE':
       return { ...state, profile: { ...state.profile, ...action.profile } };
+
+    case 'SET_PREFS':
+      return { ...state, prefs: { ...DEFAULT_PREFS, ...(state.prefs ?? {}), ...action.prefs } };
+
+    case 'SET_DIARY': {
+      // The diary page for a day is the same text as that day's note on the Today screen.
+      const existing = state.dayLogs[action.date];
+      const freeNote = action.text;
+      if (!existing && !freeNote.trim()) return state;
+      const log = existing
+        ? { ...existing, freeNote }
+        : { date: action.date, completedQuestIds: [], xpEarned: 0, perfectDay: false, dailyQuestCount: 0, freeNote };
+      return { ...state, dayLogs: { ...state.dayLogs, [action.date]: log } };
+    }
+
+    case 'UPSERT_NOTE': {
+      const now = new Date().toISOString();
+      const notes = state.notes ?? [];
+      if (action.note.id && notes.some((n) => n.id === action.note.id)) {
+        return { ...state, notes: notes.map((n) => (n.id === action.note.id ? { ...n, ...action.note, updatedAt: now } : n)) };
+      }
+      const note: NoteEntry = {
+        id: action.note.id ?? `note-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        title: action.note.title ?? '',
+        body: action.note.body ?? '',
+        pinned: action.note.pinned ?? false,
+        color: action.note.color ?? 'none',
+        createdAt: now,
+        updatedAt: now,
+      };
+      return { ...state, notes: [note, ...notes] };
+    }
+
+    case 'DELETE_NOTE':
+      return { ...state, notes: (state.notes ?? []).filter((n) => n.id !== action.noteId) };
 
     case 'SET_APPEARANCE':
       return { ...state, appearance: { ...(state.appearance ?? { accent: 'cyber', background: 'nebula' }), ...action.appearance, chosen: true } };

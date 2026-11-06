@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from '../lib/prefs';
 import { useApp } from '../store/AppContext';
 import { ownership } from '../store/reducer';
 import { todayKey } from '../lib/date';
@@ -79,30 +80,30 @@ export function DailyBoxCard() {
           <BoxArt size={64} />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-violet-300">Daily box</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-violet-300">{t('box.title')}</p>
           {opened && info ? (
             <>
               <p className="font-display font-bold text-white truncate">
                 <Icon name={info.icon} size="1.05em" className={`icon-inline ${info.tone}`} />
                 {last?.kind === 'cosmetic' ? findItem(last.itemId)?.name ?? info.title : info.title}
               </p>
-              <p className="text-xs text-slate-400">Next box in {resetLabel}</p>
+              <p className="text-xs text-slate-400">{t('box.next', { t: resetLabel })}</p>
             </>
           ) : ready ? (
             <>
-              <p className="font-display font-bold text-white">Your box is ready!</p>
-              <p className="text-xs text-slate-400">Boosts, shields, shards… or a mythic item</p>
+              <p className="font-display font-bold text-white">{t('box.ready')}</p>
+              <p className="text-xs text-slate-400">{t('box.readySub')}</p>
             </>
           ) : (
             <>
-              <p className="font-display font-bold text-white">Finish 1 quest to unlock</p>
-              <p className="text-xs text-slate-400">A free prize every day you show up</p>
+              <p className="font-display font-bold text-white">{t('box.locked')}</p>
+              <p className="text-xs text-slate-400">{t('box.lockedSub')}</p>
             </>
           )}
         </div>
         {ready && (
           <button onClick={() => setOpening(true)} className="shrink-0 rounded-xl bg-violet-500 hover:bg-violet-400 text-white text-sm font-bold px-4 py-2.5">
-            Open
+            {t('box.open')}
           </button>
         )}
       </div>

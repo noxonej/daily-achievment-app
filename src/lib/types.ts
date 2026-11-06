@@ -178,6 +178,26 @@ export interface RunRecord {
   source: 'gps' | 'manual';
 }
 
+export interface NoteEntry {
+  id: string;
+  title: string;
+  body: string;
+  pinned: boolean;
+  color: 'none' | 'amber' | 'sky' | 'emerald' | 'violet' | 'rose';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Prefs {
+  language: string;
+  theme: 'dark' | 'light' | 'system';
+  timeFormat: 'auto' | '12' | '24';
+  sounds: boolean;
+  haptics: boolean;
+  reduceMotion: boolean;
+  splash: boolean;
+}
+
 export type Accent = 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose';
 export type BgTheme = 'nebula' | 'graphite' | 'midnight' | 'black';
 export interface Appearance {
@@ -229,6 +249,9 @@ export interface AppState {
   /** Bumped when built-in content changes, so existing saves get new default quests once. */
   contentVersion: number;
   appearance: Appearance;
+  prefs: Prefs;
+  /** Free-form notes (the Notes side of the diary). */
+  notes: NoteEntry[];
   /** Daily box: last date it was opened, and what it gave. */
   dailyBox: { lastOpened: string | null; lastReward: unknown };
   questSwaps: number;

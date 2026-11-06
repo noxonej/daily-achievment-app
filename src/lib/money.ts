@@ -1,5 +1,6 @@
 import type { Expense, MoneyAccount, MoneyKind, MoneyState, SpendCategory } from './types';
 import { addDaysToKey, todayKey } from './date';
+import { locale } from './locale';
 
 export const MONEY_KINDS: Array<{ id: MoneyKind; label: string; short: string; color: string; hint: string }> = [
   { id: 'spending', label: 'Spending money', short: 'Spending', color: '#0891b2', hint: 'Cash, card, wallet. What you can use day to day.' },
@@ -59,7 +60,7 @@ export function formatMoney(cents: number, currency: string, opts: { compact?: b
   const useCompact = opts.compact && Math.abs(cents) >= 1000000;
   const whole = cents % 100 === 0;
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(locale(), {
       style: 'currency',
       currency,
       notation: useCompact ? 'compact' : 'standard',

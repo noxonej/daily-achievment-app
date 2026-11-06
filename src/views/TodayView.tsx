@@ -1,3 +1,5 @@
+import { settings } from '../lib/settingsNav';
+import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { todayKey, formatDisplayDate } from '../lib/date';
@@ -28,10 +30,10 @@ import { setIntent } from '../lib/intents';
 
 function greeting(d: Date = new Date()): string {
   const h = d.getHours();
-  if (h < 5) return 'Good night';
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 5) return t('greet.night');
+  if (h < 12) return t('greet.morning');
+  if (h < 18) return t('greet.afternoon');
+  return t('greet.evening');
 }
 
 function QuickAction({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
@@ -120,17 +122,17 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <NowNextCard onOpenPlan={() => onNavigate('plan')} />
 
       <div className="grid grid-cols-4 gap-2">
-        <QuickAction icon="⏱" label="Focus" onClick={() => focusTimer.open()} />
-        <QuickAction icon="🏃" label="Run" onClick={() => runTracker.open()} />
+        <QuickAction icon="⏱" label={t('now.focus')} onClick={() => focusTimer.open()} />
+        <QuickAction icon="🏃" label={t('qa.run')} onClick={() => runTracker.open()} />
         <QuickAction
           icon="💸"
-          label="Spent"
+          label={t('qa.spent')}
           onClick={() => {
             setIntent('add-expense');
             onNavigate('money');
           }}
         />
-        <QuickAction icon="📅" label="Plan" onClick={() => onNavigate('plan')} />
+        <QuickAction icon="📅" label={t('nav.plan')} onClick={() => onNavigate('plan')} />
       </div>
 
       <DailyBoxCard />
@@ -139,7 +141,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         {showConfetti && <Confetti count={36} />}
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-slate-300">
-            <span className="font-bold text-white">Daily quests</span> · {doneCount} / {activeDaily.length} done
+            <span className="font-bold text-white">{t('today.dailyQuests')}</span> · {doneCount} / {activeDaily.length} {t('today.done')}
           </span>
           {isPerfect && (
             <span className="text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1">
@@ -152,7 +154,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           max={Math.max(activeDaily.length, 1)}
           colorClass="bg-gradient-to-r from-emerald-500 to-teal-400"
         />
-        <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />New quests in {resetLabel}</p>
+        <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />{t('today.newQuestsIn', { t: resetLabel })}</p>
         {(boost > 1 || (state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0) && (
           <div className="flex flex-wrap gap-2 mt-3">
             {boost > 1 && (
@@ -193,7 +195,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       )}
 
       {activeDaily.length === 0 ? (
-        <EmptyState onNavigate={onNavigate} />
+        <EmptyState />
       ) : (
         <div className="space-y-2.5 rows-stagger">
           {sorted.map((original) => {
@@ -267,7 +269,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   );
 }
 
-function EmptyState({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
+function EmptyState() {
   return (
     <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
       <div className="flex justify-center mb-2 text-slate-400"><Icon name="🗺" size={30} strokeWidth={1.8} /></div>
@@ -275,8 +277,7 @@ function EmptyState({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <p className="text-slate-400 text-sm mb-4 px-6">Add one to start building your streak.</p>
       <button
         onClick={() => {
-          setIntent('you-settings');
-          onNavigate('you');
+          settings.open('quests');
         }}
         className="rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-4 py-2 transition"
       >

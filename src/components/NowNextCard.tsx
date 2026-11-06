@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from '../lib/prefs';
 import { useApp } from '../store/AppContext';
 import { checkedPlanIds, formatPlanTime, planCategory, planItemsForDay, todayWeekday } from '../lib/weekPlan';
 import { focusTimer } from '../lib/focusTimer';
@@ -45,7 +46,7 @@ export function NowNextCard({ onOpenPlan }: { onOpenPlan: () => void }) {
             <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-60" />
             <span className="relative w-2 h-2 rounded-full bg-amber-400" />
           </span>
-          {dayOver ? 'Day complete' : 'Right now'}
+          {dayOver ? t('now.dayComplete') : t('now.rightNow')}
         </p>
         <button onClick={onOpenPlan} className="text-xs font-semibold text-slate-400 hover:text-white tabular-nums">
           {doneCount}/{items.length} done →
@@ -77,21 +78,21 @@ export function NowNextCard({ onOpenPlan }: { onOpenPlan: () => void }) {
             }`}
           >
             <Icon name="✓" size={16} strokeWidth={3} />
-            {checked.has(current.id) ? 'Done' : 'Mark done'}
+            {checked.has(current.id) ? t('common.done') : t('now.markDone')}
           </button>
           <button
             onClick={() => focusTimer.open(current.text)}
             className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold bg-white/5 border border-white/10 text-white hover:bg-white/10"
           >
             <Icon name="⏱" size={16} />
-            Focus
+            {t('now.focus')}
           </button>
         </div>
       )}
 
       {next && (
         <div className="mt-3.5 pt-3 border-t border-white/[0.07] flex items-center gap-2 text-sm">
-          <span className="text-slate-500 font-semibold">Next</span>
+          <span className="text-slate-500 font-semibold">{t('now.next')}</span>
           <span className="flex-1 min-w-0 truncate text-slate-200">{next.text}</span>
           <span className="shrink-0 text-xs font-bold text-amber-300 tabular-nums">
             {formatPlanTime(next.time!)} · {inLabel(toMin(next.time!) - nowMin)}
