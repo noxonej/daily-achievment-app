@@ -7,7 +7,10 @@ unlockable achievements.
 
 ## Features
 
-- **First-run setup** — a one-minute walkthrough (name, what you want to
+- **First-run setup** — a short quiz, then you design the app yourself
+  (light/dark/automatic, colour, background, changing live) and create your
+  character (skin, face, hair, colour, outfit, scene, or shuffle). The
+  walkthrough covers name, what you want to
   get better at, wake/bed time, school or work hours) that builds a
   personal Monday–Sunday plan.
 - **Today home screen** — a greeting, a "Right now / Next" card from your

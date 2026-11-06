@@ -231,34 +231,7 @@ function AppearancePage() {
     <div className="space-y-6">
       <section>
         <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{t('appearance.theme')}</p>
-        <div className="grid grid-cols-3 gap-2.5" role="radiogroup" aria-label={t('appearance.theme')}>
-          {THEME_CARDS.map((c) => {
-            const on = prefs.theme === c.id;
-            return (
-              <button
-                key={c.id}
-                role="radio"
-                aria-checked={on}
-                onClick={() => setPrefs({ theme: c.id })}
-                className={`rounded-2xl border-2 p-2 transition ${on ? 'border-amber-400' : 'border-white/10 hover:border-white/25'}`}
-              >
-                <span className="block h-20 rounded-xl p-2 space-y-1.5 overflow-hidden" style={{ background: c.bg }}>
-                  {c.card ? (
-                    <>
-                      <span className="block h-4 rounded-md" style={{ background: c.card }} />
-                      <span className="block h-1.5 w-3/4 rounded" style={{ background: c.line }} />
-                      <span className="block h-1.5 w-1/2 rounded" style={{ background: c.line }} />
-                    </>
-                  ) : null}
-                </span>
-                <span className="mt-2 flex items-center justify-center gap-1.5 text-sm font-bold text-white">
-                  {on && <Icon name="✓" size={14} strokeWidth={3} className="text-amber-400" />}
-                  {t(c.key)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <ThemePicker />
       </section>
 
       <section>
@@ -450,6 +423,41 @@ function HelpPage() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Light / Dark / Automatic cards with a mini preview of each. */
+export function ThemePicker() {
+  const [prefs, setPrefs] = usePrefs();
+  return (
+        <div className="grid grid-cols-3 gap-2.5" role="radiogroup" aria-label={t('appearance.theme')}>
+      {THEME_CARDS.map((c) => {
+        const on = prefs.theme === c.id;
+        return (
+          <button
+            key={c.id}
+            role="radio"
+            aria-checked={on}
+            onClick={() => setPrefs({ theme: c.id })}
+            className={`rounded-2xl border-2 p-2 transition ${on ? 'border-amber-400' : 'border-white/10 hover:border-white/25'}`}
+          >
+            <span className="block h-20 rounded-xl p-2 space-y-1.5 overflow-hidden" style={{ background: c.bg }}>
+              {c.card ? (
+                <>
+                  <span className="block h-4 rounded-md" style={{ background: c.card }} />
+                  <span className="block h-1.5 w-3/4 rounded" style={{ background: c.line }} />
+                  <span className="block h-1.5 w-1/2 rounded" style={{ background: c.line }} />
+                </>
+              ) : null}
+            </span>
+            <span className="mt-2 flex items-center justify-center gap-1.5 text-sm font-bold text-white">
+              {on && <Icon name="✓" size={14} strokeWidth={3} className="text-amber-400" />}
+              {t(c.key)}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
