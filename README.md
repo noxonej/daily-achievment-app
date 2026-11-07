@@ -21,6 +21,10 @@ unlockable achievements.
   "every day: read 10 pages" makes a quest, "gym every monday 17:30" adds a
   weekly plan item, anything else becomes a to-do. It shows what it
   understood before you add it. Also on the app icon's long-press menu.
+- **Wishlist** — things you want one day, with price and link. Each shows how
+  many weeks of saving it takes with your money plan, asks you to wait a day
+  before buying, turns into a savings goal with one tap, and the whole list
+  can be shared (handy before birthdays).
 - **Breathe** — a 1, 3 or 5-minute guided breathing session (in 4, hold 4,
   out 6) with a growing and shrinking circle. It counts as focus time and
   ticks off a breathing or meditation quest.

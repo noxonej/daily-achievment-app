@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem } from '../lib/types';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -98,6 +98,7 @@ function normalizeMoney(money: MoneyState | undefined): MoneyState {
     crypto: Array.isArray(money.crypto) ? money.crypto : [],
     cryptoPrices: money.cryptoPrices,
     bills: Array.isArray(money.bills) ? money.bills : [],
+    wishlist: Array.isArray(money.wishlist) ? money.wishlist : [],
     income: money.income,
     saveRate: money.saveRate,
   };
@@ -190,6 +191,8 @@ export type Action =
   | { type: 'MONEY_SET_CRYPTO_PRICES'; prices: NonNullable<MoneyState['cryptoPrices']> }
   | { type: 'MONEY_UPSERT_BILL'; bill: Omit<Bill, 'id'> & { id?: string } }
   | { type: 'MONEY_DELETE_BILL'; billId: string }
+  | { type: 'MONEY_UPSERT_WISH'; wish: Omit<WishItem, 'id' | 'addedAt'> & { id?: string } }
+  | { type: 'MONEY_DELETE_WISH'; wishId: string }
   | { type: 'MONEY_SET_INCOME'; income: MoneyState['income']; saveRate?: number }
   | { type: 'USE_QUEST_SWAP'; questId: string; replacement: { title: string; description?: string; icon: string } }
   /** Spends Streak Shields on missed days right before today, if that keeps an existing streak alive. */
@@ -1034,6 +1037,21 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'MONEY_SET_INCOME':
       return withMoney(state, (m) => ({ ...m, income: action.income, saveRate: action.saveRate ?? m.saveRate }));
+
+    case 'MONEY_UPSERT_WISH': {
+      const w = action.wish;
+      if (!w.name.trim() || !(w.price > 0)) return state;
+      return withMoney(state, (m) => {
+        const list = m.wishlist ?? [];
+        const old = w.id ? list.find((x) => x.id === w.id) : undefined;
+        const link = w.link?.trim() ? (/^https?:\/\//i.test(w.link.trim()) ? w.link.trim() : `https://${w.link.trim()}`) : undefined;
+        const item: WishItem = { id: old?.id ?? moneyId('wish'), name: w.name.trim(), price: Math.round(w.price), icon: w.icon || '🎁', link, addedAt: old?.addedAt ?? todayKey() };
+        return { ...m, wishlist: old ? list.map((x) => (x.id === old.id ? item : x)) : [...list, item] };
+      });
+    }
+
+    case 'MONEY_DELETE_WISH':
+      return withMoney(state, (m) => ({ ...m, wishlist: (m.wishlist ?? []).filter((x) => x.id !== action.wishId) }));
 
     case 'MONEY_DELETE_BILL':
       return withMoney(state, (m) => ({ ...m, bills: (m.bills ?? []).filter((x) => x.id !== action.billId) }));

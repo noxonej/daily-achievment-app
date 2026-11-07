@@ -173,6 +173,18 @@ export interface SavingsGoal {
   createdAt: string;
 }
 
+/** Something you want to buy one day (wishlist). */
+export interface WishItem {
+  id: string;
+  name: string;
+  /** Price in cents. */
+  price: number;
+  icon: string;
+  link?: string;
+  /** YYYY-MM-DD it was added (for the 24-hour "do I still want it?" rule). */
+  addedAt: string;
+}
+
 export interface MoneyState {
   currency: string;
   setupDone: boolean;
@@ -186,6 +198,8 @@ export interface MoneyState {
   cryptoPrices?: { currency: string; fetchedAt: string; prices: Record<string, { price: number; change24h?: number }> };
   /** Bills and subscriptions that come out every month. */
   bills?: Bill[];
+  /** Wishlist: things you'd like, before they become savings goals. */
+  wishlist?: WishItem[];
   /** Money coming in, used by the money plan (cents per month). */
   income?: { monthly: number; kind: 'allowance' | 'salary' };
   /** Share of income to save, 0–1 (the plan suggests one). */

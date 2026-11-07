@@ -26,6 +26,7 @@ import { Segmented } from '../components/Segmented';
 import { CryptoPanel } from '../components/money/CryptoPanel';
 import { TipsPanel, TipCard } from '../components/money/TipsPanel';
 import { BillsCard, MonthCard } from '../components/money/BillsCard';
+import { WishlistCard } from '../components/money/WishlistCard';
 import { MoneyPlanCard } from '../components/money/MoneyPlanCard';
 import { CashCounter } from '../components/money/CashCounter';
 import { cryptoTotal } from '../lib/crypto';
@@ -120,6 +121,7 @@ export function MoneyView() {
             onEdit={(g) => setEditingGoal(g)}
             onAddMoney={(g) => setTransferOpen({ fromKind: 'spending', toId: g.accountId })}
           />
+          <WishlistCard />
           {!simple && <HistoryCard />}
           {!simple && <MonthCard />}
           <BillsCard />

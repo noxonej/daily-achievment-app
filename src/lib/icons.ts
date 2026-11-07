@@ -14,7 +14,7 @@ import {
   ArrowLeft, Timer, Play, Pause, RotateCcw, Frown, Annoyed, Meh, Laugh, Share, SquarePlus, Undo2, Info, EllipsisVertical, ShieldCheck, Sunset,
   Scissors, LockOpen, Shirt as ShirtIcon,
   ChevronRight, SkipForward, Bitcoin, Receipt, PiggyBank, CalendarClock, CircleDollarSign, Search, Pin, PinOff, Trash2, Plus, Volume2, Vibrate, Languages, Clock, SunMoon, Database, BookHeart,
-  Cross, Shuffle, ChevronDown, TreePalm, Heart, MountainSnow, BellRing, Brain, Quote,
+  Cross, Shuffle, ChevronDown, TreePalm, Heart, MountainSnow, BellRing, Brain, Quote, Headphones,
 } from 'lucide-react';
 
 /**
@@ -49,7 +49,7 @@ const EMOJI_ICONS: Record<string, LucideIcon> = {
   '🌇': Sunset, '✂': Scissors, '🔓': LockOpen, '👚': ShirtIcon,
   '›': ChevronRight, '🔍': Search, '📌': Pin, '📍': PinOff, '🗑': Trash2, '＋': Plus, '🔊': Volume2, '📳': Vibrate,
   '🔤': Languages, '🕐': Clock, '🌗': SunMoon, '💾': Database, '📕': BookHeart, '⏭': SkipForward, '₿': Bitcoin, '🧾': Receipt, '🐷': PiggyBank, '🪙': CircleDollarSign, '📆': CalendarClock,
-  '✝': Cross, '🔀': Shuffle, '▾': ChevronDown, '🏖': TreePalm, '💛': Heart, '🧗': MountainSnow, '🛎': BellRing, '🧠': Brain, '❝': Quote,
+  '✝': Cross, '🔀': Shuffle, '▾': ChevronDown, '🏖': TreePalm, '💛': Heart, '🧗': MountainSnow, '🛎': BellRing, '🧠': Brain, '❝': Quote, '🎧': Headphones,
 };
 
 export function normalizeIconId(name: string): string {
