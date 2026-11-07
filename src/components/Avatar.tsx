@@ -57,6 +57,67 @@ function Backdrop({ item, x }: { item: AvatarItem; x: Ctx }) {
   let defs: ReactNode;
   let extra: ReactNode = null;
   switch (item.style) {
+    case 'y2k':
+      defs = grad('#f9a8d4', '#7dd3fc', 'v');
+      extra = (
+        <>
+          <circle cx="80" cy="22" r="16" fill="#fff" opacity=".18" />
+          {([[16, 18, 6], [84, 70, 5], [12, 74, 3.4], [70, 10, 2.6], [30, 8, 2.2]] as const).map(([cx, cy, r]) => (
+            <path key={cx} d={star(cx, cy, r, r * 0.28, 4)} fill="#fff" stroke="#c4b5fd" strokeWidth=".5" />
+          ))}
+          <path d="M0 90 Q25 84 50 90 T100 90 V100 H0Z" fill="#c4b5fd" opacity=".55" />
+        </>
+      );
+      break;
+    case 'comic':
+      // pop-art halftone with a burst behind the head
+      defs = (
+        <>
+          <radialGradient id={g} cx=".5" cy=".42" r=".75">
+            <stop offset="0" stopColor="#fde047" />
+            <stop offset="1" stopColor="#f97316" />
+          </radialGradient>
+          <pattern id={`${g}d`} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+            <circle cx="2" cy="2" r="1" fill="#dc2626" opacity=".55" />
+          </pattern>
+        </>
+      );
+      extra = (
+        <>
+          <rect width="100" height="100" fill={`url(#${g}d)`} />
+          <path d={star(50, 44, 52, 30, 14)} fill="#fef08a" opacity=".85" />
+          <path d={star(50, 44, 52, 30, 14)} fill="none" stroke="#1b1512" strokeWidth=".8" opacity=".5" />
+        </>
+      );
+      break;
+    case 'bubbles':
+      defs = grad('#c4b5fd', '#f0abfc', 'v');
+      extra = (
+        <g>
+          {([[16, 24, 9], [84, 30, 7], [78, 76, 10], [14, 72, 6], [40, 10, 4], [62, 12, 3]] as const).map(([cx, cy, r]) => (
+            <g key={cx}>
+              <circle cx={cx} cy={cy} r={r} fill="#fff" fillOpacity=".18" stroke="#fff" strokeOpacity=".8" strokeWidth=".7" />
+              <path d={`M${cx - r * 0.55} ${cy - r * 0.2} Q${cx - r * 0.45} ${cy - r * 0.6} ${cx - r * 0.1} ${cy - r * 0.62}`} stroke="#fff" strokeWidth=".9" fill="none" strokeLinecap="round" />
+            </g>
+          ))}
+        </g>
+      );
+      break;
+    case 'desktop':
+      // a retro computer screen with a window and a cursor
+      defs = grad('#38bdf8', '#1d4ed8', 'v');
+      extra = (
+        <g>
+          <rect x="6" y="8" width="34" height="24" rx="1.5" fill="#e2e8f0" stroke="#1b1512" strokeWidth=".8" />
+          <rect x="6" y="8" width="34" height="5" rx="1.5" fill="#4f46e5" />
+          <rect x="34" y="9.2" width="2.6" height="2.6" fill="#f87171" />
+          <path d="M10 18 H34 M10 22 H28 M10 26 H31" stroke="#94a3b8" strokeWidth="1.2" />
+          <path d="M80 12 l0 9 l2.4 -2.2 l1.6 3.4 l1.4 -.7 l-1.6 -3.3 l3.2 -.1Z" fill="#fff" stroke="#1b1512" strokeWidth=".6" strokeLinejoin="round" />
+          <rect x="0" y="92" width="100" height="8" fill="#cbd5e1" />
+          <rect x="2" y="93.5" width="12" height="5" rx="1" fill="#4ade80" stroke="#1b1512" strokeWidth=".5" />
+        </g>
+      );
+      break;
     case 'sunset':
       defs = grad('#fb923c', '#db2777', 'v');
       extra = (
@@ -320,6 +381,7 @@ function Backdrop({ item, x }: { item: AvatarItem; x: Ctx }) {
 function HairBack({ style, x }: { style: string; x: Ctx }) {
   switch (style) {
     case 'long':
+    case 'clips':
       return (
         <path
           d="M27 44 C26 25 37 17 50 17 C63 17 74 25 73 44 L76 76 C71 80 64 80 62 73 L62 52 L38 52 L38 73 C36 80 29 80 24 76 Z"
@@ -376,9 +438,71 @@ function HairBack({ style, x }: { style: string; x: Ctx }) {
 
 /* ---------- hair (front layer, over head) ---------- */
 function HairFront({ style, x }: { style: string; x: Ctx }) {
-  // Flat cartoon hair: no glossy shine.
-  const shine = null;
+  // Comic-book shine: a hard white streak, no soft gloss.
+  const shine = (
+    <g fill="none" stroke="#fff" strokeLinecap="round" opacity=".8">
+      <path d="M36.6 27.4 Q40.2 23.6 45.2 22.8" strokeWidth="1.5" />
+      <path d="M47.6 22.4 L49 22.3" strokeWidth="1.5" />
+    </g>
+  );
+  const butterfly = (cx: number, cy: number, c: string, rot = 0) => (
+    <g key={`${cx}${cy}`} transform={`rotate(${rot} ${cx} ${cy})`} stroke={INK} strokeWidth=".55">
+      <ellipse cx={cx - 1.6} cy={cy - 0.9} rx="1.8" ry="1.5" fill={c} />
+      <ellipse cx={cx + 1.6} cy={cy - 0.9} rx="1.8" ry="1.5" fill={c} />
+      <ellipse cx={cx - 1.2} cy={cy + 1} rx="1.2" ry="1" fill={shade(c, 0.25)} />
+      <ellipse cx={cx + 1.2} cy={cy + 1} rx="1.2" ry="1" fill={shade(c, 0.25)} />
+      <path d={`M${cx} ${cy - 2} V${cy + 2}`} strokeWidth=".8" />
+    </g>
+  );
   switch (style) {
+    case 'frosted': {
+      // spiky with bleached tips, very 2000s
+      const tips: Array<[number, number]> = [[28.5, 27], [35.5, 16.5], [44, 11], [53, 10], [61.5, 13.5], [68.5, 20], [72, 29]];
+      return (
+        <g>
+          <path d="M28.5 43 C28 30 37 21.5 50 21.5 C63 21.5 72 30 71.5 43 C67.5 35.5 60 32 50 32.5 C40 32 32.5 35.5 28.5 43Z" fill={x.hair} />
+          {tips.map(([ax, ay]) => (
+            <path key={ax} d={`M${ax - 5 + (ax - 50) * 0.08} ${ay + 15} L${ax} ${ay} L${ax + 5 + (ax - 50) * 0.08} ${ay + 15}Z`} fill={x.hair} />
+          ))}
+          {tips.map(([ax, ay]) => (
+            <path key={`t${ax}`} d={`M${ax - 2.4} ${ay + 6.2} L${ax} ${ay} L${ax + 2.4} ${ay + 6.2}Z`} fill="#fdf2c2" />
+          ))}
+        </g>
+      );
+    }
+    case 'spacebuns':
+      return (
+        <g>
+          <circle cx="34" cy="20" r="7" fill={x.hair} />
+          <circle cx="66" cy="20" r="7" fill={x.hair} />
+          <path d="M29 42 C29 28 38 20.5 50 20.5 C62 20.5 71 28 71 42 C66 33 56 30.5 50 31 C44 30.5 34 33 29 42Z" fill={x.hair} />
+          <path d="M50 21 V30.5" stroke={x.hairDark} strokeWidth=".8" />
+          {butterfly(41, 25, '#f472b6', -15)}
+          {shine}
+        </g>
+      );
+    case 'curtains':
+      // 90s middle part with curtain bangs
+      return (
+        <g>
+          <path d="M29 44 C28 29 38 20.5 50 20.5 C62 20.5 72 29 71 44 C69 37 63 31.5 53.4 29.6 L50 33.4 L46.6 29.6 C37 31.5 31 37 29 44Z" fill={x.hair} />
+          <path d="M50 21 V32" stroke={x.hairDark} strokeWidth=".8" />
+          <path d="M33 37 Q37 31.5 44 30.6 M67 37 Q63 31.5 56 30.6" stroke={x.hairDark} strokeWidth=".7" fill="none" strokeLinecap="round" />
+          {shine}
+        </g>
+      );
+    case 'clips':
+      // long hair with a zig-zag part and butterfly clips
+      return (
+        <g>
+          <path d="M29 43 C29 28 38 20.5 50 20.5 C62 20.5 71 28 71 43 C67 34 59 29.5 50 30.5 C46 34 38 37 29 43Z" fill={x.hair} />
+          <path d="M50 21 l-1.4 2 l2.4 2 l-2.4 2 l2.4 2 l-1 1.4" stroke={x.hairDark} strokeWidth=".7" fill="none" strokeLinejoin="round" />
+          {butterfly(37.5, 30, '#a78bfa', -25)}
+          {butterfly(43.5, 25.8, '#f472b6', -10)}
+          {butterfly(58, 25.4, '#38bdf8', 12)}
+          {shine}
+        </g>
+      );
     case 'twists': {
       // short twists on top with faded sides, like a fresh cut
       const tufts: Array<[number, number, number]> = [
@@ -532,6 +656,71 @@ function Outfit({ item, x }: { item: AvatarItem; x: Ctx }) {
   const g = `${x.id}out`;
   const neckline = <path d="M41.5 73.2 Q50 83 58.5 73.2 Z" fill={x.skin} />;
   switch (item.style) {
+    case 'babytee':
+      // fitted baby tee with a chrome star
+      return (
+        <g>
+          <defs>
+            <linearGradient id={`${g}ch`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#f8fafc" />
+              <stop offset=".45" stopColor="#c4b5fd" />
+              <stop offset=".7" stopColor="#7dd3fc" />
+              <stop offset="1" stopColor="#f0abfc" />
+            </linearGradient>
+          </defs>
+          <path d={TORSO} fill={c1} />
+          {neckline}
+          <path d="M41.5 73.2 Q50 83 58.5 73.2" stroke={c2} strokeWidth="1.6" fill="none" />
+          <path d={star(50, 90, 7.2, 3, 4)} fill={`url(#${g}ch)`} stroke="#1b1512" strokeWidth="1" strokeLinejoin="round" />
+          <path d={star(60, 84.5, 2.2, 0.8, 4)} fill="#fff" />
+          <path d={star(40.5, 85.5, 1.6, 0.6, 4)} fill="#fff" />
+        </g>
+      );
+    case 'chromepuffer':
+      return (
+        <g>
+          <defs>
+            <linearGradient id={`${g}cp`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#94a3b8" />
+              <stop offset=".25" stopColor="#f1f5f9" />
+              <stop offset=".5" stopColor="#a5b4fc" />
+              <stop offset=".75" stopColor="#f5d0fe" />
+              <stop offset="1" stopColor="#94a3b8" />
+            </linearGradient>
+          </defs>
+          <path d={TORSO} fill={`url(#${g}cp)`} />
+          {[86, 93].map((y) => (
+            <path key={y} d={`M12 ${y} Q50 ${y - 3} 88 ${y}`} stroke="#475569" strokeWidth=".8" fill="none" opacity=".7" />
+          ))}
+          <path d="M38 76 Q50 70 62 76 L60 83 Q50 79 40 83Z" fill="#cbd5e1" stroke="#475569" strokeWidth=".6" />
+          <path d="M50 78 V100" stroke="#334155" strokeWidth="1" />
+          <path d="M22 82 Q30 80 34 86" stroke="#fff" strokeWidth="1.4" fill="none" opacity=".7" strokeLinecap="round" />
+        </g>
+      );
+    case 'meshjersey':
+      return (
+        <g>
+          <path d={TORSO} fill={c1} />
+          <path d="M42 73.4 L50 82 L58 73.4 Z" fill={x.skin} />
+          <path d="M41 73.4 L50 83 L59 73.4" stroke={c2} strokeWidth="2.2" fill="none" />
+          <path d="M14 88 Q16 84 22 82 M86 88 Q84 84 78 82" stroke={c2} strokeWidth="2.4" fill="none" />
+          <text x="50" y="97" textAnchor="middle" fontSize="12" fontWeight="900" fontFamily="system-ui, sans-serif" fill={c2} stroke="#1b1512" strokeWidth=".6">
+            00
+          </text>
+        </g>
+      );
+    case 'chaintee':
+      // black tee with a silver chain and a star pendant
+      return (
+        <g>
+          <path d={TORSO} fill={c1} />
+          {neckline}
+          <path d="M41.5 73.2 Q50 83 58.5 73.2" stroke={c2} strokeWidth="1.6" fill="none" />
+          <path d="M42 75 Q50 89 58 75" stroke="#e2e8f0" strokeWidth="1.2" fill="none" strokeDasharray="1.3 .7" />
+          <path d={star(50, 88.4, 3, 1.3, 5)} fill="#e2e8f0" stroke="#1b1512" strokeWidth=".6" />
+          <path d="M70 90 l4 -4 M74 90 l-4 -4" stroke="#f472b6" strokeWidth="1.4" strokeLinecap="round" />
+        </g>
+      );
     case 'graphic':
       // an oversized tee with a big smiley print
       return (
@@ -1068,7 +1257,8 @@ function Eye({ cx, kind, x, lid }: { cx: number; kind: EyeKind; x: Ctx; lid: Lid
       return (
         <g>
           <ToonEye cx={cx} cy={cy} x={x} dir={dir} lid={lid} />
-          <path d={star(cx - dir * 0.6, cy + 0.2, 2.4, 0.8, 4)} fill="#fff" />
+          <path d={star(cx - dir * 0.9 + 1.4, cy - 1.1, 1.9, 0.55, 4)} fill="#fff" />
+          <circle cx={cx - dir * 0.9 - 1.1} cy={cy + 1.9} r=".55" fill="#fff" />
         </g>
       );
     case 'puppy':
@@ -1168,7 +1358,7 @@ function OpenMouth({ w, h, T = 51.8, teeth = true, tongue = true, x }: { w: numb
   );
 }
 
-type MouthKind = 'smile' | 'grin' | 'soft' | 'sad' | 'frown' | 'o' | 'smirk' | 'laugh' | 'cat' | 'robot' | 'grit' | 'small' | 'flat' | 'buck' | 'pout';
+type MouthKind = 'smile' | 'grin' | 'soft' | 'sad' | 'frown' | 'o' | 'smirk' | 'laugh' | 'cat' | 'robot' | 'grit' | 'small' | 'flat' | 'buck' | 'pout' | 'tongue';
 function Mouth({ kind, x }: { kind: MouthKind; x: Ctx }) {
   const line = { stroke: INK, strokeWidth: 1.25, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (kind) {
@@ -1214,6 +1404,15 @@ function Mouth({ kind, x }: { kind: MouthKind; x: Ctx }) {
       );
     case 'small':
       return <path d="M48.3 54 Q50 54.9 51.7 54" {...line} />;
+    case 'tongue':
+      // a cheeky grin with the tongue out
+      return (
+        <g>
+          <path d="M51 54.2 Q51.2 59.2 54 59.2 Q56.8 59 56 54" fill={TONGUE} stroke={INK} strokeWidth="1" strokeLinejoin="round" />
+          <path d="M53.6 55.2 V57.4" stroke={shade(TONGUE, -0.25)} strokeWidth=".6" strokeLinecap="round" />
+          <path d="M44.6 52.8 Q50.5 57 56.4 52.4" {...line} />
+        </g>
+      );
     case 'flat':
       return <path d="M46.4 54.2 H53.6" {...line} />;
     case 'buck':
@@ -1274,6 +1473,8 @@ const EXPRESSIONS: Record<string, ExpressionSpec> = {
   dead: { eyes: ['x', 'x'], brows: 'flat', mouth: 'o' },
   maincharacter: { eyes: ['sparkle', 'sparkle'], brows: 'one', mouth: 'grin', blush: true },
   cosmic: { eyes: ['cosmic', 'cosmic'], brows: 'normal', mouth: 'soft' },
+  silly: { eyes: ['happy', 'open'], brows: 'raised', mouth: 'tongue', blush: true },
+  sparkle: { eyes: ['sparkle', 'sparkle'], brows: 'normal', mouth: 'grin', blush: true },
 };
 
 /** Maps today's mood check-in (1–5) to an expression for the "Match my mood" face. */
@@ -1317,6 +1518,32 @@ function Face({ x, style, mood }: { x: Ctx; style: string; mood?: number }) {
 function Eyewear({ item, x }: { item: AvatarItem; x: Ctx }) {
   const g = `${x.id}eye`;
   switch (item.style) {
+    case 'oval':
+      // tiny tinted Y2K shades
+      return (
+        <g>
+          <ellipse cx="42" cy="46" rx="5.4" ry="3.4" fill={item.c1 ?? '#f472b6'} fillOpacity=".72" stroke="#cbd5e1" strokeWidth=".9" />
+          <ellipse cx="58" cy="46" rx="5.4" ry="3.4" fill={item.c1 ?? '#f472b6'} fillOpacity=".72" stroke="#cbd5e1" strokeWidth=".9" />
+          <path d="M47.4 45.6 Q50 44.6 52.6 45.6 M36.6 45.5 L30 44 M63.4 45.5 L70 44" stroke="#cbd5e1" strokeWidth=".9" fill="none" />
+          <path d="M39.5 45 q1.5 -1.2 3.2 -1.3 M55.5 45 q1.5 -1.2 3.2 -1.3" stroke="#fff" strokeWidth=".8" strokeLinecap="round" opacity=".85" />
+        </g>
+      );
+    case 'wrap':
+      // chrome wraparound shield
+      return (
+        <g>
+          <defs>
+            <linearGradient id={`${g}w`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#e0f2fe" />
+              <stop offset=".35" stopColor="#818cf8" />
+              <stop offset=".65" stopColor="#f0abfc" />
+              <stop offset="1" stopColor="#38bdf8" />
+            </linearGradient>
+          </defs>
+          <path d="M30 42 Q50 37.5 70 42 L68.5 47.5 Q60 51.5 52 48.5 Q50 47.6 48 48.5 Q40 51.5 31.5 47.5Z" fill={`url(#${g}w)`} stroke="#1b1512" strokeWidth=".9" strokeLinejoin="round" />
+          <path d="M34 43 Q42 40.6 48 41.2" stroke="#fff" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity=".9" />
+        </g>
+      );
     case 'round':
       return (
         <g stroke={item.c1 ?? '#1f2937'} strokeWidth="1.5" fill="#fff" fillOpacity=".12">
@@ -1443,6 +1670,57 @@ function Headwear({ item, x }: { item: AvatarItem; x: Ctx }) {
         <g>
           <path d="M28.7 35 Q50 27.5 71.3 35 L71.6 40 Q50 32.5 28.4 40 Z" fill={c1} />
           <path d="M28.7 35 Q50 27.5 71.3 35" stroke="#fff" strokeOpacity=".5" strokeWidth=".8" fill="none" />
+        </g>
+      );
+    case 'trucker':
+      // foam-front trucker cap with mesh back and a star patch
+      return (
+        <g>
+          <path d="M28 37 C28 22 38 15.5 50 15.5 C62 15.5 72 22 72 37 Z" fill={c1} />
+          <g stroke={c2} strokeWidth=".45" opacity=".8">
+            {[30, 33, 36, 64, 67, 70].map((mx) => (
+              <path key={mx} d={`M${mx} 24 V37`} />
+            ))}
+          </g>
+          <path d="M36 37 C35.5 24 41 17 50 16.4 C59 17 64.5 24 64 37 Z" fill="#f8fafc" />
+          <path d="M23 37.5 Q50 30.5 77 37.5 Q75 42.5 50 40.5 Q25 42.5 23 37.5Z" fill={c1} />
+          <circle cx="50" cy="15.8" r="1.6" fill={c1} />
+          <path d={star(50, 27.5, 5, 2.1, 5)} fill={c2} stroke="#1b1512" strokeWidth=".6" strokeLinejoin="round" />
+        </g>
+      );
+    case 'bandana':
+      return (
+        <g>
+          <path d="M27 37 C27 21 38 14.5 50 14.5 C62 14.5 73 21 73 37 C65 33 35 33 27 37Z" fill={c1} />
+          <path d="M71 34 L79 31 L77 38 Z M71 35 L78 40 L72.5 42 Z" fill={c1} />
+          <g fill="#fff" opacity=".9">
+            {[[36, 26], [44, 21], [52, 19.5], [60, 22], [66, 28], [40, 32], [56, 29]].map(([cx, cy]) => (
+              <g key={`${cx}${cy}`}>
+                <circle cx={cx} cy={cy} r="1.1" />
+                <circle cx={cx + 1.8} cy={cy + 1.6} r=".45" />
+              </g>
+            ))}
+          </g>
+        </g>
+      );
+    case 'butterflies':
+      return (
+        <g stroke="#1b1512" strokeWidth=".55">
+          {([[33, 34, '#f472b6', -30], [39, 27, '#a78bfa', -15], [50, 23.5, '#38bdf8', 0], [61, 27, '#fde047', 15], [67, 34, '#4ade80', 30]] as const).map(([cx, cy, c, r]) => (
+            <g key={cx} transform={`rotate(${r} ${cx} ${cy})`}>
+              <path d={`M${cx} ${cy} C${cx - 4.5} ${cy - 5} ${cx - 5.5} ${cy + 1} ${cx} ${cy + 0.4}Z`} fill={c} />
+              <path d={`M${cx} ${cy} C${cx + 4.5} ${cy - 5} ${cx + 5.5} ${cy + 1} ${cx} ${cy + 0.4}Z`} fill={c} />
+              <path d={`M${cx} ${cy + 0.4} C${cx - 3} ${cy + 1} ${cx - 3} ${cy + 3.6} ${cx} ${cy + 1.4}Z M${cx} ${cy + 0.4} C${cx + 3} ${cy + 1} ${cx + 3} ${cy + 3.6} ${cx} ${cy + 1.4}Z`} fill={shade(c, 0.3)} />
+            </g>
+          ))}
+        </g>
+      );
+    case 'sportvisor':
+      return (
+        <g>
+          <path d="M28.5 35.5 Q50 28.5 71.5 35.5 L71.5 38.5 Q50 31.5 28.5 38.5 Z" fill={c1} />
+          <path d="M24 38.5 Q50 31 76 38.5 Q74 44 50 42 Q26 44 24 38.5Z" fill={c2} />
+          <path d="M30 40 Q50 35.4 70 40" stroke="#fff" strokeWidth=".9" fill="none" opacity=".7" />
         </g>
       );
     case 'cap':
@@ -1691,6 +1969,53 @@ function Pet({ item }: { item: AvatarItem }) {
   );
   let body: ReactNode = null;
   switch (item.style) {
+    case 'butterfly':
+      body = (
+        <g stroke="#1b1512" strokeWidth=".7">
+          <path d="M11 12 C2 2 -3 12 3 16 C6 18 9 16 11 13Z" fill={c} />
+          <path d="M11 12 C20 2 25 12 19 16 C16 18 13 16 11 13Z" fill={c} />
+          <path d="M11 13 C6 15 4 22 8 22 C10 22 11 18 11 14Z M11 13 C16 15 18 22 14 22 C12 22 11 18 11 14Z" fill={shade(c, 0.3)} />
+          <circle cx="5" cy="10" r="1.4" fill="#fff" />
+          <circle cx="17" cy="10" r="1.4" fill="#fff" />
+          <path d="M11 10 V21" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M11 10 Q9 6 8 5 M11 10 Q13 6 14 5" fill="none" />
+        </g>
+      );
+      break;
+    case 'pixelpet':
+      // an egg-shaped pocket pet with a pixel creature on its screen
+      body = (
+        <g>
+          <ellipse cx="11" cy="14" rx="9" ry="10.5" fill={c} stroke="#1b1512" strokeWidth=".8" />
+          <rect x="5" y="7" width="12" height="10" rx="1.5" fill="#bef264" stroke="#1b1512" strokeWidth=".7" />
+          <g fill="#1b1512">
+            <rect x="9" y="9" width="4" height="1.2" />
+            <rect x="8" y="10.2" width="6" height="3.6" />
+            <rect x="8" y="13.8" width="1.4" height="1.2" />
+            <rect x="12.6" y="13.8" width="1.4" height="1.2" />
+          </g>
+          <rect x="9.2" y="11" width="1" height="1" fill="#bef264" />
+          <rect x="11.8" y="11" width="1" height="1" fill="#bef264" />
+          {[7, 11, 15].map((bx) => (
+            <circle key={bx} cx={bx} cy="20.5" r="1.2" fill="#fde047" stroke="#1b1512" strokeWidth=".5" />
+          ))}
+        </g>
+      );
+      break;
+    case 'flipphone':
+      body = (
+        <g stroke="#1b1512" strokeWidth=".8" strokeLinejoin="round">
+          <path d="M15 1.5 V4" strokeWidth=".9" strokeLinecap="round" />
+          <rect x="5" y="4" width="12" height="9" rx="2" fill={c} />
+          <rect x="7" y="6" width="8" height="5" rx="1" fill="#a5f3fc" />
+          <rect x="5" y="13.5" width="12" height="10" rx="2" fill={shade(c, -0.12)} />
+          <g fill="#fff" stroke="none">
+            {[0, 1, 2].map((r) => [0, 1, 2].map((k) => <rect key={`${r}${k}`} x={7.2 + k * 2.8} y={15.5 + r * 2.4} width="1.8" height="1.3" rx=".4" />))}
+          </g>
+          <path d={star(-1.5, 7, 2.4, 0.7, 4)} fill="#fde047" strokeWidth=".5" />
+        </g>
+      );
+      break;
     case 'cat':
       body = (
         <>
@@ -1928,7 +2253,7 @@ export function Avatar({
   const clip = `${id}clip`;
   // The cartoon ink outline around every shape. Thicker on small pictures so it still shows.
   const ink = `url(#${id}ink)`;
-  const radius = size < 60 ? 1.15 : size < 120 ? 0.85 : 0.75;
+  const radius = size < 60 ? 1.25 : size < 120 ? 1 : 0.9;
   const shadow = shade(skin, -0.16);
 
   return (
@@ -1949,6 +2274,10 @@ export function Avatar({
         <clipPath id={`${id}face`}>
           <path d={FACE} />
         </clipPath>
+        {/* comic-book halftone dots for the shadows */}
+        <pattern id={`${id}dots`} width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <circle cx="1.2" cy="1.2" r=".62" fill={shade(skin, -0.32)} />
+        </pattern>
         <linearGradient id={`${id}rim`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#fff" stopOpacity=".12" />
           <stop offset=".2" stopColor="#fff" stopOpacity="0" />
@@ -1968,6 +2297,7 @@ export function Avatar({
           <path d="M45.2 60 H54.8 V80 H45.2 Z" fill={skin} />
         </g>
         <path d="M45.2 64.5 Q50 69.5 54.8 64.5 V69 Q50 72.5 45.2 69 Z" fill={shadow} />
+        <path d="M45.2 66 Q50 71 54.8 66 V73 H45.2 Z" fill={`url(#${id}dots)`} opacity=".6" />
         <g transform={BODY}>
           <g filter={ink}>
             <Outfit item={findItem(l.outfit)!} x={x} />
@@ -1982,7 +2312,8 @@ export function Avatar({
           </g>
           {/* one flat cel shadow on the far cheek and under the hairline */}
           <g clipPath={`url(#${id}face)`}>
-            <path d="M64.6 28 C71 36 71.6 50 65.4 58.4 C62.2 62.6 57.6 64.8 53 65.4 L72 66 L73 26Z" fill={shadow} opacity=".55" />
+            <path d="M64.6 28 C71 36 71.6 50 65.4 58.4 C62.2 62.6 57.6 64.8 53 65.4 L72 66 L73 26Z" fill={shadow} opacity=".4" />
+            <path d="M62 30 C68 38 68.6 50 63 57.6 C60 61.4 56 63.4 52 64 L73 66 L73 26Z" fill={`url(#${id}dots)`} opacity=".7" />
           </g>
           <g transform={FEATURES}>
             <Face x={x} style={findItem(l.expression)!.style} mood={mood ?? todayMood} />
