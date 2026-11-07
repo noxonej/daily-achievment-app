@@ -1151,74 +1151,94 @@ function Outfit({ item, x }: { item: AvatarItem; x: Ctx }) {
 }
 
 /* ---------- face / expression ---------- */
-// Cartoon style: huge round white eyes with an ink outline and black pupils, no lips, a small
-// nose bump and simple ink mouths. Eyes sit close together, like a modern animated show.
+// Realistic comic style (like a modern game character): almond eyes with a coloured iris and a
+// bold inked upper lid, tapered inked brows, a drawn nose and lips, all with hard comic shadows.
 const EYE_L = 42.5;
 const EYE_R = 57.5;
-const EYE_Y = 45.4;
-const EYE_RX = 5.9;
-const EYE_RY = 6.9;
+const EYE_Y = 45;
+const EYE_W = 4.3;
+const EYE_H = 3.3;
 const INK = '#1b1512';
-const MOUTH_IN = '#5c1a1d';
-const TONGUE = '#e2626f';
+const MOUTH_IN = '#4a1418';
+const TONGUE = '#d9596a';
 
 function heart(cx: number, cy: number, s: number): string {
   return `M${cx} ${cy + s * 0.9} C${cx - s * 1.6} ${cy - s * 0.1} ${cx - s * 0.9} ${cy - s * 1.3} ${cx} ${cy - s * 0.45} C${cx + s * 0.9} ${cy - s * 1.3} ${cx + s * 1.6} ${cy - s * 0.1} ${cx} ${cy + s * 0.9}Z`;
 }
 
-type EyeKind = 'open' | 'round' | 'happy' | 'closed' | 'half' | 'star' | 'heart' | 'dizzy' | 'robot' | 'fire' | 'side' | 'x' | 'sparkle' | 'puppy' | 'cosmic';
-/** How the upper lid cuts into the eye: angry slants down to the nose, sad slants up. */
-type Lid = 'none' | 'angry' | 'sad' | 'half' | 'squint';
+type EyeKind = 'open' | 'round' | 'happy' | 'closed' | 'half' | 'star' | 'heart' | 'dizzy' | 'robot' | 'fire' | 'side' | 'x' | 'sparkle' | 'puppy' | 'cosmic' | 'squint' | 'droopy';
+/** How the upper lid cuts across the eye: angry slants down to the nose, sad slants up. */
+type Lid = 'none' | 'angry' | 'sad' | 'half' | 'squint' | 'droopy';
+
+/** Almond eye outline; `dir` points to the outer corner (towards the ear). */
+function almond(cx: number, cy: number, dir: number, w = EYE_W, h = EYE_H): string {
+  const X = (dx: number) => cx + dx * dir;
+  return `M${X(-w)} ${cy + 0.4} Q${X(-w * 0.45)} ${cy - h} ${X(w * 0.12)} ${cy - h * 0.98} Q${X(w * 0.78)} ${cy - h * 0.86} ${X(w)} ${cy - 0.3} Q${X(w * 0.45)} ${cy + h * 0.78} ${X(-w * 0.08)} ${cy + h * 0.74} Q${X(-w * 0.72)} ${cy + h * 0.62} ${X(-w)} ${cy + 0.4}Z`;
+}
 
 /**
- * The cartoon eye: a big white oval with an ink outline and a black pupil with a light dot. A lid
- * cuts the top off at an angle for angry, sad, bored and sly looks; the cut line doubles as the brow.
+ * The comic eye: white almond, coloured iris with a dark ring, pupil and a hard light dot, a bold
+ * inked upper lid with a flick at the outer corner, a light lower lid and the crease above.
  */
-function ToonEye({ cx, cy, x, dir, lid = 'none', look = 0, big = false }: { cx: number; cy: number; x: Ctx; dir: number; lid?: Lid; look?: number; big?: boolean }) {
-  const rx = big ? EYE_RX + 0.5 : EYE_RX;
-  const ry = big ? EYE_RY + 0.6 : EYE_RY;
-  const cid = `${x.id}t${Math.round(cx * 10)}`;
-  // inner = towards the nose, outer = towards the ear
-  const inner = cx - dir * 7;
-  const outer = cx + dir * 7;
+function ComicEye({ cx, cy, x, dir, lid = 'none', look = 0, big = false }: { cx: number; cy: number; x: Ctx; dir: number; lid?: Lid; look?: number; big?: boolean }) {
+  const w = big ? EYE_W + 0.5 : EYE_W;
+  const h = big ? EYE_H + 1 : EYE_H;
+  const X = (dx: number) => cx + dx * dir;
+  const cid = `${x.id}k${Math.round(cx * 10)}`;
+  const shape = almond(cx, cy, dir, w, h);
+  // the lid line: from the inner end height to the outer end height
   const cut: Record<Lid, [number, number]> = {
     none: [cy - 20, cy - 20],
-    angry: [cy - 1.6, cy - 6.6],
-    sad: [cy - 6.4, cy - 2.2],
-    half: [cy - 0.6, cy - 1.2],
-    squint: [cy - 2.6, cy - 3.4],
+    angry: [cy - 0.8, cy - 3.6],
+    sad: [cy - 3.6, cy - 1],
+    half: [cy - 0.2, cy - 0.5],
+    squint: [cy - 1.5, cy - 1.9],
+    droopy: [cy + 0.6, cy + 0.2],
   };
   const [yi, yo] = cut[lid];
-  const below = `M${inner} ${yi} L${outer} ${yo} L${outer} ${cy + 12} L${inner} ${cy + 12}Z`;
-  const ellipse = <ellipse cx={cx} cy={cy} rx={rx} ry={ry} />;
-  const pupilR = big ? 1.5 : lid === 'half' ? 1.9 : 2.05;
-  const py = lid === 'half' ? cy + 2.2 : lid === 'squint' ? cy + 1.2 : cy + 0.5;
-  const px = cx - dir * 0.9 + look * 2.6;
-  const slope = (yo - yi) / (outer - inner);
-  const at = (ax: number) => yi + slope * (ax - inner);
+  const inner = X(-7);
+  const outer = X(7);
+  const below = `M${inner} ${yi} L${outer} ${yo} L${outer} ${cy + 10} L${inner} ${cy + 10}Z`;
+  const at = (ax: number) => yi + ((yo - yi) * (ax - inner)) / (outer - inner);
+  const pupilY = lid === 'half' || lid === 'droopy' ? cy + 1.3 : lid === 'squint' ? cy + 0.6 : cy - 0.1;
+  const px = cx - dir * 0.25 + look * 1.7;
+  const irisR = big ? 1.75 : 2.15;
   return (
     <g>
       <defs>
-        <clipPath id={`${cid}e`}>{ellipse}</clipPath>
+        <clipPath id={`${cid}e`}>
+          <path d={shape} />
+        </clipPath>
         <clipPath id={`${cid}l`}>
           <path d={below} />
         </clipPath>
       </defs>
+      {/* brow-ridge shadow */}
+      <path d={`M${X(-4.8)} ${cy - 3.3} Q${cx} ${cy - 5.6} ${X(5)} ${cy - 3.1}`} stroke={x.skinDark} strokeWidth="1.5" fill="none" opacity=".35" strokeLinecap="round" />
+      <path d={`M${X(-3.9)} ${cy - h - 0.9} Q${cx} ${cy - h - 2.4} ${X(4.1)} ${cy - h - 0.7}`} stroke={x.skinDark} strokeWidth=".6" fill="none" opacity=".7" />
       <g clipPath={`url(#${cid}l)`}>
         <g clipPath={`url(#${cid}e)`}>
-          <rect x={cx - 8} y={cy - 8} width="16" height="16" fill="#fff" />
-          <circle cx={px} cy={py} r={pupilR} fill={INK} />
-          <circle cx={px + 0.75} cy={py - 0.8} r={pupilR * 0.34} fill="#fff" />
+          <rect x={cx - 7} y={cy - 7} width="14" height="14" fill="#fbf8f4" />
+          <path d={`M${cx - 7} ${cy - 7} H${cx + 7} V${cy - h * 0.25} Q${cx} ${cy - h * 0.7} ${cx - 7} ${cy - h * 0.2}Z`} fill={INK} opacity=".18" />
+          <circle cx={px} cy={pupilY} r={irisR} fill={x.eye[1]} />
+          <circle cx={px} cy={pupilY} r={irisR} fill="none" stroke={x.eye[2]} strokeWidth=".55" />
+          <circle cx={px} cy={pupilY} r={irisR * 0.48} fill={INK} />
+          <circle cx={px + 0.75} cy={pupilY - 0.75} r=".58" fill="#fff" />
         </g>
-        <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke={INK} strokeWidth="1" />
-      </g>
-      {lid !== 'none' && (
+        {/* bold upper lid with an outer flick, light lower lid */}
         <path
-          d={`M${cx - dir * (rx + (lid === 'angry' ? 0.6 : 0.2))} ${at(cx - dir * (rx + 0.6))} L${cx + dir * (rx + (lid === 'sad' ? 0.6 : 0.2))} ${at(cx + dir * (rx + 0.6))}`}
+          d={`M${X(-w - 0.1)} ${cy + 0.5} Q${X(-w * 0.45)} ${cy - h - 0.35} ${X(w * 0.12)} ${cy - h - 0.3} Q${X(w * 0.8)} ${cy - h * 0.92} ${X(w + 1.1)} ${cy - 1.3}`}
           stroke={INK}
-          strokeWidth={lid === 'angry' || lid === 'sad' ? 1.7 : 1.15}
+          strokeWidth="1.35"
+          fill="none"
           strokeLinecap="round"
         />
+        <path d={`M${X(-w * 0.75)} ${cy + h * 0.66} Q${X(0)} ${cy + h * 0.95} ${X(w * 0.85)} ${cy + h * 0.35}`} stroke={INK} strokeWidth=".5" fill="none" opacity=".55" strokeLinecap="round" />
+      </g>
+      {lid !== 'none' && (
+        <g clipPath={`url(#${cid}e)`}>
+          <path d={`M${X(-w - 1)} ${at(X(-w - 1))} L${X(w + 1)} ${at(X(w + 1))}`} stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
+        </g>
       )}
     </g>
   );
@@ -1226,107 +1246,127 @@ function ToonEye({ cx, cy, x, dir, lid = 'none', look = 0, big = false }: { cx: 
 
 function Eye({ cx, kind, x, lid }: { cx: number; kind: EyeKind; x: Ctx; lid: Lid }) {
   const cy = EYE_Y;
-  const dir = cx < 50 ? -1 : 1; // which way is the outer corner
+  const dir = cx < 50 ? -1 : 1;
   const X = (dx: number) => cx + dx * dir;
-  // the special eyes (stars, hearts…) were drawn small: blow them up to cartoon size
-  const big = (el: ReactNode) => <g transform={`translate(${cx} ${cy}) scale(1.4) translate(${-cx} ${-cy})`}>{el}</g>;
+  const big = (el: ReactNode) => <g transform={`translate(${cx} ${cy}) scale(1.15) translate(${-cx} ${-cy})`}>{el}</g>;
   switch (kind) {
     case 'side':
-      return <ToonEye cx={cx} cy={cy} x={x} dir={dir} lid="half" look={1} />;
+      return <ComicEye cx={cx} cy={cy} x={x} dir={dir} lid={lid === 'none' ? 'squint' : lid} look={1} />;
     case 'round':
-      return <ToonEye cx={cx} cy={cy} x={x} dir={dir} big />;
+      return <ComicEye cx={cx} cy={cy} x={x} dir={dir} big />;
     case 'half':
-      return <ToonEye cx={cx} cy={cy} x={x} dir={dir} lid={lid === 'none' ? 'squint' : lid} />;
+      return <ComicEye cx={cx} cy={cy} x={x} dir={dir} lid={lid === 'none' ? 'half' : lid} />;
+    case 'squint':
+      return <ComicEye cx={cx} cy={cy} x={x} dir={dir} lid={lid === 'none' ? 'squint' : lid} />;
+    case 'droopy':
+      return <ComicEye cx={cx} cy={cy} x={x} dir={dir} lid="droopy" />;
     case 'happy':
-      // laughing "^" eyes
-      return <path d={`M${X(-4.8)} ${cy + 1.8} Q${cx} ${cy - 5} ${X(4.8)} ${cy + 1.8}`} stroke={INK} strokeWidth="1.7" fill="none" strokeLinecap="round" />;
+      // laughing eyes: an upward arc with a lash flick and the cheek pushed up
+      return (
+        <g>
+          <path d={`M${X(-4.4)} ${cy + 1.2} Q${cx} ${cy - 3.6} ${X(4.6)} ${cy + 0.6} l${0.9 * dir} -.6`} stroke={INK} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={`M${X(-3.2)} ${cy + 3} Q${cx} ${cy + 2} ${X(3.4)} ${cy + 2.8}`} stroke={x.skinDark} strokeWidth=".7" fill="none" opacity=".7" strokeLinecap="round" />
+        </g>
+      );
     case 'closed':
-      return <path d={`M${X(-4.6)} ${cy - 0.2} Q${cx} ${cy + 3.8} ${X(4.6)} ${cy - 0.2}`} stroke={INK} strokeWidth="1.5" fill="none" strokeLinecap="round" />;
+      return (
+        <g>
+          <path d={`M${X(-4.3)} ${cy} Q${cx} ${cy + 2.6} ${X(4.5)} ${cy - 0.3} l${0.8 * dir} -.5`} stroke={INK} strokeWidth="1.4" fill="none" strokeLinecap="round" />
+          {[-1.8, 0, 1.8].map((d) => (
+            <path key={d} d={`M${X(d)} ${cy + 1.85 - Math.abs(d) * 0.2} l${0.3 * dir} .9`} stroke={INK} strokeWidth=".5" strokeLinecap="round" />
+          ))}
+          <path d={`M${X(-3.9)} ${cy - 2.6} Q${cx} ${cy - 4.2} ${X(4.1)} ${cy - 2.4}`} stroke={x.skinDark} strokeWidth=".6" fill="none" opacity=".7" />
+        </g>
+      );
     case 'cosmic':
       return big(
         <g>
-          <ellipse cx={cx} cy={cy} rx="3.6" ry="4" fill="#a855f7" opacity=".35" />
-          <ellipse cx={cx} cy={cy} rx="2.6" ry="3" fill="#4c1d95" stroke={INK} strokeWidth=".6" />
-          <circle cx={cx - 0.6} cy={cy + 0.8} r=".9" fill="#22d3ee" />
-          <path d={star(cx + 0.6, cy - 0.6, 1.6, 0.5, 4)} fill="#fff" />
+          <path d={almond(cx, cy, dir)} fill="#2e1065" stroke={INK} strokeWidth="1" />
+          <circle cx={cx - 0.6} cy={cy + 0.6} r=".8" fill="#22d3ee" />
+          <path d={star(cx + 0.6, cy - 0.5, 1.8, 0.5, 4)} fill="#fff" />
+          <circle cx={cx + 2.2} cy={cy + 0.8} r=".4" fill="#f0abfc" />
         </g>,
       );
     case 'x':
-      return big(<path d={`M${cx - 2.4} ${cy - 2.4} L${cx + 2.4} ${cy + 2.4} M${cx + 2.4} ${cy - 2.4} L${cx - 2.4} ${cy + 2.4}`} stroke={INK} strokeWidth="1.3" strokeLinecap="round" />);
+      return big(<path d={`M${cx - 2.3} ${cy - 2.3} L${cx + 2.3} ${cy + 2.3} M${cx + 2.3} ${cy - 2.3} L${cx - 2.3} ${cy + 2.3}`} stroke={INK} strokeWidth="1.4" strokeLinecap="round" />);
     case 'sparkle':
       return (
         <g>
-          <ToonEye cx={cx} cy={cy} x={x} dir={dir} lid={lid} />
-          <path d={star(cx - dir * 0.9 + 1.4, cy - 1.1, 1.9, 0.55, 4)} fill="#fff" />
-          <circle cx={cx - dir * 0.9 - 1.1} cy={cy + 1.9} r=".55" fill="#fff" />
+          <ComicEye cx={cx} cy={cy} x={x} dir={dir} big />
+          <path d={star(cx - dir * 0.25 + 1.2, cy - 1.2, 1.7, 0.5, 4)} fill="#fff" />
+          <circle cx={cx - dir * 0.25 - 1} cy={cy + 1.3} r=".5" fill="#fff" />
         </g>
       );
     case 'puppy':
       return (
         <g>
-          <ToonEye cx={cx} cy={cy} x={x} dir={dir} lid="sad" />
-          <circle cx={cx - dir * 0.9} cy={cy + 1.2} r="2.9" fill={INK} />
-          <circle cx={cx - dir * 0.9 + 1} cy={cy} r="1.1" fill="#fff" />
-          <circle cx={cx - dir * 0.9 - 0.8} cy={cy + 2.4} r=".55" fill="#fff" />
-          <path d={`M${cx - 3.4} ${cy + 5.2} Q${cx} ${cy + 6.8} ${cx + 3.4} ${cy + 5.2}`} stroke="#7dd3fc" strokeWidth="1.1" fill="none" strokeLinecap="round" />
+          <ComicEye cx={cx} cy={cy} x={x} dir={dir} lid="sad" big />
+          <circle cx={cx - dir * 0.25 + 0.9} cy={cy - 0.4} r=".8" fill="#fff" />
+          <path d={`M${X(-3.4)} ${cy + 4.6} Q${cx} ${cy + 5.8} ${X(3.6)} ${cy + 4.4}`} stroke="#7dd3fc" strokeWidth="1.1" fill="none" strokeLinecap="round" />
         </g>
       );
     case 'star':
-      return big(<path d={star(cx, cy, 3.8, 1.6)} fill="#facc15" stroke={INK} strokeWidth=".7" strokeLinejoin="round" />);
+      return big(<path d={star(cx, cy, 3.9, 1.6)} fill="#facc15" stroke={INK} strokeWidth=".8" strokeLinejoin="round" />);
     case 'heart':
-      return big(<path d={heart(cx, cy, 3)} fill="#f43f5e" stroke={INK} strokeWidth=".7" />);
+      return big(<path d={heart(cx, cy, 3)} fill="#f43f5e" stroke={INK} strokeWidth=".8" />);
     case 'dizzy':
       return (
         <g>
-          <ellipse cx={cx} cy={cy} rx={EYE_RX} ry={EYE_RY} fill="#fff" stroke={INK} strokeWidth="1" />
-          <path
-            d={`M${cx} ${cy} m-.6 0 a.6 .6 0 1 1 1.2 0 a1.4 1.4 0 1 1 -2.8 0 a2.2 2.2 0 1 1 4.4 0 a3 3 0 1 1 -6 0`}
-            stroke={INK}
-            strokeWidth=".9"
-            fill="none"
-            strokeLinecap="round"
-          />
+          <path d={almond(cx, cy, dir)} fill="#fbf8f4" stroke={INK} strokeWidth="1.1" />
+          <path d={`M${cx} ${cy} m-.5 0 a.5 .5 0 1 1 1 0 a1.2 1.2 0 1 1 -2.4 0 a1.9 1.9 0 1 1 3.8 0`} stroke={INK} strokeWidth=".8" fill="none" strokeLinecap="round" />
         </g>
       );
     case 'robot':
       return big(
         <g>
-          <rect x={cx - 3} y={cy - 1.8} width="6" height="3.6" rx="1" fill="#22d3ee" opacity=".35" />
-          <rect x={cx - 2.4} y={cy - 1.2} width="4.8" height="2.4" rx=".8" fill="#22d3ee" stroke={INK} strokeWidth=".5" />
+          <rect x={cx - 3.2} y={cy - 1.8} width="6.4" height="3.6" rx="1" fill="#0f172a" stroke={INK} strokeWidth=".6" />
+          <rect x={cx - 2.4} y={cy - 1.1} width="4.8" height="2.2" rx=".6" fill="#22d3ee" />
         </g>,
       );
     case 'fire':
       return (
         <g>
-          <ToonEye cx={cx} cy={cy} x={x} dir={dir} lid="angry" />
-          <ellipse cx={cx - dir * 0.9} cy={cy + 0.8} rx="2.1" ry="2.7" fill="#f97316" />
-          <ellipse cx={cx - dir * 0.9} cy={cy + 0.4} rx="1" ry="1.4" fill="#fde047" />
+          <ComicEye cx={cx} cy={cy} x={x} dir={dir} lid="angry" />
+          <circle cx={cx - dir * 0.25} cy={cy - 0.1} r="2.15" fill="#f97316" />
+          <circle cx={cx - dir * 0.25} cy={cy - 0.1} r="1" fill="#fde047" />
         </g>
       );
     default:
-      return <ToonEye cx={cx} cy={cy} x={x} dir={dir} lid={lid} />;
+      return <ComicEye cx={cx} cy={cy} x={x} dir={dir} lid={lid} />;
   }
 }
 
-type BrowKind = 'normal' | 'raised' | 'angry' | 'sad' | 'flat' | 'one' | 'none';
+type BrowKind = 'normal' | 'raised' | 'angry' | 'sad' | 'flat' | 'one' | 'worried' | 'none';
+/** Left brow as [inner, middle, outer]; the right one is mirrored. */
+const BROW_PTS: Record<Exclude<BrowKind, 'none' | 'one'>, [[number, number], [number, number], [number, number]]> = {
+  normal: [[46.6, 39.3], [42.6, 37.8], [38.2, 39.2]],
+  raised: [[46.4, 37.6], [42.4, 35.4], [38.2, 37.2]],
+  angry: [[46.8, 41.3], [42.8, 39.5], [38.4, 38]],
+  sad: [[46.4, 38], [42.6, 38.9], [38.6, 40.8]],
+  flat: [[46.6, 40.1], [42.6, 39.7], [38.4, 40]],
+  worried: [[46.4, 37.6], [42.6, 38.2], [38.6, 39.8]],
+};
 
-/** Small ink brows floating above the eyes; angry and sad brows are drawn by the eye lids instead. */
-function Brows({ kind }: { kind: BrowKind }) {
-  const arc = (cx: number, y: number, tilt = 0) => `M${cx - 3.2} ${y + 0.9 + tilt} Q${cx} ${y - 1} ${cx + 3.2} ${y + 0.9 - tilt}`;
-  const s = { stroke: INK, strokeWidth: 1.35, fill: 'none', strokeLinecap: 'round' as const };
-  switch (kind) {
-    case 'raised':
-      return (
-        <g>
-          <path d={arc(EYE_L, 36)} {...s} />
-          <path d={arc(EYE_R, 36)} {...s} />
-        </g>
-      );
-    case 'one':
-      return <path d={arc(EYE_R + 0.4, 36.2, 0.5)} {...s} />;
-    default:
-      return null;
-  }
+function browPath(pts: [[number, number], [number, number], [number, number]], mirror: boolean, thick: number): string {
+  const m = ([px, py]: [number, number]): [number, number] => (mirror ? [100 - px, py] : [px, py]);
+  const [a, b, c] = pts.map(m);
+  // bold at the inner end, tapering to a point at the outer end
+  return `M${a[0]} ${a[1] - thick * 0.55} Q${b[0]} ${b[1] - thick * 0.7} ${c[0]} ${c[1]} Q${b[0]} ${b[1] + thick * 0.35} ${a[0]} ${a[1] + thick * 0.5}Z`;
+}
+
+/** Bold, tapered inked brows: the strongest part of a comic face. */
+function Brows({ kind, x }: { kind: BrowKind; x: Ctx }) {
+  if (kind === 'none') return null;
+  const fill = mix(x.hairDark, INK, 0.55);
+  const thick = kind === 'angry' ? 2.3 : 1.9;
+  const left = kind === 'one' ? BROW_PTS.flat : BROW_PTS[kind];
+  const right = kind === 'one' ? ([[46.4, 37.2], [42.4, 34.6], [38.2, 36.4]] as [[number, number], [number, number], [number, number]]) : BROW_PTS[kind];
+  return (
+    <g fill={fill} stroke={INK} strokeWidth=".35" strokeLinejoin="round">
+      <path d={browPath(left, false, thick)} />
+      <path d={browPath(right, true, thick)} />
+    </g>
+  );
 }
 
 function lidFor(brows: BrowKind): Lid {
@@ -1335,12 +1375,25 @@ function lidFor(brows: BrowKind): Lid {
   return 'none';
 }
 
-/** An open cartoon mouth from x 50±w, top at T, h tall: dark inside, a row of top teeth, a tongue, ink outline. */
-function OpenMouth({ w, h, T = 51.8, teeth = true, tongue = true, x }: { w: number; h: number; T?: number; teeth?: boolean; tongue?: boolean; x: Ctx }) {
+/** Lips along a line from l through m to r: an inked parting line, a shaded lower lip and corners. */
+function Lips({ l, m, r, x, lower = 1 }: { l: [number, number]; m: [number, number]; r: [number, number]; x: Ctx; lower?: number }) {
+  const midY = (l[1] + r[1]) / 4 + m[1] / 2;
+  return (
+    <g>
+      <path d={`M${l[0] + 1} ${l[1] + 0.3} Q${m[0]} ${midY + 2.6 * lower} ${r[0] - 1} ${r[1] + 0.3} Q${m[0]} ${midY + 0.6} ${l[0] + 1} ${l[1] + 0.3}Z`} fill={x.lip} opacity=".55" />
+      <path d={`M${m[0] - 1.8} ${midY + 2.6 * lower} Q${m[0]} ${midY + 3.1 * lower} ${m[0] + 1.8} ${midY + 2.6 * lower}`} stroke={x.skinDark} strokeWidth=".7" fill="none" strokeLinecap="round" />
+      <path d={`M${l[0]} ${l[1]} Q${m[0]} ${m[1]} ${r[0]} ${r[1]}`} stroke={INK} strokeWidth="1.15" fill="none" strokeLinecap="round" />
+      <path d={`M${l[0] - 0.2} ${l[1] - 0.6} l.3 1.1 M${r[0] + 0.2} ${r[1] - 0.6} l-.3 1.1`} stroke={INK} strokeWidth=".6" strokeLinecap="round" opacity=".7" />
+    </g>
+  );
+}
+
+/** An open mouth: dark inside, top teeth, tongue, inked outline and a shaded lower lip. */
+function OpenMouth({ w, h, T = 52, teeth = true, tongue = true, x }: { w: number; h: number; T?: number; teeth?: boolean; tongue?: boolean; x: Ctx }) {
   const L = 50 - w;
   const R = 50 + w;
   const id = `${x.id}m`;
-  const shape = `M${L} ${T} Q50 ${T + 1.4} ${R} ${T} Q${R - 0.4} ${T + h} 50 ${T + h + 0.4} Q${L + 0.4} ${T + h} ${L} ${T}Z`;
+  const shape = `M${L} ${T} Q50 ${T + 1.2} ${R} ${T} Q${R - 0.5} ${T + h} 50 ${T + h + 0.3} Q${L + 0.5} ${T + h} ${L} ${T}Z`;
   return (
     <g>
       <defs>
@@ -1350,41 +1403,61 @@ function OpenMouth({ w, h, T = 51.8, teeth = true, tongue = true, x }: { w: numb
       </defs>
       <path d={shape} fill={MOUTH_IN} />
       <g clipPath={`url(#${id}c)`}>
-        {tongue && <ellipse cx="50" cy={T + h + 0.6} rx={w * 0.62} ry={h * 0.42} fill={TONGUE} />}
-        {teeth && <path d={`M${L} ${T - 1} H${R} V${T + 2} Q50 ${T + 3.1} ${L} ${T + 2}Z`} fill="#fff" />}
+        {tongue && <ellipse cx="50" cy={T + h + 0.4} rx={w * 0.6} ry={h * 0.42} fill={TONGUE} />}
+        {teeth && <path d={`M${L} ${T - 1} H${R} V${T + 1.7} Q50 ${T + 2.7} ${L} ${T + 1.7}Z`} fill="#f8f5ef" />}
+        {teeth && <path d={`M${L + w * 0.55} ${T + 0.6} V${T + 2.2} M${R - w * 0.55} ${T + 0.6} V${T + 2.2}`} stroke="#cfc6b8" strokeWidth=".35" />}
       </g>
       <path d={shape} fill="none" stroke={INK} strokeWidth="1.05" strokeLinejoin="round" />
+      <path d={`M${50 - w * 0.45} ${T + h + 1.6} Q50 ${T + h + 2.3} ${50 + w * 0.45} ${T + h + 1.6}`} stroke={x.skinDark} strokeWidth=".8" fill="none" strokeLinecap="round" />
     </g>
   );
 }
 
-type MouthKind = 'smile' | 'grin' | 'soft' | 'sad' | 'frown' | 'o' | 'smirk' | 'laugh' | 'cat' | 'robot' | 'grit' | 'small' | 'flat' | 'buck' | 'pout' | 'tongue';
+type MouthKind = 'smile' | 'grin' | 'soft' | 'sad' | 'frown' | 'o' | 'smirk' | 'laugh' | 'cat' | 'robot' | 'grit' | 'small' | 'flat' | 'buck' | 'pout' | 'tongue' | 'wavy' | 'yawn' | 'side' | 'smug';
 function Mouth({ kind, x }: { kind: MouthKind; x: Ctx }) {
-  const line = { stroke: INK, strokeWidth: 1.25, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  const line = { stroke: INK, strokeWidth: 1.15, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (kind) {
     case 'grin':
-      // a big toothy grin: white teeth with the line where they meet
+      return <OpenMouth w={5.4} h={4.4} tongue={false} x={x} />;
+    case 'laugh':
+      return <OpenMouth w={5.8} h={6.8} T={51.6} x={x} />;
+    case 'soft':
+      return <Lips l={[46.8, 53.2]} m={[50, 55]} r={[53.2, 53.2]} x={x} lower={0.8} />;
+    case 'sad':
+      return <Lips l={[46, 55.2]} m={[50, 52.6]} r={[54, 55.2]} x={x} lower={0.7} />;
+    case 'frown':
       return (
         <g>
-          <path d="M43.6 51.6 Q50 53.4 56.4 51.6 Q55.8 58.6 50 58.9 Q44.2 58.6 43.6 51.6Z" fill="#fff" stroke={INK} strokeWidth="1.1" strokeLinejoin="round" />
-          <path d="M44.3 54.6 Q50 56.2 55.7 54.6" stroke={INK} strokeWidth=".6" fill="none" />
-          <path d="M42.9 51.2 q.5 .9 1.2 1 M57.1 51.2 q-.5 .9 -1.2 1" {...line} strokeWidth=".9" />
+          <Lips l={[45.4, 55.4]} m={[50, 52.2]} r={[54.6, 55.4]} x={x} lower={0.7} />
+          <path d="M47.5 58.6 Q50 59.6 52.5 58.6" stroke={x.skinDark} strokeWidth=".8" fill="none" strokeLinecap="round" />
         </g>
       );
-    case 'laugh':
-      return <OpenMouth w={6.4} h={8} T={51.2} x={x} />;
-    case 'soft':
-      return <path d="M46.6 53.2 Q50 55.6 53.4 53.2" {...line} />;
-    case 'sad':
-      return <path d="M45.8 56.2 Q50 52.8 54.2 56.2" {...line} />;
-    case 'frown':
-      return <path d="M45 56 Q50 52.4 55 56" {...line} strokeWidth={1.4} />;
     case 'o':
-      return <ellipse cx="50" cy="55" rx="2.4" ry="3" fill={MOUTH_IN} stroke={INK} strokeWidth="1.05" />;
+      return (
+        <g>
+          <ellipse cx="50" cy="55" rx="2.2" ry="2.8" fill={MOUTH_IN} stroke={INK} strokeWidth="1" />
+          <path d="M48.4 58.8 Q50 59.4 51.6 58.8" stroke={x.skinDark} strokeWidth=".7" fill="none" strokeLinecap="round" />
+        </g>
+      );
+    case 'yawn':
+      return <OpenMouth w={3} h={5} T={52.6} teeth={false} x={x} />;
     case 'smirk':
-      return <path d="M45.6 54.2 Q50.8 56.4 54.8 52.4 M54.8 52.4 l.9 -.2" {...line} />;
+      return (
+        <g>
+          <Lips l={[45.8, 54.2]} m={[50.6, 55.6]} r={[54.8, 52.4]} x={x} lower={0.7} />
+          <path d="M55.4 51.6 q.9 .8 .5 1.9" stroke={INK} strokeWidth=".7" fill="none" strokeLinecap="round" />
+        </g>
+      );
+    case 'smug':
+      // closed, satisfied little smile pushed to one side
+      return <Lips l={[47, 54.4]} m={[51, 55.2]} r={[54.4, 53]} x={x} lower={0.6} />;
+    case 'side':
+      // mouth pressed and pulled to one side
+      return <path d="M49 54.6 Q51.6 54 54 53.2" {...line} />;
     case 'cat':
-      return <path d="M45.6 52.8 q2.2 2.4 4.4 0 q2.2 2.4 4.4 0" {...line} />;
+      return <path d="M45.6 53 q2.2 2.4 4.4 0 q2.2 2.4 4.4 0" {...line} />;
+    case 'wavy':
+      return <path d="M45.4 54.6 q1.15 -1.2 2.3 0 t2.3 0 t2.3 0 t2.3 0" {...line} />;
     case 'robot':
       return (
         <g>
@@ -1395,38 +1468,42 @@ function Mouth({ kind, x }: { kind: MouthKind; x: Ctx }) {
         </g>
       );
     case 'grit':
-      // clenched teeth
       return (
         <g>
-          <rect x="43.8" y="51.6" width="12.4" height="5.4" rx="2.4" fill="#fff" stroke={INK} strokeWidth="1.1" />
-          <path d="M44.2 54.3 H55.8 M47 51.8 V56.8 M50 51.6 V57 M53 51.8 V56.8" stroke={INK} strokeWidth=".55" />
+          <rect x="44.2" y="51.8" width="11.6" height="4.6" rx="2" fill="#f8f5ef" stroke={INK} strokeWidth="1.05" />
+          <path d="M44.6 54.1 H55.4 M47 52 V56.2 M50 51.8 V56.4 M53 52 V56.2" stroke={INK} strokeWidth=".5" />
+          <path d="M47 58.6 Q50 59.5 53 58.6" stroke={x.skinDark} strokeWidth=".8" fill="none" strokeLinecap="round" />
         </g>
       );
     case 'small':
-      return <path d="M48.3 54 Q50 54.9 51.7 54" {...line} />;
-    case 'tongue':
-      // a cheeky grin with the tongue out
-      return (
-        <g>
-          <path d="M51 54.2 Q51.2 59.2 54 59.2 Q56.8 59 56 54" fill={TONGUE} stroke={INK} strokeWidth="1" strokeLinejoin="round" />
-          <path d="M53.6 55.2 V57.4" stroke={shade(TONGUE, -0.25)} strokeWidth=".6" strokeLinecap="round" />
-          <path d="M44.6 52.8 Q50.5 57 56.4 52.4" {...line} />
-        </g>
-      );
+      return <Lips l={[48, 54]} m={[50, 54.7]} r={[52, 54]} x={x} lower={0.5} />;
     case 'flat':
-      return <path d="M46.4 54.2 H53.6" {...line} />;
+      return <Lips l={[46.2, 54.2]} m={[50, 54.3]} r={[53.8, 54.2]} x={x} lower={0.6} />;
     case 'buck':
       return (
         <g>
-          <path d="M44.6 52.2 Q50 57.4 55.4 52.2" {...line} />
-          <path d="M47.9 53.9 V56 H52.1 V53.9" fill="#fff" stroke={INK} strokeWidth=".8" strokeLinejoin="round" />
+          <path d="M44.8 52.4 Q50 57.2 55.2 52.4" {...line} />
+          <path d="M48 53.9 V56 H52 V53.9" fill="#f8f5ef" stroke={INK} strokeWidth=".8" strokeLinejoin="round" />
           <path d="M50 54.4 V56" stroke={INK} strokeWidth=".5" />
         </g>
       );
     case 'pout':
-      return <path d="M47.6 54.8 Q50 52.8 52.4 54.8" {...line} />;
+      return (
+        <g>
+          <ellipse cx="50" cy="54.6" rx="2" ry="1.4" fill={x.lip} stroke={INK} strokeWidth=".8" />
+          <path d="M48.6 54.4 H51.4" stroke={INK} strokeWidth=".6" />
+        </g>
+      );
+    case 'tongue':
+      return (
+        <g>
+          <path d="M51 54.2 Q51.2 59 54 59 Q56.6 58.8 56 54" fill={TONGUE} stroke={INK} strokeWidth="1" strokeLinejoin="round" />
+          <path d="M53.6 55.2 V57.2" stroke={shade(TONGUE, -0.25)} strokeWidth=".6" strokeLinecap="round" />
+          <path d="M44.6 52.8 Q50.5 57 56.4 52.4" {...line} />
+        </g>
+      );
     default:
-      return <path d="M44.6 52.6 Q50 57.8 55.4 52.6" {...line} />;
+      return <Lips l={[45.2, 52.8]} m={[50, 56.4]} r={[54.8, 52.8]} x={x} />;
   }
 }
 
@@ -1442,43 +1519,51 @@ interface ExpressionSpec {
   tears2?: boolean;
   /** Little motion lines by the head (surprise). */
   pop?: boolean;
+  /** The comic "angry vein" mark on the forehead. */
+  vein?: boolean;
+  /** Sparkles around the face. */
+  bling?: boolean;
+  /** A sweat drop on the side of the head (awkward / deadpan). */
+  drop?: boolean;
 }
 
+/** Every expression differs from every other in at least two of: eyes, brows, mouth, extras. */
 const EXPRESSIONS: Record<string, ExpressionSpec> = {
   happy: { eyes: ['open', 'open'], brows: 'normal', mouth: 'smile' },
-  grin: { eyes: ['open', 'open'], brows: 'normal', mouth: 'grin' },
+  grin: { eyes: ['squint', 'squint'], brows: 'raised', mouth: 'grin' },
   calm: { eyes: ['closed', 'closed'], brows: 'flat', mouth: 'soft' },
   sad: { eyes: ['open', 'open'], brows: 'sad', mouth: 'sad', tear: true },
-  angry: { eyes: ['open', 'open'], brows: 'angry', mouth: 'frown' },
+  angry: { eyes: ['open', 'open'], brows: 'angry', mouth: 'frown', vein: true },
   surprised: { eyes: ['round', 'round'], brows: 'raised', mouth: 'o', pop: true },
-  sleepy: { eyes: ['closed', 'closed'], brows: 'flat', mouth: 'small', zzz: true },
+  sleepy: { eyes: ['droopy', 'droopy'], brows: 'worried', mouth: 'yawn', zzz: true },
   wink: { eyes: ['open', 'happy'], brows: 'normal', mouth: 'smile', blush: true },
   laugh: { eyes: ['happy', 'happy'], brows: 'raised', mouth: 'laugh', blush: true },
-  smirk: { eyes: ['half', 'half'], brows: 'normal', mouth: 'smirk' },
-  determined: { eyes: ['open', 'open'], brows: 'angry', mouth: 'grit', sweat: true },
+  smirk: { eyes: ['open', 'squint'], brows: 'one', mouth: 'smirk' },
+  determined: { eyes: ['squint', 'squint'], brows: 'angry', mouth: 'grit', sweat: true },
   starstruck: { eyes: ['star', 'star'], brows: 'raised', mouth: 'grin', blush: true },
   love: { eyes: ['heart', 'heart'], brows: 'raised', mouth: 'smile', blush: true },
-  dizzy: { eyes: ['dizzy', 'dizzy'], brows: 'sad', mouth: 'o' },
+  dizzy: { eyes: ['dizzy', 'dizzy'], brows: 'worried', mouth: 'wavy' },
   cat: { eyes: ['happy', 'happy'], brows: 'normal', mouth: 'cat', blush: true, whiskers: true },
   robot: { eyes: ['robot', 'robot'], brows: 'none', mouth: 'robot' },
   fire: { eyes: ['fire', 'fire'], brows: 'angry', mouth: 'smirk' },
-  sigma: { eyes: ['half', 'half'], brows: 'one', mouth: 'smirk' },
-  sideeye: { eyes: ['side', 'side'], brows: 'flat', mouth: 'flat' },
-  rizz: { eyes: ['half', 'happy'], brows: 'one', mouth: 'smirk', blush: true },
-  bruh: { eyes: ['half', 'half'], brows: 'flat', mouth: 'flat' },
-  unbothered: { eyes: ['closed', 'closed'], brows: 'one', mouth: 'smirk' },
-  nerd: { eyes: ['open', 'open'], brows: 'raised', mouth: 'buck', blush: true },
-  crylaugh: { eyes: ['happy', 'happy'], brows: 'sad', mouth: 'laugh', tear: true, tears2: true },
-  pleading: { eyes: ['puppy', 'puppy'], brows: 'sad', mouth: 'pout', blush: true },
-  dead: { eyes: ['x', 'x'], brows: 'flat', mouth: 'o' },
-  maincharacter: { eyes: ['sparkle', 'sparkle'], brows: 'one', mouth: 'grin', blush: true },
+  sigma: { eyes: ['half', 'half'], brows: 'flat', mouth: 'smug' },
+  sideeye: { eyes: ['side', 'side'], brows: 'one', mouth: 'side' },
+  rizz: { eyes: ['squint', 'happy'], brows: 'raised', mouth: 'smirk', blush: true, bling: true },
+  bruh: { eyes: ['half', 'half'], brows: 'raised', mouth: 'flat', drop: true },
+  unbothered: { eyes: ['closed', 'closed'], brows: 'raised', mouth: 'smug' },
+  nerd: { eyes: ['round', 'round'], brows: 'normal', mouth: 'buck', blush: true },
+  crylaugh: { eyes: ['happy', 'happy'], brows: 'worried', mouth: 'laugh', tear: true, tears2: true },
+  pleading: { eyes: ['puppy', 'puppy'], brows: 'worried', mouth: 'pout', blush: true },
+  dead: { eyes: ['x', 'x'], brows: 'flat', mouth: 'tongue' },
+  maincharacter: { eyes: ['open', 'open'], brows: 'one', mouth: 'grin', bling: true },
   cosmic: { eyes: ['cosmic', 'cosmic'], brows: 'normal', mouth: 'soft' },
   silly: { eyes: ['happy', 'open'], brows: 'raised', mouth: 'tongue', blush: true },
-  sparkle: { eyes: ['sparkle', 'sparkle'], brows: 'normal', mouth: 'grin', blush: true },
+  sparkle: { eyes: ['sparkle', 'sparkle'], brows: 'normal', mouth: 'soft', bling: true },
 };
 
 /** Maps today's mood check-in (1–5) to an expression for the "Match my mood" face. */
 const MOOD_FACE: Record<number, string> = { 1: 'sad', 2: 'sleepy', 3: 'calm', 4: 'happy', 5: 'laugh' };
+
 
 function Face({ x, style, mood }: { x: Ctx; style: string; mood?: number }) {
   const key = style === 'mood' ? (mood ? MOOD_FACE[mood] : 'happy') : style;
@@ -1488,22 +1573,37 @@ function Face({ x, style, mood }: { x: Ctx; style: string; mood?: number }) {
     <g>
       {e.blush && (
         <>
-          <ellipse cx="37" cy="53" rx="3.2" ry="1.7" fill="#ff5a78" opacity=".22" />
-          <ellipse cx="63" cy="53" rx="3.2" ry="1.7" fill="#ff5a78" opacity=".22" />
+          <ellipse cx="37.5" cy="51.4" rx="3" ry="1.5" fill="#ff5a78" opacity=".24" />
+          <ellipse cx="62.5" cy="51.4" rx="3" ry="1.5" fill="#ff5a78" opacity=".24" />
+          <path d="M36 51 l.8 -.6 M37.6 51.2 l.8 -.6 M62 51 l.8 -.6 M63.6 51.2 l.8 -.6" stroke="#e11d48" strokeWidth=".45" opacity=".6" strokeLinecap="round" />
         </>
       )}
       <Eye cx={EYE_L} kind={e.eyes[0]} x={x} lid={lid} />
       <Eye cx={EYE_R} kind={e.eyes[1]} x={x} lid={lid} />
-      <Brows kind={e.brows} />
+      <Brows kind={e.brows} x={x} />
       {e.mouth !== 'robot' && (
-        // a small round nose bump between the eyes
-        <path d="M49.2 49.4 Q47.6 51.9 49.9 52.2 Q51.9 52.3 51.7 50.6" stroke={INK} strokeWidth=".95" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        // nose: bridge line on the shadow side, the tip, nostrils and the shadow under it
+        <g>
+          <path d="M51.6 44.4 Q52.8 47.6 52.6 49.6" stroke={x.skinDark} strokeWidth=".8" fill="none" strokeLinecap="round" />
+          <path d="M48 50.6 Q50 52.4 52.4 50.4" fill={x.skinDark} opacity=".45" />
+          <path d="M47.6 50.2 Q47.9 51.4 49.2 51.3 M52.6 50.2 Q52.3 51.4 51 51.3" stroke={INK} strokeWidth=".7" fill="none" strokeLinecap="round" />
+          <path d="M49.4 51.5 Q50.1 51.9 50.8 51.5" stroke={INK} strokeWidth=".55" fill="none" strokeLinecap="round" />
+        </g>
       )}
       <Mouth kind={e.mouth} x={x} />
-      {e.tear && <path d="M37.6 50.6 q-1.5 2.6 0 3.7 q1.5 -1.1 0 -3.7Z" fill="#7dd3fc" stroke={INK} strokeWidth=".5" />}
-      {e.tears2 && <path d="M62.4 50.6 q-1.5 2.6 0 3.7 q1.5 -1.1 0 -3.7Z" fill="#7dd3fc" stroke={INK} strokeWidth=".5" />}
+      {e.tear && <path d="M38.6 48.4 q-1.4 2.4 0 3.4 q1.4 -1 0 -3.4Z M38.6 52.6 q-.8 1.6 0 2.2 q.8 -.6 0 -2.2Z" fill="#7dd3fc" stroke={INK} strokeWidth=".45" />}
+      {e.tears2 && <path d="M61.4 48.4 q-1.4 2.4 0 3.4 q1.4 -1 0 -3.4Z M61.4 52.6 q-.8 1.6 0 2.2 q.8 -.6 0 -2.2Z" fill="#7dd3fc" stroke={INK} strokeWidth=".45" />}
       {e.sweat && <path d="M66.5 35 q-1.7 2.8 0 4 q1.7 -1.2 0 -4Z" fill="#7dd3fc" stroke={INK} strokeWidth=".5" />}
+      {e.drop && <path d="M68 38 q-2.2 3.6 0 5.2 q2.2 -1.6 0 -5.2Z" fill="#bae6fd" stroke={INK} strokeWidth=".55" />}
       {e.pop && <path d="M30 31 l-2.6 -2.2 M28.4 35.6 l-3.2 -.8 M32.6 27.6 l-1.2 -3" stroke={INK} strokeWidth="1" strokeLinecap="round" />}
+      {e.vein && <path d="M61.4 31.4 q1.6 1.6 0 3.2 M63.2 30.6 q-1.6 1.6 0 3.2 M60.6 33.4 q1.6 -1.6 3.2 0 M61.4 35.2 q1.6 -1.6 3.2 0" stroke="#dc2626" strokeWidth=".9" fill="none" strokeLinecap="round" />}
+      {e.bling && (
+        <g fill="#fde047" stroke={INK} strokeWidth=".4">
+          <path d={star(30, 34, 2.4, 0.7, 4)} />
+          <path d={star(70.5, 31, 1.8, 0.5, 4)} />
+          <path d={star(68, 56, 1.4, 0.4, 4)} />
+        </g>
+      )}
       {e.whiskers && <path d="M33 51 l-5 -1 M33 53 l-5 1 M67 51 l5 -1 M67 53 l5 1" stroke={INK} strokeWidth=".7" strokeLinecap="round" />}
       {e.zzz && (
         <text x="66" y="27" fontSize="8.5" fontWeight="900" fill="#e2e8f0" stroke={INK} strokeWidth=".5" fontFamily="system-ui, sans-serif">
@@ -2184,29 +2284,29 @@ function Pet({ item }: { item: AvatarItem }) {
 
 /* ---------- head geometry ---------- */
 /** Scales every head layer (hair, face, glasses, hats) about the chin. A big head reads as a cartoon. */
-const HEAD = 'translate(50 70) scale(1.1) translate(-50 -63.5)';
+const HEAD = 'translate(50 68.5) scale(1.02) translate(-50 -63.5)';
 /** Where the eyes, nose and mouth sit inside the head (eyes and glasses share it). */
 const FEATURES = 'translate(50 48) scale(1.13) translate(-50 -48)';
 /** A round, wide head with soft full cheeks and a rounded chin. */
 const FACE =
-  'M28.8 41.5 C28.8 27.4 38.2 20 50 20 C61.8 20 71.2 27.4 71.2 41.5 C71.2 50.6 68.4 57.6 62.6 61.6 C59 64.1 54.8 65.3 50 65.3 C45.2 65.3 41 64.1 37.4 61.6 C31.6 57.6 28.8 50.6 28.8 41.5Z';
-/** Shoulders are narrower than the head, like the reference cartoon proportions. */
-const BODY = 'translate(50 100) scale(.84 1) translate(-50 -100)';
+  'M29.4 40.6 C29.4 27.2 38.8 20.6 50 20.6 C61.2 20.6 70.6 27.2 70.6 40.6 C70.6 46.6 69.6 51.2 67.4 55 C64.8 59.6 59.4 63.6 53.6 64.6 C51.2 65 48.8 65 46.4 64.6 C40.6 63.6 35.2 59.6 32.6 55 C30.4 51.2 29.4 46.6 29.4 40.6Z';
+/** Shoulders a little narrower than real life: heroic but still comic. */
+const BODY = 'translate(50 100) scale(.92 1) translate(-50 -100)';
 
 /** Big round ears that stick out at eye level. */
 function Ears({ x }: { x: Ctx }) {
   return (
     <g>
       {[-1, 1].map((d) => {
-        const ex = 50 + d * 20.6;
+        const ex = 50 + d * 20.2;
         return (
           <g key={d}>
             <path
-              d={`M${ex} 40.2 C${ex + d * 7.6} 38.2 ${ex + d * 9.4} 45.2 ${ex + d * 7.4} 49.6 C${ex + d * 5.8} 53.2 ${ex + d * 2.2} 53.6 ${ex - d * 0.4} 51.6 Z`}
+              d={`M${ex} 40.8 C${ex + d * 5} 39.6 ${ex + d * 6} 45.6 ${ex + d * 4.4} 49.6 C${ex + d * 3.2} 52.4 ${ex + d * 1.2} 52.6 ${ex - d * 0.4} 51.2 Z`}
               fill={x.skin}
             />
-            <path d={`M${ex + d * 1.6} 43.2 C${ex + d * 5.6} 42.6 ${ex + d * 6.2} 48.2 ${ex + d * 3.2} 49.4`} stroke={INK} strokeWidth=".95" fill="none" strokeLinecap="round" />
-            <path d={`M${ex + d * 2.2} 44.6 C${ex + d * 4.6} 44.6 ${ex + d * 4.6} 47.6 ${ex + d * 2.8} 48.2 Z`} fill={x.skinDark} opacity=".45" />
+            <path d={`M${ex + d * 1.2} 43 C${ex + d * 3.8} 42.6 ${ex + d * 4.2} 47.6 ${ex + d * 2.2} 49`} stroke={INK} strokeWidth=".8" fill="none" strokeLinecap="round" />
+            <path d={`M${ex + d * 1.6} 44.4 C${ex + d * 3.2} 44.6 ${ex + d * 3.2} 47.2 ${ex + d * 2} 47.8 Z`} fill={x.skinDark} opacity=".5" />
           </g>
         );
       })}
@@ -2294,10 +2394,11 @@ export function Avatar({
         </g>
         {/* a thin neck with the chin's shadow */}
         <g filter={ink}>
-          <path d="M45.2 60 H54.8 V80 H45.2 Z" fill={skin} />
+          <path d="M43.6 58 H56.4 V80 H43.6 Z" fill={skin} />
         </g>
-        <path d="M45.2 64.5 Q50 69.5 54.8 64.5 V69 Q50 72.5 45.2 69 Z" fill={shadow} />
-        <path d="M45.2 66 Q50 71 54.8 66 V73 H45.2 Z" fill={`url(#${id}dots)`} opacity=".6" />
+        <path d="M43.6 62.5 Q50 68.5 56.4 62.5 V67.5 Q50 72 43.6 67.5 Z" fill={shadow} />
+        <path d="M43.6 64 Q50 70 56.4 64 V72 H43.6 Z" fill={`url(#${id}dots)`} opacity=".6" />
+        <path d="M47.4 68 Q48.6 72 47.6 76" stroke={shade(skin, -0.25)} strokeWidth=".7" fill="none" opacity=".6" strokeLinecap="round" />
         <g transform={BODY}>
           <g filter={ink}>
             <Outfit item={findItem(l.outfit)!} x={x} />
@@ -2312,8 +2413,14 @@ export function Avatar({
           </g>
           {/* one flat cel shadow on the far cheek and under the hairline */}
           <g clipPath={`url(#${id}face)`}>
-            <path d="M64.6 28 C71 36 71.6 50 65.4 58.4 C62.2 62.6 57.6 64.8 53 65.4 L72 66 L73 26Z" fill={shadow} opacity=".4" />
-            <path d="M62 30 C68 38 68.6 50 63 57.6 C60 61.4 56 63.4 52 64 L73 66 L73 26Z" fill={`url(#${id}dots)`} opacity=".7" />
+            {/* hard comic shadow on the far side of the face, with halftone in it */}
+            <path d="M63.4 27 C69 34 69.6 46 66 53.6 C63.4 58.8 59 62 54.4 64 L73 66 L73 24Z" fill={shadow} opacity=".55" />
+            <path d="M61.6 30 C66.6 38 67 49 62.6 56.4 C60 60.4 56.4 62.6 52.6 63.6 L73 66 L73 26Z" fill={`url(#${id}dots)`} opacity=".75" />
+            {/* cheekbone and jaw shadows, a rim light on the near side, the chin */}
+            <path d="M59.6 50.4 Q63 52.2 64.8 55.6" stroke={shadow} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+            <path d="M34.8 52 Q36.6 54.6 39.6 55.4" stroke={shadow} strokeWidth=".9" fill="none" strokeLinecap="round" opacity=".7" />
+            <path d="M31.4 36 Q30.6 44 32.8 51" stroke="#fff" strokeWidth="1.1" fill="none" opacity=".35" strokeLinecap="round" />
+            <path d="M46.2 61.6 Q50 63 53.8 61.6" stroke={shadow} strokeWidth="1" fill="none" strokeLinecap="round" />
           </g>
           <g transform={FEATURES}>
             <Face x={x} style={findItem(l.expression)!.style} mood={mood ?? todayMood} />
@@ -2321,8 +2428,7 @@ export function Avatar({
           <g filter={ink}>
             <HairFront style={hairItem.style} x={x} />
           </g>
-          {/* glasses a little bigger, to fit over the big cartoon eyes */}
-          <g transform={`${FEATURES} translate(50 45.4) scale(1.12) translate(-50 -45.4)`}>
+          <g transform={FEATURES}>
             <Eyewear item={findItem(l.face)!} x={x} />
           </g>
           <g filter={ink}>
