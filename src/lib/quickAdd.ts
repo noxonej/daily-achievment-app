@@ -84,7 +84,8 @@ function takeDate(text: string, today: string): { rest: string; date?: string } 
   const iso = text.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
   if (iso) return { rest: text.replace(iso[0], ' '), date: iso[0] };
   const dm = text.match(/\b(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?\b/);
-  if (dm) {
+  // "24.12" or "5/3" is a date; "1.5" (one and a half) is not
+  if (dm && (dm[0].includes('/') || dm[3] || (dm[1].length === 2 || dm[2].length === 2))) {
     const d = Number(dm[1]);
     const mo = Number(dm[2]);
     if (d >= 1 && d <= 31 && mo >= 1 && mo <= 12) {
@@ -103,7 +104,14 @@ export function parseQuickAdd(raw: string, state: AppState, today: string = toda
 
   // Money: "spent 4.50 on lunch", "paid €12 for cinema", "4.5 lunch", "lunch 4,50€"
   const money = text.match(/^(?:i\s+)?(?:spent|paid|bought|buy|spend)\s+(?:[€$£]\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:€|\$|£|eur|euro|euros|usd|dollars?|gbp|zł|pln)?\s*(?:on|for)?\s*(.*)$/i)
-    ?? text.match(/^(?:[€$£]\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:€|\$|£|eur|euro|euros|usd|dollars?|gbp|zł|pln)?\s+(?:on|for)?\s*([a-z].*)$/i)
+    ?? (() => {
+      // "4.5 lunch" / "€12 cinema": a number first only counts as money with a currency or a spending word,
+      // so "2 hours homework" or "10 push-ups" stay to-dos.
+      const m = text.match(/^([€$£]\s*)?(\d+(?:[.,]\d{1,2})?)\s*(€|\$|£|eur|euro|euros|usd|dollars?|gbp|zł|pln)?\s+(?:on|for)?\s*([a-z].*)$/i);
+      if (!m) return null;
+      const spendy = CATEGORY_WORDS.some(([, re]) => re.test(m[4])) || /\b(ticket|gift|present|clothes|shoes|book|snacks?)\b/i.test(m[4]);
+      return m[1] || m[3] || spendy ? [m[0], m[2], m[4]] : null;
+    })()
     ?? (() => {
       const m = text.match(/^([a-z][a-z\s]*?)\s+(?:[€$£]\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:€|\$|£|eur|euro|euros|usd|dollars?)$/i);
       return m ? [m[0], m[2], m[1]] : null;
