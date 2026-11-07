@@ -5,6 +5,7 @@ import { FloatingReward } from './FloatingReward';
 import { useCompletionFx } from '../lib/useCompletionFx';
 import { questReward } from '../lib/rewards';
 import { Icon } from './Icon';
+import { Burst } from './fx/Burst';
 
 interface QuestCardProps {
   quest: Quest;
@@ -64,6 +65,7 @@ export function QuestCard({ quest, completed, onToggle, periodKey }: QuestCardPr
           <span className="complete-sweep" />
         </span>
       )}
+      {justCompleted && <Burst x="34px" y="50%" color={crit ? 'var(--color-amber-300)' : 'var(--color-emerald-400)'} size={crit ? 1.5 : 1.1} sparks={crit ? 14 : 10} />}
       {justCompleted && <FloatingReward xp={xp} crit={crit} />}
     </div>
   );

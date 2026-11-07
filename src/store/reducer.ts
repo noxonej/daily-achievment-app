@@ -6,7 +6,7 @@ import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../l
 import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
 import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, boxPool, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
-import { computeDerivedStats, dayCountsForStreak } from '../lib/stats';
+import { computeDerivedStats, dayCountsForStreak, graceDays } from '../lib/stats';
 import { checkNote } from '../lib/questRules';
 import type { BoxReward } from '../lib/dailyBox';
 import { DEFAULT_PREFS, guessLanguage } from '../lib/i18n';
@@ -1060,7 +1060,9 @@ export function reducer(state: AppState, action: Action): AppState {
       let shields = state.streakShields ?? 0;
       if (shields <= 0) return state;
       const shielded = new Set(state.shieldedDates ?? []);
-      const good = (k: string) => shielded.has(k) || dayCountsForStreak(state.dayLogs[k]);
+      // A rest day (one missed day in any 7) already keeps the streak: don't spend a shield on it.
+      const rest = graceDays(state.dayLogs, shielded);
+      const good = (k: string) => shielded.has(k) || rest.has(k) || dayCountsForStreak(state.dayLogs[k]);
       // Walk back over missed days (yesterday first), as far as the shields go.
       const missed: string[] = [];
       let cursor = addDaysToKey(todayKey(), -1);

@@ -67,7 +67,7 @@ export function YouView() {
           <div className="grid grid-cols-3 gap-2 mt-4">
             <Stat icon="🔥" value={stats.currentStreak} label={t('you.streak')} color="text-orange-400" />
             <Stat icon="💎" value={stats.availableShards} label={t('you.shards')} color="text-amber-300" />
-            <Stat icon="🎁" value={stats.chestsAvailable} label={t('you.chests')} color="text-violet-300" pulse={stats.chestsAvailable > 0} />
+            <Stat icon="df:chest" value={stats.chestsAvailable} label={t('you.chests')} color="text-violet-300" pulse={stats.chestsAvailable > 0} />
           </div>
           {((state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0 || (state.skipPasses ?? 0) > 0) && (
             <div className="flex flex-wrap gap-2 mt-2 text-[11px] font-semibold">

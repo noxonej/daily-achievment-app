@@ -4,7 +4,9 @@ import { QuestFormModal } from '../components/QuestFormModal';
 import { QuestLibraryModal } from '../components/QuestLibraryModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SyncSettings } from '../components/SyncSettings';
-import type { Frequency, Quest } from '../lib/types';
+import type { AppState, Frequency, Quest } from '../lib/types';
+import { listSnapshots, readSnapshot } from '../lib/safeStorage';
+import { formatDisplayDate } from '../lib/date';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { Icon } from '../components/Icon';
 
@@ -155,6 +157,8 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
           />
         </div>
         {importError && <p className="text-xs text-red-400">{importError}</p>}
+
+        <AutoBackups />
 
         <button
           onClick={() => setConfirmReset(true)}
@@ -308,6 +312,47 @@ function QuestRow({
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/** The automatic daily copies kept on this device: restore one if something went wrong today. */
+function AutoBackups() {
+  const { storageKey, undoable } = useApp();
+  const [list] = useState(() => listSnapshots(storageKey));
+  const [confirm, setConfirm] = useState<string | null>(null);
+  if (!list.length) return null;
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+      <p className="text-sm font-semibold text-white">Automatic backups</p>
+      <p className="text-xs text-slate-400 mt-0.5">A copy is kept each day for the last {list.length} {list.length === 1 ? 'day' : 'days'}, on this phone only.</p>
+      <ul className="mt-2 space-y-1.5">
+        {list.map((s) => (
+          <li key={s.key} className="flex items-center justify-between gap-2 text-sm">
+            <span className="text-slate-300">
+              {formatDisplayDate(s.date)} <span className="text-slate-500 text-xs">· start of day · {Math.max(1, Math.round(s.bytes / 1024))} KB</span>
+            </span>
+            {confirm === s.key ? (
+              <button
+                onClick={() => {
+                  const data = readSnapshot(s.key);
+                  if (data && typeof data === 'object' && Array.isArray((data as { quests?: unknown }).quests)) {
+                    undoable({ type: 'IMPORT_STATE', state: data as AppState }, `Restored ${formatDisplayDate(s.date)}`);
+                  }
+                  setConfirm(null);
+                }}
+                className="shrink-0 rounded-lg bg-amber-500 text-white text-xs font-bold px-3 py-1.5"
+              >
+                Yes, restore
+              </button>
+            ) : (
+              <button onClick={() => setConfirm(s.key)} className="shrink-0 rounded-lg border border-white/10 text-slate-200 text-xs font-semibold px-3 py-1.5">
+                Restore
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

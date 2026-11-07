@@ -16,6 +16,30 @@ unlockable achievements.
 - **Today home screen** — a greeting, a "Right now / Next" card from your
   plan with one-tap Done and Focus, quick actions, and a daily mood
   check-in.
+- **Today at a glance** — the top of Today shows today's progress ring,
+  XP to the next level, the streak with this week's days (consistency, not
+  only perfection) and an "Up next" button that finishes the next quest in
+  one tap (or jumps to it when it needs input).
+- **Rest days** — miss one day in any seven and the streak carries on (it
+  just doesn't grow that day). Two missed days in a row reset it, unless a
+  Streak Shield covers them; shields aren't spent on rest days.
+- **Safe data** — a save that can't be read is copied aside before anything
+  is written over it, one automatic snapshot per day is kept for the last
+  three days (Settings → Data → Automatic backups → Restore, with undo),
+  and a banner warns if the phone's storage is full.
+- **Subscription calculator** — weekly, monthly and yearly subscriptions in
+  one place with what they cost per month, per year and per day, biggest
+  first, plus the check-up for ones you hardly use. Bills have their own
+  list; both count toward "fixed costs".
+- **Manual assets** — crypto, stocks and ETFs, gold and anything else, with
+  amounts and prices you type in (no exchanges, wallets or price services);
+  profit or loss, a split by type and a reminder when prices get old. The
+  old live-price code is kept for a possible future opt-in.
+- **Big moments** — finishing a quest bursts with a shockwave and sparks, a
+  perfect day and a level-up get full-screen moments; everyday screens stay
+  calm, and Reduce motion turns all of it down.
+- **Dayforge icons** — the app's own two-tone icons for the tabs, streak,
+  shards, XP, chests, shields and quick actions.
 - **Quick add** — one box on Today for everything, in plain words: "Dentist
   tomorrow 15:00" goes to the plan, "spent 4.50 on lunch" logs an expense,
   "every day: read 10 pages" makes a quest, "gym every monday 17:30" adds a

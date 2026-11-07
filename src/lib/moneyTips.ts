@@ -1,4 +1,4 @@
-import type { MoneyState } from './types';
+import type { Bill, MoneyState } from './types';
 import { addDaysToKey, parseKey, todayKey } from './date';
 import { dailyLimit, formatMoney, lastNDays, spentOn, totalByKind } from './money';
 import { cryptoTotal } from './crypto';
@@ -13,8 +13,32 @@ export interface MoneyTip {
 }
 
 /** Monthly cost of bills and subscriptions, in cents. */
-export function billsPerMonth(money: MoneyState): number {
-  return (money.bills ?? []).reduce((s, b) => s + b.amount, 0);
+/** What a bill or subscription costs per month, whatever its billing period (in cents). */
+export function monthlyCost(b: Pick<Bill, 'amount' | 'cycle'>): number {
+  if (b.cycle === 'yearly') return b.amount / 12;
+  if (b.cycle === 'weekly') return (b.amount * 52) / 12;
+  return b.amount;
+}
+
+export function billsPerMonth(money: MoneyState, kind?: Bill['kind']): number {
+  return Math.round((money.bills ?? []).filter((b) => !kind || b.kind === kind).reduce((s, b) => s + monthlyCost(b), 0));
+}
+
+/** The next date a bill is paid, for its billing period. */
+export function billDue(b: Pick<Bill, 'day' | 'cycle' | 'month'>, today: string = todayKey()): string {
+  const t = parseKey(today);
+  if (b.cycle === 'weekly') {
+    const target = Math.min(7, Math.max(1, b.day)) % 7; // 1..7 (Mon..Sun) -> JS 1..6,0
+    const diff = (target - t.getDay() + 7) % 7;
+    return todayKey(new Date(t.getFullYear(), t.getMonth(), t.getDate() + diff));
+  }
+  if (b.cycle === 'yearly') {
+    const m = Math.min(12, Math.max(1, b.month ?? t.getMonth() + 1)) - 1;
+    const at = (y: number) => new Date(y, m, Math.min(b.day, new Date(y, m + 1, 0).getDate()));
+    const d = at(t.getFullYear()) < new Date(t.getFullYear(), t.getMonth(), t.getDate()) ? at(t.getFullYear() + 1) : at(t.getFullYear());
+    return todayKey(d);
+  }
+  return nextDue(b.day, today);
 }
 
 /** Spending per category over a date range (inclusive), biggest first. */
@@ -149,7 +173,7 @@ export function smartTips(money: MoneyState, today: string = todayKey()): MoneyT
 
   // Bills coming out in the next 3 days.
   for (const b of money.bills ?? []) {
-    const due = nextDue(b.day, today);
+    const due = billDue(b, today);
     const days = Math.round((parseKey(due).getTime() - parseKey(today).getTime()) / 86400000);
     if (days <= 3) {
       tips.push({

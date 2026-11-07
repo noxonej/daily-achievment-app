@@ -1,4 +1,4 @@
-import type { Achievement, AchievementTier, DerivedStats } from '../lib/types';
+import type { Achievement, AchievementTier, NumericStat } from '../lib/types';
 
 function threshold(
   id: string,
@@ -7,7 +7,7 @@ function threshold(
   icon: string,
   tier: AchievementTier,
   category: string,
-  metric: keyof DerivedStats,
+  metric: NumericStat,
   target: number,
 ): Achievement {
   return { id, title, description, icon, tier, category, metric, target, check: (s) => s[metric] >= target };

@@ -37,7 +37,7 @@ const Wardrobe = lazy(() => import('./components/Wardrobe').then((m) => ({ defau
 const VIEW_ORDER: ViewId[] = ['today', 'plan', 'money', 'quests', 'you'];
 
 export default function App() {
-  const { state, stats, dispatch } = useApp();
+  const { state, stats, dispatch, saveFailed } = useApp();
   const auth = useAuth();
   // Keep the account picker's picture, name and level current.
   const lookKey = JSON.stringify(state.character);
@@ -144,6 +144,11 @@ export default function App() {
         </Suspense>
       )}
       <UndoToast />
+      {saveFailed && (
+        <div role="alert" className="fixed z-[90] left-3 right-3 top-[max(0.75rem,env(safe-area-inset-top))] rounded-2xl border border-red-400/50 bg-red-950/95 px-4 py-3 text-sm text-red-100 shadow-xl">
+          <b>Couldn't save on this phone.</b> Its storage is full. Your changes work for now, but export a backup in Settings → Data and free some space.
+        </div>
+      )}
       <FriendToasts
         onOpen={() => {
           setIntent('you-friends');

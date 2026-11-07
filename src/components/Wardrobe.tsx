@@ -99,7 +99,7 @@ export function Wardrobe() {
           }`}
           aria-label={`${stats.chestsAvailable} chests to open`}
         >
-          <Icon name="🎁" size={15} />
+          <Icon name="df:chest" size={15} />
           {stats.chestsAvailable}
           {stats.chestsAvailable > 0 && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />}
         </button>
@@ -177,7 +177,7 @@ export function Wardrobe() {
                     <Avatar look={{ ...look, [item.slot]: item.id }} size={84} className={isOwnedItem ? '' : 'saturate-[.7] brightness-90'} />
                     {!isOwnedItem && (
                       <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-canvas border border-white/15 flex items-center justify-center text-slate-200">
-                        <Icon name={item.unlock.kind === 'chest' ? '🎁' : item.unlock.kind === 'box' ? '📦' : '🔒'} size={12} />
+                        <Icon name={item.unlock.kind === 'chest' ? 'df:chest' : item.unlock.kind === 'box' ? '📦' : '🔒'} size={12} />
                       </span>
                     )}
                     {equipped && (
@@ -207,7 +207,7 @@ export function Wardrobe() {
               <b className="text-slate-200">Shards:</b> every XP you earn from quests is a shard to spend.
             </p>
             <p>
-              <Icon name="🎁" size="1.1em" className="icon-inline text-violet-300" />
+              <Icon name="df:chest" size="1.1em" className="icon-inline text-violet-300" />
               <b className="text-slate-200">Chests:</b> one for each perfect day, perfect week and new level.
             </p>
             <p>

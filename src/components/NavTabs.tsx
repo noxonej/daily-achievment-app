@@ -6,10 +6,10 @@ import { useApp } from '../store/AppContext';
 export type ViewId = 'today' | 'plan' | 'money' | 'quests' | 'you';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
-  { id: 'today', label: 'Today', icon: '☀️' },
-  { id: 'plan', label: 'Plan', icon: '📅' },
-  { id: 'money', label: 'Money', icon: '💰' },
-  { id: 'quests', label: 'Quests', icon: '⚔️' },
+  { id: 'today', label: 'Today', icon: 'df:today' },
+  { id: 'plan', label: 'Plan', icon: 'df:plan' },
+  { id: 'money', label: 'Money', icon: 'df:money' },
+  { id: 'quests', label: 'Quests', icon: 'df:quests' },
   { id: 'you', label: 'You', icon: 'avatar' },
 ];
 

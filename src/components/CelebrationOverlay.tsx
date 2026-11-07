@@ -17,20 +17,37 @@ export function CelebrationOverlay() {
   if (!current) return null;
 
   if (current.kind === 'levelup') {
+    // Cinematic: flash, spinning light rays, shockwaves, the number slamming in, letters dropping.
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/80" onClick={dismissCelebration} />
-        <Confetti count={48} />
-        <div className="relative bg-gradient-to-b from-[#241a10] to-surface border border-amber-500/40 rounded-2xl shadow-2xl shadow-amber-900/50 px-8 py-8 text-center max-w-xs w-full animate-celebrate">
-          <div className="flex justify-center mb-3 text-amber-300"><Icon name="🎉" size={60} strokeWidth={1.6} /></div>
-          <p className="text-xs uppercase tracking-[0.2em] text-amber-300 font-bold mb-1">Level Up</p>
-          <p className="font-display text-4xl font-extrabold text-white mb-1">{current.level}</p>
-          <p className="text-slate-300 text-sm mb-6">You are now a {titleForLevel(current.level)}</p>
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-hidden" role="dialog" aria-label={`Level ${current.level}`}>
+        <div className="absolute inset-0 bg-[#04060a]/92 backdrop-in" onClick={dismissCelebration} />
+        <div className="absolute w-[170vmax] h-[170vmax] fx-rays pointer-events-none" />
+        <div className="absolute inset-0 fx-flash pointer-events-none" />
+        <Confetti count={90} />
+        <div className="relative w-full max-w-xs text-center">
+          <span className="absolute left-1/2 top-[42%] w-0 h-0 pointer-events-none">
+            <span className="fx-shock" />
+            <span className="fx-shock fx-shock-2" />
+          </span>
+          <p className="font-display text-sm font-black tracking-[0.35em] text-amber-200" aria-hidden="true">
+            {'LEVEL UP'.split('').map((ch, i) => (
+              <span key={i} className="lv-letter" style={{ animationDelay: `${i * 45}ms` }}>
+                {ch === ' ' ? '\u00a0' : ch}
+              </span>
+            ))}
+          </p>
+          <p className="lv-num font-display text-[120px] leading-none font-black tabular-nums mt-1">{current.level}</p>
+          <p className="text-white font-display text-xl font-bold mt-1 fade-up [animation-delay:.9s]">{titleForLevel(current.level)}</p>
+          <div className="mt-4 flex justify-center gap-2 fade-up [animation-delay:1.05s]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/20 border border-violet-400/40 px-3 py-1 text-xs font-bold text-violet-100">
+              <Icon name="df:chest" size={14} /> +1 reward chest
+            </span>
+          </div>
           <button
             onClick={dismissCelebration}
-            className="w-full rounded-xl bg-gradient-to-b from-amber-400 to-amber-600 text-white font-semibold py-2.5 active:scale-95 transition-transform"
+            className="lv-glow mt-8 w-full rounded-2xl bg-gradient-to-b from-amber-400 to-amber-600 text-white font-display text-lg font-bold py-3.5 active:scale-95 transition-transform fade-up [animation-delay:1.2s]"
           >
-            Nice!
+            Let's go
           </button>
         </div>
       </div>

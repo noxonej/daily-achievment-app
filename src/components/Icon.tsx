@@ -1,5 +1,6 @@
 import type { LucideProps } from 'lucide-react';
 import { normalizeIconId, resolveIcon } from '../lib/icons';
+import { DfIcon, dfGlyph } from './DfIcons';
 
 interface IconProps extends Omit<LucideProps, 'ref' | 'name'> {
   /** An icon id from the app's data (the emoji it was saved with). */
@@ -7,6 +8,9 @@ interface IconProps extends Omit<LucideProps, 'ref' | 'name'> {
 }
 
 export function Icon({ name, size = 20, strokeWidth = 2, ...rest }: IconProps) {
+  // Dayforge's own glyphs for its signature things (tabs, streak, shards, XP…).
+  const glyph = name ? dfGlyph(normalizeIconId(name)) : null;
+  if (glyph) return <DfIcon glyph={glyph} size={size} strokeWidth={strokeWidth} {...(rest as Record<string, unknown>)} />;
   const C = resolveIcon(name);
   return <C size={size} strokeWidth={strokeWidth} aria-hidden="true" {...rest} />;
 }

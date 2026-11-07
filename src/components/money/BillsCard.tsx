@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Bill } from '../../lib/types';
 import { addDaysToKey, parseKey, todayKey } from '../../lib/date';
 import { centsToInput, parseMoney } from '../../lib/money';
-import { billsPerMonth, monthStart, nextDue, spendByCategory } from '../../lib/moneyTips';
+import { billDue, billsPerMonth, monthStart, monthlyCost, spendByCategory } from '../../lib/moneyTips';
 import { locale } from '../../lib/locale';
 import { Icon, IconGrid } from '../Icon';
 import { Modal } from '../Modal';
@@ -16,33 +16,68 @@ function dueLabel(date: string, today: string): string {
   return parseKey(date).toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
 }
 
-/** Monthly bills and subscriptions: what they cost a month and a year, and what's due next. */
-export function BillsCard() {
+const CYCLE_LABEL: Record<NonNullable<Bill['cycle']>, string> = { weekly: 'a week', monthly: 'a month', yearly: 'a year' };
+
+function BillRow({ b, today, onEdit, share }: { b: Bill; today: string; onEdit: () => void; share?: number }) {
+  const { fmt } = useMoney();
+  const due = billDue(b, today);
+  const soon = due <= addDaysToKey(today, 3);
+  const cycle = b.cycle ?? 'monthly';
+  return (
+    <li>
+      <button onClick={onEdit} className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.04] text-left">
+        <span className="shrink-0 w-9 h-9 rounded-lg bg-white/5 text-sky-300 flex items-center justify-center">
+          <Icon name={b.icon} size={17} />
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="flex items-center gap-1.5">
+            <span className="text-[15px] text-slate-200 truncate">{b.name}</span>
+            {b.used === 'rarely' && <span className="shrink-0 rounded-full bg-amber-500/15 px-1.5 text-[10px] font-bold text-amber-200">hardly used</span>}
+          </span>
+          <span className={`block text-xs ${soon ? 'text-amber-300 font-semibold' : 'text-slate-500'}`}>
+            {cycle === 'monthly' ? 'Monthly' : cycle === 'yearly' ? 'Yearly' : 'Weekly'} · next {dueLabel(due, today)}
+          </span>
+          {share !== undefined && (
+            <span className="mt-1.5 block h-1 rounded-full bg-white/[0.06] overflow-hidden">
+              <span className="block h-full rounded-full bg-sky-400/70" style={{ width: `${Math.max(4, share * 100)}%` }} />
+            </span>
+          )}
+        </span>
+        <span className="shrink-0 text-right">
+          <span className="block font-bold text-white tabular-nums">{fmt(b.amount)}</span>
+          <span className="block text-[11px] text-slate-500">{CYCLE_LABEL[cycle]}</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+/**
+ * Subscription calculator: every recurring subscription in one place, with what they really cost per
+ * month, per year and per day, the biggest first, and a check-up to cancel the ones you don't use.
+ */
+export function SubscriptionCalculator() {
   const { money, fmt } = useMoney();
   const [editing, setEditing] = useState<Bill | 'new' | null>(null);
   const [checkup, setCheckup] = useState(false);
   const today = todayKey();
-  const bills = [...(money.bills ?? [])].sort((a, b) => nextDue(a.day, today).localeCompare(nextDue(b.day, today)));
-  const monthly = billsPerMonth(money);
-  const subs = bills.filter((b) => b.kind === 'subscription');
+  const subs = (money.bills ?? []).filter((b) => b.kind === 'subscription').sort((a, b) => monthlyCost(b) - monthlyCost(a));
+  const monthly = billsPerMonth(money, 'subscription');
+  const top = subs.length ? monthlyCost(subs[0]) : 1;
+  const unused = subs.filter((b) => b.used === 'rarely');
+  const unusedYear = Math.round(unused.reduce((n, b) => n + monthlyCost(b), 0) * 12);
 
   return (
-    <div className={card}>
-      <div className="flex items-start justify-between gap-2 px-5 pt-4 pb-2">
+    <div className={card} id="subscriptions">
+      <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4 pb-1">
         <div>
           <p className="text-sm font-semibold text-white">
-            <Icon name="🧾" size="1.15em" className="icon-inline text-sky-300" />
-            Bills & subscriptions
+            <Icon name="🔁" size="1.15em" className="icon-inline text-sky-300" />
+            Subscription calculator
           </p>
-          {bills.length > 0 ? (
-            <p className="text-xs text-slate-400 mt-0.5">
-              <b className="text-white">{fmt(monthly)}</b> a month · {fmt(monthly * 12, true)} a year
-            </p>
-          ) : (
-            <p className="text-xs text-slate-400 mt-0.5">Phone, streaming, gym, games… things that come out every month.</p>
-          )}
+          <p className="text-xs text-slate-400 mt-0.5">{subs.length ? `${subs.length} ${subs.length === 1 ? 'subscription' : 'subscriptions'}` : 'Streaming, music, games, apps, gym…'}</p>
         </div>
-        <div className="shrink-0 flex gap-1.5">
+        <div className="flex gap-1.5 [&>button]:whitespace-nowrap">
           {subs.length > 0 && (
             <button onClick={() => setCheckup(true)} className={`${secondaryBtn} px-2.5 py-1.5 text-xs`}>
               <Icon name="🔍" size="1.1em" className="icon-inline" />
@@ -54,51 +89,87 @@ export function BillsCard() {
           </button>
         </div>
       </div>
+      {subs.length > 0 ? (
+        <>
+          <div className="grid grid-cols-3 gap-2 px-5 pt-3">
+            {(
+              [
+                ['Per month', monthly],
+                ['Per year', monthly * 12],
+                ['Per day', monthly / 30.44],
+              ] as const
+            ).map(([label, v], i) => (
+              <div key={label} className={`rounded-xl border p-2.5 text-center ${i === 1 ? 'border-sky-400/40 bg-sky-500/10' : 'border-white/10 bg-black/20'}`}>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                <p className="font-display text-[17px] font-extrabold text-white tabular-nums mt-0.5">{fmt(Math.round(v), i === 1)}</p>
+              </div>
+            ))}
+          </div>
+          <ul className="px-2 py-2">
+            {subs.map((b) => (
+              <BillRow key={b.id} b={b} today={today} share={monthlyCost(b) / top} onEdit={() => setEditing(b)} />
+            ))}
+          </ul>
+          <button onClick={() => setCheckup(true)} className={`block w-full text-left px-5 pb-4 text-xs ${unused.length ? 'text-amber-200' : 'text-slate-400'}`}>
+            <Icon name="💡" size="1.1em" className="icon-inline text-yellow-300" />
+            {unused.length ? (
+              <>
+                You hardly use {unused.length === 1 ? unused[0].name : `${unused.length} of them`}. Cancel and save <b>{fmt(unusedYear, true)} a year</b>.
+              </>
+            ) : subs.some((b) => !b.used) ? (
+              'Do a 30-second check-up: which ones do you really use?'
+            ) : (
+              `In 10 years these cost ${fmt(Math.round(monthly * 120), true)}. Worth it? Keep checking every few months.`
+            )}
+          </button>
+        </>
+      ) : (
+        <button onClick={() => setEditing('new')} className="m-5 mt-3 w-[calc(100%-2.5rem)] rounded-xl border border-dashed border-white/15 py-4 text-sm text-slate-400 hover:text-white">
+          Add your first subscription to see what they really cost
+        </button>
+      )}
+      <CheckupModal open={checkup} onClose={() => setCheckup(false)} subs={subs} />
+      <BillModal bill={editing} onClose={() => setEditing(null)} defaultKind="subscription" />
+    </div>
+  );
+}
+
+/** Regular bills (phone plan, rent, bus pass…): what's due next and the monthly total. */
+export function BillsCard() {
+  const { money, fmt } = useMoney();
+  const [editing, setEditing] = useState<Bill | 'new' | null>(null);
+  const today = todayKey();
+  const bills = (money.bills ?? []).filter((b) => b.kind !== 'subscription').sort((a, b) => billDue(a, today).localeCompare(billDue(b, today)));
+  const monthly = billsPerMonth(money, 'bill');
+
+  return (
+    <div className={card}>
+      <div className="flex items-start justify-between gap-2 px-5 pt-4 pb-2">
+        <div>
+          <p className="text-sm font-semibold text-white">
+            <Icon name="🧾" size="1.15em" className="icon-inline text-sky-300" />
+            Bills
+          </p>
+          {bills.length > 0 ? (
+            <p className="text-xs text-slate-400 mt-0.5">
+              <b className="text-white">{fmt(monthly)}</b> a month · {fmt(monthly * 12, true)} a year
+            </p>
+          ) : (
+            <p className="text-xs text-slate-400 mt-0.5">Phone plan, bus pass, rent… things you have to pay.</p>
+          )}
+        </div>
+        <button onClick={() => setEditing('new')} className={`${secondaryBtn} shrink-0 px-2.5 py-1.5 text-xs`}>
+          + Add
+        </button>
+      </div>
       {bills.length > 0 && (
         <ul className="px-2 pb-2">
-          {bills.map((b) => {
-            const due = nextDue(b.day, today);
-            const soon = due <= addDaysToKey(today, 3);
-            return (
-              <li key={b.id}>
-                <button onClick={() => setEditing(b)} className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.04] text-left">
-                  <span className="shrink-0 w-9 h-9 rounded-lg bg-white/5 text-sky-300 flex items-center justify-center">
-                    <Icon name={b.icon} size={17} />
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[15px] text-slate-200 truncate">{b.name}</span>
-                    <span className={`block text-xs ${soon ? 'text-amber-300 font-semibold' : 'text-slate-500'}`}>
-                      {b.kind === 'subscription' ? 'Subscription' : 'Bill'} · due {dueLabel(due, today)}
-                    </span>
-                  </span>
-                  <span className="font-bold text-white tabular-nums">{fmt(b.amount)}</span>
-                </button>
-              </li>
-            );
-          })}
+          {bills.map((b) => (
+            <BillRow key={b.id} b={b} today={today} onEdit={() => setEditing(b)} />
+          ))}
         </ul>
       )}
-      {(() => {
-        const unused = subs.filter((b) => b.used === 'rarely');
-        if (unused.length)
-          return (
-            <button onClick={() => setCheckup(true)} className="block w-full text-left px-5 pb-4 text-xs text-amber-200">
-              <Icon name="💡" size="1.1em" className="icon-inline text-yellow-300" />
-              You hardly use {unused.length === 1 ? unused[0].name : `${unused.length} subscriptions`}. Cancel and save{' '}
-              <b>{fmt(unused.reduce((n, b) => n + b.amount, 0) * 12, true)} a year</b>.
-            </button>
-          );
-        if (subs.length >= 2 && subs.some((b) => !b.used))
-          return (
-            <button onClick={() => setCheckup(true)} className="block w-full text-left px-5 pb-4 text-xs text-slate-400">
-              <Icon name="💡" size="1.1em" className="icon-inline text-yellow-300" />
-              {subs.length} subscriptions cost {fmt(subs.reduce((n, b) => n + b.amount, 0) * 12, true)} a year. Do a 30-second check-up.
-            </button>
-          );
-        return null;
-      })()}
-      <CheckupModal open={checkup} onClose={() => setCheckup(false)} subs={subs} />
-      <BillModal bill={editing} onClose={() => setEditing(null)} />
+      <BillModal bill={editing} onClose={() => setEditing(null)} defaultKind="bill" />
     </div>
   );
 }
@@ -114,7 +185,7 @@ const BILL_IDEAS: Array<{ name: string; icon: string; kind: Bill['kind'] }> = [
   { name: 'Cloud storage', icon: '☁', kind: 'subscription' },
 ];
 
-function BillModal({ bill, onClose }: { bill: Bill | 'new' | null; onClose: () => void }) {
+function BillModal({ bill, onClose, defaultKind = 'subscription' }: { bill: Bill | 'new' | null; onClose: () => void; defaultKind?: Bill['kind'] }) {
   const { dispatch, fmt, undoable } = useMoney();
   const existing = bill && bill !== 'new' ? bill : null;
   const [name, setName] = useState('');
@@ -122,6 +193,8 @@ function BillModal({ bill, onClose }: { bill: Bill | 'new' | null; onClose: () =
   const [day, setDay] = useState(1);
   const [icon, setIcon] = useState('🧾');
   const [kind, setKind] = useState<Bill['kind']>('subscription');
+  const [cycle, setCycle] = useState<NonNullable<Bill['cycle']>>('monthly');
+  const [month, setMonth] = useState(1);
 
   useEffect(() => {
     if (!bill) return;
@@ -129,7 +202,9 @@ function BillModal({ bill, onClose }: { bill: Bill | 'new' | null; onClose: () =
     setAmount(existing ? centsToInput(existing.amount) : '');
     setDay(existing?.day ?? new Date().getDate());
     setIcon(existing?.icon ?? '🧾');
-    setKind(existing?.kind ?? 'subscription');
+    setKind(existing?.kind ?? defaultKind);
+    setCycle(existing?.cycle ?? 'monthly');
+    setMonth(existing?.month ?? new Date().getMonth() + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bill]);
 
@@ -138,12 +213,13 @@ function BillModal({ bill, onClose }: { bill: Bill | 'new' | null; onClose: () =
 
   function save() {
     if (!valid || cents === null) return;
-    dispatch({ type: 'MONEY_UPSERT_BILL', bill: { id: existing?.id, name, amount: cents, day, icon, kind } });
+    const d = cycle === 'weekly' ? Math.min(7, Math.max(1, day)) : day;
+    dispatch({ type: 'MONEY_UPSERT_BILL', bill: { ...(existing ?? {}), id: existing?.id, name, amount: cents, day: d, icon, kind, cycle, month: cycle === 'yearly' ? month : undefined } });
     onClose();
   }
 
   return (
-    <Modal open={!!bill} onClose={onClose} title={existing ? 'Edit bill' : 'Add a bill or subscription'}>
+    <Modal open={!!bill} onClose={onClose} title={existing ? `Edit ${existing.name}` : kind === 'subscription' ? 'Add a subscription' : 'Add a bill'}>
       <div className="space-y-4">
         {!existing && (
           <div className="flex flex-wrap gap-1.5">
@@ -165,19 +241,49 @@ function BillModal({ bill, onClose }: { bill: Bill | 'new' | null; onClose: () =
         <Field label="Name">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Phone plan" maxLength={40} className={inputClass} />
         </Field>
+        <div className="grid grid-cols-3 gap-1 rounded-xl bg-white/[0.04] border border-white/10 p-1" role="radiogroup" aria-label="How often">
+          {(['weekly', 'monthly', 'yearly'] as const).map((c) => (
+            <button key={c} role="radio" aria-checked={cycle === c} onClick={() => setCycle(c)} className={`rounded-lg py-2 text-sm font-bold ${cycle === c ? 'bg-amber-500 text-white' : 'text-slate-400'}`}>
+              {c === 'weekly' ? 'Weekly' : c === 'monthly' ? 'Monthly' : 'Yearly'}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Each month">
+          <Field label={cycle === 'weekly' ? 'Each week' : cycle === 'yearly' ? 'Each year' : 'Each month'}>
             <AmountInput value={amount} onChange={setAmount} invalid={amount !== '' && cents === null} />
           </Field>
-          <Field label="Paid on day">
-            <select value={day} onChange={(e) => setDay(Number(e.target.value))} className={inputClass}>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {cycle === 'weekly' ? (
+            <Field label="Paid on">
+              <select value={Math.min(7, day)} onChange={(e) => setDay(Number(e.target.value))} className={inputClass}>
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w, i) => (
+                  <option key={w} value={i + 1}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : (
+            <Field label="Paid on day">
+              <div className="flex gap-1.5">
+                <select value={day} onChange={(e) => setDay(Number(e.target.value))} className={inputClass} aria-label="Day">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                {cycle === 'yearly' && (
+                  <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className={inputClass} aria-label="Month">
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i} value={i + 1}>
+                        {new Date(2026, i, 1).toLocaleDateString(locale(), { month: 'short' })}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </Field>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-1 rounded-xl bg-white/[0.04] border border-white/10 p-1" role="radiogroup" aria-label="Type">
           {(['subscription', 'bill'] as const).map((k) => (
@@ -195,7 +301,15 @@ function BillModal({ bill, onClose }: { bill: Bill | 'new' | null; onClose: () =
         <IconGrid options={BILL_ICONS} value={icon} onChange={setIcon} size="sm" />
         {cents !== null && cents > 0 && (
           <p className="text-sm text-slate-400">
-            That's <b className="text-white">{fmt(cents * 12)}</b> a year.
+            {cycle === 'yearly' ? (
+              <>
+                That's <b className="text-white">{fmt(Math.round(cents / 12))}</b> a month.
+              </>
+            ) : (
+              <>
+                That's <b className="text-white">{fmt(Math.round(monthlyCost({ amount: cents, cycle }) * 12))}</b> a year.
+              </>
+            )}
           </p>
         )}
         <div className="flex gap-2">
@@ -275,7 +389,7 @@ export function MonthCard() {
 function CheckupModal({ open, onClose, subs }: { open: boolean; onClose: () => void; subs: Bill[] }) {
   const { dispatch, fmt } = useMoney();
   const unused = subs.filter((b) => b.used === 'rarely');
-  const yearly = unused.reduce((n, b) => n + b.amount, 0) * 12;
+  const yearly = Math.round(unused.reduce((n, b) => n + monthlyCost(b), 0) * 12);
   // What that yearly saving grows to in 10 years at 7% a year, added once a year.
   let grown = 0;
   for (let i = 0; i < 10; i++) grown = (grown + yearly) * 1.07;
@@ -292,7 +406,7 @@ function CheckupModal({ open, onClose, subs }: { open: boolean; onClose: () => v
               <span className="flex-1 min-w-0">
                 <span className="block text-[15px] font-semibold text-white truncate">{b.name}</span>
                 <span className="block text-xs text-slate-400">
-                  {fmt(b.amount)} a month · {fmt(b.amount * 12, true)} a year
+                  {fmt(Math.round(monthlyCost(b)))} a month · {fmt(Math.round(monthlyCost(b) * 12), true)} a year
                 </span>
               </span>
             </div>

@@ -6,16 +6,14 @@ import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { todayKey, formatDisplayDate } from '../lib/date';
-import { useDailyResetLabel } from '../lib/useResetCountdown';
 import { QuestCard } from '../components/QuestCard';
 import { NoteQuestCard } from '../components/NoteQuestCard';
 import { MeasureQuestCard } from '../components/MeasureQuestCard';
 import { WildcardQuestCard } from '../components/WildcardQuestCard';
-import { ProgressBar } from '../components/ProgressBar';
 import { QuickTaskList } from '../components/QuickTaskList';
 import { DailyNoteBox } from '../components/DailyNoteBox';
 import { DailyInsight } from '../components/DailyInsight';
-import { Confetti } from '../components/Confetti';
+import { PerfectDayFx } from '../components/fx/PerfectDayFx';
 import { TodayPlanCard } from '../components/TodayPlanCard';
 import type { ViewId } from '../components/NavTabs';
 import { Icon } from '../components/Icon';
@@ -28,6 +26,7 @@ import { QuestSwapModal } from '../components/QuestSwapModal';
 import { DailyBoost } from '../components/today/DailyBoost';
 import { CoachCard } from '../components/today/CoachCard';
 import { QuickAdd } from '../components/today/QuickAdd';
+import { TodayHero } from '../components/today/TodayHero';
 import { breathe } from '../components/Breathe';
 
 const RECAP_KEY = 'dayforge-recap-dismissed';
@@ -59,7 +58,6 @@ function QuickAction({ icon, label, onClick }: { icon: string; label: string; on
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch, stats } = useApp();
-  const resetLabel = useDailyResetLabel();
   // Every Monday, last week's recap sits at the top of Today until dismissed.
   const [showRecap, setShowRecap] = useState(() => {
     try {
@@ -83,9 +81,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   useEffect(() => {
     if (isPerfect && !wasPerfectRef.current) {
       setShowConfetti(true);
-      const t = setTimeout(() => setShowConfetti(false), 1400);
       wasPerfectRef.current = isPerfect;
-      return () => clearTimeout(t);
+      return;
     }
     wasPerfectRef.current = isPerfect;
   }, [isPerfect]);
@@ -114,11 +111,43 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         </h1>
       </div>
 
-      <QuickAdd />
+      <TodayHero
+        quests={activeDaily}
+        completed={[...completed, ...skipped]}
+        boost={boost}
+        onDoNext={(q) => {
+          if (q.measure || q.promptForNote || swaps[q.id]) {
+            const el = document.querySelector<HTMLElement>(`[data-flip="${q.id}"]`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el?.classList.add('attention');
+            setTimeout(() => el?.classList.remove('attention'), 1400);
+          } else dispatch({ type: 'TOGGLE_QUEST', questId: q.id });
+        }}
+        extras={
+          <>
+            {(state.streakShields ?? 0) > 0 && (
+              <span className="flex items-center gap-1 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-1 text-[11px] font-bold text-emerald-200" title="Protects your streak if you miss two days">
+                <Icon name="🛡" size={12} />
+                {state.streakShields}
+              </span>
+            )}
+            {(state.questSwaps ?? 0) > 0 && (
+              <button onClick={() => setSwapOpen(true)} className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/40 hover:bg-sky-400/20 px-2.5 py-1 text-[11px] font-bold text-sky-200">
+                <Icon name="🔁" size={12} />
+                Swap ({state.questSwaps})
+              </button>
+            )}
+            {(state.skipPasses ?? 0) > 0 && (
+              <button onClick={() => setSkipOpen(true)} className="flex items-center gap-1 rounded-full bg-teal-400/10 border border-teal-400/40 hover:bg-teal-400/20 px-2.5 py-1 text-[11px] font-bold text-teal-200">
+                <Icon name="⏭" size={12} />
+                Skip ({state.skipPasses})
+              </button>
+            )}
+          </>
+        }
+      />
 
       <GettingStarted onNavigate={onNavigate} />
-
-      <InstallCard />
 
       {showRecap && (
         <WeekRecap
@@ -137,77 +166,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <NowNextCard onOpenPlan={() => onNavigate('plan')} />
 
-      <div className="grid grid-cols-5 gap-1.5">
-        <QuickAction icon="⏱" label={t('now.focus')} onClick={() => focusTimer.open()} />
-        <QuickAction icon="🌬" label="Breathe" onClick={() => breathe.open()} />
-        <QuickAction icon="🏃" label={t('qa.run')} onClick={() => runTracker.open()} />
-        <QuickAction
-          icon="💸"
-          label={t('qa.spent')}
-          onClick={() => {
-            setIntent('add-expense');
-            onNavigate('money');
-          }}
-        />
-        <QuickAction icon="📅" label={t('nav.plan')} onClick={() => onNavigate('plan')} />
-      </div>
-
-      <DailyBoxCard />
-
-      <FriendsPeek
-        onOpen={() => {
-          setIntent('you-friends');
-          onNavigate('you');
-        }}
-      />
-
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        {showConfetti && <Confetti count={36} />}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-slate-300">
-            <span className="font-bold text-white">{t('today.dailyQuests')}</span> · {doneCount} / {activeDaily.length} {t('today.done')}
-          </span>
-          {isPerfect && (
-            <span className="text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1">
-              <Icon name="✨" size="1.15em" className="icon-inline" />Perfect day
-            </span>
-          )}
-        </div>
-        <ProgressBar
-          value={doneCount}
-          max={Math.max(activeDaily.length, 1)}
-          colorClass="bg-gradient-to-r from-emerald-500 to-teal-400"
-        />
-        <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />{t('today.newQuestsIn', { t: resetLabel })}</p>
-        {(boost > 1 || (state.streakShields ?? 0) > 0 || (state.questSwaps ?? 0) > 0 || (state.skipPasses ?? 0) > 0) && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {boost > 1 && (
-              <span className="flex items-center gap-1 rounded-full bg-yellow-400/10 border border-yellow-400/30 px-2.5 py-1 text-[11px] font-bold text-yellow-200">
-                <Icon name="⚡" size={12} />
-                {boost >= 2 ? 'Double XP today' : '+50% XP today'}
-              </span>
-            )}
-            {(state.streakShields ?? 0) > 0 && (
-              <span className="flex items-center gap-1 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-1 text-[11px] font-bold text-emerald-200" title="Protects your streak if you miss a day">
-                <Icon name="🛡" size={12} />
-                {state.streakShields} streak {state.streakShields === 1 ? 'shield' : 'shields'}
-              </span>
-            )}
-            {(state.questSwaps ?? 0) > 0 && (
-              <button onClick={() => setSwapOpen(true)} className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/40 hover:bg-sky-400/20 px-2.5 py-1 text-[11px] font-bold text-sky-200">
-                <Icon name="🔁" size={12} />
-                Swap a quest ({state.questSwaps})
-              </button>
-            )}
-            {(state.skipPasses ?? 0) > 0 && (
-              <button onClick={() => setSkipOpen(true)} className="flex items-center gap-1 rounded-full bg-teal-400/10 border border-teal-400/40 hover:bg-teal-400/20 px-2.5 py-1 text-[11px] font-bold text-teal-200">
-                <Icon name="⏭" size={12} />
-                Skip a quest ({state.skipPasses})
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      {showConfetti && <PerfectDayFx onDone={() => setShowConfetti(false)} />}
 
       {/* Simple mode keeps Today to the essentials: what's now, your quests, the box and your mood. */}
       {!simple && <TodayPlanCard onOpen={() => onNavigate('plan')} />}
@@ -276,11 +235,39 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         </div>
       )}
 
+      <QuickAdd />
+
+      <div className="grid grid-cols-5 gap-1.5">
+        <QuickAction icon="⏱" label={t('now.focus')} onClick={() => focusTimer.open()} />
+        <QuickAction icon="🌬" label="Breathe" onClick={() => breathe.open()} />
+        <QuickAction icon="df:run" label={t('qa.run')} onClick={() => runTracker.open()} />
+        <QuickAction
+          icon="df:spend"
+          label={t('qa.spent')}
+          onClick={() => {
+            setIntent('add-expense');
+            onNavigate('money');
+          }}
+        />
+        <QuickAction icon="df:plan" label={t('nav.plan')} onClick={() => onNavigate('plan')} />
+      </div>
+
+      <DailyBoxCard />
+
+      <FriendsPeek
+        onOpen={() => {
+          setIntent('you-friends');
+          onNavigate('you');
+        }}
+      />
+
       {simple && <MoodCheckIn />}
 
       <CoachCard onNavigate={onNavigate} max={simple ? 1 : 2} />
 
       <DailyBoost />
+
+      <InstallCard />
 
       {(!simple || (log?.quickTasks?.length ?? 0) > 0) && <QuickTaskList />}
       {!simple && <DailyNoteBox />}

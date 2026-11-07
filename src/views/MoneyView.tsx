@@ -25,12 +25,12 @@ import { MoneyDonut } from '../components/MoneyDonut';
 import { Segmented } from '../components/Segmented';
 import { CryptoPanel } from '../components/money/CryptoPanel';
 import { TipsPanel, TipCard } from '../components/money/TipsPanel';
-import { BillsCard, MonthCard } from '../components/money/BillsCard';
+import { BillsCard, MonthCard, SubscriptionCalculator } from '../components/money/BillsCard';
 import { WishlistCard } from '../components/money/WishlistCard';
 import { MoneyPlanCard } from '../components/money/MoneyPlanCard';
 import { CashCounter } from '../components/money/CashCounter';
 import { cryptoTotal } from '../lib/crypto';
-import { lessonOfTheDay, smartTips } from '../lib/moneyTips';
+import { billsPerMonth, lessonOfTheDay, smartTips } from '../lib/moneyTips';
 import { AmountInput, Field, card, inputClass, primaryBtn, secondaryBtn, useMoney } from '../components/money/ui';
 import { useCountUp } from '../lib/useCountUp';
 import { takeIntent } from '../lib/intents';
@@ -94,7 +94,7 @@ export function MoneyView() {
             onChange={setTab}
             options={[
               { id: 'overview', label: 'Overview', icon: '💰' },
-              { id: 'crypto', label: 'Crypto', icon: '₿' },
+              { id: 'crypto', label: 'Assets', icon: '📈' },
               { id: 'tips', label: 'Tips', icon: '💡' },
             ]}
           />
@@ -108,6 +108,7 @@ export function MoneyView() {
             </div>
           ) : (
           <>
+          <MonthSummary />
           <OverviewCard />
           {!simple && <TopTip onMore={() => setTab('tips')} />}
           <TodayCard
@@ -115,6 +116,7 @@ export function MoneyView() {
             onEditLimits={() => setLimitsOpen(true)}
             onSaveLeftover={(amount) => setTransferOpen({ fromKind: 'spending', toKind: 'savings', amount })}
           />
+          <SubscriptionCalculator />
           <MoneyPlanCard />
           <GoalsCard
             onAdd={() => setEditingGoal('new')}
@@ -211,6 +213,40 @@ function SetupCard() {
         Show my money
       </button>
     </div>
+  );
+}
+
+/* ---------------- This month at a glance ---------------- */
+
+/** Income, what's gone out (spending + fixed costs) and what's left, for the current month. */
+function MonthSummary() {
+  const { money, fmt } = useMoney();
+  const today = todayKey();
+  const from = `${today.slice(0, 8)}01`;
+  const spent = money.expenses.filter((e) => e.date >= from && e.date <= today).reduce((n, e) => n + e.amount, 0);
+  const fixed = billsPerMonth(money);
+  const income = money.income?.monthly ?? 0;
+  const left = income - spent - fixed;
+  const monthName = new Date().toLocaleDateString(locale(), { month: 'long' });
+  const tiles: Array<{ label: string; value: string; tone: string; hint?: string }> = [
+    { label: 'Money in', value: income ? fmt(income, true) : '—', tone: 'text-emerald-300', hint: income ? (money.income?.kind === 'salary' ? 'salary' : 'pocket money') : 'set in Money plan' },
+    { label: 'Spent', value: fmt(spent, true), tone: 'text-white', hint: 'so far' },
+    { label: 'Fixed costs', value: fmt(fixed, true), tone: 'text-sky-200', hint: 'bills + subs' },
+    { label: income ? 'Left over' : 'Out total', value: income ? fmt(left, true) : fmt(spent + fixed, true), tone: income && left < 0 ? 'text-red-300' : 'text-amber-200', hint: income ? (left >= 0 ? 'to save' : 'over budget') : 'this month' },
+  ];
+  return (
+    <section aria-label="This month" className={`${card} p-4`}>
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-400 first-letter:uppercase">{monthName} at a glance</p>
+      <div className="grid grid-cols-2 min-[400px]:grid-cols-4 gap-2 mt-2.5">
+        {tiles.map((t) => (
+          <div key={t.label} className="rounded-xl bg-black/20 border border-white/[0.06] p-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t.label}</p>
+            <p className={`font-display text-base font-extrabold tabular-nums mt-0.5 ${t.tone}`}>{t.value}</p>
+            {t.hint && <p className="text-[10px] text-slate-500">{t.hint}</p>}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

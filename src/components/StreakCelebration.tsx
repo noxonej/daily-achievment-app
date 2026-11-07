@@ -78,7 +78,8 @@ export function StreakCelebration() {
 }
 
 function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean; onClose: () => void }) {
-  const { state } = useApp();
+  const { state, stats } = useApp();
+  const rest = new Set(stats.graceDates);
   const today = todayKey();
   const [rolled, setRolled] = useState(false);
   const [todayLit, setTodayLit] = useState(false);
@@ -130,7 +131,7 @@ function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean
         {WEEKDAYS.map((w) => {
           const date = dateOfWeekday(w.id);
           const isToday = date === today;
-          const done = isToday ? todayLit : date < today && (shielded.has(date) || !!state.dayLogs[date]?.completedQuestIds.length);
+          const done = isToday ? todayLit : date < today && (shielded.has(date) || rest.has(date) || !!state.dayLogs[date]?.completedQuestIds.length);
           return (
             <div key={w.id} className="flex flex-col items-center gap-1.5">
               <span className={`text-[11px] font-bold ${isToday ? 'text-orange-300' : 'text-slate-500'}`}>{weekdayShort(w.id).slice(0, 2)}</span>
@@ -143,7 +144,7 @@ function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean
                       : 'border-white/10'
                 } ${isToday && todayLit ? 'streak-day-pop' : ''}`}
               >
-                {done && <Icon name={shielded.has(date) ? '🛡' : '✓'} size={16} strokeWidth={3} />}
+                {done && <Icon name={shielded.has(date) ? '🛡' : rest.has(date) ? '🌙' : '✓'} size={16} strokeWidth={3} />}
               </span>
             </div>
           );

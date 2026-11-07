@@ -26,17 +26,33 @@ export const COINS: Array<{ id: string; symbol: string; name: string; color: str
   { id: 'polygon-ecosystem-token', symbol: 'POL', name: 'Polygon', color: '#8247e5' },
 ];
 
-export function coinMeta(h: Pick<CryptoHolding, 'coinId' | 'symbol' | 'name'>) {
-  return COINS.find((c) => c.id === h.coinId) ?? { id: h.coinId, symbol: h.symbol, name: h.name, color: '#64748b' };
+export function coinMeta(h: Pick<CryptoHolding, 'coinId' | 'symbol' | 'name'> & { assetType?: CryptoHolding['assetType'] }) {
+  const coin = (h.assetType ?? 'crypto') === 'crypto' ? COINS.find((c) => c.id === h.coinId) : undefined;
+  return coin ?? { id: h.coinId, symbol: h.symbol, name: h.name, color: assetTypeOf(h).color };
 }
 
 export const STABLECOINS = new Set(['tether', 'usd-coin']);
 
-/** Price per coin in cents: the latest live price if we have one, else the price typed in. */
+/**
+ * Price per unit in cents. Prices are entered by hand (manual tracking); a price saved from the old
+ * live-price feature is only used for holdings that never had one typed in. Live price fetching
+ * (fetchCryptoPrices below) is kept for a future opt-in integration but isn't called any more.
+ */
 export function coinPrice(money: MoneyState, h: CryptoHolding): number | null {
-  const live = money.cryptoPrices?.currency === money.currency ? money.cryptoPrices.prices[h.coinId]?.price : undefined;
-  if (live !== undefined) return live;
-  return h.manualPrice ?? null;
+  if (h.manualPrice !== undefined) return h.manualPrice;
+  const saved = money.cryptoPrices?.currency === money.currency ? money.cryptoPrices.prices[h.coinId]?.price : undefined;
+  return saved ?? null;
+}
+
+export const ASSET_TYPES: Array<{ id: NonNullable<CryptoHolding['assetType']>; label: string; icon: string; color: string }> = [
+  { id: 'crypto', label: 'Crypto', icon: '₿', color: '#f7931a' },
+  { id: 'stock', label: 'Stock / ETF', icon: '📈', color: '#38bdf8' },
+  { id: 'metal', label: 'Gold & metals', icon: '🪙', color: '#eab308' },
+  { id: 'other', label: 'Other', icon: '💠', color: '#a78bfa' },
+];
+
+export function assetTypeOf(h: Pick<CryptoHolding, 'assetType'>) {
+  return ASSET_TYPES.find((t) => t.id === (h.assetType ?? 'crypto'))!;
 }
 
 export function holdingValue(money: MoneyState, h: CryptoHolding): number {

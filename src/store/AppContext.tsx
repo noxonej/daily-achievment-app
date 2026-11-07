@@ -5,6 +5,7 @@ import { normalizeLook } from '../data/avatar';
 import { computeDerivedStats } from '../lib/stats';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { todayKey } from '../lib/date';
+import { rescueUnreadable, snapshotDaily, writeSave } from '../lib/safeStorage';
 import {
   loadSyncConfig,
   saveSyncConfig,
@@ -18,11 +19,16 @@ import {
 export const LEGACY_STORAGE_KEY = 'daily-quest-app-state-v1';
 
 function loadState(storageKey: string): AppState {
+  let raw: string | null = null;
   try {
-    const raw = localStorage.getItem(storageKey);
+    raw = localStorage.getItem(storageKey);
     if (!raw) return createInitialState();
+    // One snapshot a day of what was saved before today's changes (Settings → Data can restore it).
+    snapshotDaily(storageKey, raw);
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.quests)) {
+      // Unreadable or damaged: keep a copy aside before the fresh start is saved over it.
+      rescueUnreadable(storageKey, raw);
       return createInitialState();
     }
     // Merge over fresh defaults so saves from before a schema change (new
@@ -32,6 +38,7 @@ function loadState(storageKey: string): AppState {
     // Older saves used a different character format; map them onto the current avatar slots.
     return migrateContent({ ...merged, character: normalizeLook(merged.character) });
   } catch {
+    if (raw) rescueUnreadable(storageKey, raw);
     return createInitialState();
   }
 }
@@ -61,6 +68,10 @@ interface AppContextValue {
   /** Runs an action and offers a few seconds to undo it. */
   undoable: (action: Action, message: string) => void;
   undoToast: { id: number; message: string } | null;
+  /** True when the last change couldn't be written to the phone (storage full). */
+  saveFailed: boolean;
+  /** Where this account's data is saved (used by the restore-a-snapshot screen). */
+  storageKey: string;
   undo: () => void;
   dismissUndo: () => void;
 }
@@ -167,12 +178,17 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, syncConfig?.autoSync, syncConfig?.token, syncConfig?.owner, syncConfig?.repo, syncConfig?.path]);
 
+  const [saveFailed, setSaveFailed] = useState(false);
   useEffect(() => {
+    let json = '';
     try {
-      localStorage.setItem(storageKey, JSON.stringify(state));
+      json = JSON.stringify(state);
     } catch {
-      // storage full or unavailable; ignore, in-memory state still works this session
+      setSaveFailed(true);
+      return;
     }
+    // If the phone's storage is full the change still works this session, and the app says so.
+    setSaveFailed(!writeSave(storageKey, json));
   }, [state, storageKey]);
 
   // Level-up celebration
@@ -290,6 +306,8 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
     undoToast: undoToast ? { id: undoToast.id, message: undoToast.message } : null,
     undo,
     dismissUndo,
+    saveFailed,
+    storageKey,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

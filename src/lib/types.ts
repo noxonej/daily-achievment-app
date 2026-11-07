@@ -216,8 +216,12 @@ export interface CryptoHolding {
   amount: number;
   /** What you paid in total, in cents (optional, for profit / loss). */
   invested?: number;
-  /** Price per coin in cents, used when live prices aren't available. */
+  /** Price per unit in cents, as the user typed it (prices are entered by hand for now). */
   manualPrice?: number;
+  /** What kind of asset this is. Older saves have none: crypto. */
+  assetType?: 'crypto' | 'stock' | 'metal' | 'other';
+  /** When the price was last typed in (ISO date), so it's clear how fresh it is. */
+  priceAt?: string;
 }
 
 export interface Bill {
@@ -229,6 +233,10 @@ export interface Bill {
   /** Day of the month it's paid (1–31). */
   day: number;
   kind: 'bill' | 'subscription';
+  /** How often it's paid; `amount` is per period. Older saves have none: monthly. */
+  cycle?: 'weekly' | 'monthly' | 'yearly';
+  /** Yearly ones: the month it renews (1–12). Weekly ones use `day` as the weekday (1 = Monday). */
+  month?: number;
   /** Subscription check-up answer: do you really use it? */
   used?: 'yes' | 'rarely';
 }
@@ -362,7 +370,7 @@ export interface Achievement {
   icon: string;
   tier: AchievementTier;
   category: string;
-  metric: keyof DerivedStats;
+  metric: NumericStat;
   target: number;
   check: (stats: DerivedStats) => boolean;
 }
@@ -380,4 +388,11 @@ export interface DerivedStats {
   /** Reward chests earned so far: one per perfect day, perfect week and level reached. */
   chestsEarned: number;
   chestsAvailable: number;
+  /** Days this week (Monday to today) with at least one quest done. */
+  activeThisWeek: number;
+  /** Missed days forgiven as rest days (one in any 7) so the streak carries on. */
+  graceDates: string[];
 }
+
+/** The stats that are plain numbers (what achievements can count). */
+export type NumericStat = { [K in keyof DerivedStats]: DerivedStats[K] extends number ? K : never }[keyof DerivedStats];
