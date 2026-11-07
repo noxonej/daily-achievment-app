@@ -19,6 +19,8 @@ import { googleConfigured } from '../lib/google';
 import { AboutCard, AccentPicker, BackgroundPicker, ProfileCard } from './ProfileSettings';
 import { InstallCard } from './InstallCard';
 import { ManageView } from '../views/ManageView';
+import { NUDGE_COUNT, backgroundRemindersSupported, randomNudge } from '../lib/nudges';
+import { showSystemNotification } from '../lib/notify';
 
 const TITLES: Record<SettingsPage, TKey> = {
   home: 'settings.title',
@@ -162,6 +164,35 @@ function Home() {
       <Group>
         <SwitchRow label={t('settings.simple')} hint={t('settings.simpleHint')} on={prefs.simple} onChange={(v) => setPrefs({ simple: v })} />
         <Row icon="💡" tint="bg-yellow-500" label={t('settings.help')} to="help" />
+      </Group>
+
+      <Group title="Daily boost">
+        <div className="px-4 py-3.5">
+          <p className="text-[15px] font-semibold text-white">On the Today screen, show</p>
+          <p className="text-xs text-slate-400 mt-0.5">A new one every day, from over 1,000 quotes and 200+ Bible verses.</p>
+          <div className="mt-3 grid grid-cols-2 min-[400px]:grid-cols-4 gap-1.5" role="radiogroup" aria-label="Daily boost">
+            {(
+              [
+                ['quotes', 'Quotes'],
+                ['verses', 'Bible verses'],
+                ['both', 'Both'],
+                ['off', 'Nothing'],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                role="radio"
+                aria-checked={prefs.daily === id}
+                onClick={() => setPrefs({ daily: id })}
+                className={`rounded-lg py-2 text-xs font-semibold border ${
+                  prefs.daily === id ? 'bg-amber-500/20 border-amber-400 text-amber-100' : 'bg-white/5 border-white/10 text-slate-300'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </Group>
 
       <Group title={t('settings.general')}>
@@ -336,24 +367,92 @@ function LanguagePage() {
 }
 
 function NotificationsPage() {
+  const { state, stats } = useApp();
+  const [prefs, setPrefs] = usePrefs();
   const [live, setLive] = useState(loadLiveRemindersEnabled);
   const [permission, setPermission] = useState(() => (notificationsSupported() ? Notification.permission : 'unsupported'));
+  const [background, setBackground] = useState<boolean | null>(null);
+  const [sent, setSent] = useState(false);
+  useEffect(() => {
+    void backgroundRemindersSupported().then(setBackground);
+  }, []);
 
-  async function toggle(next: boolean) {
-    if (next && notificationsSupported() && Notification.permission === 'default') {
+  async function ask() {
+    if (notificationsSupported() && Notification.permission === 'default') {
       try {
-        setPermission(await Notification.requestPermission());
+        const p = await Notification.requestPermission();
+        setPermission(p);
+        return p;
       } catch {
         // the in-app banner still works
       }
     }
+    return notificationsSupported() ? Notification.permission : 'unsupported';
+  }
+
+  async function toggle(next: boolean) {
+    if (next) await ask();
     setLive(next);
     saveLiveRemindersEnabled(next);
   }
 
+  async function toggleNudges(next: boolean) {
+    if (next) await ask();
+    setPrefs({ nudges: next });
+  }
+
+  async function test() {
+    const p = await ask();
+    if (p !== 'granted') return;
+    const n = randomNudge(stats.currentStreak, state.profile?.name ?? '');
+    showSystemNotification(n.title, n.body, 'nudge-test');
+    setSent(true);
+    setTimeout(() => setSent(false), 2000);
+  }
+
   return (
     <div className="space-y-4">
-      <Group>
+      <Group title="Motivation">
+        <SwitchRow
+          label="Motivation reminders"
+          hint={`If you haven't done a quest by the evening, a push to keep your streak (${NUDGE_COUNT} different ones, never the same two days in a row). Plus a morning boost with your daily quote.`}
+          on={prefs.nudges}
+          onChange={toggleNudges}
+        />
+        {prefs.nudges && (
+          <>
+            <label className="flex items-center gap-3 px-4 py-3.5">
+              <span className="flex-1 text-[15px] font-semibold text-white">Evening check</span>
+              <input
+                type="time"
+                value={prefs.nudgeTime}
+                onChange={(e) => e.target.value && setPrefs({ nudgeTime: e.target.value })}
+                className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 text-white text-base"
+              />
+            </label>
+            <div className="px-4 py-3">
+              <button onClick={test} className="rounded-full bg-white/[0.06] border border-white/10 hover:bg-white/10 px-3.5 py-2 text-sm font-semibold text-white">
+                <Icon name={sent ? '✓' : '🛎'} size={15} className="icon-inline" />
+                {sent ? 'Sent' : 'Send me one now'}
+              </button>
+            </div>
+          </>
+        )}
+      </Group>
+      {prefs.nudges && permission === 'denied' && (
+        <p className="px-1 text-xs text-amber-300">Notifications are blocked for this app in your phone's settings. Allow them there to get reminders.</p>
+      )}
+      {prefs.nudges && permission !== 'denied' && (
+        <p className="px-1 text-xs text-slate-400">
+          {background && isStandalone()
+            ? 'Your phone supports reminders even when the app is closed. Android decides the exact moment, so one may come a bit late.'
+            : !isStandalone()
+              ? 'Install the app on your home screen (Settings → Install) so reminders can also come when the app is closed.'
+              : 'On this phone, reminders come while the app is open or in the background. For alarms with the app fully closed, add your plan to your calendar (below).'}
+        </p>
+      )}
+
+      <Group title="Week plan">
         <SwitchRow
           label="Plan reminders"
           hint="A pop-up and a buzz when something in your week plan starts, while the app is open."

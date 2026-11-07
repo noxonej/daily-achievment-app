@@ -16,6 +16,27 @@ unlockable achievements.
 - **Today home screen** — a greeting, a "Right now / Next" card from your
   plan with one-tap Done and Focus, quick actions, and a daily mood
   check-in.
+- **Your coach** — personal tips from how your days really went (missed
+  yesterday, too many quests, too easy, weekend dip, short sleep, low mood,
+  no water or movement, no morning routine, comfort zone), each with a
+  one-tap fix such as adding the right quest. Runs on the phone only.
+- **Daily boost** — a quote of the day on Today, from 1,000+ famous quotes,
+  proverbs and original lines, or a Bible verse (King James Version, 230+),
+  or both, or hidden (Settings). "Another" shows a random one; share or copy it.
+- **Motivation reminders** — 50 different tough-love pushes (never rude) when
+  you haven't done a quest by your evening check time, plus a morning boost
+  with the quote of the day. While the app is open or in the background they
+  come from the app; on Android with the app installed, the service worker
+  also sends them with the app closed (periodic background sync). iPhones
+  and fully closed apps elsewhere would need a push server.
+- **Number quests you can tune** — water shows litres and lets you pick your
+  glass or bottle (150 ml to 1 L) and daily goal; other number quests get
+  their own goal and quick-add buttons. The title follows the new goal.
+- **Money plan and cash counter** — enter what you get each month (pocket
+  money or salary) and how much to save; the app takes off bills, then
+  spreads your spending over the week using your plan (more on days with
+  fun plans, less on quiet days) and reminds you about birthdays. Count
+  your notes and coins to set your wallet in one tap.
 - **Focus timer** — 15/25/45/60-minute sessions that keep running when
   the app is closed, with a chime, vibration and notification at the end;
   focus minutes show up in Stats.

@@ -147,6 +147,49 @@ export function smartTips(money: MoneyState, today: string = todayKey()): MoneyT
     });
   }
 
+  // Bills coming out in the next 3 days.
+  for (const b of money.bills ?? []) {
+    const due = nextDue(b.day, today);
+    const days = Math.round((parseKey(due).getTime() - parseKey(today).getTime()) / 86400000);
+    if (days <= 3) {
+      tips.push({
+        id: `due-${b.id}`,
+        icon: '🧾',
+        title: `${b.name} (${fmt(b.amount)}) comes out ${days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`}`,
+        text: 'Keep that much in your spending money so it does not catch you by surprise.',
+        tone: 'warn',
+      });
+    }
+  }
+
+  // How long a savings goal takes, and how much faster a little more each week would be.
+  for (const g of money.goals.slice(0, 2)) {
+    const saved = money.accounts.find((a) => a.id === g.accountId)?.amount ?? 0;
+    const left = g.target - saved;
+    if (left <= 0 || !g.weekly) continue;
+    const weeks = Math.ceil(left / g.weekly);
+    const faster = Math.ceil(left / (g.weekly * 1.5));
+    if (weeks > 8) {
+      tips.push({
+        id: `pace-${g.id}`,
+        icon: g.icon,
+        title: `${g.name}: about ${weeks >= 104 ? `${Math.round(weeks / 52)} years` : `${weeks} weeks`} at ${fmt(g.weekly)} a week`,
+        text: `Saving ${fmt(Math.round(g.weekly * 0.5))} more a week gets you there ${weeks - faster} weeks sooner. Small extra jobs or skipping one buy a week does it.`,
+        tone: 'idea',
+      });
+    }
+  }
+
+  if (!money.income) {
+    tips.push({
+      id: 'plan',
+      icon: '🧮',
+      title: 'Make a money plan',
+      text: 'Tell the app how much you get each month (Overview → Plan my money). It works out what to save and how much you can spend each day, based on your week.',
+      tone: 'idea',
+    });
+  }
+
   if (total > 0 && crypto / total > 0.2) {
     tips.push({
       id: 'crypto-risk',

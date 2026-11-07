@@ -98,6 +98,8 @@ function normalizeMoney(money: MoneyState | undefined): MoneyState {
     crypto: Array.isArray(money.crypto) ? money.crypto : [],
     cryptoPrices: money.cryptoPrices,
     bills: Array.isArray(money.bills) ? money.bills : [],
+    income: money.income,
+    saveRate: money.saveRate,
   };
 }
 
@@ -174,6 +176,8 @@ export type Action =
   | { type: 'ADD_FOCUS_MINUTES'; date: string; minutes: number }
   /** Sets today's (or this week's) total on a number-based quest; completes it at the target. */
   | { type: 'SET_PROGRESS'; questId: string; value: number }
+  /** Change a number quest's goal, glass size or quick buttons; today's progress is kept (rescaled for a new glass size). */
+  | { type: 'SET_MEASURE'; questId: string; measure: QuestMeasure }
   | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
   | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
   | { type: 'USE_SKIP_PASS'; questId: string }
@@ -186,6 +190,7 @@ export type Action =
   | { type: 'MONEY_SET_CRYPTO_PRICES'; prices: NonNullable<MoneyState['cryptoPrices']> }
   | { type: 'MONEY_UPSERT_BILL'; bill: Omit<Bill, 'id'> & { id?: string } }
   | { type: 'MONEY_DELETE_BILL'; billId: string }
+  | { type: 'MONEY_SET_INCOME'; income: MoneyState['income']; saveRate?: number }
   | { type: 'USE_QUEST_SWAP'; questId: string; replacement: { title: string; description?: string; icon: string } }
   /** Spends Streak Shields on missed days right before today, if that keeps an existing streak alive. */
   | { type: 'CHECK_STREAK_SHIELDS' }
@@ -874,6 +879,35 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, moods };
     }
 
+    case 'SET_MEASURE': {
+      const quest = state.quests.find((q) => q.id === action.questId);
+      if (!quest?.measure || action.measure.unit !== quest.measure.unit || !(action.measure.target > 0)) return state;
+      const before = currentProgress(state, quest);
+      const oldSize = quest.measure.size ?? 250;
+      const newSize = action.measure.size ?? 250;
+      const updated = { ...quest, measure: { ...action.measure } };
+      // "Drink 2L of water" follows a new daily goal (e.g. 2.5L).
+      if (quest.measure.unit === 'glasses' && /\d+([.,]\d+)?\s?L\b/.test(quest.title)) {
+        const l = Math.round(((action.measure.size ?? 250) * action.measure.target) / 100) / 10;
+        updated.title = quest.title.replace(/\d+([.,]\d+)?\s?L\b/, `${l}L`);
+      } else if (quest.measure.unit !== 'glasses' && quest.measure.target !== action.measure.target) {
+        // "Walk 10,000 steps" → "Walk 8,000 steps" (only when the old goal is written in the title).
+        const t = quest.measure.target;
+        const forms = [t.toLocaleString('en-US'), String(t), t.toLocaleString('de-DE')];
+        const hit = forms.find((f) => new RegExp(`(^|\\D)${f.replace(/[.,]/g, '\\$&')}(?!\\d)`).test(quest.title));
+        if (hit) {
+          const nt = action.measure.target;
+          const repl = hit.includes(',') ? nt.toLocaleString('en-US') : hit.includes('.') && t >= 1000 ? nt.toLocaleString('de-DE') : String(nt);
+          updated.title = quest.title.replace(hit, repl);
+        }
+      }
+      let next: AppState = { ...state, quests: state.quests.map((q) => (q.id === quest.id ? updated : q)) };
+      // Same amount of water drunk, counted in the new glass size.
+      const value = quest.measure.unit === 'glasses' && oldSize !== newSize ? Math.round((before * oldSize) / newSize) : before;
+      next = withProgress(next, updated, value);
+      return next;
+    }
+
     case 'SET_PROGRESS': {
       const quest = state.quests.find((q) => q.id === action.questId);
       if (!quest?.measure) return state;
@@ -997,6 +1031,9 @@ export function reducer(state: AppState, action: Action): AppState {
         return { ...m, bills: list.some((x) => x.id === id) ? list.map((x) => (x.id === id ? item : x)) : [...list, item] };
       });
     }
+
+    case 'MONEY_SET_INCOME':
+      return withMoney(state, (m) => ({ ...m, income: action.income, saveRate: action.saveRate ?? m.saveRate }));
 
     case 'MONEY_DELETE_BILL':
       return withMoney(state, (m) => ({ ...m, bills: (m.bills ?? []).filter((x) => x.id !== action.billId) }));

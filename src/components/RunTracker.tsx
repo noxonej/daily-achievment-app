@@ -118,8 +118,8 @@ export function RunTracker() {
           </div>
 
           {s.status === 'finished' ? (
-            <div className="mt-10 w-full max-w-xs space-y-2">
-              <button onClick={save} disabled={km2 <= 0.01} className="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-white font-bold py-3.5">
+            <div key="finished" className="mt-10 w-full max-w-xs space-y-2">
+              <button key="save" onClick={save} disabled={km2 <= 0.01} className="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-white font-bold py-3.5">
                 {km2 > 0.01 ? `Save ${km2.toFixed(2)} km run` : 'No distance recorded'}
               </button>
               <button onClick={() => runTracker.reset()} className="w-full py-2 text-sm font-semibold text-slate-400">

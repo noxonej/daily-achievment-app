@@ -16,6 +16,7 @@ import { focusTimer } from './lib/focusTimer';
 import { useApplyAppearance } from './lib/theme';
 import { useWardrobeOpen } from './lib/wardrobe';
 import { useApplyPrefs } from './lib/prefs';
+import { useNudges } from './lib/nudges';
 import { useGoogleAutoBackup } from './components/GoogleConnect';
 import { rememberInvite, useFriendsEngine } from './lib/friends';
 import { FriendToasts } from './components/FriendToasts';
@@ -50,6 +51,7 @@ export default function App() {
   }, [lookKey, stats.level, state.profile?.name]);
   useApplyAppearance(state.appearance);
   useApplyPrefs(state.prefs);
+  useNudges(state, stats);
   useGoogleAutoBackup();
   useFriendsEngine({
     accountId: auth?.account.id ?? null,

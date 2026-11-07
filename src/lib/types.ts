@@ -3,6 +3,10 @@ export type MeasureUnit = 'steps' | 'km' | 'glasses' | 'reps' | 'minutes' | 'pag
 export interface QuestMeasure {
   unit: MeasureUnit;
   target: number;
+  /** Water: millilitres per glass / bottle (default 250). */
+  size?: number;
+  /** Your own quick-add buttons (e.g. +20 push-ups). */
+  quick?: number[];
 }
 
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'epic';
@@ -182,6 +186,10 @@ export interface MoneyState {
   cryptoPrices?: { currency: string; fetchedAt: string; prices: Record<string, { price: number; change24h?: number }> };
   /** Bills and subscriptions that come out every month. */
   bills?: Bill[];
+  /** Money coming in, used by the money plan (cents per month). */
+  income?: { monthly: number; kind: 'allowance' | 'salary' };
+  /** Share of income to save, 0–1 (the plan suggests one). */
+  saveRate?: number;
 }
 
 export interface CryptoHolding {
@@ -246,6 +254,12 @@ export interface Prefs {
   splash: boolean;
   /** Simple mode: hides the extra cards so the app is easy for a first-timer. */
   simple: boolean;
+  /** Daily boost card: famous quotes, Bible verses, both, or hidden. */
+  daily: 'quotes' | 'verses' | 'both' | 'off';
+  /** Motivational reminders (when the app is installed and notifications are allowed). */
+  nudges: boolean;
+  /** Evening check time for the "you haven't done a quest yet" reminder, HH:MM. */
+  nudgeTime: string;
 }
 
 export type Accent = 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose';

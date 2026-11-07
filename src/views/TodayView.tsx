@@ -25,6 +25,8 @@ import { InstallCard } from '../components/InstallCard';
 import { WeekRecap } from '../components/WeekRecap';
 import { DailyBoxCard } from '../components/DailyBox';
 import { QuestSwapModal } from '../components/QuestSwapModal';
+import { DailyBoost } from '../components/today/DailyBoost';
+import { CoachCard } from '../components/today/CoachCard';
 
 const RECAP_KEY = 'dayforge-recap-dismissed';
 import { focusTimer } from '../lib/focusTimer';
@@ -270,6 +272,10 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       )}
 
       {simple && <MoodCheckIn />}
+
+      <CoachCard onNavigate={onNavigate} max={simple ? 1 : 2} />
+
+      <DailyBoost />
 
       {!simple && <QuickTaskList />}
       {!simple && <DailyNoteBox />}

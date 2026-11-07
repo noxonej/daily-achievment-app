@@ -715,3 +715,6 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
   100% { transform: scale(0.92) translateY(6px); opacity: 0.85; }
 }
 .chest-pop { animation: chest-pop 0.7s var(--ease-out) both; transform-origin: 50% 90%; }
+
+@keyframes bar-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bar-grow-y { transform-origin: bottom center; animation: bar-grow-y 0.7s var(--ease-out) backwards; }

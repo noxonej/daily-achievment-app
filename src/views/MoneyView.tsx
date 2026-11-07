@@ -26,6 +26,8 @@ import { Segmented } from '../components/Segmented';
 import { CryptoPanel } from '../components/money/CryptoPanel';
 import { TipsPanel, TipCard } from '../components/money/TipsPanel';
 import { BillsCard, MonthCard } from '../components/money/BillsCard';
+import { MoneyPlanCard } from '../components/money/MoneyPlanCard';
+import { CashCounter } from '../components/money/CashCounter';
 import { cryptoTotal } from '../lib/crypto';
 import { lessonOfTheDay, smartTips } from '../lib/moneyTips';
 import { AmountInput, Field, card, inputClass, primaryBtn, secondaryBtn, useMoney } from '../components/money/ui';
@@ -49,6 +51,7 @@ export function MoneyView() {
   const [editing, setEditing] = useState<MoneyAccount | 'new' | null>(null);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | 'new' | null>(null);
   const [tab, setTab] = useState<'overview' | 'crypto' | 'tips'>('overview');
+  const [countOpen, setCountOpen] = useState(false);
   const simple = useSimple();
   useEffect(() => {
     if (takeIntent('add-expense') && money.setupDone) setExpenseOpen(true);
@@ -111,6 +114,7 @@ export function MoneyView() {
             onEditLimits={() => setLimitsOpen(true)}
             onSaveLeftover={(amount) => setTransferOpen({ fromKind: 'spending', toKind: 'savings', amount })}
           />
+          <MoneyPlanCard />
           <GoalsCard
             onAdd={() => setEditingGoal('new')}
             onEdit={(g) => setEditingGoal(g)}
@@ -120,6 +124,7 @@ export function MoneyView() {
           {!simple && <MonthCard />}
           <BillsCard />
           <AccountsCard
+            onCount={() => setCountOpen(true)}
             onEdit={(a) => setEditing(a)}
             onAdd={() => setEditing('new')}
             onTransfer={() => setTransferOpen({})}
@@ -130,6 +135,7 @@ export function MoneyView() {
       )}
 
       <ExpenseModal open={expenseOpen} onClose={() => setExpenseOpen(false)} />
+      <CashCounter open={countOpen} onClose={() => setCountOpen(false)} />
       <LimitsModal open={limitsOpen} onClose={() => setLimitsOpen(false)} />
       <TransferModal preset={transferOpen} onClose={() => setTransferOpen(null)} />
       <AccountModal account={editing} onClose={() => setEditing(null)} />
@@ -552,7 +558,9 @@ function AccountsCard({
   onEdit,
   onAdd,
   onTransfer,
+  onCount,
 }: {
+  onCount: () => void;
   onEdit: (a: MoneyAccount) => void;
   onAdd: () => void;
   onTransfer: () => void;
@@ -560,9 +568,13 @@ function AccountsCard({
   const { money, fmt } = useMoney();
   return (
     <div className={card}>
-      <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-2">
-        <p className="text-sm font-semibold text-white">Where your money is</p>
-        <div className="flex gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4 pb-2">
+        <p className="text-sm font-semibold text-white whitespace-nowrap">Where your money is</p>
+        <div className="flex flex-wrap gap-1.5 [&>button]:whitespace-nowrap">
+          <button onClick={onCount} className={`${secondaryBtn} px-2.5 py-1.5 text-xs`}>
+            <Icon name="🧮" size="1.1em" className="icon-inline" />
+            Count cash
+          </button>
           {money.accounts.length > 1 && (
             <button onClick={onTransfer} className={`${secondaryBtn} px-2.5 py-1.5 text-xs`}>
               ⇄ Move money

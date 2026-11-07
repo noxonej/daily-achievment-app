@@ -22,7 +22,8 @@ type Section = 'stats' | 'badges' | 'friends' | 'diary';
 export function YouView() {
   const { state, stats } = useApp();
   const wantFriends = useIntent('you-friends');
-  const [section, setSection] = useState<Section>(wantFriends ? 'friends' : 'stats');
+  const wantDiary = useIntent('you-diary');
+  const [section, setSection] = useState<Section>(wantFriends ? 'friends' : wantDiary ? 'diary' : 'stats');
   const { xpIntoLevel, xpForNextLevel } = levelFromTotalXp(stats.totalXp);
   const friendRequests = useFriends().requests.length;
   const name = state.profile?.name;
