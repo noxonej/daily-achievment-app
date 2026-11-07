@@ -9,6 +9,7 @@ import { PlanReminderToast } from './components/PlanReminderToast';
 import { hideBoot } from './lib/boot';
 import { FocusTimer } from './components/FocusTimer';
 import { RunTracker } from './components/RunTracker';
+import { BreatheOverlay, breathe } from './components/Breathe';
 import { UndoToast } from './components/UndoToast';
 import { useApp } from './store/AppContext';
 import { useAuth } from './store/AuthContext';
@@ -91,6 +92,9 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('focus') === '1') focusTimer.open();
+    if (params.get('breathe') === '1') breathe.open();
+    // "Quick add" shortcut on the app icon: jump into the quick-add box.
+    if (params.get('add') === '1') setTimeout(() => document.querySelector<HTMLInputElement>('input[aria-label^="Quick add"]')?.focus(), 500);
     // Opened from a friend's invite link: remember their code and show Friends.
     const invite = params.get('invite');
     if (invite) {
@@ -98,7 +102,7 @@ export default function App() {
       setIntent('you-friends');
       setViewState('you');
     }
-    if (params.has('view') || params.has('focus') || params.has('source') || invite) {
+    if (params.has('view') || params.has('focus') || params.has('breathe') || params.has('add') || params.has('source') || invite) {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
@@ -133,6 +137,7 @@ export default function App() {
       <PlanReminderToast />
       <FocusTimer />
       <RunTracker />
+      <BreatheOverlay />
       {settingsPage && (
         <Suspense fallback={null}>
           <SettingsScreen />

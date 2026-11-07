@@ -215,6 +215,8 @@ export interface Bill {
   /** Day of the month it's paid (1–31). */
   day: number;
   kind: 'bill' | 'subscription';
+  /** Subscription check-up answer: do you really use it? */
+  used?: 'yes' | 'rarely';
 }
 
 export interface RunRecord {

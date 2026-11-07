@@ -20,6 +20,7 @@ function dueLabel(date: string, today: string): string {
 export function BillsCard() {
   const { money, fmt } = useMoney();
   const [editing, setEditing] = useState<Bill | 'new' | null>(null);
+  const [checkup, setCheckup] = useState(false);
   const today = todayKey();
   const bills = [...(money.bills ?? [])].sort((a, b) => nextDue(a.day, today).localeCompare(nextDue(b.day, today)));
   const monthly = billsPerMonth(money);
@@ -41,9 +42,17 @@ export function BillsCard() {
             <p className="text-xs text-slate-400 mt-0.5">Phone, streaming, gym, games… things that come out every month.</p>
           )}
         </div>
-        <button onClick={() => setEditing('new')} className={`${secondaryBtn} shrink-0 px-2.5 py-1.5 text-xs`}>
-          + Add
-        </button>
+        <div className="shrink-0 flex gap-1.5">
+          {subs.length > 0 && (
+            <button onClick={() => setCheckup(true)} className={`${secondaryBtn} px-2.5 py-1.5 text-xs`}>
+              <Icon name="🔍" size="1.1em" className="icon-inline" />
+              Check-up
+            </button>
+          )}
+          <button onClick={() => setEditing('new')} className={`${secondaryBtn} px-2.5 py-1.5 text-xs`}>
+            + Add
+          </button>
+        </div>
       </div>
       {bills.length > 0 && (
         <ul className="px-2 pb-2">
@@ -69,12 +78,26 @@ export function BillsCard() {
           })}
         </ul>
       )}
-      {subs.length >= 3 && (
-        <p className="px-5 pb-4 text-xs text-slate-400">
-          <Icon name="💡" size="1.1em" className="icon-inline text-yellow-300" />
-          {subs.length} subscriptions. Cancel the one you used least this month and save {fmt(Math.min(...subs.map((s) => s.amount)) * 12, true)} a year.
-        </p>
-      )}
+      {(() => {
+        const unused = subs.filter((b) => b.used === 'rarely');
+        if (unused.length)
+          return (
+            <button onClick={() => setCheckup(true)} className="block w-full text-left px-5 pb-4 text-xs text-amber-200">
+              <Icon name="💡" size="1.1em" className="icon-inline text-yellow-300" />
+              You hardly use {unused.length === 1 ? unused[0].name : `${unused.length} subscriptions`}. Cancel and save{' '}
+              <b>{fmt(unused.reduce((n, b) => n + b.amount, 0) * 12, true)} a year</b>.
+            </button>
+          );
+        if (subs.length >= 2 && subs.some((b) => !b.used))
+          return (
+            <button onClick={() => setCheckup(true)} className="block w-full text-left px-5 pb-4 text-xs text-slate-400">
+              <Icon name="💡" size="1.1em" className="icon-inline text-yellow-300" />
+              {subs.length} subscriptions cost {fmt(subs.reduce((n, b) => n + b.amount, 0) * 12, true)} a year. Do a 30-second check-up.
+            </button>
+          );
+        return null;
+      })()}
+      <CheckupModal open={checkup} onClose={() => setCheckup(false)} subs={subs} />
       <BillModal bill={editing} onClose={() => setEditing(null)} />
     </div>
   );
@@ -242,5 +265,80 @@ export function MonthCard() {
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * Subscription check-up (like the money apps that hunt down forgotten subscriptions): go through each
+ * one, say if you really use it, and see what cancelling the unused ones saves, now and invested.
+ */
+function CheckupModal({ open, onClose, subs }: { open: boolean; onClose: () => void; subs: Bill[] }) {
+  const { dispatch, fmt } = useMoney();
+  const unused = subs.filter((b) => b.used === 'rarely');
+  const yearly = unused.reduce((n, b) => n + b.amount, 0) * 12;
+  // What that yearly saving grows to in 10 years at 7% a year, added once a year.
+  let grown = 0;
+  for (let i = 0; i < 10; i++) grown = (grown + yearly) * 1.07;
+  return (
+    <Modal open={open} onClose={onClose} title="Subscription check-up">
+      <p className="text-sm text-slate-400 -mt-1 mb-3">Be honest: did you really use it in the last month?</p>
+      <ul className="space-y-2">
+        {subs.map((b) => (
+          <li key={b.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <div className="flex items-center gap-3">
+              <span className="shrink-0 w-9 h-9 rounded-lg bg-white/5 text-sky-300 flex items-center justify-center">
+                <Icon name={b.icon} size={17} />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[15px] font-semibold text-white truncate">{b.name}</span>
+                <span className="block text-xs text-slate-400">
+                  {fmt(b.amount)} a month · {fmt(b.amount * 12, true)} a year
+                </span>
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 mt-2.5" role="radiogroup" aria-label={`Do you use ${b.name}?`}>
+              {(
+                [
+                  ['yes', 'I use it'],
+                  ['rarely', 'Hardly ever'],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  role="radio"
+                  aria-checked={b.used === v}
+                  onClick={() => dispatch({ type: 'MONEY_UPSERT_BILL', bill: { ...b, used: v } })}
+                  className={`rounded-lg py-2 text-xs font-bold border ${
+                    b.used === v ? (v === 'yes' ? 'bg-emerald-500/15 border-emerald-400 text-emerald-100' : 'bg-amber-500/15 border-amber-400 text-amber-100') : 'border-white/10 text-slate-300'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {b.used === 'rarely' && (
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="text-[11px] text-slate-400">Cancel it where you pay (app store, website), then remove it here.</p>
+                <button onClick={() => dispatch({ type: 'MONEY_DELETE_BILL', billId: b.id })} className="shrink-0 rounded-lg border border-rose-400/40 text-rose-200 text-xs font-bold px-2.5 py-1.5">
+                  Cancelled
+                </button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      {yearly > 0 ? (
+        <div className="mt-4 rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.08] p-4 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">You could save</p>
+          <p className="font-display text-3xl font-extrabold text-white tabular-nums">{fmt(yearly, true)} a year</p>
+          <p className="text-xs text-slate-300 mt-1">Invested instead, that grows to about <b className="text-white">{fmt(Math.round(grown), true)}</b> in 10 years.</p>
+        </div>
+      ) : (
+        <p className="mt-4 text-xs text-slate-500 text-center">Mark the ones you hardly use to see what you'd save.</p>
+      )}
+      <button onClick={onClose} className={`${primaryBtn} w-full py-3 mt-4`}>
+        Done
+      </button>
+    </Modal>
   );
 }

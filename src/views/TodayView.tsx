@@ -27,6 +27,8 @@ import { DailyBoxCard } from '../components/DailyBox';
 import { QuestSwapModal } from '../components/QuestSwapModal';
 import { DailyBoost } from '../components/today/DailyBoost';
 import { CoachCard } from '../components/today/CoachCard';
+import { QuickAdd } from '../components/today/QuickAdd';
+import { breathe } from '../components/Breathe';
 
 const RECAP_KEY = 'dayforge-recap-dismissed';
 import { focusTimer } from '../lib/focusTimer';
@@ -45,12 +47,12 @@ function QuickAction({ icon, label, onClick }: { icon: string; label: string; on
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] py-3 transition"
+      className="min-w-0 flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] py-3 transition"
     >
       <span className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center">
         <Icon name={icon} size={19} />
       </span>
-      <span className="text-xs font-semibold text-slate-200">{label}</span>
+      <span className="max-w-full truncate px-0.5 text-[11px] min-[380px]:text-xs font-semibold text-slate-200">{label}</span>
     </button>
   );
 }
@@ -112,6 +114,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         </h1>
       </div>
 
+      <QuickAdd />
+
       <GettingStarted onNavigate={onNavigate} />
 
       <InstallCard />
@@ -133,8 +137,9 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <NowNextCard onOpenPlan={() => onNavigate('plan')} />
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-5 gap-1.5">
         <QuickAction icon="⏱" label={t('now.focus')} onClick={() => focusTimer.open()} />
+        <QuickAction icon="🌬" label="Breathe" onClick={() => breathe.open()} />
         <QuickAction icon="🏃" label={t('qa.run')} onClick={() => runTracker.open()} />
         <QuickAction
           icon="💸"
@@ -277,7 +282,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <DailyBoost />
 
-      {!simple && <QuickTaskList />}
+      {(!simple || (log?.quickTasks?.length ?? 0) > 0) && <QuickTaskList />}
       {!simple && <DailyNoteBox />}
 
       {!simple && (

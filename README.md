@@ -16,6 +16,17 @@ unlockable achievements.
 - **Today home screen** — a greeting, a "Right now / Next" card from your
   plan with one-tap Done and Focus, quick actions, and a daily mood
   check-in.
+- **Quick add** — one box on Today for everything, in plain words: "Dentist
+  tomorrow 15:00" goes to the plan, "spent 4.50 on lunch" logs an expense,
+  "every day: read 10 pages" makes a quest, "gym every monday 17:30" adds a
+  weekly plan item, anything else becomes a to-do. It shows what it
+  understood before you add it. Also on the app icon's long-press menu.
+- **Breathe** — a 1, 3 or 5-minute guided breathing session (in 4, hold 4,
+  out 6) with a growing and shrinking circle. It counts as focus time and
+  ticks off a breathing or meditation quest.
+- **Subscription check-up** — go through your subscriptions, say which you
+  hardly use, and see what cancelling them saves a year and what that would
+  grow to if invested.
 - **Your coach** — personal tips from how your days really went (missed
   yesterday, too many quests, too easy, weekend dip, short sleep, low mood,
   no water or movement, no morning routine, comfort zone), each with a

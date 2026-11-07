@@ -16,9 +16,10 @@
     { "src": "app-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Today", "url": "./?view=today", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Quick add", "url": "./?add=1", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
     { "name": "Week plan", "url": "./?view=plan", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
     { "name": "Log spending", "url": "./?view=money", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
-    { "name": "Start focus", "url": "./?focus=1", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] }
+    { "name": "Start focus", "url": "./?focus=1", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Breathe", "url": "./?breathe=1", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] }
   ]
 }
