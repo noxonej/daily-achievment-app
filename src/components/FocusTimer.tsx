@@ -46,7 +46,7 @@ export function FocusTimer() {
     return (
       <button
         onClick={() => focusTimer.open()}
-        className="fixed z-40 left-1/2 -translate-x-1/2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] flex items-center gap-2 rounded-full bg-raised/95 backdrop-blur border border-amber-400/40 shadow-xl px-4 py-2 animate-pop-in"
+        className="fixed z-40 left-1/2 -translate-x-1/2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] flex items-center gap-2 rounded-full bg-raised/95 border border-amber-400/40 shadow-xl px-4 py-2 animate-pop-in"
       >
         <span className={`w-2 h-2 rounded-full ${running ? 'bg-emerald-400 animate-pulse' : s.finishedAt ? 'bg-amber-400' : 'bg-slate-400'}`} />
         <Icon name="⏱" size={16} className="text-amber-300" />

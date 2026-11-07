@@ -19,7 +19,7 @@ export function CelebrationOverlay() {
   if (current.kind === 'levelup') {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={dismissCelebration} />
+        <div className="absolute inset-0 bg-black/80" onClick={dismissCelebration} />
         <Confetti count={48} />
         <div className="relative bg-gradient-to-b from-[#241a10] to-surface border border-amber-500/40 rounded-2xl shadow-2xl shadow-amber-900/50 px-8 py-8 text-center max-w-xs w-full animate-celebrate">
           <div className="flex justify-center mb-3 text-amber-300"><Icon name="🎉" size={60} strokeWidth={1.6} /></div>

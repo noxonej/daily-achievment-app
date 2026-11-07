@@ -30,8 +30,8 @@ export function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-30 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] transition-[background-color,box-shadow,backdrop-filter] duration-300 ${
-        scrolled ? 'bg-canvas/75 backdrop-blur-xl shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)]' : 'bg-canvas/40 backdrop-blur-md'
+      className={`sticky top-0 z-30 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] transition-[background-color,box-shadow] duration-300 ${
+        scrolled ? 'bg-canvas/[0.97] shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)]' : 'bg-canvas/[0.93]'
       }`}
     >
       <div className="max-w-2xl mx-auto px-4 flex items-center gap-2.5 h-[60px]">
@@ -42,7 +42,7 @@ export function Header() {
             aria-label={`Level ${stats.level}, ${title}`}
             className="flex items-center gap-2.5 min-w-0 rounded-2xl -ml-1 pl-1 pr-2 py-1 hover:bg-white/[0.04]"
           >
-            <span className="relative shrink-0 logo-float">
+            <span className="relative shrink-0">
               <span className="absolute inset-1 rounded-xl bg-amber-400/40 blur-md" aria-hidden="true" />
               <Logo size={36} className={`relative transition-transform duration-300 ${scrolled ? 'scale-90' : ''}`} />
             </span>

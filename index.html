@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/app-icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="description" content="Plan your week, build habits, track your money and savings goals, and level up every day." />
     <meta name="theme-color" content="#05060b" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -13,6 +13,35 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Dayforge" />
     <meta name="application-name" content="Dayforge" />
+    <style>
+      /* Startup screen: shown from the very first frame (no white flash), in the saved theme and colour.
+         It only animates transform/opacity, so it stays smooth while the app loads underneath. */
+      html, body { margin: 0; background: #05060b; }
+      html[data-theme='light'], html[data-theme='light'] body { background: #f3f5fa; }
+      html { --b1: #67e8f9; --b2: #0891b2; --b3: #0e7490; --bw: #22d3ee; }
+      html:not([data-accent]) { --b1: #fcd34d; --b2: #f59e0b; --b3: #d97706; --bw: #fbbf24; }
+      html[data-accent='ocean'] { --b1: #93c5fd; --b2: #3b82f6; --b3: #2563eb; --bw: #60a5fa; }
+      html[data-accent='emerald'] { --b1: #6ee7b7; --b2: #10b981; --b3: #059669; --bw: #34d399; }
+      html[data-accent='violet'] { --b1: #c4b5fd; --b2: #8b5cf6; --b3: #7c3aed; --bw: #a78bfa; }
+      html[data-accent='rose'] { --b1: #fda4af; --b2: #f43f5e; --b3: #e11d48; --bw: #fb7185; }
+      #boot { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: #05060b; transition: opacity 0.35s ease, visibility 0.35s; }
+      html[data-theme='light'] #boot { background: #f3f5fa; }
+      #boot.hide { opacity: 0; visibility: hidden; }
+      #boot .glow { position: absolute; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, var(--bw) 0%, transparent 65%);
+        opacity: 0; animation: boot-glow 1.2s ease-out 0.1s forwards; }
+      #boot .tile { position: relative; animation: boot-in 0.55s cubic-bezier(.34,1.56,.64,1) both; }
+      #boot .check { transform-box: fill-box; transform-origin: 30% 70%; animation: boot-check 0.45s cubic-bezier(.34,1.56,.64,1) 0.3s both; }
+      #boot .word { position: relative; margin-top: 20px; font: 800 26px/1 "Space Grotesk", ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.01em;
+        color: #fff; animation: boot-fade 0.4s ease-out 0.45s both; }
+      html[data-theme='light'] #boot .word { color: #0f172a; }
+      #boot .word span { color: var(--bw); }
+      @keyframes boot-in { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+      @keyframes boot-check { from { transform: scale(0.3); opacity: 0; } to { transform: none; opacity: 1; } }
+      @keyframes boot-fade { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+      @keyframes boot-glow { to { opacity: 0.18; } }
+      @media (prefers-reduced-motion: reduce) { #boot * { animation-duration: 0.01ms !important; animation-delay: 0s !important; } }
+    </style>
     <title>Dayforge: Planner, Habits &amp; Money</title>
     <script>
       // Apply the saved theme before the app draws, so there's no flash of the wrong colours.
@@ -34,6 +63,30 @@
     </script>
   </head>
   <body>
+    <div id="boot" aria-hidden="true">
+      <div class="glow"></div>
+      <svg class="tile" viewBox="0 0 48 48" width="88" height="88">
+        <defs>
+          <linearGradient id="bootbg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" style="stop-color: var(--b1)" />
+            <stop offset="0.5" style="stop-color: var(--b2)" />
+            <stop offset="1" style="stop-color: var(--b3)" />
+          </linearGradient>
+          <linearGradient id="boothl" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fff" stop-opacity=".38" />
+            <stop offset=".55" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <rect width="48" height="48" rx="14" fill="url(#bootbg)" />
+        <rect x="1" y="1" width="46" height="24" rx="13" fill="url(#boothl)" />
+        <rect x=".75" y=".75" width="46.5" height="46.5" rx="13.25" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="1.5" />
+        <g class="check" fill="none" stroke="#fff" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.5 26.5 20 34 35 17" />
+          <path d="M26.5 16 35.5 16.2 35.7 25" />
+        </g>
+      </svg>
+      <div class="word">Day<span>forge</span></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

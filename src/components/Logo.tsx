@@ -33,19 +33,10 @@ export function Logo({ size = 32, animated = false, className = '' }: { size?: n
       <rect width="48" height="48" rx="14" fill={`url(#sh${id})`} />
       <rect x="1" y="1" width="46" height="24" rx="13" fill={`url(#hl${id})`} />
       <rect x=".75" y=".75" width="46.5" height="46.5" rx="13.25" fill="none" stroke="#fff" strokeOpacity=".22" strokeWidth="1.5" />
-      <g fill="none" stroke="#fff" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round">
-        <path
-          d="M12.5 26.5 20 34 35 17"
-          pathLength={1}
-          className={animated ? 'logo-stroke' : ''}
-          style={animated ? { animationDelay: '0.35s' } : undefined}
-        />
-        <path
-          d="M26.5 16 35.5 16.2 35.7 25"
-          pathLength={1}
-          className={animated ? 'logo-stroke' : ''}
-          style={animated ? { animationDelay: '0.72s' } : undefined}
-        />
+      {/* The tick pops in with a scale (transform only): drawing it with stroke dashes glitches on iPhone Safari. */}
+      <g fill="none" stroke="#fff" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" className={animated ? 'logo-check-in' : ''}>
+        <path d="M12.5 26.5 20 34 35 17" />
+        <path d="M26.5 16 35.5 16.2 35.7 25" />
       </g>
     </svg>
   );

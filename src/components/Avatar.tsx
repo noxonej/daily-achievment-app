@@ -1014,8 +1014,10 @@ function Eye({ cx, kind, x }: { cx: number; kind: EyeKind; x: Ctx }) {
       return (
         <g>
           <path d={`M${cx - 3.1} ${cy + 0.3} Q${cx} ${cy - 4} ${cx + 3.1} ${cy + 0.3} Q${cx} ${cy + 3.3} ${cx - 3.1} ${cy + 0.3}Z`} fill="#fff" opacity=".92" />
-          <circle cx={cx + 0.15} cy={cy + 0.1} r="2.15" fill={INK} />
-          <circle cx={cx + 0.9} cy={cy - 0.75} r=".6" fill="#fff" />
+          <circle cx={cx + 0.15} cy={cy + 0.1} r="2.2" fill="#4a3226" />
+          <circle cx={cx + 0.15} cy={cy + 0.1} r="1.25" fill={INK} />
+          <circle cx={cx + 0.95} cy={cy - 0.8} r=".8" fill="#fff" />
+          <circle cx={cx - 0.6} cy={cy + 1} r=".35" fill="#fff" opacity=".8" />
           <path d={`M${cx - 3.3} ${cy + 0.2} Q${cx} ${cy - 4.3} ${cx + 3.3} ${cy}`} stroke={INK} strokeWidth="1.1" fill="none" strokeLinecap="round" />
         </g>
       );
@@ -1759,6 +1761,10 @@ export function Avatar({
   const skin = skinItem.c1!;
   const x: Ctx = { id, skin, skinDark: shade(skin, -0.3), hair: hairColor, hairDark: shade(hairColor, -0.35) };
   const clip = `${id}clip`;
+  // Bigger pictures get soft 3D lighting on hair, clothes and hats (a light from the top left).
+  // Tiny ones (header, lists) skip the filter to stay fast.
+  const rich = size >= 56;
+  const vol = rich ? `url(#${id}vol)` : undefined;
 
   return (
     <svg viewBox="0 0 100 100" width={size} height={size} className={className} role="img" aria-label={title ?? 'Avatar'}>
@@ -1766,20 +1772,66 @@ export function Avatar({
         <clipPath id={clip}>
           {shape === 'circle' ? <circle cx="50" cy="50" r="50" /> : <rect width="100" height="100" rx={shape === 'rounded' ? 24 : 0} />}
         </clipPath>
-        <radialGradient id={`${id}skin`} cx=".4" cy=".35" r=".75">
-          <stop offset="0" stopColor={shade(skin, 0.12)} />
-          <stop offset="1" stopColor={skin} />
+        <radialGradient id={`${id}skin`} cx=".38" cy=".3" r=".8">
+          <stop offset="0" stopColor={shade(skin, 0.2)} />
+          <stop offset=".55" stopColor={skin} />
+          <stop offset="1" stopColor={shade(skin, -0.14)} />
         </radialGradient>
+        <radialGradient id={`${id}blush`} cx=".5" cy=".5" r=".5">
+          <stop offset="0" stopColor="#f43f5e" stopOpacity=".32" />
+          <stop offset="1" stopColor="#f43f5e" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={`${id}ao`} cx=".5" cy=".5" r=".5">
+          <stop offset="0" stopColor="#000" stopOpacity=".38" />
+          <stop offset="1" stopColor="#000" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={`${id}spot`} cx=".5" cy=".38" r=".62">
+          <stop offset="0" stopColor="#fff" stopOpacity=".1" />
+          <stop offset=".6" stopColor="#fff" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity=".3" />
+        </radialGradient>
+        <linearGradient id={`${id}rim`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity=".14" />
+          <stop offset=".18" stopColor="#fff" stopOpacity="0" />
+          <stop offset=".8" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity=".22" />
+        </linearGradient>
+        {rich && (
+          // Volume: a soft light rim on the top-left edges and shade on the bottom-right ones.
+          <filter id={`${id}vol`} x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+            <feOffset in="SourceAlpha" dx="-1.4" dy="-1.8" result="o1" />
+            <feGaussianBlur in="o1" stdDeviation="1.3" result="b1" />
+            <feComposite in="SourceAlpha" in2="b1" operator="out" result="edgeDark" />
+            <feFlood floodColor="#000" floodOpacity=".32" />
+            <feComposite in2="edgeDark" operator="in" result="shadow" />
+            <feOffset in="SourceAlpha" dx="1.2" dy="1.5" result="o2" />
+            <feGaussianBlur in="o2" stdDeviation="1.1" result="b2" />
+            <feComposite in="SourceAlpha" in2="b2" operator="out" result="edgeLight" />
+            <feFlood floodColor="#fff" floodOpacity=".34" />
+            <feComposite in2="edgeLight" operator="in" result="light" />
+            <feMerge>
+              <feMergeNode in="SourceGraphic" />
+              <feMergeNode in="shadow" />
+              <feMergeNode in="light" />
+            </feMerge>
+          </filter>
+        )}
       </defs>
       <g clipPath={`url(#${clip})`}>
         <Backdrop item={findItem(l.backdrop)!} x={x} />
-        <g transform={HEAD}>
+        {/* studio light behind the head, darker corners */}
+        <rect width="100" height="100" fill={`url(#${id}spot)`} />
+        <g transform={HEAD} filter={vol}>
           <HairBack style={hairItem.style} x={x} />
         </g>
         {/* neck */}
         <path d="M44.6 58 H55.4 V76 H44.6 Z" fill={skin} />
         <path d="M44.6 61 Q50 67.5 55.4 61 V65.5 Q50 70 44.6 65.5 Z" fill={x.skinDark} opacity=".3" />
-        <Outfit item={findItem(l.outfit)!} x={x} />
+        <g filter={vol}>
+          <Outfit item={findItem(l.outfit)!} x={x} />
+        </g>
+        {/* the head's soft shadow on the neck and chest */}
+        <ellipse cx="50" cy="73" rx="17" ry="6.5" fill={`url(#${id}ao)`} />
         {/* ears + head: scaled about the chin for natural, grown-up proportions */}
         <g transform={HEAD}>
         <ellipse cx="29.6" cy="46" rx="3.2" ry="4.6" fill={skin} />
@@ -1789,12 +1841,29 @@ export function Avatar({
         <path d={FACE} fill={`url(#${id}skin)`} />
         <path d="M61 26 C70 32 72 46 66 56 C63 60 58 62.5 54 63.2 C60 59 66 51 66.5 42 C66.8 35 64.5 29.5 61 26Z" fill={x.skinDark} opacity=".13" />
         <path d="M43 60.5 Q50 64 57 60.5" stroke={x.skinDark} strokeWidth="1" fill="none" opacity=".18" strokeLinecap="round" />
+        {/* face shape: forehead light, cheeks, nose and chin shading */}
+        <ellipse cx="44" cy="31" rx="9" ry="5" fill="#fff" opacity=".16" />
+        <ellipse cx="37.5" cy="52" rx="5.2" ry="3.4" fill={`url(#${id}blush)`} />
+        <ellipse cx="62.5" cy="52" rx="5.2" ry="3.4" fill={`url(#${id}blush)`} />
+        <path d="M51.6 46.5 Q53.6 51.5 51.2 53.2" stroke={x.skinDark} strokeWidth="1.1" fill="none" opacity=".28" strokeLinecap="round" />
+        <circle cx="48.8" cy="51.2" r="1" fill="#fff" opacity=".28" />
         <Face x={x} style={findItem(l.expression)!.style} mood={mood ?? todayMood} />
-        <HairFront style={hairItem.style} x={x} />
-        <Eyewear item={findItem(l.face)!} x={x} />
-        <Headwear item={findItem(l.headwear)!} x={x} />
+        <g filter={vol}>
+          <HairFront style={hairItem.style} x={x} />
         </g>
-        <Pet item={findItem(l.pet)!} />
+        <Eyewear item={findItem(l.face)!} x={x} />
+        <g filter={vol}>
+          <Headwear item={findItem(l.headwear)!} x={x} />
+        </g>
+        </g>
+        <g filter={vol}>
+          <Pet item={findItem(l.pet)!} />
+        </g>
+        {/* glassy card edge: light on top, a touch of shade at the bottom */}
+        <rect width="100" height="100" fill={`url(#${id}rim)`} />
+        {shape !== 'circle' && (
+          <rect x=".6" y=".6" width="98.8" height="98.8" rx={shape === 'rounded' ? 23.5 : 0} fill="none" stroke="#fff" strokeOpacity=".14" strokeWidth="1.2" />
+        )}
       </g>
     </svg>
   );

@@ -72,7 +72,7 @@ export function SettingsScreen() {
       aria-label={t(TITLES[page])}
       className={`fixed inset-0 z-[70] bg-canvas bg-grid overflow-y-auto overscroll-contain ${dir === 'up' ? 'sheet-in' : ''}`}
     >
-      <div className="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-white/10 pt-[env(safe-area-inset-top)]">
+      <div className="sticky top-0 z-10 bg-canvas/[0.97] border-b border-white/10 pt-[env(safe-area-inset-top)]">
         <div className="max-w-2xl mx-auto px-2 h-14 flex items-center gap-1">
           <button
             onClick={() => (page === 'home' ? settings.close() : settings.open('home'))}

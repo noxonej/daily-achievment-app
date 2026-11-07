@@ -9,7 +9,7 @@ import { StatsView } from './StatsView';
 import { AchievementsView } from './AchievementsView';
 import { DiaryView } from './DiaryView';
 import { FriendsView } from './FriendsView';
-import { takeIntent } from '../lib/intents';
+import { useIntent } from '../lib/intents';
 import { useFriends } from '../lib/friends';
 import { settings } from '../lib/settingsNav';
 import { t } from '../lib/prefs';
@@ -21,7 +21,8 @@ type Section = 'stats' | 'badges' | 'friends' | 'diary';
 /** Profile hub: your character and level up top, then stats, badges and your diary. Settings open from the gear. */
 export function YouView() {
   const { state, stats } = useApp();
-  const [section, setSection] = useState<Section>(() => (takeIntent('you-friends') ? 'friends' : 'stats'));
+  const wantFriends = useIntent('you-friends');
+  const [section, setSection] = useState<Section>(wantFriends ? 'friends' : 'stats');
   const { xpIntoLevel, xpForNextLevel } = levelFromTotalXp(stats.totalXp);
   const friendRequests = useFriends().requests.length;
   const name = state.profile?.name;

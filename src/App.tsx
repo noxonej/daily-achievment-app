@@ -5,12 +5,8 @@ import { NewDayBanner } from './components/NewDayBanner';
 import { CelebrationOverlay } from './components/CelebrationOverlay';
 import { StreakCelebration } from './components/StreakCelebration';
 import { TodayView } from './views/TodayView';
-import { PlanView } from './views/PlanView';
-import { MoneyView } from './views/MoneyView';
-import { QuestsView } from './views/QuestsView';
-import { YouView } from './views/YouView';
 import { PlanReminderToast } from './components/PlanReminderToast';
-import { SplashScreen } from './components/SplashScreen';
+import { hideBoot } from './lib/boot';
 import { FocusTimer } from './components/FocusTimer';
 import { RunTracker } from './components/RunTracker';
 import { UndoToast } from './components/UndoToast';
@@ -24,9 +20,15 @@ import { useGoogleAutoBackup } from './components/GoogleConnect';
 import { rememberInvite, useFriendsEngine } from './lib/friends';
 import { FriendToasts } from './components/FriendToasts';
 import { setIntent } from './lib/intents';
-import { SettingsScreen } from './components/SettingsScreen';
+import { useSettingsPage } from './lib/settingsNav';
 
-// Loaded only when needed, so the app opens faster.
+// Loaded only when needed, so the app opens faster (Today is in the first download; the rest
+// is fetched quietly right after, so switching tabs is still instant).
+const PlanView = lazy(() => import('./views/PlanView').then((m) => ({ default: m.PlanView })));
+const MoneyView = lazy(() => import('./views/MoneyView').then((m) => ({ default: m.MoneyView })));
+const QuestsView = lazy(() => import('./views/QuestsView').then((m) => ({ default: m.QuestsView })));
+const YouView = lazy(() => import('./views/YouView').then((m) => ({ default: m.YouView })));
+const SettingsScreen = lazy(() => import('./components/SettingsScreen').then((m) => ({ default: m.SettingsScreen })));
 const Onboarding = lazy(() => import('./components/Onboarding').then((m) => ({ default: m.Onboarding })));
 const Wardrobe = lazy(() => import('./components/Wardrobe').then((m) => ({ default: m.Wardrobe })));
 
@@ -58,16 +60,27 @@ export default function App() {
     streak: stats.currentStreak,
   });
   const wardrobeOpen = useWardrobeOpen();
+  const settingsPage = useSettingsPage();
   // Fetch the lazy screens in the background so they're cached for offline use.
   useEffect(() => {
     const t = setTimeout(() => {
+      void import('./views/PlanView');
+      void import('./views/MoneyView');
+      void import('./views/QuestsView');
+      void import('./views/YouView');
+      void import('./components/SettingsScreen');
       void import('./components/Wardrobe');
       void import('./components/Onboarding');
-    }, 2500);
+    }, 1200);
     return () => clearTimeout(t);
   }, []);
   // The launch animation is for returning users; someone finishing setup has just seen the logo.
   const [launchedOnboarded] = useState(() => state.onboarded);
+  // The startup screen (in index.html) fades once Today has drawn.
+  useEffect(() => {
+    hideBoot({ showLogo: launchedOnboarded && state.prefs?.splash !== false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Home-screen shortcuts open straight into a tab (?view=plan) or the focus timer (?focus=1).
   const [view, setViewState] = useState<ViewId>(() => {
     const v = new URLSearchParams(window.location.search).get('view') as ViewId | null;
@@ -102,13 +115,15 @@ export default function App() {
       <Header />
       <NewDayBanner />
       <main className="flex-1 pb-4">
-        <div key={view} className={directionRef.current === 'right' ? 'animate-view-right' : 'animate-view-left'}>
-          {view === 'today' && <TodayView onNavigate={setView} />}
-          {view === 'plan' && <PlanView />}
-          {view === 'money' && <MoneyView />}
-          {view === 'quests' && <QuestsView onNavigate={setView} />}
-          {view === 'you' && <YouView />}
-        </div>
+        <Suspense fallback={<div className="min-h-[70vh]" />}>
+          <div key={view} className={directionRef.current === 'right' ? 'animate-view-right' : 'animate-view-left'}>
+            {view === 'today' && <TodayView onNavigate={setView} />}
+            {view === 'plan' && <PlanView />}
+            {view === 'money' && <MoneyView />}
+            {view === 'quests' && <QuestsView onNavigate={setView} />}
+            {view === 'you' && <YouView />}
+          </div>
+        </Suspense>
       </main>
       <NavTabs active={view} onChange={setView} />
       <CelebrationOverlay />
@@ -116,7 +131,11 @@ export default function App() {
       <PlanReminderToast />
       <FocusTimer />
       <RunTracker />
-      <SettingsScreen />
+      {settingsPage && (
+        <Suspense fallback={null}>
+          <SettingsScreen />
+        </Suspense>
+      )}
       <UndoToast />
       <FriendToasts
         onOpen={() => {
@@ -133,8 +152,6 @@ export default function App() {
         <Suspense fallback={<div className="fixed inset-0 z-[90] bg-canvas" />}>
           <Onboarding />
         </Suspense>
-      ) : launchedOnboarded && state.prefs?.splash !== false ? (
-        <SplashScreen />
       ) : null}
     </div>
   );

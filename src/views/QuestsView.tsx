@@ -4,14 +4,15 @@ import { t } from '../lib/prefs';
 import { Segmented } from '../components/Segmented';
 import { WeeklyView } from './WeeklyView';
 import { GoalsView } from './GoalsView';
-import { takeIntent } from '../lib/intents';
+import { useIntent } from '../lib/intents';
 import type { ViewId } from '../components/NavTabs';
 
 type Section = 'weekly' | 'goals';
 
 /** Weekly quests and long-term (monthly / yearly) goals in one place. */
 export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
-  const [section, setSection] = useState<Section>(() => (takeIntent('quests-goals') ? 'goals' : 'weekly'));
+  const wantGoals = useIntent('quests-goals');
+  const [section, setSection] = useState<Section>(wantGoals ? 'goals' : 'weekly');
   return (
     <div>
       <div className="max-w-2xl mx-auto px-4 pt-4">

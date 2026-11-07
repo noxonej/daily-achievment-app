@@ -21,6 +21,7 @@ import { Logo, Wordmark } from './Logo';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { APP_NAME } from '../lib/brand';
+import { hideBoot } from '../lib/boot';
 import { downloadBackup, findBackup, googleProfile, googleSignIn, isBackup } from '../lib/google';
 import { GoogleButton } from './GoogleConnect';
 import { settings } from '../lib/settingsNav';
@@ -177,6 +178,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 /* ---------------- screens ---------------- */
 
 function Shell({ children }: { children: ReactNode }) {
+  useEffect(() => hideBoot(), []);
   return (
     <div className="min-h-screen bg-grid flex flex-col">
       <div className="flex-1 w-full max-w-sm mx-auto px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col animate-view-right">

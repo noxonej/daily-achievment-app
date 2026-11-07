@@ -43,7 +43,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
   const shown = open ? { title, children } : last.current;
   return (
     <div data-overlay className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 ${closing ? 'pointer-events-none' : ''}`}>
-      <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm ${closing ? 'backdrop-out' : 'backdrop-in'}`} onClick={onClose} />
+      <div className={`absolute inset-0 bg-black/70 ${closing ? 'backdrop-out' : 'backdrop-in'}`} onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"

@@ -97,7 +97,7 @@ function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean
   const prev = Math.max(0, streak - 1);
 
   return (
-    <div data-overlay className="theme-dark fixed inset-0 z-[85] flex flex-col items-center justify-center px-6 bg-[#0b0806]/95 backdrop-blur-md backdrop-in" role="dialog" aria-label={`${streak} day streak`}>
+    <div data-overlay className="theme-dark fixed inset-0 z-[85] flex flex-col items-center justify-center px-6 bg-[#0b0806]/95 backdrop-in" role="dialog" aria-label={`${streak} day streak`}>
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(60%_45%_at_50%_38%,rgba(249,115,22,0.28),transparent_70%)]" />
       {milestone && <Confetti count={60} />}
       <div className="relative streak-flame-in">

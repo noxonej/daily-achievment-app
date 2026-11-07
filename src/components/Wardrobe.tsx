@@ -219,7 +219,7 @@ export function Wardrobe() {
       </div>
 
       {preview && (
-        <div className="border-t border-white/10 bg-surface/95 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sheet-in">
+        <div className="border-t border-white/10 bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sheet-in">
           <div className="max-w-xl mx-auto flex items-center gap-3">
             <Avatar look={shown} size={52} />
             <div className="flex-1 min-w-0">
@@ -261,7 +261,8 @@ const SKIP_PASS_CHANCE = 0.06;
 function ChestOpening({ onClose }: { onClose: () => void }) {
   const { state, stats, dispatch } = useApp();
   useBackToClose(true, onClose);
-  const [phase, setPhase] = useState<'closed' | 'opening' | 'reveal'>('closed');
+  // closed → shake (anticipation) → opening (lid swings up, light, sparkles) → reveal
+  const [phase, setPhase] = useState<'closed' | 'shake' | 'opening' | 'reveal'>('closed');
   // undefined = not opened yet, null = shards (everything owned), 'skip' = a Skip Pass.
   const [prize, setPrize] = useState<AvatarItem | null | 'skip' | undefined>(undefined);
   const look = normalizeLook(state.character);
@@ -273,16 +274,24 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
     const skip = Math.random() < SKIP_PASS_CHANCE;
     const won = skip ? null : rollChest(ctx);
     setPrize(skip ? 'skip' : won);
-    setPhase('opening');
+    setPhase('shake');
     try {
-      navigator.vibrate?.([30, 40, 30, 40, 80]);
+      navigator.vibrate?.([20, 60, 20, 60, 30]);
     } catch {
       // optional
     }
     setTimeout(() => {
+      setPhase('opening');
+      try {
+        navigator.vibrate?.(60);
+      } catch {
+        // optional
+      }
+    }, 700);
+    setTimeout(() => {
       dispatch({ type: 'OPEN_CHEST', itemId: won?.id ?? null, skip });
       setPhase('reveal');
-    }, 900);
+    }, 1400);
   }
 
   const item = prize && prize !== 'skip' ? prize : null;
@@ -290,15 +299,34 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
   const remaining = stats.chestsAvailable;
 
   return (
-    <div className="theme-dark fixed inset-0 z-[80] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center px-6 backdrop-in">
+    <div className="theme-dark fixed inset-0 z-[80] bg-black/[0.92] flex flex-col items-center justify-center px-6 backdrop-in">
       <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
         <Icon name="✕" size={20} />
       </button>
 
       {phase !== 'reveal' ? (
         <button onClick={openIt} className="flex flex-col items-center" aria-label="Open chest">
-          <div className={phase === 'closed' ? 'animate-chest-wiggle' : 'animate-chest-burst'}>
-            <ChestArt size={210} open={phase === 'opening'} glow={r.hex} />
+          <div className="relative">
+            {phase === 'opening' && (
+              <>
+                <span className="box-shockwave" aria-hidden="true" />
+                {Array.from({ length: 16 }, (_, i) => {
+                  const a = (i / 16) * Math.PI * 2;
+                  const d = 110 + (i % 3) * 28;
+                  return (
+                    <span
+                      key={i}
+                      className="box-particle"
+                      aria-hidden="true"
+                      style={{ ['--dx' as string]: `${Math.cos(a) * d}px`, ['--dy' as string]: `${Math.sin(a) * d - 40}px`, animationDelay: `${(i % 4) * 0.03}s` }}
+                    />
+                  );
+                })}
+              </>
+            )}
+            <div className={phase === 'closed' ? 'animate-float-soft' : phase === 'shake' ? 'box-shake' : 'chest-pop'}>
+              <ChestArt size={230} open={phase === 'opening'} glow={r.hex} shine={phase === 'closed'} />
+            </div>
           </div>
           <p className="mt-6 font-display text-2xl font-extrabold text-white">{phase === 'closed' ? 'Tap to open' : 'Opening…'}</p>
           <p className="text-sm text-slate-400 mt-1">Could be common, rare, epic, legendary… or a Skip Pass</p>

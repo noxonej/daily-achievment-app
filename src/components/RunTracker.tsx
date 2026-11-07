@@ -34,7 +34,7 @@ export function RunTracker() {
     return (
       <button
         onClick={() => runTracker.open()}
-        className="fixed z-40 left-1/2 -translate-x-1/2 bottom-[calc(8rem+env(safe-area-inset-bottom))] flex items-center gap-2 rounded-full bg-raised/95 backdrop-blur border border-emerald-400/40 shadow-xl px-4 py-2 animate-pop-in"
+        className="fixed z-40 left-1/2 -translate-x-1/2 bottom-[calc(8rem+env(safe-area-inset-bottom))] flex items-center gap-2 rounded-full bg-raised/95 border border-emerald-400/40 shadow-xl px-4 py-2 animate-pop-in"
       >
         <span className={`w-2 h-2 rounded-full ${s.status === 'running' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
         <Icon name="🏃" size={16} className="text-emerald-300" />
