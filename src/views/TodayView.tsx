@@ -126,19 +126,19 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         extras={
           <>
             {(state.streakShields ?? 0) > 0 && (
-              <span className="flex items-center gap-1 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-1 text-[11px] font-bold text-emerald-200" title="Protects your streak if you miss two days">
+              <span aria-label={`${state.streakShields} streak ${state.streakShields === 1 ? 'shield' : 'shields'}`} className="flex items-center gap-1 rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-1 text-[11px] font-bold text-emerald-200" title="Protects your streak if you miss two days">
                 <Icon name="🛡" size={12} />
                 {state.streakShields}
               </span>
             )}
             {(state.questSwaps ?? 0) > 0 && (
-              <button onClick={() => setSwapOpen(true)} className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/40 hover:bg-sky-400/20 px-2.5 py-1 text-[11px] font-bold text-sky-200">
+              <button onClick={() => setSwapOpen(true)} aria-label={`Swap a quest (${state.questSwaps} left)`} className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/40 hover:bg-sky-400/20 px-2.5 py-1 text-[11px] font-bold text-sky-200">
                 <Icon name="🔁" size={12} />
                 Swap ({state.questSwaps})
               </button>
             )}
             {(state.skipPasses ?? 0) > 0 && (
-              <button onClick={() => setSkipOpen(true)} className="flex items-center gap-1 rounded-full bg-teal-400/10 border border-teal-400/40 hover:bg-teal-400/20 px-2.5 py-1 text-[11px] font-bold text-teal-200">
+              <button onClick={() => setSkipOpen(true)} aria-label={`Skip a quest (${state.skipPasses} left)`} className="flex items-center gap-1 rounded-full bg-teal-400/10 border border-teal-400/40 hover:bg-teal-400/20 px-2.5 py-1 text-[11px] font-bold text-teal-200">
                 <Icon name="⏭" size={12} />
                 Skip ({state.skipPasses})
               </button>
