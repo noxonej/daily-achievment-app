@@ -77,6 +77,7 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'exp-main', slot: 'expression', name: 'Main character', rarity: 'epic', unlock: level(15), style: 'maincharacter' },
 
   // Hair styles
+  { id: 'hair-twists', slot: 'hair', name: 'Twists', rarity: 'common', unlock: free, style: 'twists' },
   { id: 'hair-short', slot: 'hair', name: 'Classic', rarity: 'common', unlock: free, style: 'short' },
   { id: 'hair-buzz', slot: 'hair', name: 'Buzz cut', rarity: 'common', unlock: free, style: 'buzz' },
   { id: 'hair-long', slot: 'hair', name: 'Long', rarity: 'common', unlock: free, style: 'long' },
@@ -107,6 +108,7 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'hc-snow', slot: 'hairColor', name: 'Snow', rarity: 'epic', unlock: chest, style: 'color', c1: '#f8fafc' },
 
   // Outfits
+  { id: 'out-smiley', slot: 'outfit', name: 'Smiley tee', rarity: 'common', unlock: free, style: 'graphic', c1: '#e8dcc6', c2: '#c9b99c' },
   { id: 'out-tee', slot: 'outfit', name: 'White tee', rarity: 'common', unlock: free, style: 'tee', c1: '#f1f5f9', c2: '#cbd5e1' },
   { id: 'out-hoodie-gray', slot: 'outfit', name: 'Gray hoodie', rarity: 'common', unlock: free, style: 'hoodie', c1: '#64748b', c2: '#475569' },
   { id: 'out-hoodie-violet', slot: 'outfit', name: 'Violet hoodie', rarity: 'common', unlock: shop(50, 100), style: 'hoodie', c1: '#7c3aed', c2: '#5b21b6' },
@@ -226,9 +228,9 @@ export const AVATAR_SLOTS: Array<{ id: AvatarSlot; label: string; icon: string }
 export const DEFAULT_LOOK: Character = {
   skin: 'skin-2',
   expression: 'exp-happy',
-  hair: 'hair-short',
+  hair: 'hair-twists',
   hairColor: 'hc-brown',
-  outfit: 'out-hoodie-gray',
+  outfit: 'out-smiley',
   headwear: 'hw-none',
   face: 'face-none',
   backdrop: 'bg-midnight',
