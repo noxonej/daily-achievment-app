@@ -27,6 +27,7 @@ import { CryptoPanel } from '../components/money/CryptoPanel';
 import { TipsPanel, TipCard } from '../components/money/TipsPanel';
 import { BillsCard, MonthCard, SubscriptionCalculator } from '../components/money/BillsCard';
 import { WishlistCard } from '../components/money/WishlistCard';
+import { BudgetCard } from '../components/money/BudgetCard';
 import { MoneyPlanCard } from '../components/money/MoneyPlanCard';
 import { CashCounter } from '../components/money/CashCounter';
 import { cryptoTotal } from '../lib/crypto';
@@ -116,8 +117,9 @@ export function MoneyView() {
             onEditLimits={() => setLimitsOpen(true)}
             onSaveLeftover={(amount) => setTransferOpen({ fromKind: 'spending', toKind: 'savings', amount })}
           />
-          <SubscriptionCalculator />
           <MoneyPlanCard />
+          <BudgetCard />
+          <SubscriptionCalculator />
           <GoalsCard
             onAdd={() => setEditingGoal('new')}
             onEdit={(g) => setEditingGoal(g)}

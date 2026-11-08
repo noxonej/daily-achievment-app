@@ -6,7 +6,10 @@ import { Icon } from './Icon';
 export function QuickTaskList() {
   const { state, dispatch, undoable } = useApp();
   const [text, setText] = useState('');
-  const tasks = state.dayLogs[todayKey()]?.quickTasks ?? [];
+  // Top priorities first (at most three, like a "big three" for the day), then the rest; done last.
+  const all = state.dayLogs[todayKey()]?.quickTasks ?? [];
+  const tasks = [...all].sort((a, b) => Number(a.done) - Number(b.done) || Number(!!b.top) - Number(!!a.top));
+  const topCount = all.filter((t) => t.top && !t.done).length;
 
   function handleAdd() {
     const trimmed = text.trim();
@@ -17,7 +20,13 @@ export function QuickTaskList() {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-sm font-semibold text-white mb-3"><Icon name="📋" size="1.15em" className="icon-inline text-amber-300" />Quick Tasks</p>
+      <p className="text-sm font-semibold text-white mb-3 flex items-center justify-between gap-2">
+        <span>
+          <Icon name="📋" size="1.15em" className="icon-inline text-amber-300" />
+          To-dos
+        </span>
+        {all.length > 1 && <span className="text-[11px] font-normal text-slate-500">Star your top 3</span>}
+      </p>
 
       {tasks.length > 0 && (
         <div className="space-y-2 mb-3">
@@ -39,9 +48,23 @@ export function QuickTaskList() {
               >
                 {t.done && <Icon name="✓" size={13} strokeWidth={3} className="animate-check" />}
               </span>
-              <span className={`flex-1 text-sm ${t.done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+              <span className={`flex-1 text-sm ${t.done ? 'text-slate-500 line-through' : t.top ? 'text-white font-semibold' : 'text-slate-200'}`}>
                 {t.text}
               </span>
+              {!t.done && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dispatch({ type: 'TOGGLE_TASK_TOP', taskId: t.id });
+                  }}
+                  disabled={!t.top && topCount >= 3}
+                  className={`shrink-0 px-1 disabled:opacity-25 ${t.top ? 'text-amber-300' : 'text-slate-500 hover:text-amber-200'}`}
+                  aria-label={t.top ? 'Remove from top priorities' : 'Make a top priority'}
+                  aria-pressed={!!t.top}
+                >
+                  <Icon name="⭐" size={15} fill={t.top ? 'currentColor' : 'none'} />
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();

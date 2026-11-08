@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption } from '../lib/types';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -191,6 +191,11 @@ export type Action =
   | { type: 'MONEY_SET_CRYPTO_PRICES'; prices: NonNullable<MoneyState['cryptoPrices']> }
   | { type: 'MONEY_UPSERT_BILL'; bill: Omit<Bill, 'id'> & { id?: string } }
   | { type: 'MONEY_DELETE_BILL'; billId: string }
+  | { type: 'UPSERT_REWARD'; reward: Omit<CustomReward, 'id'> & { id?: string } }
+  | { type: 'DELETE_REWARD'; rewardId: string }
+  | { type: 'REDEEM_REWARD'; rewardId: string }
+  | { type: 'TOGGLE_TASK_TOP'; taskId: string }
+  | { type: 'MONEY_SET_ASSIGNED'; assigned: Record<string, number> }
   | { type: 'MONEY_UPSERT_WISH'; wish: Omit<WishItem, 'id' | 'addedAt'> & { id?: string } }
   | { type: 'MONEY_DELETE_WISH'; wishId: string }
   | { type: 'MONEY_SET_INCOME'; income: MoneyState['income']; saveRate?: number }
@@ -1037,6 +1042,50 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'MONEY_SET_INCOME':
       return withMoney(state, (m) => ({ ...m, income: action.income, saveRate: action.saveRate ?? m.saveRate }));
+
+    case 'UPSERT_REWARD': {
+      const r = action.reward;
+      const cost = Math.round(r.cost);
+      if (!r.title.trim() || !(cost > 0)) return state;
+      const list = state.rewards ?? [];
+      const id = r.id ?? `rw-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const item: CustomReward = { id, title: r.title.trim().slice(0, 60), icon: r.icon || '🎁', cost: Math.min(100000, cost) };
+      return { ...state, rewards: list.some((x) => x.id === id) ? list.map((x) => (x.id === id ? item : x)) : [...list, item] };
+    }
+
+    case 'DELETE_REWARD':
+      return { ...state, rewards: (state.rewards ?? []).filter((x) => x.id !== action.rewardId) };
+
+    case 'REDEEM_REWARD': {
+      const r = (state.rewards ?? []).find((x) => x.id === action.rewardId);
+      if (!r) return state;
+      // Only if there are enough shards.
+      if (computeDerivedStats(state).availableShards < r.cost) return state;
+      const red: Redemption = { id: `rd-${Date.now()}`, rewardId: r.id, title: r.title, icon: r.icon, cost: r.cost, at: new Date().toISOString() };
+      return { ...state, redemptions: [...(state.redemptions ?? []), red].slice(-500) };
+    }
+
+    case 'TOGGLE_TASK_TOP': {
+      const key = todayKey();
+      const log = state.dayLogs[key];
+      if (!log?.quickTasks) return state;
+      const target = log.quickTasks.find((t) => t.id === action.taskId);
+      if (!target) return state;
+      // At most three top priorities: starring a fourth is ignored.
+      if (!target.top && log.quickTasks.filter((t) => t.top && !t.done).length >= 3) return state;
+      const quickTasks = log.quickTasks.map((t) => (t.id === action.taskId ? { ...t, top: !t.top } : t));
+      return { ...state, dayLogs: { ...state.dayLogs, [key]: { ...log, quickTasks } } };
+    }
+
+    case 'MONEY_SET_ASSIGNED':
+      return withMoney(state, (m) => ({
+        ...m,
+        categories: m.categories.map((c) => {
+          const v = action.assigned[c.id];
+          if (v === undefined) return c;
+          return { ...c, monthly: v > 0 ? Math.round(v) : undefined };
+        }),
+      }));
 
     case 'MONEY_UPSERT_WISH': {
       const w = action.wish;

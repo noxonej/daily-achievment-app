@@ -60,6 +60,27 @@ export interface QuickTask {
   id: string;
   text: string;
   done: boolean;
+  /** Starred as one of today's top priorities (at most three). */
+  top?: boolean;
+}
+
+/** A real-life treat you set yourself and buy with shards (e.g. "1 hour of gaming"). */
+export interface CustomReward {
+  id: string;
+  title: string;
+  icon: string;
+  /** Price in shards. */
+  cost: number;
+}
+
+/** A reward bought: kept so the shards spent stay spent even if the reward is edited or deleted. */
+export interface Redemption {
+  id: string;
+  rewardId: string;
+  title: string;
+  icon: string;
+  cost: number;
+  at: string;
 }
 
 export interface DayLog {
@@ -147,6 +168,8 @@ export interface SpendCategory {
   icon: string;
   /** How much may be spent in this category per day, in cents. The daily limit is the sum of these. */
   dailyLimit: number;
+  /** Money given to this category for the month (its "envelope"), in cents. */
+  monthly?: number;
 }
 
 export interface Expense {
@@ -353,6 +376,10 @@ export interface AppState {
   streakPopDate?: string;
   /** What friends can see. Money, plans, diary and notes are never shared. */
   sharing?: Sharing;
+  /** Real-life rewards bought with shards. */
+  rewards?: CustomReward[];
+  /** Rewards bought so far (newest last). */
+  redemptions?: Redemption[];
   streakShields: number;
   /** Days a Streak Shield covered; they count as perfect for the streak only. */
   shieldedDates: string[];

@@ -4,10 +4,11 @@ import { t } from '../lib/prefs';
 import { Segmented } from '../components/Segmented';
 import { WeeklyView } from './WeeklyView';
 import { GoalsView } from './GoalsView';
+import { RewardsView } from './RewardsView';
 import { useIntent } from '../lib/intents';
 import type { ViewId } from '../components/NavTabs';
 
-type Section = 'weekly' | 'goals';
+type Section = 'weekly' | 'goals' | 'rewards';
 
 /** Weekly quests and long-term (monthly / yearly) goals in one place. */
 export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
@@ -19,7 +20,7 @@ export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
         <p className="text-slate-400 text-sm">Challenges and dreams</p>
         <h1 className="font-display text-2xl font-bold text-white mt-0.5 mb-4 flex items-center gap-1">
           Quests
-          <InfoTip title="Bigger challenges" text="Daily quests are on Today. Here are the bigger ones: weekly quests take all week, and long-term goals are for big things like saving for a car or reading 12 books." />
+          <InfoTip title="Bigger challenges" text="Daily quests are on Today. Here are the bigger ones: weekly quests take all week, long-term goals are for big things like saving for a car, and Rewards is your own shop of treats you buy with shards." />
         </h1>
         <Segmented
           value={section}
@@ -27,11 +28,12 @@ export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
           options={[
             { id: 'weekly', label: t('quests.week'), icon: '🗡' },
             { id: 'goals', label: t('quests.goals'), icon: '🏆' },
+            { id: 'rewards', label: 'Rewards', icon: 'df:chest' },
           ]}
         />
       </div>
       <div key={section} className="animate-view-right">
-        {section === 'weekly' ? <WeeklyView onNavigate={onNavigate} embedded /> : <GoalsView embedded />}
+        {section === 'weekly' ? <WeeklyView onNavigate={onNavigate} embedded /> : section === 'goals' ? <GoalsView embedded /> : <RewardsView />}
       </div>
     </div>
   );

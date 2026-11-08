@@ -6,6 +6,8 @@ import { useCompletionFx } from '../lib/useCompletionFx';
 import { questReward } from '../lib/rewards';
 import { Icon } from './Icon';
 import { Burst } from './fx/Burst';
+import { useApp } from '../store/AppContext';
+import { questRate, questStreak } from '../lib/questStats';
 
 interface QuestCardProps {
   quest: Quest;
@@ -17,6 +19,11 @@ interface QuestCardProps {
 export function QuestCard({ quest, completed, onToggle, periodKey }: QuestCardProps) {
   const { justCompleted } = useCompletionFx(completed);
   const { xp, crit } = questReward(periodKey, quest.id, quest.xp);
+  const { state } = useApp();
+  // Each daily quest keeps its own streak, like a habit tracker; and how often it was done lately.
+  const daily = quest.frequency === 'daily' && !quest.wildcardDate;
+  const streak = daily ? questStreak(state, quest.id) : 0;
+  const rate = daily ? questRate(state, quest.id, quest.createdAt) : { done: 0, of: 0 };
 
   return (
     <div
@@ -44,6 +51,21 @@ export function QuestCard({ quest, completed, onToggle, periodKey }: QuestCardPr
           </p>
           {quest.description && (
             <p className="text-xs text-slate-400 mt-0.5 truncate">{quest.description}</p>
+          )}
+          {(streak >= 2 || rate.of >= 7) && (
+            <p className="mt-1 flex items-center gap-2 text-[11px] font-semibold">
+              {streak >= 2 && (
+                <span className={`flex items-center gap-0.5 ${streak >= 7 ? 'text-orange-300' : 'text-orange-300/80'}`} title={`${streak} days in a row`}>
+                  <Icon name="🔥" size={11} fill={streak >= 7 ? 'currentColor' : 'none'} />
+                  {streak}
+                </span>
+              )}
+              {rate.of >= 7 && (
+                <span className="text-slate-500" title="Days done out of the last days">
+                  {rate.done}/{rate.of} days
+                </span>
+              )}
+            </p>
           )}
         </div>
         <div className="shrink-0 flex flex-col items-end gap-1">

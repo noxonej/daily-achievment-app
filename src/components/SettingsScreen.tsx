@@ -495,6 +495,8 @@ const HELP: Array<{ icon: string; title: string; text: string }> = [
   { icon: '🔥', title: 'Streak', text: 'How many days in a row you finished at least one quest. Do one quest every day to keep the fire going. Finish all of them for a perfect day, which also wins you a chest.' },
   { icon: '🌙', title: 'Rest day', text: 'Life happens. Miss one day in a week and your streak carries on: that day becomes a rest day. Miss two days in a row and it starts again, unless a Streak Shield saves it.' },
   { icon: 'df:chest', title: 'Chests', text: 'You win a chest for every perfect day, every perfect week and every new level. Open them in the wardrobe (tap your character) to win clothes, faces and more.' },
+  { icon: 'df:chest', title: 'Rewards', text: 'Quests → Rewards is your own shop. Add real treats (like 30 minutes of gaming) with a price in shards, then buy them when you have earned enough. Treats feel better when they are earned.' },
+  { icon: '🧮', title: 'Monthly budget', text: 'In Money, give every euro a job: split what you get this month (after bills and saving) into envelopes like Food and Fun, and see what is left in each as you spend.' },
   { icon: '💎', title: 'Shards', text: 'The app\'s coins. You get them from chests and the daily box, and spend them on items in the wardrobe.' },
   { icon: '📦', title: 'Daily box', text: 'Finish one quest and the daily box on Today unlocks. Open it once a day for a prize. Very rarely it has a Mythic item you can\'t get anywhere else.' },
   { icon: '🔁', title: 'Quest Swap', text: 'Trade one of today\'s quests for a different one. Back to normal tomorrow.' },

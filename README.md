@@ -40,6 +40,16 @@ unlockable achievements.
   calm, and Reduce motion turns all of it down.
 - **Dayforge icons** — the app's own two-tone icons for the tabs, streak,
   shards, XP, chests, shields and quick actions.
+- **Rewards shop** — your own real-life treats (30 minutes of gaming, a
+  movie night…) with a price in shards; buy them when earned, with undo
+  and a history. Shards come from quests and are shared with the wardrobe.
+- **Quest streaks** — each daily quest shows its own streak and how many of
+  the last 30 days it was done.
+- **Monthly budget (envelopes)** — money in minus fixed costs and saving is
+  "Ready to assign"; split it into category envelopes (or fill them from
+  daily limits / evenly) and see what's left in each, per day.
+- **Top 3 to-dos** — star up to three to-dos as today's priorities; they
+  go to the top.
 - **Quick add** — one box on Today for everything, in plain words: "Dentist
   tomorrow 15:00" goes to the plan, "spent 4.50 on lunch" logs an expense,
   "every day: read 10 pages" makes a quest, "gym every monday 17:30" adds a
