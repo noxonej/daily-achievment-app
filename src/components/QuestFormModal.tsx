@@ -28,29 +28,39 @@ interface QuestFormModalProps {
 }
 
 export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFrequency = 'daily' }: QuestFormModalProps) {
-  const [title, setTitle] = useState(initial?.title ?? '');
-  const [description, setDescription] = useState(initial?.description ?? '');
-  const [details, setDetails] = useState(initial?.details ?? '');
-  const [frequency, setFrequency] = useState<Frequency>(initial?.frequency ?? defaultFrequency);
-  const [difficulty, setDifficulty] = useState<Difficulty>(initial?.difficulty ?? 'easy');
-  const [icon, setIcon] = useState(initial?.icon ?? '🎯');
-  const [category, setCategory] = useState(initial?.category ?? 'Custom');
-  const [kind, setKind] = useState<'check' | 'note' | 'number'>(initial?.measure ? 'number' : initial?.promptForNote ? 'note' : 'check');
-  const [unit, setUnit] = useState<MeasureUnit>(initial?.measure?.unit ?? 'reps');
-  const [target, setTarget] = useState(initial?.measure ? String(initial.measure.target) : '');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [details, setDetails] = useState('');
+  const [frequency, setFrequency] = useState<Frequency>(defaultFrequency);
+  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+  const [icon, setIcon] = useState('🎯');
+  const [category, setCategory] = useState('Custom');
+  const [kind, setKind] = useState<'check' | 'note' | 'number'>('check');
+  const [unit, setUnit] = useState<MeasureUnit>('reps');
+  const [target, setTarget] = useState('');
   const targetNum = Number(target.replace(',', '.'));
 
-  function reset() {
-    setTitle('');
-    setDescription('');
-    setDetails('');
-    setFrequency(defaultFrequency);
-    setDifficulty('easy');
-    setIcon('🎯');
-    setCategory('Custom');
-    setKind('check');
-    setTarget('');
+  // The modal stays mounted, so load the quest being edited (or a blank form) each time it opens.
+  // Without this the form kept whatever it first showed and "Edit" opened an empty quest.
+  const [loadedFor, setLoadedFor] = useState<Quest | 'new' | null>(null);
+  const want = open ? initial ?? 'new' : null;
+  if (want !== loadedFor) {
+    setLoadedFor(want);
+    if (want) {
+      const q = want === 'new' ? undefined : want;
+      setTitle(q?.title ?? '');
+      setDescription(q?.description ?? '');
+      setDetails(q?.details ?? '');
+      setFrequency(q?.frequency ?? defaultFrequency);
+      setDifficulty(q?.difficulty ?? 'easy');
+      setIcon(q?.icon ?? '🎯');
+      setCategory(q?.category ?? 'Custom');
+      setKind(q?.measure ? 'number' : q?.promptForNote ? 'note' : 'check');
+      setUnit(q?.measure?.unit ?? 'reps');
+      setTarget(q?.measure ? String(q.measure.target) : '');
+    }
   }
+  const icons = ICONS.includes(icon) ? ICONS : [icon, ...ICONS];
 
   const numberInvalid = kind === 'number' && !(targetNum > 0);
 
@@ -65,9 +75,9 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
       category: category.trim() || 'Custom',
       promptForNote: kind === 'note',
       details: details.trim() || undefined,
-      measure: kind === 'number' ? { unit, target: targetNum } : undefined,
+      // Keep the glass size and quick buttons you set on the quest when the unit stays the same.
+      measure: kind === 'number' ? { ...(initial?.measure?.unit === unit ? initial.measure : {}), unit, target: targetNum } : undefined,
     });
-    if (!initial) reset();
     onClose();
   }
 
@@ -77,7 +87,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
         <div>
           <label className="block text-xs font-semibold text-slate-400 mb-1.5">Icon</label>
           <div className="flex flex-wrap gap-2">
-            <IconGrid options={ICONS} value={icon} onChange={setIcon} size="sm" />
+            <IconGrid options={icons} value={icon} onChange={setIcon} size="sm" />
           </div>
         </div>
 

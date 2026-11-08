@@ -1,3 +1,4 @@
+import { EditQuestsRow } from '../components/EditQuestsRow';
 import { settings } from '../lib/settingsNav';
 import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
@@ -80,6 +81,8 @@ export function WeeklyView({ embedded = false }: { onNavigate?: (v: ViewId) => v
           periodKey={key}
         />
       )}
+
+      {activeWeekly.length > 0 && <EditQuestsRow label="This week's quests" />}
 
       {activeWeekly.length === 0 ? (
         <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">

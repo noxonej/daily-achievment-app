@@ -1,4 +1,5 @@
 import { settings } from '../lib/settingsNav';
+import { EditQuestsRow } from '../components/EditQuestsRow';
 import { GettingStarted } from '../components/Guide';
 import { FriendsPeek } from '../components/FriendsPeek';
 import { useFlip } from '../lib/useFlip';
@@ -183,6 +184,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           periodKey={key}
         />
       )}
+
+      {activeDaily.length > 0 && <EditQuestsRow label="Daily quests" />}
 
       {activeDaily.length === 0 ? (
         <EmptyState />
