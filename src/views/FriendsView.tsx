@@ -239,7 +239,7 @@ function Connected() {
             >
               <span className={`w-6 text-center font-display font-extrabold tabular-nums ${i === 0 ? 'text-yellow-300' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-orange-300' : 'text-slate-500'}`}>{i + 1}</span>
               <span className="w-10 h-10 rounded-full overflow-hidden bg-raised shrink-0">
-                <Avatar look={p.isMe ? state.character : lookOf(p)} size={40} className="scale-[1.15] translate-y-[2px]" />
+                <Avatar look={p.isMe ? state.character : lookOf(p)} size={40} />
               </span>
               <span className="flex-1 min-w-0">
                 <span className="block text-sm font-bold text-white truncate">{p.isMe ? `${p.name} (you)` : p.name}</span>
@@ -354,7 +354,7 @@ export function FeedRow({ item, who, compact }: { item: ActivityItem; who?: Frie
     <li className="flex items-center gap-3 rounded-xl px-2 py-2">
       <span className="relative w-10 h-10 shrink-0">
         <span className="absolute inset-0 rounded-full overflow-hidden bg-raised">
-          <Avatar look={lookOf(who)} size={40} className="scale-[1.15] translate-y-[2px]" />
+          <Avatar look={lookOf(who)} size={40} />
         </span>
         <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-raised border border-white/10 text-amber-300 flex items-center justify-center">
           <Icon name={item.icon} size={11} />

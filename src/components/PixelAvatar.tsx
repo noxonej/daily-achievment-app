@@ -707,7 +707,7 @@ export function PixelAvatar({
   look: Partial<Character> | undefined;
   mood?: number;
   /** "head" zooms in on the face (small pictures do this automatically), "full" shows the whole body. */
-  framing?: 'head' | 'full';
+  framing?: 'head' | 'bust' | 'full';
   size?: number;
   shape?: 'rounded' | 'circle' | 'square';
   className?: string;
@@ -721,12 +721,16 @@ export function PixelAvatar({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const rects = useMemo(() => toRects(compose(l, m)), [key]);
   // Small pictures (header, lists) zoom in on the head so the face stays readable.
-  const crop = framing ? framing === 'head' : size < 64;
+  // "head": a close-up for square wardrobe tiles. Small round pictures (header, lists) get a looser
+  // head-and-shoulders view so the face sits inside the circle with room around it.
+  const mode = framing ?? (size < 64 ? 'bust' : 'full');
+  const crop = mode !== 'full';
   // Full body: pixel rows 0–30 fill the middle 84% of the picture, centred on the body.
   // Head view: pixel area x7.5–24.5, y-0.5–16.5 (room for tall hats).
-  const s = crop ? 100 / 17 : 2.8;
-  const tx = crop ? -7.5 * s : 50 - 16 * s;
-  const ty = crop ? 0.5 * s : 7;
+  // Bust view: pixel area x4–28, y-2–22 (head, shoulders and any hat, all inside a circle).
+  const s = mode === 'head' ? 100 / 17 : mode === 'bust' ? 100 / 24 : 2.8;
+  const tx = mode === 'head' ? -7.5 * s : mode === 'bust' ? -4 * s : 50 - 16 * s;
+  const ty = mode === 'head' ? 0.5 * s : mode === 'bust' ? 2 * s : 7;
   const clip = `${id}c`;
   return (
     <svg viewBox="0 0 100 100" width={size} height={size} className={className} role="img" aria-label={title ?? 'Avatar'}>

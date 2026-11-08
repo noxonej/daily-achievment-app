@@ -28,7 +28,7 @@ export function FriendToasts({ onOpen }: { onOpen: () => void }) {
             <span className="relative w-10 h-10 shrink-0">
               {look ? (
                 <span className="absolute inset-0 rounded-full overflow-hidden bg-surface">
-                  <Avatar look={look} size={40} className="scale-[1.15] translate-y-[2px]" />
+                  <Avatar look={look} size={40} />
                 </span>
               ) : (
                 <span className="absolute inset-0 rounded-full bg-amber-500/15 text-amber-300 flex items-center justify-center">

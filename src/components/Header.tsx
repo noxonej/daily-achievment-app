@@ -144,7 +144,7 @@ function AvatarRing({
         />
       </svg>
       <span className="absolute inset-[5px] rounded-full overflow-hidden bg-raised">
-        <Avatar look={look} size={36} className="scale-[1.18] translate-y-[2px]" />
+        <Avatar look={look} size={36} />
       </span>
       {dot && (
         <span className="absolute top-0 right-0 w-3 h-3">
