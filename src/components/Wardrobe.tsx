@@ -36,6 +36,9 @@ function unlockLabel(item: AvatarItem): string {
 }
 
 /** Full-screen avatar customisation: try anything on, buy with shards, win from chests. */
+
+/** Item tiles for these zoom in on the head, so faces, hair and hats are easy to compare. */
+const HEAD_SLOTS = new Set<string>(['expression', 'hair', 'hairColor', 'face', 'headwear']);
 export function Wardrobe() {
   const open = useWardrobeOpen();
   useBackToClose(open, () => wardrobe.close());
@@ -174,7 +177,7 @@ export function Wardrobe() {
                   } ${preview?.id === item.id ? 'ring-2 ring-white/60' : ''} ${item.rarity !== 'common' && !equipped ? r.glow : ''}`}
                 >
                   <div className="relative">
-                    <Avatar look={{ ...look, [item.slot]: item.id }} size={84} className={isOwnedItem ? '' : 'saturate-[.7] brightness-90'} />
+                    <Avatar look={{ ...look, [item.slot]: item.id }} size={84} framing={HEAD_SLOTS.has(item.slot) ? 'head' : 'full'} className={isOwnedItem ? '' : 'saturate-[.7] brightness-90'} />
                     {!isOwnedItem && (
                       <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-canvas border border-white/15 flex items-center justify-center text-slate-200">
                         <Icon name={item.unlock.kind === 'chest' ? 'df:chest' : item.unlock.kind === 'box' ? '📦' : '🔒'} size={12} />
