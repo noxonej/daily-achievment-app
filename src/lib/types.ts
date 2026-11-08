@@ -227,6 +227,8 @@ export interface MoneyState {
   income?: { monthly: number; kind: 'allowance' | 'salary' };
   /** Share of income to save, 0–1 (the plan suggests one). */
   saveRate?: number;
+  /** What your money focuses on right now (sets the save-first share and tips). */
+  mode?: 'balanced' | 'saver' | 'goal' | 'safety' | 'debt' | 'grow' | 'enjoy';
 }
 
 export interface CryptoHolding {
@@ -329,6 +331,28 @@ export interface Profile {
   bedTime: string;
 }
 
+/** One logged night. `date` is the morning you woke up (YYYY-MM-DD). */
+export interface SleepEntry {
+  id: string;
+  date: string;
+  start: string;
+  end: string;
+  hours: number;
+  /** How you felt waking up: 1 tired, 2 okay, 3 rested. */
+  feel?: 1 | 2 | 3;
+}
+
+export interface SleepState {
+  band?: 'kid' | 'teen' | 'young' | 'adult' | 'senior';
+  /** Your own sleep need in hours (defaults to the middle of your age group's range). */
+  needHours?: number;
+  /** Minutes it usually takes you to fall asleep. */
+  fallAsleep?: number;
+  /** Set when you tap "Going to sleep"; cleared when you wake. */
+  sleepingSince?: string;
+  log?: SleepEntry[];
+}
+
 /** 1 = awful … 5 = great */
 export type Mood = 1 | 2 | 3 | 4 | 5;
 
@@ -389,6 +413,8 @@ export interface AppState {
   bonusChests: number;
   /** Daily rewards track: the day (1–7) claimed last, when, and how many in a row this week. */
   checkIn?: { day: number; last: string; inARow: number };
+  /** Sleep calculator settings and sleep log. */
+  sleep?: SleepState;
   createdAt: string;
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SavePanel } from '../components/money/SavePanel';
 import { useSimple } from '../lib/prefs';
 import { InfoTip } from '../components/Guide';
 import type { MoneyAccount, MoneyKind, SavingsGoal, SpendCategory } from '../lib/types';
@@ -52,7 +53,17 @@ export function MoneyView() {
   const [transferOpen, setTransferOpen] = useState<TransferPreset | null>(null);
   const [editing, setEditing] = useState<MoneyAccount | 'new' | null>(null);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | 'new' | null>(null);
-  const [tab, setTab] = useState<'overview' | 'crypto' | 'tips'>('overview');
+  const [tab, setTab] = useState<'overview' | 'save' | 'crypto' | 'tips'>('overview');
+  // From the Save tab: jump to a card on the overview (money plan, budget, subscriptions, wishlist).
+  function goTo(id: string) {
+    setTab('overview');
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el?.classList.add('attention');
+      setTimeout(() => el?.classList.remove('attention'), 1400);
+    }, 120);
+  }
   const [countOpen, setCountOpen] = useState(false);
   const simple = useSimple();
   useEffect(() => {
@@ -95,6 +106,7 @@ export function MoneyView() {
             onChange={setTab}
             options={[
               { id: 'overview', label: 'Overview', icon: '💰' },
+              { id: 'save', label: 'Save', icon: '🐷' },
               { id: 'crypto', label: 'Assets', icon: '📈' },
               { id: 'tips', label: 'Tips', icon: '💡' },
             ]}
@@ -102,6 +114,10 @@ export function MoneyView() {
           {tab === 'crypto' ? (
             <div className="animate-view-in">
               <CryptoPanel />
+            </div>
+          ) : tab === 'save' ? (
+            <div className="animate-view-in">
+              <SavePanel onGo={goTo} />
             </div>
           ) : tab === 'tips' ? (
             <div className="animate-view-in">
@@ -117,7 +133,7 @@ export function MoneyView() {
             onEditLimits={() => setLimitsOpen(true)}
             onSaveLeftover={(amount) => setTransferOpen({ fromKind: 'spending', toKind: 'savings', amount })}
           />
-          <MoneyPlanCard />
+          <MoneyPlanCard onChangeMode={() => setTab('save')} />
           <BudgetCard />
           <SubscriptionCalculator />
           <GoalsCard

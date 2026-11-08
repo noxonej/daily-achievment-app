@@ -5,12 +5,13 @@ import { parseMoney, centsToInput, splitDailyLimit } from '../../lib/money';
 import { todayKey } from '../../lib/date';
 import { formatEventDate, weekdayShort } from '../../lib/weekPlan';
 import { Icon } from '../Icon';
+import { modeInfo } from '../../lib/moneyModes';
 import { AmountInput, card, primaryBtn, secondaryBtn, useMoney } from './ui';
 
 const KIND_ICON = { fun: '🎉', food: '🍔', transport: '🚌', gift: '🎁' } as const;
 
 /** "Plan my money": income → save / bills / spend, then a day-by-day budget shaped by your week plan. */
-export function MoneyPlanCard() {
+export function MoneyPlanCard({ onChangeMode }: { onChangeMode?: () => void } = {}) {
   const { state } = useApp();
   const { money, fmt, dispatch } = useMoney();
   const plan = buildMoneyPlan(state, money);
@@ -23,7 +24,7 @@ export function MoneyPlanCard() {
   const todayPlan = plan.days.find((d) => d.date === today);
 
   return (
-    <div className={`${card} p-5`}>
+    <div className={`${card} p-5`} id="money-plan">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-white">
@@ -31,6 +32,12 @@ export function MoneyPlanCard() {
             Your money plan
           </p>
           <p className="text-xs text-slate-400 mt-0.5">From {fmt(plan.monthlyIn, true)} a month and your week plan</p>
+          {onChangeMode && (
+            <button onClick={onChangeMode} className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-400/30 px-2 py-0.5 text-[11px] font-bold text-amber-200">
+              <Icon name={modeInfo(money.mode).icon} size={11} />
+              {modeInfo(money.mode).label} mode · change
+            </button>
+          )}
         </div>
         <button onClick={() => setEditing(true)} className={`${secondaryBtn} shrink-0 px-2.5 py-1.5 text-xs`}>
           Edit
@@ -113,7 +120,7 @@ function IncomeSetup({ onDone }: { onDone: () => void }) {
   const [rate, setRate] = useState(Math.round((money.saveRate ?? suggestedSaveRate(money.income?.kind ?? 'allowance')) * 100));
   const cents = parseMoney(amount);
   return (
-    <div className={`${card} p-5`}>
+    <div className={`${card} p-5`} id="money-plan">
       <p className="text-sm font-semibold text-white">
         <Icon name="🧮" size="1.15em" className="icon-inline text-amber-300" />
         Plan my money

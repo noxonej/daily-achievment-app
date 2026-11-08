@@ -24,6 +24,7 @@ import { InstallCard } from '../components/InstallCard';
 import { WeekRecap } from '../components/WeekRecap';
 import { DailyBoxCard } from '../components/DailyBox';
 import { CheckInCard } from '../components/today/CheckInCard';
+import { sleepTool } from '../components/SleepTool';
 import { QuestSwapModal } from '../components/QuestSwapModal';
 import { DailyBoost } from '../components/today/DailyBoost';
 import { CoachCard } from '../components/today/CoachCard';
@@ -48,9 +49,9 @@ function QuickAction({ icon, label, onClick }: { icon: string; label: string; on
   return (
     <button
       onClick={onClick}
-      className="min-w-0 flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] py-3 transition"
+      className="group min-w-0 flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] py-3 transition active:scale-[0.94]"
     >
-      <span className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center">
+      <span className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] group-hover:-translate-y-0.5 group-active:scale-110 group-active:rotate-[-8deg]">
         <Icon name={icon} size={19} />
       </span>
       <span className="max-w-full truncate px-0.5 text-[11px] min-[380px]:text-xs font-semibold text-slate-200">{label}</span>
@@ -114,6 +115,22 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           {state.profile?.name ? `, ${state.profile.name}` : ''}
         </h1>
       </div>
+
+      {state.sleep?.sleepingSince && Date.now() - new Date(state.sleep.sleepingSince).getTime() > 30 * 60000 && (
+        <button
+          onClick={() => sleepTool.open('plan')}
+          className="w-full flex items-center gap-3 rounded-2xl border border-indigo-300/40 bg-indigo-500/10 px-4 py-3 text-left animate-pop-in"
+        >
+          <span className="shrink-0 w-10 h-10 rounded-xl bg-indigo-400/20 text-indigo-200 flex items-center justify-center">
+            <Icon name="🌅" size={20} />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-bold text-white">Good morning! Log your sleep</span>
+            <span className="block text-xs text-slate-400">Tap “I’m awake” to save last night.</span>
+          </span>
+          <Icon name="›" size={18} className="text-slate-500" />
+        </button>
+      )}
 
       <TodayHero
         quests={activeDaily}
@@ -246,9 +263,10 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <QuickAdd />
 
-      <div className="grid grid-cols-5 gap-1.5">
+      <div className="grid grid-cols-3 min-[420px]:grid-cols-6 gap-1.5">
         <QuickAction icon="⏱" label={t('now.focus')} onClick={() => focusTimer.open()} />
         <QuickAction icon="🌬" label="Breathe" onClick={() => breathe.open()} />
+        <QuickAction icon="🌙" label="Sleep" onClick={() => sleepTool.open()} />
         <QuickAction icon="df:run" label={t('qa.run')} onClick={() => runTracker.open()} />
         <QuickAction
           icon="df:spend"

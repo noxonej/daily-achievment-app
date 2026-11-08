@@ -51,7 +51,7 @@ export function WishlistCard() {
   }
 
   return (
-    <div className={card}>
+    <div className={card} id="wishlist">
       <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4 pb-2">
         <div>
           <p className="text-sm font-semibold text-white">

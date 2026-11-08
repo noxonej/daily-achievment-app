@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { SleepOverlay, sleepTool } from './components/SleepTool';
 import { Header } from './components/Header';
 import { NavTabs, type ViewId } from './components/NavTabs';
 import { NewDayBanner } from './components/NewDayBanner';
@@ -93,6 +94,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('focus') === '1') focusTimer.open();
     if (params.get('breathe') === '1') breathe.open();
+    if (params.get('sleep') === '1') sleepTool.open();
     // "Quick add" shortcut on the app icon: jump into the quick-add box.
     if (params.get('add') === '1') setTimeout(() => document.querySelector<HTMLInputElement>('input[aria-label^="Quick add"]')?.focus(), 500);
     // Opened from a friend's invite link: remember their code and show Friends.
@@ -138,6 +140,7 @@ export default function App() {
       <FocusTimer />
       <RunTracker />
       <BreatheOverlay />
+      <SleepOverlay />
       {settingsPage && (
         <Suspense fallback={null}>
           <SettingsScreen />

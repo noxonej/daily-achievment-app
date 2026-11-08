@@ -1,5 +1,6 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState } from '../lib/types';
 import { claimCheckIn } from '../lib/checkIn';
+import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -102,6 +103,7 @@ function normalizeMoney(money: MoneyState | undefined): MoneyState {
     wishlist: Array.isArray(money.wishlist) ? money.wishlist : [],
     income: money.income,
     saveRate: money.saveRate,
+    mode: money.mode,
   };
 }
 
@@ -197,6 +199,12 @@ export type Action =
   | { type: 'REDEEM_REWARD'; rewardId: string }
   | { type: 'TOGGLE_TASK_TOP'; taskId: string }
   | { type: 'CLAIM_CHECK_IN' }
+  | { type: 'MONEY_SET_MODE'; mode: NonNullable<MoneyState['mode']>; saveRate: number }
+  | { type: 'SLEEP_SET'; sleep: Partial<Pick<SleepState, 'band' | 'needHours' | 'fallAsleep'>> }
+  | { type: 'SLEEP_START'; at: string }
+  | { type: 'SLEEP_CANCEL' }
+  | { type: 'SLEEP_LOG'; start: string; end: string; feel?: 1 | 2 | 3 }
+  | { type: 'SLEEP_DELETE'; entryId: string }
   | { type: 'MONEY_SET_ASSIGNED'; assigned: Record<string, number> }
   | { type: 'MONEY_UPSERT_WISH'; wish: Omit<WishItem, 'id' | 'addedAt'> & { id?: string } }
   | { type: 'MONEY_DELETE_WISH'; wishId: string }
@@ -986,6 +994,46 @@ export function reducer(state: AppState, action: Action): AppState {
       return next;
     }
 
+    case 'SLEEP_SET': {
+      const sleep = { ...(state.sleep ?? {}), ...action.sleep };
+      if (sleep.needHours !== undefined) sleep.needHours = Math.min(12, Math.max(5, Math.round(sleep.needHours * 4) / 4));
+      if (sleep.fallAsleep !== undefined) sleep.fallAsleep = Math.min(60, Math.max(0, Math.round(sleep.fallAsleep)));
+      return { ...state, sleep };
+    }
+
+    case 'SLEEP_START':
+      return { ...state, sleep: { ...(state.sleep ?? {}), sleepingSince: action.at } };
+
+    case 'SLEEP_CANCEL': {
+      const { sleepingSince: _drop, ...rest } = state.sleep ?? {};
+      void _drop;
+      return { ...state, sleep: rest };
+    }
+
+    case 'SLEEP_LOG': {
+      const start = new Date(action.start);
+      const end = new Date(action.end);
+      const mins = (end.getTime() - start.getTime()) / 60000;
+      // Ignore impossible nights (negative, or longer than 16 hours).
+      if (!(mins > 30 && mins < 16 * 60)) return { ...state, sleep: { ...(state.sleep ?? {}), sleepingSince: undefined } };
+      const hours = hoursBetween(action.start, action.end, fallAsleepMin(state.sleep));
+      const date = todayKey(end);
+      const entry: SleepEntry = { id: `sleep-${end.getTime()}`, date, start: action.start, end: action.end, hours, feel: action.feel };
+      // One entry per morning: a new one replaces that day's.
+      const log = [...(state.sleep?.log ?? []).filter((e) => e.date !== date), entry].sort((a, b) => a.date.localeCompare(b.date)).slice(-120);
+      let next: AppState = { ...state, sleep: { ...(state.sleep ?? {}), sleepingSince: undefined, log } };
+      if (date === todayKey()) {
+        const doneNow = next.dayLogs[date]?.completedQuestIds ?? [];
+        for (const id of sleepQuestsDone(next, entry)) {
+          if (!doneNow.includes(id)) next = reducer(next, { type: 'TOGGLE_QUEST', questId: id });
+        }
+      }
+      return next;
+    }
+
+    case 'SLEEP_DELETE':
+      return { ...state, sleep: { ...(state.sleep ?? {}), log: (state.sleep?.log ?? []).filter((e) => e.id !== action.entryId) } };
+
     case 'CLAIM_CHECK_IN': {
       const claim = claimCheckIn(state, todayKey());
       if (!claim) return state;
@@ -1054,6 +1102,9 @@ export function reducer(state: AppState, action: Action): AppState {
         return { ...m, bills: list.some((x) => x.id === id) ? list.map((x) => (x.id === id ? item : x)) : [...list, item] };
       });
     }
+
+    case 'MONEY_SET_MODE':
+      return withMoney(state, (m) => ({ ...m, mode: action.mode, saveRate: Math.min(0.9, Math.max(0, action.saveRate)) }));
 
     case 'MONEY_SET_INCOME':
       return withMoney(state, (m) => ({ ...m, income: action.income, saveRate: action.saveRate ?? m.saveRate }));

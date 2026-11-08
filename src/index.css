@@ -881,3 +881,13 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
 
 /* Dayforge glyphs: the soft fill becomes solid when an icon is "filled" (e.g. a lit streak flame) */
 .df-solid [fill-opacity] { fill-opacity: .9; }
+
+/* Sleep screen: soft twinkling stars and the "now playing" bars. */
+@keyframes twinkle { 0%, 100% { opacity: 0.15; transform: scale(0.8); } 50% { opacity: 0.9; transform: scale(1.2); } }
+.twinkle { animation: twinkle 3.2s ease-in-out infinite; }
+@keyframes sound-bar { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+.sound-bar { height: 30%; animation: sound-bar 0.9s ease-in-out infinite; }
+:root[data-motion='reduce'] .twinkle, :root[data-motion='reduce'] .sound-bar { animation: none; }
+@keyframes moon-rock { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+.moon-rock { animation: moon-rock 4s ease-in-out infinite; transform-origin: 50% 60%; }
+:root[data-motion='reduce'] .moon-rock { animation: none; }

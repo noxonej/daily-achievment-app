@@ -11,6 +11,17 @@ unlockable achievements.
   (plus your name if the account didn't give one), your day (wake, bed,
   school or work hours), your character and app colour, then the personal
   Monday–Sunday plan it builds. Time boxes never overlap, even on small phones.
+- **Sleep** — a night-mode screen from Today: your ideal sleep by age
+  (AASM/CDC ranges, adjustable), a bedtime/wake-up calculator in ~90-minute
+  cycles, sleep sounds made on the phone (rain, waves, fan, brown and pink
+  noise) with a timer, a sleep log with a 7-night chart and advice, and
+  research-backed tips. Logging a night can tick "Get 7+ hours of sleep" and
+  "Bed before 23:00" quests.
+- **Money modes** — Money → Save: Balanced (50/30/20), Save hard, Big goal,
+  Safety net, Pay off debt, Grow it, Enjoy now. Each sets the save-first
+  share and what to focus on. Plus 13 proven saving methods (some set
+  themselves up, like an emergency fund or the 52-week challenge) and scam
+  red flags.
 - **Daily rewards** — open the app each day and claim the next of seven
   rewards (shards, a Quest Swap, a Streak Shield, a prize chest on day 7).
   Missing a day never takes progress away; seven days in a row adds a

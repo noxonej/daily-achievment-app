@@ -143,7 +143,7 @@ export function BillsCard() {
   const monthly = billsPerMonth(money, 'bill');
 
   return (
-    <div className={card}>
+    <div className={card} id="bills">
       <div className="flex items-start justify-between gap-2 px-5 pt-4 pb-2">
         <div>
           <p className="text-sm font-semibold text-white">
