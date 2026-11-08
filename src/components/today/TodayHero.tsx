@@ -48,7 +48,7 @@ export function TodayHero({
   return (
     <section aria-label="Today at a glance" className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.07] via-white/[0.03] to-transparent p-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
       <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
-      <div className="relative flex items-center gap-4">
+      <div className="hero-row relative flex items-center gap-4">
         {/* today's progress ring */}
         <div className="relative shrink-0 w-[92px] h-[92px]" role="img" aria-label={`${done} of ${total} quests done today`}>
           <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
@@ -84,7 +84,7 @@ export function TodayHero({
           </div>
         </div>
 
-        <div className="flex-1 min-w-0 space-y-2.5">
+        <div className="hero-stats flex-1 min-w-0 space-y-2.5">
           {/* next level */}
           <div>
             <div className="flex items-baseline justify-between gap-2">

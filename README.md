@@ -7,12 +7,18 @@ unlockable achievements.
 
 ## Features
 
-- **First-run setup** — a short quiz, then you design the app yourself
-  (light/dark/automatic, colour, background, changing live) and create your
-  character (skin, face, hair, colour, outfit, scene, or shuffle). The
-  walkthrough covers name, what you want to
-  get better at, wake/bed time, school or work hours) that builds a
-  personal Monday–Sunday plan.
+- **First-run setup** — four quick steps: what you want to get better at
+  (plus your name if the account didn't give one), your day (wake, bed,
+  school or work hours), your character and app colour, then the personal
+  Monday–Sunday plan it builds. Time boxes never overlap, even on small phones.
+- **Daily rewards** — open the app each day and claim the next of seven
+  rewards (shards, a Quest Swap, a Streak Shield, a prize chest on day 7).
+  Missing a day never takes progress away; seven days in a row adds a
+  50-shard bonus. The card always shows tomorrow's reward.
+- **Easy reading** — Settings → Appearance: Normal, Roomy or Extra makes
+  gaps, text and line spacing bigger and shows full names instead of "…".
+- **About, terms & privacy** — Settings → About explains what the app is for,
+  how it works, and short plain-language terms and privacy.
 - **Today home screen** — a greeting, a "Right now / Next" card from your
   plan with one-tap Done and Focus, quick actions, and a daily mood
   check-in.
@@ -100,8 +106,9 @@ unlockable achievements.
   win chest-only items from reward chests (one per perfect day, perfect
   week and level-up).
 - **Appearance** — the futuristic Nebula look by default (with a Space
-  Grotesk heading font), six accent colours and four backgrounds (Nebula,
-  Graphite, Midnight, true Black) in Settings, applied before first paint.
+  Grotesk heading font), eleven accent colours and eight backgrounds (Nebula,
+  Aurora, Ember, Deep sea, Candy, Graphite, Midnight, true Black) in
+  Settings, applied before first paint.
   A **light (white) theme** and an **Automatic** mode that follows the phone.
 - **Settings** — opened from the gear in the header or on the You tab, laid
   out like a phone's settings app: profile, appearance, language, plan

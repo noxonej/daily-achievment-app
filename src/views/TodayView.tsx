@@ -23,6 +23,7 @@ import { MoodCheckIn } from '../components/MoodCheckIn';
 import { InstallCard } from '../components/InstallCard';
 import { WeekRecap } from '../components/WeekRecap';
 import { DailyBoxCard } from '../components/DailyBox';
+import { CheckInCard } from '../components/today/CheckInCard';
 import { QuestSwapModal } from '../components/QuestSwapModal';
 import { DailyBoost } from '../components/today/DailyBoost';
 import { CoachCard } from '../components/today/CoachCard';
@@ -68,6 +69,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
     }
   });
   const key = todayKey();
+  // Where the daily rewards card sits is decided when Today opens, so it doesn't jump away as you claim.
+  const [rewardsOnTop] = useState(() => state.checkIn?.last !== key);
   const log = state.dayLogs[key];
   const completed = log?.completedQuestIds ?? [];
   const notes = log?.notes ?? {};
@@ -147,6 +150,9 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           </>
         }
       />
+
+      {/* Daily rewards: up top until today's is claimed, then it moves down next to the box. */}
+      {rewardsOnTop && <CheckInCard />}
 
       <GettingStarted onNavigate={onNavigate} />
 
@@ -254,6 +260,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         />
         <QuickAction icon="df:plan" label={t('nav.plan')} onClick={() => onNavigate('plan')} />
       </div>
+
+      {!rewardsOnTop && <CheckInCard />}
 
       <DailyBoxCard />
 

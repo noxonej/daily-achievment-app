@@ -20,6 +20,9 @@ const FILTERS: Array<{ id: Frequency | 'all'; label: string }> = [
 export function QuestLibraryModal({ open, onClose }: QuestLibraryModalProps) {
   const { state, dispatch } = useApp();
   const [filter, setFilter] = useState<Frequency | 'all'>('all');
+  const [query, setQuery] = useState('');
+  const [cat, setCat] = useState<string | null>(null);
+  const categories = useMemo(() => Array.from(new Set(QUEST_LIBRARY.map((q) => q.category))), []);
 
   const activeTitles = useMemo(
     () => new Set(state.quests.filter((q) => !q.archived).map((q) => q.title.toLowerCase())),
@@ -27,20 +30,47 @@ export function QuestLibraryModal({ open, onClose }: QuestLibraryModalProps) {
   );
 
   const grouped = useMemo(() => {
-    const filtered = QUEST_LIBRARY.filter((q) => filter === 'all' || q.frequency === filter);
+    const words = query.trim().toLowerCase();
+    const filtered = QUEST_LIBRARY.filter(
+      (q) =>
+        (filter === 'all' || q.frequency === filter) &&
+        (!cat || q.category === cat) &&
+        (!words || `${q.title} ${q.description} ${q.category}`.toLowerCase().includes(words)),
+    );
     const byCategory = new Map<string, LibraryQuest[]>();
     for (const q of filtered) {
       if (!byCategory.has(q.category)) byCategory.set(q.category, []);
       byCategory.get(q.category)!.push(q);
     }
     return Array.from(byCategory.entries());
-  }, [filter]);
+  }, [filter, query, cat]);
 
   return (
     <Modal open={open} onClose={onClose} title="Quest Library">
       <p className="text-xs text-slate-400 -mt-1 mb-3">
-        A bigger archive of quests to draw from — tap one to add it to your list.
+        {QUEST_LIBRARY.length} quest ideas. Tap one to add it to your list.
       </p>
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search, e.g. water, money, read"
+        aria-label="Search quests"
+        className="w-full rounded-xl bg-white/5 border border-white/10 px-3 h-11 text-base text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 mb-3"
+      />
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-3 -mx-1 px-1" aria-label="Categories">
+        {[null, ...categories].map((c) => (
+          <button
+            key={c ?? 'all'}
+            onClick={() => setCat(c)}
+            aria-pressed={cat === c}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border transition ${
+              cat === c ? 'bg-amber-500 border-amber-500 text-white' : 'border-white/10 bg-white/5 text-slate-300'
+            }`}
+          >
+            {c ?? 'Every topic'}
+          </button>
+        ))}
+      </div>
 
       <div className="grid grid-cols-3 gap-1.5 mb-4">
         {FILTERS.map((f) => (
@@ -59,6 +89,7 @@ export function QuestLibraryModal({ open, onClose }: QuestLibraryModalProps) {
       </div>
 
       <div className="space-y-5 max-h-96 overflow-y-auto pr-0.5">
+        {grouped.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">No quests match. Try another word, or make your own with + Add.</p>}
         {grouped.map(([category, items]) => (
           <div key={category}>
             <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">{category}</p>

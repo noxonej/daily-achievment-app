@@ -14,7 +14,7 @@ import {
   ArrowLeft, Timer, Play, Pause, RotateCcw, Frown, Annoyed, Meh, Laugh, Share, SquarePlus, Undo2, Info, EllipsisVertical, ShieldCheck, Sunset,
   Scissors, LockOpen, Shirt as ShirtIcon,
   ChevronRight, SkipForward, Bitcoin, Receipt, PiggyBank, CalendarClock, CircleDollarSign, Search, Pin, PinOff, Trash2, Plus, Volume2, Vibrate, Languages, Clock, SunMoon, Database, BookHeart,
-  Cross, Shuffle, ChevronDown, TreePalm, Heart, MountainSnow, BellRing, Brain, Quote, Headphones, Scale, Balloon, FerrisWheel, CreditCard, ChartLine, ShieldAlert, ChartPie, Popcorn, Volleyball,
+  Cross, Shuffle, ChevronDown, TreePalm, Heart, MountainSnow, BellRing, Brain, Quote, Headphones, Scale, Balloon, FerrisWheel, CreditCard, ChartLine, ShieldAlert, ChartPie, Popcorn, Volleyball, Bike,
 } from 'lucide-react';
 
 /**
@@ -22,7 +22,7 @@ import {
  * Every emoji is drawn as a matching line icon instead, so saved quests, goals and categories keep working.
  */
 const EMOJI_ICONS: Record<string, LucideIcon> = {
-  '🎯': Target, '✕': X, '🔥': Flame, '🏆': Trophy, '✨': Sparkles, '📚': Library, '🗓': CalendarDays, '🚗': Car,
+  '🚲': Bike, '🎯': Target, '✕': X, '🔥': Flame, '🏆': Trophy, '✨': Sparkles, '📚': Library, '🗓': CalendarDays, '🚗': Car,
   '✓': Check, '📝': NotebookPen, '📅': Calendar, '✅': CircleCheck, '🧘': Flower2, '💪': Dumbbell, '💻': Laptop,
   '💰': Wallet, '💸': Banknote, '✎': Pencil, '💎': Gem, '⚡': Zap, '🎉': PartyPopper, '📖': BookOpen,
   '🏃': Footprints, '🧹': Brush, '🎨': Palette, '🗡': Sword, '🔔': Bell, '🌱': Sprout, '🛡': Shield,

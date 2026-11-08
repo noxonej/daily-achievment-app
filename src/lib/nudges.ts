@@ -43,6 +43,9 @@ const START: Line[] = [
   { title: 'Light the fire 🔥', body: 'One quest today starts a new streak.' },
   { title: 'Phone in hand anyway?', body: 'Use it to tick off one quest instead of scrolling.' },
   { title: 'Today counts', body: 'You won’t get this day back. Make one thing happen.' },
+  { title: '🎁 Your daily reward is waiting', body: 'Open the app to claim it. Tomorrow’s is even better.' },
+  { title: 'Free shards, today only', body: 'Today’s daily reward disappears at midnight. Grab it and do one quest.' },
+  { title: 'Day 7 has a prize chest', body: 'Keep claiming your daily reward to reach it.' },
 ];
 
 /** Comfort-zone pushes and general fire, used any day. */

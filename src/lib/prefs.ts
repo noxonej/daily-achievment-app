@@ -6,6 +6,7 @@ import { setSoundsEnabled } from './focusTimer';
 import { useApp } from '../store/AppContext';
 
 const THEME_KEY = 'dayforge-theme';
+const READING_KEY = 'dayforge-reading';
 
 export function fullPrefs(p: Partial<Prefs> | undefined): Prefs {
   return { ...DEFAULT_PREFS, ...(p ?? {}) };
@@ -74,6 +75,18 @@ export function useApplyPrefs(raw: Partial<Prefs> | undefined) {
     if (prefs.reduceMotion) root.dataset.motion = 'reduce';
     else delete root.dataset.motion;
   }, [prefs.reduceMotion]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const reading = prefs.reading ?? 'normal';
+    if (reading === 'normal') delete root.dataset.reading;
+    else root.dataset.reading = reading;
+    try {
+      localStorage.setItem(READING_KEY, reading);
+    } catch {
+      // ignore
+    }
+  }, [prefs.reading]);
 
   useEffect(() => setHaptics(prefs.haptics), [prefs.haptics]);
 }

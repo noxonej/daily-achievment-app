@@ -6,18 +6,17 @@ import { formatPlanTime, planCategory } from '../lib/weekPlan';
 import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
 import { Avatar } from './Avatar';
-import { AccentPicker, BackgroundPicker } from './ProfileSettings';
-import { ThemePicker } from './SettingsScreen';
+import { AccentPicker } from './ProfileSettings';
 import { AVATAR_ITEMS, isOwned, normalizeLook, RARITY } from '../data/avatar';
 import { ownership } from '../store/reducer';
 import type { AvatarSlot } from '../lib/types';
 
-// The quiz first (name, goals, day), then you design the app and your character, then the plan.
-type Step = 'welcome' | 'name' | 'focus' | 'day' | 'look' | 'avatar' | 'preview';
-const STEPS: Step[] = ['welcome', 'name', 'focus', 'day', 'look', 'avatar', 'preview'];
+// Kept short on purpose: goals (and your name, if needed), your day, your character and colour, then the plan.
+type Step = 'welcome' | 'focus' | 'day' | 'avatar' | 'preview';
+const STEPS: Step[] = ['welcome', 'focus', 'day', 'avatar', 'preview'];
 
 const timeInput =
-  'w-full rounded-xl bg-white/5 border border-white/10 px-3 h-12 text-base text-white focus:outline-none focus:border-amber-400/60';
+  'time-input block w-full min-w-0 max-w-full rounded-xl bg-white/5 border border-white/10 px-3 h-12 text-base text-white focus:outline-none focus:border-amber-400/60';
 
 /** First-run setup: a few questions, then a personal week plan is built and the app opens. */
 export function Onboarding() {
@@ -26,6 +25,8 @@ export function Onboarding() {
   const [step, setStep] = useState<Step>(() => (state.profile?.name ? 'focus' : 'welcome'));
   const [dir, setDir] = useState<'right' | 'left'>('right');
   const [name, setName] = useState(state.profile?.name ?? '');
+  // Only ask for a name if the account didn't already give one.
+  const [askName] = useState(() => !state.profile?.name);
   const [areas, setAreas] = useState<FocusArea[]>([]);
   const [wake, setWake] = useState('07:00');
   const [bed, setBed] = useState('22:30');
@@ -98,26 +99,8 @@ export function Onboarding() {
                   <Feature icon="⏳" title="Focus timer" text="Get deep work done, distraction free" />
                 </ul>
               </div>
-              <Primary onClick={() => go('name')}>Let's set it up</Primary>
+              <Primary onClick={() => go('focus')}>Let's set it up</Primary>
               <p className="text-center text-xs text-slate-500 mt-3">Takes about a minute. Everything stays on your phone.</p>
-            </>
-          )}
-
-          {step === 'name' && (
-            <>
-              <Title title="What should we call you?" sub="So the app can greet you every morning." />
-              <input
-                autoFocus
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && go('focus')}
-                placeholder="Your first name"
-                maxLength={24}
-                autoComplete="given-name"
-                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 h-14 text-xl text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400/60"
-              />
-              <div className="flex-1" />
-              <Primary onClick={() => go('focus')}>{name.trim() ? 'Continue' : 'Skip for now'}</Primary>
             </>
           )}
 
@@ -127,6 +110,17 @@ export function Onboarding() {
                 title={name.trim() ? `What do you want to get better at, ${name.trim()}?` : 'What do you want to get better at?'}
                 sub="Pick as many as you like. Your plan is built around them."
               />
+              {askName && (
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your first name (optional)"
+                  aria-label="Your first name"
+                  maxLength={24}
+                  autoComplete="given-name"
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 h-12 text-base text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 mb-4"
+                />
+              )}
               <div className="grid grid-cols-2 gap-2.5">
                 {FOCUS_AREAS.map((a) => {
                   const on = areas.includes(a.id);
@@ -167,7 +161,7 @@ export function Onboarding() {
           {step === 'day' && (
             <>
               <Title title="What does your day look like?" sub="Rough times are fine. You can change everything later." />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="time-grid">
                 <TimeField label="I wake up at" icon="🌅" value={wake} onChange={setWake} />
                 <TimeField label="I go to bed at" icon="🌙" value={bed} onChange={setBed} />
               </div>
@@ -188,23 +182,14 @@ export function Onboarding() {
                   </button>
                 </div>
                 {hasBusy && (
-                  <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="time-grid mt-4">
                     <TimeField label="Starts" value={busyStart} onChange={setBusyStart} />
                     <TimeField label="Ends" value={busyEnd} onChange={setBusyEnd} />
                   </div>
                 )}
               </div>
               <div className="flex-1 min-h-6" />
-              <Primary onClick={() => go('look')}>Continue</Primary>
-            </>
-          )}
-
-          {step === 'look' && (
-            <>
-              <Title title="Make it yours" sub="Pick how your app looks. It changes as you tap." />
-              <LookStep />
-              <div className="flex-1 min-h-6" />
-              <Primary onClick={() => go('avatar')}>Looks good</Primary>
+              <Primary onClick={() => go('avatar')}>Continue</Primary>
             </>
           )}
 
@@ -212,6 +197,11 @@ export function Onboarding() {
             <>
               <Title title={name.trim() ? `Create your character, ${name.trim()}` : 'Create your character'} sub="This is you in the app. Win more clothes and faces as you level up." />
               <AvatarStep />
+              <section className="mt-6">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">App colour</p>
+                <AccentPicker />
+                <p className="text-xs text-slate-500 mt-2">More looks (light mode, backgrounds) are in Settings → Appearance.</p>
+              </section>
               <div className="flex-1 min-h-6" />
               <Primary onClick={() => go('preview')}>Build my week</Primary>
             </>
@@ -280,36 +270,13 @@ function Primary({ onClick, disabled, children }: { onClick: () => void; disable
 
 function TimeField({ label, icon, value, onChange }: { label: string; icon?: string; value: string; onChange: (v: string) => void }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-300 mb-1.5">
         {icon && <Icon name={icon} size={15} className="text-amber-300" />}
         {label}
       </span>
       <input type="time" value={value} onChange={(e) => onChange(e.target.value || value)} className={timeInput} />
     </label>
-  );
-}
-
-function LookStep() {
-  const { state } = useApp();
-  const dark = (state.prefs?.theme ?? 'dark') !== 'light';
-  return (
-    <div className="space-y-5">
-      <section>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Theme</p>
-        <ThemePicker />
-      </section>
-      <section>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Colour</p>
-        <AccentPicker />
-      </section>
-      {dark && (
-        <section className="animate-view-in">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Background</p>
-          <BackgroundPicker />
-        </section>
-      )}
-    </div>
   );
 }
 

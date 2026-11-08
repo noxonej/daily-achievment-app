@@ -307,10 +307,12 @@ export interface Prefs {
   nudges: boolean;
   /** Evening check time for the "you haven't done a quest yet" reminder, HH:MM. */
   nudgeTime: string;
+  /** Easier reading: bigger gaps, text and line spacing for people who find dense screens hard to read. */
+  reading?: 'normal' | 'roomy' | 'extra';
 }
 
-export type Accent = 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose';
-export type BgTheme = 'nebula' | 'graphite' | 'midnight' | 'black';
+export type Accent = 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose' | 'sunset' | 'pink' | 'teal' | 'lime' | 'indigo';
+export type BgTheme = 'nebula' | 'graphite' | 'midnight' | 'black' | 'aurora' | 'ember' | 'deepsea' | 'candy';
 export interface Appearance {
   accent: Accent;
   background: BgTheme;
@@ -385,6 +387,8 @@ export interface AppState {
   shieldedDates: string[];
   /** Extra reward chests won from the daily box. */
   bonusChests: number;
+  /** Daily rewards track: the day (1–7) claimed last, when, and how many in a row this week. */
+  checkIn?: { day: number; last: string; inARow: number };
   createdAt: string;
 }
 

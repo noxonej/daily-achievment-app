@@ -16,7 +16,8 @@ import { Toggle } from './AuthGate';
 import { AccountSettings } from './AccountSettings';
 import { GoogleCard, GoogleG } from './GoogleConnect';
 import { googleConfigured } from '../lib/google';
-import { AboutCard, AccentPicker, BackgroundPicker, ProfileCard } from './ProfileSettings';
+import { AccentPicker, BackgroundPicker, ProfileCard } from './ProfileSettings';
+import { AboutPage } from './AboutPage';
 import { InstallCard } from './InstallCard';
 import { ManageView } from '../views/ManageView';
 import { NUDGE_COUNT, backgroundRemindersSupported, randomNudge } from '../lib/nudges';
@@ -110,7 +111,7 @@ export function SettingsScreen() {
         {page === 'quests' && <ManageView part="quests" />}
         {page === 'data' && <ManageView part="data" />}
         {page === 'install' && <InstallCard always />}
-        {page === 'about' && <AboutCard />}
+        {page === 'about' && <AboutPage />}
         {page === 'help' && <HelpPage />}
       </div>
     </div>
@@ -210,7 +211,7 @@ function Home() {
 
       <Group>
         {!isStandalone() && <Row icon="📱" tint="bg-fuchsia-500" label={t('settings.install')} to="install" />}
-        <Row icon="ℹ" tint="bg-slate-500" label={t('settings.about')} value="1.1" to="about" />
+        <Row icon="ℹ" tint="bg-slate-500" label={t('settings.about')} value="Terms & privacy" to="about" />
       </Group>
     </div>
   );
@@ -269,6 +270,38 @@ function AppearancePage() {
         <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{t('appearance.accent')}</p>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <AccentPicker />
+        </div>
+      </section>
+
+      <section>
+        <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Easy reading</p>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Easy reading">
+            {(
+              [
+                ['normal', 'Normal', 'Aa'],
+                ['roomy', 'Roomy', 'Aa'],
+                ['extra', 'Extra', 'Aa'],
+              ] as const
+            ).map(([id, label, aa], i) => {
+              const on = (prefs.reading ?? 'normal') === id;
+              return (
+                <button
+                  key={id}
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setPrefs({ reading: id })}
+                  className={`rounded-xl border-2 py-2.5 transition ${on ? 'border-amber-400 bg-amber-500/10' : 'border-white/10 hover:border-white/25'}`}
+                >
+                  <span className="block font-display font-bold text-white" style={{ fontSize: 16 + i * 4 }}>{aa}</span>
+                  <span className="block text-xs font-semibold text-slate-300 mt-0.5">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-slate-400 mt-3 leading-relaxed">
+            Bigger gaps, bigger text and more space between lines. Good if busy screens are hard to read, or for dyslexia.
+          </p>
         </div>
       </section>
 
@@ -499,6 +532,8 @@ const HELP: Array<{ icon: string; title: string; text: string }> = [
   { icon: '🧮', title: 'Monthly budget', text: 'In Money, give every euro a job: split what you get this month (after bills and saving) into envelopes like Food and Fun, and see what is left in each as you spend.' },
   { icon: '💎', title: 'Shards', text: 'The app\'s coins. You get them from chests and the daily box, and spend them on items in the wardrobe.' },
   { icon: '📦', title: 'Daily box', text: 'Finish one quest and the daily box on Today unlocks. Open it once a day for a prize. Very rarely it has a Mythic item you can\'t get anywhere else.' },
+  { icon: '🎁', title: 'Daily rewards', text: 'Open the app every day and tap Claim on Today. Seven rewards in a row: shards, a Quest Swap, a Streak Shield and a prize chest on day 7. Missed a day? You keep your progress. All 7 days in a row adds 50 bonus shards.' },
+  { icon: '🔤', title: 'Easy reading', text: 'Settings → Appearance → Easy reading makes gaps, text and line spacing bigger, and shows full names instead of cutting them off. Good if busy screens are hard to read.' },
   { icon: '🔁', title: 'Quest Swap', text: 'Trade one of today\'s quests for a different one. Back to normal tomorrow.' },
   { icon: '🛡', title: 'Streak Shield', text: 'Saves your streak automatically if you miss a day.' },
   { icon: '⏭', title: 'Skip Pass', text: 'A rare prize. Skip one quest on a busy or sick day: it counts as done (also for your streak) but gives no XP.' },

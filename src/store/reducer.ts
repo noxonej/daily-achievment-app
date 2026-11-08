@@ -1,4 +1,5 @@
 import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption } from '../lib/types';
+import { claimCheckIn } from '../lib/checkIn';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
@@ -195,6 +196,7 @@ export type Action =
   | { type: 'DELETE_REWARD'; rewardId: string }
   | { type: 'REDEEM_REWARD'; rewardId: string }
   | { type: 'TOGGLE_TASK_TOP'; taskId: string }
+  | { type: 'CLAIM_CHECK_IN' }
   | { type: 'MONEY_SET_ASSIGNED'; assigned: Record<string, number> }
   | { type: 'MONEY_UPSERT_WISH'; wish: Omit<WishItem, 'id' | 'addedAt'> & { id?: string } }
   | { type: 'MONEY_DELETE_WISH'; wishId: string }
@@ -981,6 +983,19 @@ export function reducer(state: AppState, action: Action): AppState {
           break;
         }
       }
+      return next;
+    }
+
+    case 'CLAIM_CHECK_IN': {
+      const claim = claimCheckIn(state, todayKey());
+      if (!claim) return state;
+      let next: AppState = { ...state, checkIn: claim.record };
+      const r = claim.reward;
+      if (r.kind === 'shards') next = { ...next, bonusShards: (next.bonusShards ?? 0) + r.amount };
+      if (r.kind === 'swap') next = { ...next, questSwaps: (next.questSwaps ?? 0) + 1 };
+      if (r.kind === 'shield') next = { ...next, streakShields: (next.streakShields ?? 0) + 1 };
+      if (r.kind === 'chest') next = { ...next, bonusChests: (next.bonusChests ?? 0) + 1 };
+      if (claim.perfectBonus) next = { ...next, bonusShards: (next.bonusShards ?? 0) + claim.perfectBonus };
       return next;
     }
 

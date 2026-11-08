@@ -77,6 +77,11 @@
   --raised: #18191d;
 }
 
+:root[data-bg='aurora'] { --bg: #04100f; --surface: #0c1b1d; --raised: #13272a; }
+:root[data-bg='ember'] { --bg: #110806; --surface: #1d1110; --raised: #2a1816; }
+:root[data-bg='deepsea'] { --bg: #030a18; --surface: #0b1630; --raised: #13213f; }
+:root[data-bg='candy'] { --bg: #0f0614; --surface: #1c1024; --raised: #281733; }
+
 /* Accent colour: every amber-* utility follows the chosen accent (data-accent on <html>). */
 :root[data-accent='cyber'] {
   --color-amber-50: #ecfeff; --color-amber-100: #cffafe; --color-amber-200: #a5f3fc; --color-amber-300: #67e8f9;
@@ -97,6 +102,27 @@
 :root[data-accent='rose'] {
   --color-amber-50: #fff1f2; --color-amber-100: #ffe4e6; --color-amber-200: #fecdd3; --color-amber-300: #fda4af;
   --color-amber-400: #fb7185; --color-amber-500: #f43f5e; --color-amber-600: #e11d48; --color-amber-900: #881337;
+}
+
+:root[data-accent='sunset'] {
+  --color-amber-50: #fff7ed; --color-amber-100: #ffedd5; --color-amber-200: #fed7aa; --color-amber-300: #fdba74;
+  --color-amber-400: #fb923c; --color-amber-500: #ea580c; --color-amber-600: #c2410c; --color-amber-900: #7c2d12;
+}
+:root[data-accent='pink'] {
+  --color-amber-50: #fdf2f8; --color-amber-100: #fce7f3; --color-amber-200: #fbcfe8; --color-amber-300: #f9a8d4;
+  --color-amber-400: #f472b6; --color-amber-500: #db2777; --color-amber-600: #be185d; --color-amber-900: #831843;
+}
+:root[data-accent='teal'] {
+  --color-amber-50: #f0fdfa; --color-amber-100: #ccfbf1; --color-amber-200: #99f6e4; --color-amber-300: #5eead4;
+  --color-amber-400: #2dd4bf; --color-amber-500: #0d9488; --color-amber-600: #0f766e; --color-amber-900: #134e4a;
+}
+:root[data-accent='lime'] {
+  --color-amber-50: #f7fee7; --color-amber-100: #ecfccb; --color-amber-200: #d9f99d; --color-amber-300: #bef264;
+  --color-amber-400: #a3e635; --color-amber-500: #65a30d; --color-amber-600: #4d7c0f; --color-amber-900: #365314;
+}
+:root[data-accent='indigo'] {
+  --color-amber-50: #eef2ff; --color-amber-100: #e0e7ff; --color-amber-200: #c7d2fe; --color-amber-300: #a5b4fc;
+  --color-amber-400: #818cf8; --color-amber-500: #6366f1; --color-amber-600: #4f46e5; --color-amber-900: #312e81;
 }
 
 @theme {
@@ -134,6 +160,54 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* Easier reading (Settings > Appearance): every gap, padding and rem-based text grows, lines get more
+   air, and the smallest fixed sizes are bumped up. Helps people who find busy screens hard to read. */
+:root[data-reading='roomy'] { font-size: 103%; --spacing: 0.28rem; }
+:root[data-reading='extra'] { font-size: 107%; --spacing: 0.3rem; }
+/* The top bar and the tab bar keep their size so they never crowd on small phones. */
+:root[data-reading] header, :root[data-reading] nav { --spacing: 0.25rem; }
+:root[data-reading] header .text-\[11px\] { font-size: 11px; }
+/* Today's ring and stats wrap onto two rows when they'd be squeezed. */
+:root[data-reading] .hero-row { flex-wrap: wrap; justify-content: center; }
+:root[data-reading] .hero-stats { flex: 1 1 13rem; }
+/* Show the whole text instead of cutting it off with "…" (except in the top bar). */
+:root[data-reading] main .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+:root[data-reading] body { line-height: 1.65; letter-spacing: 0.012em; word-spacing: 0.05em; }
+:root[data-reading='extra'] body { line-height: 1.75; letter-spacing: 0.02em; word-spacing: 0.1em; }
+:root[data-reading] .leading-tight, :root[data-reading] .leading-snug { line-height: 1.4; }
+:root[data-reading] .text-\[9px\], :root[data-reading] .text-\[10px\] { font-size: 11.5px; }
+:root[data-reading] .text-\[11px\] { font-size: 12.5px; }
+:root[data-reading] .text-\[12px\], :root[data-reading] .text-\[13px\] { font-size: 14px; }
+:root[data-reading] .text-\[14px\], :root[data-reading] .text-\[15px\] { font-size: 16px; }
+:root[data-reading='extra'] .text-\[9px\], :root[data-reading='extra'] .text-\[10px\] { font-size: 12.5px; }
+:root[data-reading='extra'] .text-\[11px\] { font-size: 13.5px; }
+:root[data-reading='extra'] .text-\[12px\], :root[data-reading='extra'] .text-\[13px\] { font-size: 15px; }
+:root[data-reading='extra'] .text-\[14px\], :root[data-reading='extra'] .text-\[15px\] { font-size: 17px; }
+
+/* Time and date boxes: iPhone Safari gives them a fixed minimum width, so two side by side ran into
+   each other. Let them shrink to their column and keep the text on the left. */
+input[type='time'],
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+input[type='time']::-webkit-date-and-time-value,
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+}
+/* Two time boxes side by side, stacked when the phone is very narrow. */
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+@media (max-width: 340px) {
+  .time-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 ::-webkit-scrollbar {
@@ -202,6 +276,8 @@ body {
 
 .bg-grid {
   background-color: var(--bg);
+  /* Its own layer, so the glow (::before, z-index -1) shows above this background and below the content. */
+  isolation: isolate;
 }
 /* Nebula (the default look): soft cyan and violet glows fixed behind the content. */
 :root:not([data-bg]) .bg-grid::before,
@@ -214,13 +290,54 @@ body {
   transform: translateZ(0);
   will-change: transform;
   background:
-    radial-gradient(60% 40% at 0% 0%, rgba(34, 211, 238, 0.2), transparent 70%),
-    radial-gradient(55% 36% at 100% 4%, rgba(168, 85, 247, 0.22), transparent 70%),
-    radial-gradient(70% 45% at 50% 105%, rgba(59, 130, 246, 0.12), transparent 70%);
+    radial-gradient(60% 40% at 0% 0%, rgba(34, 211, 238, 0.26), transparent 70%),
+    radial-gradient(55% 36% at 100% 4%, rgba(168, 85, 247, 0.3), transparent 70%),
+    radial-gradient(50% 30% at 0% 70%, rgba(236, 72, 153, 0.12), transparent 70%),
+    radial-gradient(70% 45% at 50% 105%, rgba(59, 130, 246, 0.18), transparent 70%);
+}
+/* The colourful backgrounds: each has its own glow behind the content. */
+:root[data-bg='aurora'] .bg-grid::before,
+:root[data-bg='ember'] .bg-grid::before,
+:root[data-bg='deepsea'] .bg-grid::before,
+:root[data-bg='candy'] .bg-grid::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transform: translateZ(0);
+}
+:root[data-bg='aurora'] .bg-grid::before {
+  background:
+    radial-gradient(70% 35% at 20% 0%, rgba(52, 211, 153, 0.3), transparent 70%),
+    radial-gradient(60% 35% at 100% 10%, rgba(139, 92, 246, 0.3), transparent 70%),
+    radial-gradient(60% 40% at 50% 105%, rgba(45, 212, 191, 0.16), transparent 70%);
+}
+:root[data-bg='ember'] .bg-grid::before {
+  background:
+    radial-gradient(65% 38% at 0% 0%, rgba(249, 115, 22, 0.3), transparent 70%),
+    radial-gradient(55% 35% at 100% 6%, rgba(236, 72, 153, 0.26), transparent 70%),
+    radial-gradient(70% 45% at 50% 105%, rgba(250, 204, 21, 0.12), transparent 70%);
+}
+:root[data-bg='deepsea'] .bg-grid::before {
+  background:
+    radial-gradient(70% 40% at 50% 0%, rgba(59, 130, 246, 0.32), transparent 70%),
+    radial-gradient(55% 35% at 0% 60%, rgba(34, 211, 238, 0.16), transparent 70%),
+    radial-gradient(60% 40% at 100% 100%, rgba(99, 102, 241, 0.2), transparent 70%);
+}
+:root[data-bg='candy'] .bg-grid::before {
+  background:
+    radial-gradient(60% 38% at 0% 0%, rgba(244, 114, 182, 0.32), transparent 70%),
+    radial-gradient(55% 36% at 100% 4%, rgba(167, 139, 250, 0.32), transparent 70%),
+    radial-gradient(70% 45% at 50% 105%, rgba(56, 189, 248, 0.16), transparent 70%);
 }
 /* A faint neon glow on primary buttons in the Nebula look. */
 :root:not([data-bg]) .bg-amber-500:not(:disabled),
-:root[data-bg='nebula'] .bg-amber-500:not(:disabled) {
+:root[data-bg='nebula'] .bg-amber-500:not(:disabled),
+:root[data-bg='aurora'] .bg-amber-500:not(:disabled),
+:root[data-bg='ember'] .bg-amber-500:not(:disabled),
+:root[data-bg='deepsea'] .bg-amber-500:not(:disabled),
+:root[data-bg='candy'] .bg-amber-500:not(:disabled) {
   box-shadow: 0 8px 26px -12px var(--color-amber-400);
 }
 
@@ -473,6 +590,11 @@ body {
 :root[data-theme='light'][data-accent='emerald'] { --color-amber-50: #065f46; --color-amber-100: #065f46; --color-amber-200: #047857; --color-amber-300: #047857; --color-amber-400: #059669; --color-amber-500: #059669; --color-amber-600: #047857; }
 :root[data-theme='light'][data-accent='violet'] { --color-amber-50: #5b21b6; --color-amber-100: #5b21b6; --color-amber-200: #6d28d9; --color-amber-300: #6d28d9; --color-amber-400: #7c3aed; --color-amber-500: #7c3aed; --color-amber-600: #6d28d9; }
 :root[data-theme='light'][data-accent='rose'] { --color-amber-50: #9f1239; --color-amber-100: #9f1239; --color-amber-200: #be123c; --color-amber-300: #be123c; --color-amber-400: #e11d48; --color-amber-500: #e11d48; --color-amber-600: #be123c; }
+:root[data-theme='light'][data-accent='sunset'] { --color-amber-50: #9a3412; --color-amber-100: #9a3412; --color-amber-200: #c2410c; --color-amber-300: #c2410c; --color-amber-400: #ea580c; --color-amber-500: #ea580c; --color-amber-600: #c2410c; }
+:root[data-theme='light'][data-accent='pink'] { --color-amber-50: #9d174d; --color-amber-100: #9d174d; --color-amber-200: #be185d; --color-amber-300: #be185d; --color-amber-400: #db2777; --color-amber-500: #db2777; --color-amber-600: #be185d; }
+:root[data-theme='light'][data-accent='teal'] { --color-amber-50: #115e59; --color-amber-100: #115e59; --color-amber-200: #0f766e; --color-amber-300: #0f766e; --color-amber-400: #0d9488; --color-amber-500: #0d9488; --color-amber-600: #0f766e; }
+:root[data-theme='light'][data-accent='lime'] { --color-amber-50: #3f6212; --color-amber-100: #3f6212; --color-amber-200: #4d7c0f; --color-amber-300: #4d7c0f; --color-amber-400: #65a30d; --color-amber-500: #65a30d; --color-amber-600: #4d7c0f; }
+:root[data-theme='light'][data-accent='indigo'] { --color-amber-50: #3730a3; --color-amber-100: #3730a3; --color-amber-200: #4338ca; --color-amber-300: #4338ca; --color-amber-400: #4f46e5; --color-amber-500: #4f46e5; --color-amber-600: #4338ca; }
 :root[data-theme='light'] :is(.bg-amber-500, .bg-amber-600, .bg-emerald-500, .bg-emerald-600, .bg-rose-500, .bg-red-500, .bg-sky-500, .bg-violet-500, .bg-orange-500, .bg-cyan-500, .bg-fuchsia-500, .bg-blue-500) { --color-white: #ffffff; }
 :root[data-theme='light'] .theme-dark {
   color-scheme: dark; color: #e7e9f4;
@@ -500,10 +622,16 @@ body {
 :root[data-theme='light'][data-accent='emerald'] .theme-dark { --color-amber-50: #ecfdf5; --color-amber-100: #d1fae5; --color-amber-200: #a7f3d0; --color-amber-300: #6ee7b7; --color-amber-400: #34d399; --color-amber-500: #10b981; --color-amber-600: #059669; }
 :root[data-theme='light'][data-accent='violet'] .theme-dark { --color-amber-50: #f5f3ff; --color-amber-100: #ede9fe; --color-amber-200: #ddd6fe; --color-amber-300: #c4b5fd; --color-amber-400: #a78bfa; --color-amber-500: #8b5cf6; --color-amber-600: #7c3aed; }
 :root[data-theme='light'][data-accent='rose'] .theme-dark { --color-amber-50: #fff1f2; --color-amber-100: #ffe4e6; --color-amber-200: #fecdd3; --color-amber-300: #fda4af; --color-amber-400: #fb7185; --color-amber-500: #f43f5e; --color-amber-600: #e11d48; }
+:root[data-theme='light'][data-accent='sunset'] .theme-dark { --color-amber-50: #fff7ed; --color-amber-100: #ffedd5; --color-amber-200: #fed7aa; --color-amber-300: #fdba74; --color-amber-400: #fb923c; --color-amber-500: #ea580c; --color-amber-600: #c2410c; }
+:root[data-theme='light'][data-accent='pink'] .theme-dark { --color-amber-50: #fdf2f8; --color-amber-100: #fce7f3; --color-amber-200: #fbcfe8; --color-amber-300: #f9a8d4; --color-amber-400: #f472b6; --color-amber-500: #db2777; --color-amber-600: #be185d; }
+:root[data-theme='light'][data-accent='teal'] .theme-dark { --color-amber-50: #f0fdfa; --color-amber-100: #ccfbf1; --color-amber-200: #99f6e4; --color-amber-300: #5eead4; --color-amber-400: #2dd4bf; --color-amber-500: #0d9488; --color-amber-600: #0f766e; }
+:root[data-theme='light'][data-accent='lime'] .theme-dark { --color-amber-50: #f7fee7; --color-amber-100: #ecfccb; --color-amber-200: #d9f99d; --color-amber-300: #bef264; --color-amber-400: #a3e635; --color-amber-500: #65a30d; --color-amber-600: #4d7c0f; }
+:root[data-theme='light'][data-accent='indigo'] .theme-dark { --color-amber-50: #eef2ff; --color-amber-100: #e0e7ff; --color-amber-200: #c7d2fe; --color-amber-300: #a5b4fc; --color-amber-400: #818cf8; --color-amber-500: #6366f1; --color-amber-600: #4f46e5; }
 :root[data-theme='light'] .bg-grid::before {
   background:
-    radial-gradient(60% 40% at 0% 0%, color-mix(in oklab, var(--color-amber-400) 14%, transparent), transparent 70%),
-    radial-gradient(55% 36% at 100% 4%, rgba(168, 85, 247, 0.1), transparent 70%) !important;
+    radial-gradient(60% 40% at 0% 0%, color-mix(in oklab, var(--color-amber-400) 22%, transparent), transparent 70%),
+    radial-gradient(55% 36% at 100% 4%, rgba(168, 85, 247, 0.16), transparent 70%),
+    radial-gradient(60% 40% at 50% 105%, rgba(236, 72, 153, 0.08), transparent 70%) !important;
 }
 :root[data-theme='light'][data-bg='midnight'] .bg-grid { background-image: radial-gradient(circle at 1px 1px, rgba(15,23,42,0.06) 1px, transparent 0); }
 :root[data-theme='light'] ::-webkit-scrollbar-thumb { background: #cbd5e1; }

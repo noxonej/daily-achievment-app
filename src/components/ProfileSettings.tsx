@@ -3,7 +3,6 @@ import { useApp } from '../store/AppContext';
 import { FOCUS_AREAS } from '../lib/routine';
 import type { FocusArea } from '../lib/types';
 import { Icon } from './Icon';
-import { Logo, Wordmark } from './Logo';
 import { ACCENTS, BACKGROUNDS } from '../lib/theme';
 
 /** Name and the areas you're working on (the starter plan was built from these). */
@@ -84,7 +83,7 @@ export function AccentPicker() {
 export function BackgroundPicker() {
   const { state, dispatch } = useApp();
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="radiogroup" aria-label="Background">
+    <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 gap-2" role="radiogroup" aria-label="Background">
       {BACKGROUNDS.map((b) => {
         const on = (state.appearance?.background ?? 'nebula') === b.id;
         return (
@@ -95,7 +94,7 @@ export function BackgroundPicker() {
             onClick={() => dispatch({ type: 'SET_APPEARANCE', appearance: { background: b.id } })}
             className={`rounded-xl border-2 p-1.5 text-left transition ${on ? 'border-amber-400' : 'border-white/10 hover:border-white/25'}`}
           >
-            <span className="block h-12 rounded-lg p-1.5 space-y-1" style={{ background: b.bg }}>
+            <span className="block h-12 rounded-lg p-1.5 space-y-1" style={{ background: b.glow ? `${b.glow}, ${b.bg}` : b.bg }}>
               <span className="block h-2.5 w-3/4 rounded" style={{ background: b.surface }} />
               <span className="block h-2.5 w-1/2 rounded" style={{ background: b.surface }} />
             </span>
@@ -108,29 +107,3 @@ export function BackgroundPicker() {
   );
 }
 
-export function AboutCard() {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <div className="flex items-center gap-3">
-        <Logo size={40} />
-        <div>
-          <Wordmark className="text-base" />
-          <p className="text-xs text-slate-500">Planner, habits & money · version 1.1</p>
-        </div>
-      </div>
-      <ul className="mt-4 space-y-2.5 text-sm text-slate-300">
-        <li className="flex gap-2.5">
-          <Icon name="🔐" size={17} className="shrink-0 mt-0.5 text-emerald-300" />
-          <span>
-            <b className="text-white">Private by design.</b> No ads, no tracking. Everything you enter, including your diary
-            and notes, stays on this device unless you export a backup or turn on sync.
-          </span>
-        </li>
-        <li className="flex gap-2.5">
-          <Icon name="ℹ" size={17} className="shrink-0 mt-0.5 text-sky-300" />
-          <span>The Money tab helps you count and plan your own money. It isn't financial advice.</span>
-        </li>
-      </ul>
-    </div>
-  );
-}
