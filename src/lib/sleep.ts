@@ -165,3 +165,53 @@ export function sleepQuestsDone(state: AppState, entry: SleepEntry): string[] {
   }
   return ids;
 }
+
+export interface NeedSuggestion {
+  hours: number;
+  title: string;
+  text: string;
+}
+
+const quarter = (h: number) => Math.round(h * 4) / 4;
+
+/**
+ * After 3+ nights where you said how you felt, check whether your sleep need fits you:
+ * rested on less than you set → maybe set it lower; tired even on "enough" → maybe higher.
+ * Never below your age group's minimum.
+ */
+export function needSuggestion(state: Pick<AppState, 'sleep'>): NeedSuggestion | null {
+  const need = sleepNeed(state.sleep);
+  const band = bandOf(state.sleep);
+  const felt = [...(state.sleep?.log ?? [])]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-14)
+    .filter((e) => e.feel);
+  if (felt.length < 3) return null;
+  const avg = (xs: SleepEntry[], f: (e: SleepEntry) => number) => xs.reduce((n, e) => n + f(e), 0) / xs.length;
+
+  const enough = felt.filter((e) => e.hours >= need - 0.25);
+  if (enough.length >= 3 && avg(enough, (e) => e.feel ?? 2) < 1.7) {
+    const hours = Math.min(band.max + 1, quarter(need + 0.5));
+    if (hours > need) {
+      return {
+        hours,
+        title: `Try ${formatHours(hours)} instead of ${formatHours(need)}`,
+        text: `You got your ${formatHours(need)} on ${enough.length} nights but still woke up tired. Your body might need a bit more. Test it for a week.`,
+      };
+    }
+  }
+
+  const rested = felt.filter((e) => e.feel === 3 && e.hours < need - 0.25);
+  const restedOk = felt.filter((e) => e.feel === 3);
+  if (rested.length >= 3 && rested.length >= restedOk.length - rested.length) {
+    const hours = Math.max(band.min, quarter(avg(rested, (e) => e.hours) + 0.25));
+    if (hours < need) {
+      return {
+        hours,
+        title: `Maybe ${formatHours(hours)} is enough for you`,
+        text: `You woke up rested ${rested.length} times after less than ${formatHours(need)}. Setting your need to ${formatHours(hours)} makes your bedtime fit you better.`,
+      };
+    }
+  }
+  return null;
+}

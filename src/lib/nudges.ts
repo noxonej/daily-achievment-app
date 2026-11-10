@@ -161,6 +161,8 @@ export interface NudgeStatus {
   /** Ready-made messages for the next days, so the service worker can show them with the app closed. */
   evening: Record<string, Line>;
   morning: Record<string, Line>;
+  /** Extra reminders (midday and afternoon) for days the app hasn't been opened yet. */
+  comeback?: Record<string, Line>;
 }
 
 /**
@@ -220,6 +222,7 @@ export function useNudges(state: AppState, stats: DerivedStats) {
     (async () => {
       const evening: Record<string, Line> = {};
       const morning: Record<string, Line> = {};
+      const comeback: Record<string, Line> = {};
       let quotes: Awaited<ReturnType<typeof loadQuotes>> | null = null;
       if (prefs.nudges && prefs.daily !== 'off') quotes = await loadQuotes().catch(() => null);
       for (let i = 0; i < 7; i++) {
@@ -227,10 +230,11 @@ export function useNudges(state: AppState, stats: DerivedStats) {
         // A day the app wasn't opened means no quest yet, so the streak is at risk.
         evening[d] = pickNudge(i === 0 ? streak : i === 1 && doneToday ? streak : 0, name, d);
         const q = quotes ? quoteOfDay(poolFor(quotes, prefs.daily), d) : null;
+        comeback[d] = pickNudge(0, name, d, 'c');
         morning[d] = q ? { title: q.kind === 'verse' ? 'Verse of the day' : 'Your daily boost', body: `“${q.text}” — ${q.by}` } : pickNudge(0, name, d, 'm');
       }
       if (!alive) return;
-      await writeStatus({ enabled: prefs.nudges, date: today, doneToday, eveningAt, morningAt, evening, morning });
+      await writeStatus({ enabled: prefs.nudges, date: today, doneToday, eveningAt, morningAt, evening, morning, comeback });
       if (prefs.nudges) void registerPeriodic();
     })();
     return () => {

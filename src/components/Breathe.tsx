@@ -86,8 +86,9 @@ function Session() {
     }
   }, [elapsed, total, start, finished, minutes, dispatch, state.dayLogs, state.quests]);
 
-  // The circle grows while breathing in, stays while holding, and shrinks while breathing out.
-  const scale = start === null ? 0.7 : phase.label === 'Breathe out' ? 0.55 : 1;
+  // The circle grows until it touches the outer ring while breathing in, stays while holding,
+  // and shrinks back towards the middle while breathing out.
+  const scale = start === null ? 0.6 : phase.label === 'Breathe out' ? 0.42 : 1;
   const dur = start === null ? 0.6 : phase.secs;
 
   return (
@@ -98,10 +99,11 @@ function Session() {
       </button>
 
       <div className="relative w-64 h-64 flex items-center justify-center">
-        <div className="absolute inset-0 rounded-full border border-teal-300/15" />
+        <div className="absolute inset-0 rounded-full border-2 border-teal-300/35" />
+        <div className="absolute inset-[29%] rounded-full border border-dashed border-teal-200/20" />
         <div
-          className="absolute inset-4 rounded-full bg-gradient-to-br from-teal-300/70 to-sky-500/60 shadow-[0_0_80px_-10px_rgba(45,212,191,0.7)]"
-          style={{ transform: `scale(${finished ? 0.8 : scale})`, transition: `transform ${dur}s ease-in-out` }}
+          className="absolute inset-0 rounded-full bg-gradient-to-br from-teal-300/70 to-sky-500/60 shadow-[0_0_80px_-10px_rgba(45,212,191,0.7)]"
+          style={{ transform: `scale(${finished ? 0.8 : scale})`, transition: `transform ${dur}s ${phase.label === 'Hold' ? 'linear' : 'cubic-bezier(.45,0,.55,1)'}` }}
         />
         <div className="relative text-center">
           {finished ? (

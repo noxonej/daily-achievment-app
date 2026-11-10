@@ -90,6 +90,10 @@ async function maybeNudge() {
     note = { kind: 'evening', tag: `nudge-${today}`, ...status.evening[today] };
   } else if (minutes >= status.morningAt && minutes < status.morningAt + 180 && fired.morning !== today && status.morning[today]) {
     note = { kind: 'morning', tag: `boost-${today}`, ...status.morning[today] };
+  } else if (status.date !== today && status.comeback && status.comeback[today]) {
+    // The app hasn't been opened today: one extra reminder around midday and one in the afternoon.
+    if (minutes >= 12 * 60 + 30 && minutes < 14 * 60 + 30 && fired.midday !== today) note = { kind: 'midday', tag: `comeback-${today}`, ...status.comeback[today] };
+    else if (minutes >= 16 * 60 && minutes < 18 * 60 && fired.afternoon !== today) note = { kind: 'afternoon', tag: `comeback-${today}`, ...(status.evening[today] || status.comeback[today]) };
   }
   if (!note) return;
   // Don't notify if the app is open and on screen.

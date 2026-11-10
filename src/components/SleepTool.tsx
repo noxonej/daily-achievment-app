@@ -15,6 +15,7 @@ import {
   formatHours,
   sleepNeed,
   sleepSummary,
+  needSuggestion,
   wakeTimesFor,
   type SleepOption,
 } from '../lib/sleep';
@@ -406,6 +407,7 @@ function LogTab() {
   const { state, dispatch } = useApp();
   const need = sleepNeed(state.sleep);
   const sum = sleepSummary(state);
+  const tip = needSuggestion(state);
   const [adding, setAdding] = useState(false);
   const max = Math.max(need + 1, ...sum.nights.map((n) => n.hours));
   const today = todayKey();
@@ -457,6 +459,20 @@ function LogTab() {
         )}
         <p className="text-sm text-slate-300 mt-3 leading-relaxed">{sum.advice}</p>
       </section>
+
+      {tip && (
+        <section className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-indigo-200/80">Tip from your nights</p>
+          <p className="font-bold text-white mt-1">{tip.title}</p>
+          <p className="text-sm text-slate-300 mt-1 leading-relaxed">{tip.text}</p>
+          <button
+            onClick={() => dispatch({ type: 'SLEEP_SET', sleep: { needHours: tip.hours } })}
+            className="mt-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-bold px-4 py-2.5"
+          >
+            Set my need to {formatHours(tip.hours)}
+          </button>
+        </section>
+      )}
 
       {adding ? (
         <AddNight onDone={() => setAdding(false)} />

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { stepCounter } from '../lib/stepCounter';
 import { TwistTag } from './TwistTag';
 import type { QuestMeasure } from '../lib/types';
 import { useApp } from '../store/AppContext';
@@ -44,6 +45,37 @@ export function MeasureQuestCard({
   const litres = (n: number) => (n * size) / 1000;
   const pct = Math.min(100, (value / m.target) * 100);
   const entryNum = Number(entry.replace(/[\s,]/g, m.unit === 'km' ? '.' : ''));
+  const isSteps = m.unit === 'steps';
+  const counting = useSyncExternalStore(stepCounter.subscribe, stepCounter.isRunning, () => false);
+  const sessionSteps = useSyncExternalStore(stepCounter.subscribe, stepCounter.session, () => 0);
+  const [motionNote, setMotionNote] = useState('');
+  // Save counted steps to the quest every couple of seconds (one save per step would be too many).
+  const latest = useRef({ value, onSet });
+  latest.current = { value, onSet };
+  useEffect(() => {
+    if (!isSteps) return;
+    const flush = () => {
+      const n = stepCounter.takePending();
+      if (n) latest.current.onSet(latest.current.value + n);
+    };
+    flush();
+    const id = window.setInterval(flush, 2000);
+    return () => {
+      window.clearInterval(id);
+      flush();
+    };
+  }, [isSteps]);
+  const toggleCounting = async () => {
+    if (counting) return stepCounter.stop();
+    const r = await stepCounter.start();
+    setMotionNote(
+      r === 'ok'
+        ? 'Counting while the app is open and the screen is on. Walk with your phone in your hand or pocket.'
+        : r === 'denied'
+          ? 'Motion access was blocked. Allow "Motion & Orientation" for this site in your browser settings, or type your total from your phone’s health app.'
+          : 'This device has no motion sensor here. Type your total from your phone’s health app instead.',
+    );
+  };
 
   return (
     <div className={`relative rounded-xl border px-4 py-3.5 transition-colors ${completed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.03] border-white/10'}`}>
@@ -112,6 +144,26 @@ export function MeasureQuestCard({
 
       {m.unit !== 'glasses' && (
         <div className="flex flex-wrap gap-2 mt-3">
+          {isSteps && stepCounter.supported() && (
+            <button
+              type="button"
+              onClick={toggleCounting}
+              aria-pressed={counting}
+              className={`flex items-center gap-1.5 rounded-lg text-white text-sm font-bold px-3 py-2 ${counting ? 'bg-rose-500 hover:bg-rose-400' : 'bg-emerald-500 hover:bg-emerald-400'}`}
+            >
+              {counting ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
+                  Stop · {fmt(sessionSteps)}
+                </>
+              ) : (
+                <>
+                  <Icon name="▶" size={14} fill="currentColor" />
+                  Count steps
+                </>
+              )}
+            </button>
+          )}
           {m.unit === 'km' && (
             <button onClick={() => runTracker.open()} className="flex items-center gap-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold px-3 py-2">
               <Icon name="▶" size={14} fill="currentColor" />
@@ -152,6 +204,7 @@ export function MeasureQuestCard({
           )}
         </div>
       )}
+      {isSteps && motionNote && <p className="text-[11px] text-slate-400 mt-2 leading-snug">{motionNote}</p>}
       {justCompleted && (
         <span className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none" aria-hidden="true">
           <span className="complete-sweep" />
