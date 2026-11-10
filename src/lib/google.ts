@@ -7,7 +7,7 @@
  * as an authorised JavaScript origin. Put it in GOOGLE_CLIENT_ID below (it isn't a secret), or
  * set VITE_GOOGLE_CLIENT_ID when building. Without one, the Google buttons show as "coming soon".
  */
-const GOOGLE_CLIENT_ID_DEFAULT = '';
+const GOOGLE_CLIENT_ID_DEFAULT = '505583941780-t7gca2k3ikie0lal92hsudpvl2knlpip.apps.googleusercontent.com';
 
 export const GOOGLE_CLIENT_ID: string = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) || GOOGLE_CLIENT_ID_DEFAULT;
 
