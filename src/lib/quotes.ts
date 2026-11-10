@@ -28,16 +28,23 @@ export function loadQuotes() {
   cache ??= Promise.all([import('../data/quotes-famous'), import('../data/quotes-proverbs'), import('../data/quotes-dayforge'), import('../data/verses')]).then(
     ([f, p, d, v]) => ({
       quotes: [...parse(f.FAMOUS, 'quote', 'Unknown'), ...parse(p.PROVERBS, 'quote', 'Proverb'), ...parse(d.DAYFORGE, 'quote', 'Squzo')],
-      verses: parse(v.VERSES, 'verse', 'Bible'),
+      // Only the best-known verses, mixed in with the quotes now and then.
+      verses: parse(v.VERSES, 'verse', 'Bible').filter((q) => FAMOUS_VERSES.has(q.by)),
     }),
   );
   return cache;
 }
 
+const FAMOUS_VERSES = new Set([
+  'Philippians 4:13', 'Proverbs 3:5', 'Romans 8:28', 'Psalm 23:1', 'Matthew 6:34', 'Matthew 7:7', 'Matthew 5:14',
+  '2 Timothy 1:7', 'Galatians 6:9', 'Proverbs 16:3', 'Psalm 46:10', 'John 3:16', 'Romans 12:2', 'Romans 12:21', '1 Corinthians 13:4',
+]);
+
+/** Quotes with a few famous verses mixed in ('verses' and 'both' are old settings and mean the same now). */
 export function poolFor(all: { quotes: Quote[]; verses: Quote[] }, kind: DailyKind): Quote[] {
-  if (kind === 'verses') return all.verses;
-  if (kind === 'both') return [...all.quotes, ...all.verses];
-  return all.quotes;
+  void kind;
+  // Each verse counts 5 times, so about 1 line in 14 is a verse (otherwise you'd almost never see one).
+  return [...all.quotes, ...Array.from({ length: 5 }, () => all.verses).flat()];
 }
 
 /** Today's line: the same all day, a different one tomorrow. */

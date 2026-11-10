@@ -170,23 +170,21 @@ function Home() {
       <Group title="Daily boost">
         <div className="px-4 py-3.5">
           <p className="text-[15px] font-semibold text-white">On the Today screen, show</p>
-          <p className="text-xs text-slate-400 mt-0.5">A new one every day, from over 1,000 quotes and 200+ Bible verses.</p>
-          <div className="mt-3 grid grid-cols-2 min-[400px]:grid-cols-4 gap-1.5" role="radiogroup" aria-label="Daily boost">
+          <p className="text-xs text-slate-400 mt-0.5">A new one every day, from over 1,000 quotes with a few famous Bible verses mixed in. Tap Skip for another one.</p>
+          <div className="mt-3 grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Daily boost">
             {(
               [
                 ['quotes', 'Quotes'],
-                ['verses', 'Bible verses'],
-                ['both', 'Both'],
                 ['off', 'Nothing'],
               ] as const
             ).map(([id, label]) => (
               <button
                 key={id}
                 role="radio"
-                aria-checked={prefs.daily === id}
+                aria-checked={id === 'off' ? prefs.daily === 'off' : prefs.daily !== 'off'}
                 onClick={() => setPrefs({ daily: id })}
                 className={`rounded-lg py-2 text-xs font-semibold border ${
-                  prefs.daily === id ? 'bg-amber-500/20 border-amber-400 text-amber-100' : 'bg-white/5 border-white/10 text-slate-300'
+                  (id === 'off' ? prefs.daily === 'off' : prefs.daily !== 'off') ? 'bg-amber-500/20 border-amber-400 text-amber-100' : 'bg-white/5 border-white/10 text-slate-300'
                 }`}
               >
                 {label}

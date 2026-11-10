@@ -5,15 +5,13 @@ import { loadQuotes, poolFor, quoteOfDay, randomQuote, type DailyKind, type Quot
 import { Icon } from '../Icon';
 
 const KINDS: Array<{ id: DailyKind; label: string }> = [
-  { id: 'quotes', label: 'Quotes' },
-  { id: 'verses', label: 'Bible verses' },
-  { id: 'both', label: 'Both' },
+  { id: 'quotes', label: 'Show' },
   { id: 'off', label: 'Hide' },
 ];
 
 /**
- * "Daily boost": one quote (or Bible verse, if you chose that) for today, the same all day.
- * Tap "Another" for a random one. The 1,000+ lines download only when this card first shows.
+ * "Daily boost": one quote for today (now and then a famous Bible verse), the same all day.
+ * Don't like it? Tap "Skip" to go to a different one. The 1,000+ lines download only when this card first shows.
  */
 export function DailyBoost() {
   const { state, dispatch } = useApp();
@@ -61,20 +59,20 @@ export function DailyBoost() {
         <span className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-300 flex items-center justify-center">
           <Icon name={q?.kind === 'verse' ? '✝' : '💬'} size={15} />
         </span>
-        <span className="text-xs font-bold uppercase tracking-wider text-amber-200/90 flex-1">{q?.kind === 'verse' ? 'Verse of the day' : 'Daily boost'}</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-amber-200/90 flex-1">Daily boost</span>
         <button
           onClick={() => setMenu((m) => !m)}
           aria-expanded={menu}
           aria-label="Choose what to show"
           className="h-8 px-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 flex items-center gap-1 text-xs font-semibold"
         >
-          {KINDS.find((k) => k.id === kind)?.label}
+          Options
           <Icon name="▾" size={12} />
         </button>
       </div>
 
       {menu && (
-        <div className="mt-3 grid grid-cols-4 gap-1.5 fade-up">
+        <div className="mt-3 grid grid-cols-2 gap-1.5 fade-up">
           {KINDS.map((k) => (
             <button
               key={k.id}
@@ -83,7 +81,7 @@ export function DailyBoost() {
                 setMenu(false);
               }}
               className={`rounded-lg py-2 text-[11px] font-semibold border ${
-                kind === k.id ? 'bg-amber-500/20 border-amber-400 text-amber-100' : 'bg-white/5 border-white/10 text-slate-300'
+                k.id !== 'off' ? 'bg-amber-500/20 border-amber-400 text-amber-100' : 'bg-white/5 border-white/10 text-slate-300'
               }`}
             >
               {k.label}
@@ -116,8 +114,8 @@ export function DailyBoost() {
           }}
           className="flex items-center gap-1.5 rounded-full bg-white/[0.06] border border-white/10 hover:bg-white/10 px-3 py-1.5 text-xs font-semibold text-slate-200"
         >
-          <Icon name="🔀" size={13} />
-          Another
+          <Icon name="⏭" size={13} />
+          Skip
         </button>
         <button
           disabled={!q}
