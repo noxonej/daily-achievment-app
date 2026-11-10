@@ -36,7 +36,7 @@ export function loadQuotes() {
 }
 
 const FAMOUS_VERSES = new Set([
-  'Philippians 4:13', 'Proverbs 3:5', 'Romans 8:28', 'Psalm 23:1', 'Matthew 6:34', 'Matthew 7:7', 'Matthew 5:14',
+  'Philippians 4:13', 'Jeremiah 29:11', 'Joshua 1:9', 'Isaiah 40:31', 'Proverbs 3:5', 'Romans 8:28', 'Psalm 23:1', 'Matthew 6:34', 'Matthew 7:7', 'Matthew 5:14',
   '2 Timothy 1:7', 'Galatians 6:9', 'Proverbs 16:3', 'Psalm 46:10', 'John 3:16', 'Romans 12:2', 'Romans 12:21', '1 Corinthians 13:4',
 ]);
 
