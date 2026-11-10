@@ -17,7 +17,7 @@ const SUGGESTIONS: Array<Omit<CustomReward, 'id'>> = [
 const ICONS = ['🎮', '🍔', '🎬', '😴', '🍿', '🧹', '🛍', '☕', '🎵', '📱', '⚽', '🎁'];
 
 /**
- * Your own rewards shop: real-life treats you set yourself and "buy" with the shards your quests
+ * Your own rewards shop: real-life treats you set yourself and "buy" with the coins your quests
  * earn. It turns effort into something you actually want, and makes treats feel earned.
  */
 export function RewardsView() {
@@ -27,18 +27,18 @@ export function RewardsView() {
   const [bought, setBought] = useState<string | null>(null);
   const shards = stats.availableShards;
   const history = [...(state.redemptions ?? [])].reverse().slice(0, 8);
-  // Rough guide: a quest gives about 15 XP (and as many shards).
+  // Rough guide: a quest gives about 15 XP (and as many coins).
   const questsFor = (cost: number) => Math.max(1, Math.ceil((cost - shards) / 15));
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
       <div className="relative overflow-hidden rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-500/15 via-white/[0.03] to-transparent p-5">
-        <p className="text-xs font-bold uppercase tracking-wider text-violet-200">Your shards</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-violet-200">Your coins</p>
         <p className="font-display text-4xl font-black text-white tabular-nums mt-1 flex items-center gap-2">
           <Icon name="💎" size={30} className="text-cyan-300" fill="currentColor" />
           {shards}
         </p>
-        <p className="text-sm text-slate-300 mt-1">Every quest earns shards. Spend them on treats you choose, or on outfits in the wardrobe.</p>
+        <p className="text-sm text-slate-300 mt-1">Every quest earns coins. Spend them on treats you choose, or on outfits in the wardrobe.</p>
       </div>
 
       <div className="flex items-center justify-between">
@@ -147,9 +147,9 @@ function RewardModal({ reward, onClose }: { reward: CustomReward | 'new' | null;
           <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} placeholder="e.g. 1 hour of gaming" className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 px-3 h-11 text-base text-white focus:outline-none focus:border-amber-400/60" />
         </label>
         <label className="block">
-          <span className="text-sm font-semibold text-slate-300">Price in shards</span>
+          <span className="text-sm font-semibold text-slate-300">Price in coins</span>
           <input value={cost} onChange={(e) => setCost(e.target.value.replace(/[^\d]/g, ''))} inputMode="numeric" placeholder="100" className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 px-3 h-11 text-base text-white focus:outline-none focus:border-amber-400/60" />
-          <span className="block text-xs text-slate-500 mt-1">A quest gives about 10 to 30 shards. Small treats 50–150, big ones 500+.</span>
+          <span className="block text-xs text-slate-500 mt-1">A quest gives about 10 to 30 coins. Small treats 50–150, big ones 500+.</span>
         </label>
         <IconGrid options={ICONS} value={icon} onChange={setIcon} size="sm" />
         <div className="flex gap-2">

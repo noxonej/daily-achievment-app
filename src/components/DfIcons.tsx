@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 /**
  * Dayforge's own icon set: rounded line drawings with a soft two-tone fill, used for the app's
- * signature things (tabs, streak, shards, XP, chests…). Everything else still uses the line icons.
+ * signature things (tabs, streak, coins, XP, chests…). Everything else still uses the line icons.
  * Each glyph is drawn on a 24×24 grid; `D` marks the filled (duotone) parts.
  */
 const D = { fill: 'currentColor', fillOpacity: 0.3, stroke: 'none' } as const;

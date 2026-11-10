@@ -125,7 +125,7 @@ export const sleepSound = {
     if (minutes) timer = setTimeout(() => sleepSound.stop(), minutes * 60000);
     try {
       const label = SOUNDS.find((s) => s.id === id)?.label ?? 'Sleep sound';
-      if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: label, artist: 'Dayforge sleep' });
+      if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: label, artist: 'Squzo sleep' });
     } catch {
       // optional
     }

@@ -1,4 +1,4 @@
-# Dayforge: Planner, Habits & Money
+# Squzo: Planner, Habits & Money
 
 Turn your daily habits into a game. Track daily quests (read, journal,
 meditate, move, ...), bigger weekly quests, and long-term goals you're

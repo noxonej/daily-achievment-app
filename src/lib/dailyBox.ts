@@ -36,7 +36,7 @@ export function rollBox(pool: AvatarItem[], rand: () => number = Math.random): B
     r -= e.weight;
     if (r <= 0) {
       if (e.reward.kind === 'cosmetic') {
-        // Everything already collected: fall back to a big shard prize.
+        // Everything already collected: fall back to a big coin prize.
         if (pool.length === 0) return { kind: 'shards', amount: 150 };
         return { kind: 'cosmetic', itemId: pool[Math.floor(rand() * pool.length)].id };
       }
@@ -49,7 +49,7 @@ export function rollBox(pool: AvatarItem[], rand: () => number = Math.random): B
 export function rewardInfo(r: BoxReward): { title: string; text: string; icon: string; tone: string } {
   switch (r.kind) {
     case 'shards':
-      return { title: `+${r.amount} shards`, text: 'Spend them in the wardrobe.', icon: '💎', tone: 'text-amber-300' };
+      return { title: `+${r.amount} coins`, text: 'Spend them in the wardrobe.', icon: '💎', tone: 'text-amber-300' };
     case 'xpBoost':
       return {
         title: r.multiplier >= 2 ? 'Double XP today' : '+50% XP today',

@@ -727,9 +727,9 @@ export function PixelAvatar({
   const crop = mode !== 'full';
   // Full body: pixel rows 0–30 fill the middle 84% of the picture, centred on the body.
   // Head view: pixel area x7.5–24.5, y-0.5–16.5 (room for tall hats).
-  // Bust view: pixel area x4–28, y-2–22 (head, shoulders and any hat, all inside a circle).
-  const s = mode === 'head' ? 100 / 17 : mode === 'bust' ? 100 / 24 : 2.8;
-  const tx = mode === 'head' ? -7.5 * s : mode === 'bust' ? -4 * s : 50 - 16 * s;
+  // Bust view: pixel area x2.5–29.5, y-2–25 (head, shoulders, a bit of the chest and any hat).
+  const s = mode === 'head' ? 100 / 17 : mode === 'bust' ? 100 / 27 : 2.8;
+  const tx = mode === 'head' ? -7.5 * s : mode === 'bust' ? -2.5 * s : 50 - 16 * s;
   const ty = mode === 'head' ? 0.5 * s : mode === 'bust' ? 2 * s : 7;
   const clip = `${id}c`;
   return (

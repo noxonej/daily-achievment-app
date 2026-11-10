@@ -16,6 +16,7 @@ import {
 import { useWardrobeOpen, wardrobe } from '../lib/wardrobe';
 import { Avatar } from './Avatar';
 import { ChestArt } from './Chest';
+import { Coin } from './Coin';
 import { Icon } from './Icon';
 
 function unlockLabel(item: AvatarItem): string {
@@ -23,7 +24,7 @@ function unlockLabel(item: AvatarItem): string {
     case 'free':
       return 'Free';
     case 'shop':
-      return `${item.unlock.cost} shards`;
+      return `${item.unlock.cost} coins`;
     case 'level':
       return `Reach level ${item.unlock.level}`;
     case 'streak':
@@ -35,7 +36,7 @@ function unlockLabel(item: AvatarItem): string {
   }
 }
 
-/** Full-screen avatar customisation: try anything on, buy with shards, win from chests. */
+/** Full-screen avatar customisation: try anything on, buy with coins, win from chests. */
 
 /** Item tiles for these zoom in on the head, so faces, hair and hats are easy to compare. */
 const HEAD_SLOTS = new Set<string>(['expression', 'hair', 'hairColor', 'face', 'headwear']);
@@ -207,7 +208,7 @@ export function Wardrobe() {
             <p className="text-sm font-bold text-white mb-1">How to earn more</p>
             <p>
               <Icon name="💎" size="1.1em" className="icon-inline text-amber-300" />
-              <b className="text-slate-200">Shards:</b> every XP you earn from quests is a shard to spend.
+              <b className="text-slate-200">Coins:</b> every XP you earn from quests is a coin to spend.
             </p>
             <p>
               <Icon name="df:chest" size="1.1em" className="icon-inline text-violet-300" />
@@ -266,7 +267,7 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
   useBackToClose(true, onClose);
   // closed → shake (anticipation) → opening (lid swings up, light, sparkles) → reveal
   const [phase, setPhase] = useState<'closed' | 'shake' | 'opening' | 'reveal'>('closed');
-  // undefined = not opened yet, null = shards (everything owned), 'skip' = a Skip Pass.
+  // undefined = not opened yet, null = coins (everything owned), 'skip' = a Skip Pass.
   const [prize, setPrize] = useState<AvatarItem | null | 'skip' | undefined>(undefined);
   const look = normalizeLook(state.character);
   const ctx = useMemo(() => ownership(state, stats), [state, stats]);
@@ -312,7 +313,22 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
           <div className="relative">
             {phase === 'opening' && (
               <>
+                <span className="open-flash" aria-hidden="true" />
                 <span className="box-shockwave" aria-hidden="true" />
+                {Array.from({ length: 12 }, (_, i) => {
+                  const side = i % 2 ? 1 : -1;
+                  const dx = side * (30 + ((i * 37) % 110));
+                  return (
+                    <span
+                      key={`c${i}`}
+                      className="coin-fly"
+                      aria-hidden="true"
+                      style={{ ['--dx' as string]: `${dx}px`, ['--up' as string]: `${120 + ((i * 53) % 90)}px`, animationDelay: `${(i % 6) * 0.05}s` }}
+                    >
+                      <Coin size={22} />
+                    </span>
+                  );
+                })}
                 {Array.from({ length: 16 }, (_, i) => {
                   const a = (i / 16) * Math.PI * 2;
                   const d = 110 + (i % 3) * 28;
@@ -350,7 +366,7 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
           </div>
           <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text} fade-up`}>{item ? r.label : prize === 'skip' ? 'Rare drop' : 'Bonus'}</p>
           <p className="font-display text-3xl font-extrabold text-white mt-1 fade-up [animation-delay:.1s]">
-            {item ? item.name : prize === 'skip' ? 'Skip Pass' : `+${CHEST_DUPLICATE_SHARDS} shards`}
+            {item ? item.name : prize === 'skip' ? 'Skip Pass' : `+${CHEST_DUPLICATE_SHARDS} coins`}
           </p>
           <p className="text-sm text-slate-400 mt-1 fade-up [animation-delay:.15s] max-w-xs">
             {item

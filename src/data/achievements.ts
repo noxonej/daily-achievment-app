@@ -30,7 +30,7 @@ export const ACHIEVEMENTS: Achievement[] = [
 
   // Perfect days
   threshold('perfect-1', 'Perfect Day', 'Complete every daily quest in one day.', '✨', 'bronze', 'Perfection', 'totalPerfectDays', 1),
-  threshold('perfect-7', 'Flawless Week', 'Rack up 7 perfect days.', '💎', 'silver', 'Perfection', 'totalPerfectDays', 7),
+  threshold('perfect-7', 'Flawless Week', 'Rack up 7 perfect days.', '🌟', 'silver', 'Perfection', 'totalPerfectDays', 7),
   threshold('perfect-30', 'Flawless Month', 'Rack up 30 perfect days.', '💠', 'gold', 'Perfection', 'totalPerfectDays', 30),
 
   // Levels

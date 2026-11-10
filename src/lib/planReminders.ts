@@ -58,7 +58,7 @@ export function buildPlanIcs(state: AppState, minutesBefore: number, now: Date =
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Dayforge//Week Plan//EN',
+    'PRODID:-//Squzo//Week Plan//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'X-WR-CALNAME:Week Plan',

@@ -90,11 +90,11 @@ export function CheckInCard() {
         {v.claimedToday ? (
           <>
             Tomorrow (in {resetLabel}): <b className="text-slate-200">{v.nextDay === 1 ? 'a new week of rewards' : `Day ${v.nextDay}, ${nextInfo.title.toLowerCase()}`}</b>.
-            {v.perfectPossible && v.filled < 7 && <> Keep going every day for a +{PERFECT_WEEK_BONUS} shard bonus on day 7.</>}
-            {v.filled === 7 && v.inARow === 7 && <> Perfect week: +{PERFECT_WEEK_BONUS} bonus shards!</>}
+            {v.perfectPossible && v.filled < 7 && <> Keep going every day for a +{PERFECT_WEEK_BONUS} coin bonus on day 7.</>}
+            {v.filled === 7 && v.inARow === 7 && <> Perfect week: +{PERFECT_WEEK_BONUS} bonus coins!</>}
           </>
         ) : v.perfectPossible ? (
-          <>Claim 7 days in a row for a +{PERFECT_WEEK_BONUS} shard bonus. Missed a day? No problem, you keep what you have.</>
+          <>Claim 7 days in a row for a +{PERFECT_WEEK_BONUS} coin bonus. Missed a day? No problem, you keep what you have.</>
         ) : (
           <>Missed a day? No problem, your rewards are still here. Pick up where you left off.</>
         )}

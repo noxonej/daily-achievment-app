@@ -1,7 +1,7 @@
 {
   "id": "/daily-achievment-app/",
-  "name": "Dayforge: Planner, Habits & Money",
-  "short_name": "Dayforge",
+  "name": "Squzo: Planner, Habits & Money",
+  "short_name": "Squzo",
   "description": "Plan your week, build habits, track your money and savings goals, and level up every day.",
   "start_url": "./?source=homescreen",
   "scope": "./",

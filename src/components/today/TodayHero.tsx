@@ -1,4 +1,5 @@
 import { useApp } from '../../store/AppContext';
+import { Fire } from '../fx/Fire';
 import { levelFromTotalXp } from '../../lib/xp';
 import { addDaysToKey, todayKey } from '../../lib/date';
 import { useDailyResetLabel } from '../../lib/useResetCountdown';
@@ -102,7 +103,7 @@ export function TodayHero({
           <div>
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-xs font-bold text-white flex items-center gap-1">
-                <Icon name="🔥" size={13} className={stats.currentStreak > 0 ? 'text-orange-400' : 'text-slate-500'} />
+                <Fire size={15} lit={stats.currentStreak > 0} intensity={stats.currentStreak >= 30 ? 3 : stats.currentStreak >= 7 ? 2 : 1} />
                 {stats.currentStreak} day streak
               </span>
               <span className="text-[11px] text-slate-400 tabular-nums">{stats.activeThisWeek}/{dow + 1} days this week</span>

@@ -133,10 +133,10 @@ function Connected() {
 
   async function invite() {
     const url = inviteLink(me.code);
-    const text = `Join me on Dayforge! My friend code is ${me.code}.`;
+    const text = `Join me on Squzo! My friend code is ${me.code}.`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Dayforge', text, url });
+        await navigator.share({ title: 'Squzo', text, url });
         return;
       }
     } catch {

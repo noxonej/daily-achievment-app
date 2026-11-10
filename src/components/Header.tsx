@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Fire } from './fx/Fire';
 import { useApp } from '../store/AppContext';
 import { levelFromTotalXp, titleForLevel } from '../lib/xp';
 import { useCountUp } from '../lib/useCountUp';
@@ -65,7 +66,7 @@ export function Header() {
           }`}
           title={`${streak} day streak`}
         >
-          <Icon name="🔥" size={17} className={`text-orange-400 ${streak > 0 ? 'animate-flicker' : 'opacity-60'}`} fill={streak > 0 ? 'currentColor' : 'none'} />
+          <Fire size={19} lit={streak > 0} intensity={streak >= 30 ? 3 : streak >= 7 ? 2 : 1} />
           <span key={streak} className="font-display font-bold text-[15px] leading-none tabular-nums text-white animate-num-pop">
             {streak}
           </span>

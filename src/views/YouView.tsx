@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Fire } from '../components/fx/Fire';
 import { shortNum } from '../lib/num';
 import { locale } from '../lib/locale';
 import { InfoTip } from '../components/Guide';
@@ -128,11 +129,12 @@ export function YouView() {
 }
 
 function Stat({ icon, value, label, color, pulse }: { icon: string; value: number; label: string; color: string; pulse?: boolean }) {
+  const iconEl = icon === '🔥' ? <Fire size={19} lit={value > 0} intensity={value >= 30 ? 3 : value >= 7 ? 2 : 1} className="shrink-0" /> : <Icon name={icon} size={16} className="shrink-0" />;
   return (
     <div className="relative rounded-2xl bg-black/20 border border-white/[0.06] py-2.5 text-center">
       {pulse && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />}
       <div className={`flex items-center justify-center gap-1.5 px-1.5 min-w-0 ${color}`}>
-        <Icon name={icon} size={16} className="shrink-0" />
+        {iconEl}
         <span className="font-display text-lg font-extrabold text-white tabular-nums truncate">{shortNum(value)}</span>
       </div>
       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mt-0.5 px-1 truncate">{label}</p>

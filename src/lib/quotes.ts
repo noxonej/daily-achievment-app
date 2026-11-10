@@ -27,7 +27,7 @@ function parse(src: string, kind: Quote['kind'], fallback: string): Quote[] {
 export function loadQuotes() {
   cache ??= Promise.all([import('../data/quotes-famous'), import('../data/quotes-proverbs'), import('../data/quotes-dayforge'), import('../data/verses')]).then(
     ([f, p, d, v]) => ({
-      quotes: [...parse(f.FAMOUS, 'quote', 'Unknown'), ...parse(p.PROVERBS, 'quote', 'Proverb'), ...parse(d.DAYFORGE, 'quote', 'Dayforge')],
+      quotes: [...parse(f.FAMOUS, 'quote', 'Unknown'), ...parse(p.PROVERBS, 'quote', 'Proverb'), ...parse(d.DAYFORGE, 'quote', 'Squzo')],
       verses: parse(v.VERSES, 'verse', 'Bible'),
     }),
   );

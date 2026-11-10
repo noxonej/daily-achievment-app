@@ -87,7 +87,7 @@ function toast(icon: string, text: string, look?: string) {
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   set({ toasts: [...current.toasts, { id, icon, text, look }].slice(-3) });
   setTimeout(() => dismissFriendToast(id), 5000);
-  if (document.visibilityState === 'hidden') showSystemNotification('Dayforge friends', text, `friends-${id}`);
+  if (document.visibilityState === 'hidden') showSystemNotification('Squzo friends', text, `friends-${id}`);
 }
 
 /* ---------------------------------------------------------------- helpers */

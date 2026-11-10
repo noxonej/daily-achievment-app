@@ -91,7 +91,7 @@ export function computeDerivedStats(state: AppState): DerivedStats {
   const dow = (new Date().getDay() + 6) % 7;
   let activeThisWeek = 0;
   for (let i = 0; i <= dow; i++) if (dayCountsForStreak(state.dayLogs[addDaysToKey(today, -i)]) || shielded.has(addDaysToKey(today, -i))) activeThisWeek += 1;
-  // Items that no longer exist cost nothing, so shards spent on retired items are refunded automatically.
+  // Items that no longer exist cost nothing, so coins spent on retired items are refunded automatically.
   const shardsSpent = (state.unlockedCosmeticIds ?? []).reduce((sum, id) => sum + paidFor(findItem(id), state.purchases?.[id]), 0);
   const rewardsSpent = (state.redemptions ?? []).reduce((n, r) => n + r.cost, 0);
   const availableShards = Math.max(0, totalXp + (state.bonusShards ?? 0) - shardsSpent - rewardsSpent);

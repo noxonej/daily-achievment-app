@@ -27,7 +27,7 @@ export const PERFECT_WEEK_BONUS = 50;
 export function checkInRewardInfo(r: CheckInReward): { icon: string; short: string; title: string } {
   switch (r.kind) {
     case 'shards':
-      return { icon: '💎', short: String(r.amount), title: `${r.amount} shards` };
+      return { icon: '💎', short: String(r.amount), title: `${r.amount} coins` };
     case 'swap':
       return { icon: '🔁', short: 'Swap', title: 'A Quest Swap' };
     case 'shield':

@@ -19,7 +19,7 @@ export function AboutPage() {
           </div>
         </div>
         <p className="text-[15px] text-slate-200 leading-relaxed mt-4">
-          Dayforge turns your day into a game you can win. Small daily quests build habits, a simple week plan keeps you on
+          Squzo turns your day into a game you can win. Small daily quests build habits, a simple week plan keeps you on
           track, and the money tab helps you save for what you really want.
         </p>
       </div>
@@ -43,9 +43,9 @@ export function AboutPage() {
 
       <Section icon="⚡" title="How it works, in 4 steps">
         <ol className="space-y-2.5">
-          <Step n={1}>Each day you get a few quests. Tap one when it's done to earn XP and shards.</Step>
+          <Step n={1}>Each day you get a few quests. Tap one when it's done to earn XP and coins.</Step>
           <Step n={2}>Do at least one quest a day to keep your streak. Missed one day? One rest day a week is forgiven.</Step>
-          <Step n={3}>XP levels you up and unlocks new clothes for your character. Shards buy outfits or your own treats.</Step>
+          <Step n={3}>XP levels you up and unlocks new clothes for your character. Coins buy outfits or your own treats.</Step>
           <Step n={4}>Every Sunday, look back at your week and plan the next one.</Step>
         </ol>
         <button onClick={() => settings.open('help')} className="mt-3 text-sm font-semibold text-amber-300 hover:text-amber-200">
@@ -56,7 +56,7 @@ export function AboutPage() {
       <Section icon="💡" title="Why it works">
         <p>
           Big changes come from small things done often. Tiny daily wins are easier to keep than big promises, seeing your
-          progress keeps you going, and rewards make the hard part feel worth it. Dayforge is built around those ideas, and
+          progress keeps you going, and rewards make the hard part feel worth it. Squzo is built around those ideas, and
           it's forgiving on purpose: a bad day doesn't erase your progress.
         </p>
       </Section>
@@ -76,7 +76,7 @@ export function AboutPage() {
 
       <Section icon="📄" title="Terms of use (the short version)">
         <ul className="space-y-2 list-disc pl-5 marker:text-slate-500">
-          <li>Dayforge is free to use, for your own personal life.</li>
+          <li>Squzo is free to use, for your own personal life.</li>
           <li>
             <b>Not financial advice.</b> The money tab helps you count and plan your own money. Prices and values of assets
             are what you type in. Decisions about money are yours.

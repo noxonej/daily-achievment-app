@@ -20,7 +20,7 @@ export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
         <p className="text-slate-400 text-sm">Challenges and dreams</p>
         <h1 className="font-display text-2xl font-bold text-white mt-0.5 mb-4 flex items-center gap-1">
           Quests
-          <InfoTip title="Bigger challenges" text="Daily quests are on Today. Here are the bigger ones: weekly quests take all week, long-term goals are for big things like saving for a car, and Rewards is your own shop of treats you buy with shards." />
+          <InfoTip title="Bigger challenges" text="Daily quests are on Today. Here are the bigger ones: weekly quests take all week, long-term goals are for big things like saving for a car, and Rewards is your own shop of treats you buy with coins." />
         </h1>
         <Segmented
           value={section}

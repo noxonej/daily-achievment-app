@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { useBackToClose } from '../lib/backstack';
 import { t } from '../lib/prefs';
 import { doneByHand } from '../store/reducer';
@@ -11,97 +11,12 @@ import { useDailyResetLabel } from '../lib/useResetCountdown';
 import { Avatar } from './Avatar';
 import { Confetti } from './Confetti';
 import { Icon } from './Icon';
+import { PixelGift } from './PixelArt';
+import { Coin } from './Coin';
 
-/**
- * The daily box: a violet gift box with a gold ribbon and bow. `glow` adds an aura, `sparkle`
- * twinkling stars, and `lid` controls the lid ("on", or "off" while it flies away when opened).
- */
-export function BoxArt({
-  size = 120,
-  glow = false,
-  sparkle = false,
-  lid = 'on',
-  locked = false,
-}: {
-  size?: number;
-  glow?: boolean;
-  sparkle?: boolean;
-  lid?: 'on' | 'off';
-  locked?: boolean;
-}) {
-  const id = useId().replace(/:/g, '');
-  const u = (n: string) => `url(#${n}${id})`;
-  return (
-    <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true" className="overflow-visible">
-      <defs>
-        <linearGradient id={`body${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={locked ? '#475569' : '#7c3aed'} />
-          <stop offset="1" stopColor={locked ? '#1e293b' : '#3b0764'} />
-        </linearGradient>
-        <linearGradient id={`lid${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={locked ? '#94a3b8' : '#a78bfa'} />
-          <stop offset="1" stopColor={locked ? '#475569' : '#6d28d9'} />
-        </linearGradient>
-        <linearGradient id={`gold${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={locked ? '#e2e8f0' : '#fef3c7'} />
-          <stop offset=".45" stopColor={locked ? '#cbd5e1' : '#fbbf24'} />
-          <stop offset="1" stopColor={locked ? '#64748b' : '#d97706'} />
-        </linearGradient>
-        <linearGradient id={`shine${id}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#fff" stopOpacity=".28" />
-          <stop offset=".35" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-        <radialGradient id={`aura${id}`} cx=".5" cy=".5" r=".5">
-          <stop offset="0" stopColor="#c4b5fd" stopOpacity=".85" />
-          <stop offset=".55" stopColor="#8b5cf6" stopOpacity=".25" />
-          <stop offset="1" stopColor="#8b5cf6" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {glow && <circle cx="60" cy="66" r="58" fill={u('aura')} className="glow-pulse" style={{ transformOrigin: '60px 66px' }} />}
-      <ellipse cx="60" cy="108" rx="36" ry="5" fill="#000" opacity=".35" />
-      {/* body */}
-      <rect x="24" y="56" width="72" height="50" rx="7" fill={u('body')} />
-      <rect x="24" y="56" width="72" height="50" rx="7" fill={u('shine')} />
-      <rect x="24" y="56" width="72" height="8" fill="#000" opacity=".18" />
-      <rect x="53.5" y="56" width="13" height="50" fill={u('gold')} />
-      <rect x="53.5" y="56" width="3" height="50" fill="#fff" opacity=".35" />
-      {/* lid + bow */}
-      <g className={lid === 'off' ? 'box-lid-off' : ''} style={{ transformOrigin: '60px 50px' }}>
-        <rect x="18" y="42" width="84" height="18" rx="6" fill={u('lid')} />
-        <rect x="18" y="42" width="84" height="5" rx="3" fill="#fff" opacity=".22" />
-        <rect x="52" y="42" width="16" height="18" fill={u('gold')} />
-        <rect x="52" y="42" width="3.5" height="18" fill="#fff" opacity=".35" />
-        <path d="M60 41 C49 24 33 25 37 35 C40 42 52 42 60 41Z" fill={u('gold')} />
-        <path d="M60 41 C71 24 87 25 83 35 C80 42 68 42 60 41Z" fill={u('gold')} />
-        <path d="M60 41 C53 32 44 31 45 35 C46 38 53 40 60 41Z" fill="#000" opacity=".14" />
-        <path d="M60 41 C67 32 76 31 75 35 C74 38 67 40 60 41Z" fill="#000" opacity=".14" />
-        <rect x="55" y="36" width="10" height="9" rx="3.5" fill={u('gold')} />
-        <rect x="56.5" y="37" width="3" height="4" rx="1.5" fill="#fff" opacity=".5" />
-      </g>
-      {locked && (
-        <g>
-          <circle cx="92" cy="96" r="12" fill="#0f172a" stroke="#475569" strokeWidth="2" />
-          <rect x="86.5" y="94" width="11" height="8.5" rx="2" fill="#94a3b8" />
-          <path d="M89 94 v-2.5 a3 3 0 0 1 6 0 V94" fill="none" stroke="#94a3b8" strokeWidth="2" />
-        </g>
-      )}
-      {sparkle &&
-        [
-          [14, 30, 0],
-          [104, 24, 0.8],
-          [108, 76, 1.5],
-          [10, 82, 2],
-        ].map(([x, y, d]) => (
-          <path
-            key={`${x}-${y}`}
-            d={`M${x} ${y - 6} L${x + 1.6} ${y - 1.6} L${x + 6} ${y} L${x + 1.6} ${y + 1.6} L${x} ${y + 6} L${x - 1.6} ${y + 1.6} L${x - 6} ${y} L${x - 1.6} ${y - 1.6}Z`}
-            fill="#fde68a"
-            className="twinkle"
-            style={{ animationDelay: `${d}s` }}
-          />
-        ))}
-    </svg>
-  );
+/** The daily box: a pixel-art violet gift with a gold ribbon and bow. */
+export function BoxArt(props: { size?: number; glow?: boolean; sparkle?: boolean; lid?: 'on' | 'off'; locked?: boolean }) {
+  return <PixelGift {...props} />;
 }
 
 /** Today screen card: unlock by finishing one quest, open once per day. */
@@ -214,7 +129,18 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
             {phase === 'burst' && (
               <>
                 <span className="box-beam" aria-hidden="true" />
+                <span className="open-flash" aria-hidden="true" />
                 <span className="box-shockwave" aria-hidden="true" />
+                {Array.from({ length: 10 }, (_, i) => (
+                  <span
+                    key={`c${i}`}
+                    className="coin-fly"
+                    aria-hidden="true"
+                    style={{ ['--dx' as string]: `${(i % 2 ? 1 : -1) * (25 + ((i * 41) % 100))}px`, ['--up' as string]: `${110 + ((i * 47) % 80)}px`, animationDelay: `${(i % 5) * 0.05}s` }}
+                  >
+                    <Coin size={20} />
+                  </span>
+                ))}
                 {Array.from({ length: 16 }, (_, i) => {
                   const a = (i / 16) * Math.PI * 2;
                   const d = 110 + (i % 3) * 28;

@@ -1,7 +1,11 @@
 import { useId } from 'react';
 import { APP_NAME, APP_NAME_PARTS } from '../lib/brand';
 
-/** The Dayforge mark: a check that turns into an upward arrow (done, then growing). */
+/** The S of Squzo, drawn as one stroke that ends in a forward arrow. */
+const MARK = 'M13.5 34.5H26a5.25 5.25 0 0 0 0-10.5h-4a5.25 5.25 0 0 1 0-10.5h11.5';
+const HEAD = 'M29 9l4.5 4.5L29 18';
+
+/** The Squzo mark: an S that becomes a forward arrow (keep going, level up). */
 export function Logo({ size = 32, animated = false, className = '' }: { size?: number; animated?: boolean; className?: string }) {
   const id = useId().replace(/:/g, '');
   return (
@@ -33,11 +37,16 @@ export function Logo({ size = 32, animated = false, className = '' }: { size?: n
       <rect width="48" height="48" rx="14" fill={`url(#sh${id})`} />
       <rect x="1" y="1" width="46" height="24" rx="13" fill={`url(#hl${id})`} />
       <rect x=".75" y=".75" width="46.5" height="46.5" rx="13.25" fill="none" stroke="#fff" strokeOpacity=".22" strokeWidth="1.5" />
-      {/* The tick pops in with a scale (transform only): drawing it with stroke dashes glitches on iPhone Safari. */}
-      <g fill="none" stroke="#fff" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" className={animated ? 'logo-check-in' : ''}>
-        <path d="M12.5 26.5 20 34 35 17" />
-        <path d="M26.5 16 35.5 16.2 35.7 25" />
+      {/* Squzo mark: an S that finishes as a forward arrow (keep going, level up). Soft shadow first. */}
+      <g fill="none" stroke="#000" strokeOpacity=".18" strokeWidth="5.4" strokeLinecap="round" strokeLinejoin="round" transform="translate(0 1.4)">
+        <path d={MARK} />
+        <path d={HEAD} />
       </g>
+      <g fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" className={animated ? 'logo-check-in' : ''}>
+        <path d={MARK} />
+        <path d={HEAD} />
+      </g>
+      <path d="M37.5 30.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7Z" fill="#fff" opacity=".9" />
     </svg>
   );
 }

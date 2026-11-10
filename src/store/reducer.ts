@@ -137,7 +137,7 @@ export type Action =
   | { type: 'SET_WILDCARD_ENABLED'; enabled: boolean }
   | { type: 'UNLOCK_COSMETIC'; itemId: string }
   | { type: 'EQUIP_COSMETIC'; slot: CosmeticSlot; itemId: string }
-  /** itemId is the rolled prize, or null when everything is owned (gives bonus shards instead). */
+  /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
   | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
   | { type: 'SET_FREE_NOTE'; note: string }
@@ -1178,7 +1178,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'REDEEM_REWARD': {
       const r = (state.rewards ?? []).find((x) => x.id === action.rewardId);
       if (!r) return state;
-      // Only if there are enough shards.
+      // Only if there are enough coins.
       if (computeDerivedStats(state).availableShards < r.cost) return state;
       const red: Redemption = { id: `rd-${Date.now()}`, rewardId: r.id, title: r.title, icon: r.icon, cost: r.cost, at: new Date().toISOString() };
       return { ...state, redemptions: [...(state.redemptions ?? []), red].slice(-500) };
