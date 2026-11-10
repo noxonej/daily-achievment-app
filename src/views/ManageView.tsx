@@ -128,7 +128,6 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
 
       {part === 'data' && (
       <>
-      <SyncSettings />
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
         <p className="text-sm font-semibold text-white">Your Data</p>
@@ -171,6 +170,20 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
           Reset All Progress
         </button>
       </div>
+
+      {/* Old way to sync, for people who code. Google sign-in does this for everyone else. */}
+      <details className="group rounded-2xl border border-white/10 bg-white/[0.03] [&_summary::-webkit-details-marker]:hidden">
+        <summary className="flex items-center justify-between gap-3 cursor-pointer px-4 py-3.5">
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-white">Advanced: sync with GitHub</span>
+            <span className="block text-xs text-slate-400 mt-0.5">For developers. Most people should use Continue with Google instead.</span>
+          </span>
+          <Icon name="›" size={18} className="shrink-0 text-slate-500 transition-transform group-open:rotate-90" />
+        </summary>
+        <div className="px-2 pb-2">
+          <SyncSettings />
+        </div>
+      </details>
       </>
       )}
 
