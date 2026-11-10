@@ -1,3 +1,4 @@
+import { Switch } from '../components/Switch';
 import { ScrollLockGuide } from '../components/today/ScrollLockCard';
 import { useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
@@ -98,25 +99,13 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <div className="flex items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-semibold text-white"><Icon name="🎲" size="1.15em" className="icon-inline text-rose-300" />Wildcard Quests</p>
             <p className="text-xs text-slate-400 mt-0.5">
               Bonus surprise quests — one rotates daily, one rotates weekly. Don't count toward your streak.
             </p>
           </div>
-          <button
-            onClick={() => dispatch({ type: 'SET_WILDCARD_ENABLED', enabled: !state.wildcardEnabled })}
-            className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${
-              state.wildcardEnabled ? 'bg-amber-500' : 'bg-white/10'
-            }`}
-            aria-label="Toggle daily wildcard quest"
-          >
-            <span
-              className={`absolute top-1 w-5 h-5 rounded-full bg-[#fff] transition-transform ${
-                state.wildcardEnabled ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
+          <Switch on={!!state.wildcardEnabled} onChange={() => dispatch({ type: 'SET_WILDCARD_ENABLED', enabled: !state.wildcardEnabled })} label="Daily wildcard quest" />
         </div>
       </div>
 
@@ -128,13 +117,7 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
               Some days a quest changes a little: 2.5 L of water instead of 2 L, or meditate 5 minutes, or twice for 5. Same XP.
             </p>
           </div>
-          <button
-            onClick={() => dispatch({ type: 'SET_PREFS', prefs: { dailyTwists: state.prefs?.dailyTwists === false } })}
-            className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${state.prefs?.dailyTwists !== false ? 'bg-amber-500' : 'bg-white/10'}`}
-            aria-label="Toggle daily twists"
-          >
-            <span className={`absolute top-1 w-5 h-5 rounded-full bg-[#fff] transition-transform ${state.prefs?.dailyTwists !== false ? 'translate-x-6' : 'translate-x-1'}`} />
-          </button>
+          <Switch on={state.prefs?.dailyTwists !== false} onChange={() => dispatch({ type: 'SET_PREFS', prefs: { dailyTwists: state.prefs?.dailyTwists === false } })} label="Daily twists" />
         </div>
       </div>
 
@@ -389,13 +372,7 @@ function ScrollLockSetting() {
           <p className="text-sm font-semibold text-white"><Icon name="🔒" size="1.15em" className="icon-inline text-rose-300" />Scroll lock</p>
           <p className="text-xs text-slate-400 mt-0.5">TikTok, Instagram and YouTube only after your quests. Today shows when you’ve earned them.</p>
         </div>
-        <button
-          onClick={() => dispatch({ type: 'SET_PREFS', prefs: { scrollLock: n ? 0 : 3 } })}
-          className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${n ? 'bg-amber-500' : 'bg-white/10'}`}
-          aria-label="Toggle scroll lock"
-        >
-          <span className={`absolute top-1 w-5 h-5 rounded-full bg-[#fff] transition-transform ${n ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
+        <Switch on={n > 0} onChange={() => dispatch({ type: 'SET_PREFS', prefs: { scrollLock: n ? 0 : 3 } })} label="Scroll lock" />
       </div>
       {n > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2">

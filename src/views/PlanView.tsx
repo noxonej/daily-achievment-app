@@ -1,3 +1,4 @@
+import { Switch } from '../components/Switch';
 import { useEffect, useRef, useState } from 'react';
 import { InfoTip } from '../components/Guide';
 import { t, useSimple } from '../lib/prefs';
@@ -307,15 +308,7 @@ function RemindersModal({ open, onClose }: { open: boolean; onClose: () => void 
                 </p>
               )}
             </div>
-            <button
-              role="switch"
-              aria-checked={live}
-              aria-label="Alerts while the app is open"
-              onClick={toggleLive}
-              className={`shrink-0 mt-0.5 w-12 h-7 rounded-full p-0.5 transition ${live ? 'bg-emerald-500' : 'bg-white/15'}`}
-            >
-              <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform ${live ? 'translate-x-5' : ''}`} />
-            </button>
+            <Switch on={live} onChange={() => toggleLive()} label="Alerts while the app is open" color="bg-emerald-500" className="mt-0.5" />
           </div>
         </section>
       </div>

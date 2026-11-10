@@ -74,13 +74,13 @@ export function CheckInCard() {
               }`}
             >
               {done && justClaimed && day === v.filled && <Burst x="50%" y="40%" color="var(--color-amber-400)" size={1} sparks={10} />}
-              <span className="text-[9px] font-bold text-slate-400">D{day}</span>
+              <span className="text-[0.5625rem] font-bold text-slate-400 leading-none">D{day}</span>
               {done ? (
                 <Icon name="✓" size={16} strokeWidth={3} className="text-emerald-300 my-0.5" />
               ) : (
                 <Icon name={info.icon} size={16} className={`my-0.5 ${big ? 'text-fuchsia-300' : r.kind === 'shards' ? 'text-cyan-300' : 'text-amber-300'}`} />
               )}
-              <span className={`text-[9px] font-bold leading-none ${done ? 'text-emerald-300' : 'text-slate-300'}`}>{info.short}</span>
+              <span className={`max-w-full px-0.5 truncate text-center text-[0.5625rem] font-bold leading-tight ${done ? 'text-emerald-300' : 'text-slate-300'}`}>{info.short}</span>
             </li>
           );
         })}

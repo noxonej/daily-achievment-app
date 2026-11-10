@@ -70,7 +70,7 @@ export function SubscriptionCalculator() {
   return (
     <div className={card} id="subscriptions">
       <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4 pb-1">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[10rem] flex-1 [overflow-wrap:anywhere]">
           <p className="text-sm font-semibold text-white">
             <Icon name="🔁" size="1.15em" className="icon-inline text-sky-300" />
             Subscription calculator

@@ -1,3 +1,4 @@
+import { Switch } from './Switch';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   createAccount,
@@ -463,9 +464,6 @@ function PinInput({ label, value, onChange, invalid }: { label: string; value: s
 }
 
 export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={`shrink-0 w-12 h-7 rounded-full p-0.5 transition ${on ? 'bg-amber-500' : 'bg-white/15'}`}>
-      <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] ${on ? 'translate-x-5' : ''}`} />
-    </button>
+  return (<Switch on={on} onChange={onChange} label={label} />
   );
 }

@@ -1,3 +1,4 @@
+import { Switch } from './Switch';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useApp } from '../store/AppContext';
 import type { Appearance, FocusArea } from '../lib/types';
@@ -216,15 +217,7 @@ export function Onboarding() {
                     <p className="text-sm font-bold text-white">School or work on weekdays?</p>
                     <p className="text-xs text-slate-400">We'll plan around it.</p>
                   </div>
-                  <button
-                    role="switch"
-                    aria-checked={hasBusy}
-                    aria-label="School or work on weekdays"
-                    onClick={() => setHasBusy(!hasBusy)}
-                    className={`shrink-0 w-12 h-7 rounded-full p-0.5 transition ${hasBusy ? 'bg-amber-500' : 'bg-white/15'}`}
-                  >
-                    <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform ${hasBusy ? 'translate-x-5' : ''}`} />
-                  </button>
+                  <Switch on={hasBusy} onChange={setHasBusy} label="School or work on weekdays" />
                 </div>
                 {hasBusy && (
                   <div className="time-grid mt-4">
@@ -278,15 +271,7 @@ export function Onboarding() {
                       your streak survives.
                     </p>
                   </div>
-                  <button
-                    role="switch"
-                    aria-checked={remind}
-                    aria-label="Reminders"
-                    onClick={() => setRemind(!remind)}
-                    className={`shrink-0 w-12 h-7 rounded-full p-0.5 transition ${remind ? 'bg-amber-500' : 'bg-white/15'}`}
-                  >
-                    <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform ${remind ? 'translate-x-5' : ''}`} />
-                  </button>
+                  <Switch on={remind} onChange={setRemind} label="Reminders" />
                 </div>
                 {remind && <p className="text-xs text-slate-500 mt-2">Your phone will ask once if Squzo may send notifications. Tap Allow.</p>}
               </div>
@@ -299,15 +284,7 @@ export function Onboarding() {
                     </p>
                     <p className="text-sm text-slate-400 mt-1">TikTok, Instagram and YouTube only after 3 quests. Set it up later in Settings.</p>
                   </div>
-                  <button
-                    role="switch"
-                    aria-checked={lockApps}
-                    aria-label="Quests before scrolling"
-                    onClick={() => setLockApps(!lockApps)}
-                    className={`shrink-0 w-12 h-7 rounded-full p-0.5 transition ${lockApps ? 'bg-amber-500' : 'bg-white/15'}`}
-                  >
-                    <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform ${lockApps ? 'translate-x-5' : ''}`} />
-                  </button>
+                  <Switch on={lockApps} onChange={setLockApps} label="Quests before scrolling" />
                 </div>
               </div>
               <div className="flex-1 min-h-6" />

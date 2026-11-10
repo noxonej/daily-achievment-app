@@ -51,7 +51,7 @@ export function TodayHero({
       <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
       <div className="hero-row relative flex items-center gap-4">
         {/* today's progress ring */}
-        <div className="relative shrink-0 w-[92px] h-[92px]" role="img" aria-label={`${done} of ${total} quests done today`}>
+        <div className="relative shrink-0 w-[100px] h-[100px]" role="img" aria-label={`${done} of ${total} quests done today`}>
           <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
             <circle cx="40" cy="40" r={R} fill="none" stroke="currentColor" strokeWidth="7" className="text-white/[0.07]" />
             <circle
@@ -73,14 +73,14 @@ export function TodayHero({
               </linearGradient>
             </defs>
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-[16px] flex flex-col items-center justify-center text-center">
             {perfect ? (
               <Icon name="✨" size={26} className="text-emerald-300 animate-pop-in" />
             ) : (
               <span className="font-display text-[22px] font-extrabold text-white tabular-nums leading-none">{shownPct}%</span>
             )}
-            <span className="text-[10px] font-semibold text-slate-400 mt-1 tabular-nums">
-              {done}/{total} quests
+            <span className="text-[10px] font-semibold text-slate-400 mt-1 tabular-nums leading-none whitespace-nowrap">
+              {done}/{total} done
             </span>
           </div>
         </div>

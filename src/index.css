@@ -914,6 +914,13 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
 .fire .fire-core { animation: fire-lick 0.8s ease-in-out infinite; }
 .fire .fire-glow { transform-box: fill-box; transform-origin: 50% 60%; animation: fire-glow 1.4s ease-in-out infinite; }
 .fire .fire-ember { animation: fire-ember 1.9s ease-out infinite; opacity: 0; }
+.fire .fire-tongue { transform-box: fill-box; transform-origin: 50% 100%; animation: fire-tongue 1s ease-in infinite; opacity: 0; }
+@keyframes fire-tongue {
+  0% { transform: translateY(2px) scale(0.6, 0.6); opacity: 0; }
+  12% { transform: translateY(1px) scale(1, 1); opacity: 1; }
+  100% { transform: translateY(-7px) scale(0, 0.4); opacity: 1; }
+}
+
 @keyframes fire-sway {
   0%, 100% { transform: scale(1, 1) skewX(0deg); }
   25% { transform: scale(0.96, 1.07) skewX(-3deg); }
@@ -935,7 +942,7 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
   100% { transform: translateY(-9px); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fire .fire-outer, .fire .fire-mid, .fire .fire-core, .fire .fire-glow, .fire .fire-ember { animation: none; }
+  .fire .fire-outer, .fire .fire-mid, .fire .fire-core, .fire .fire-glow, .fire .fire-ember, .fire .fire-tongue { animation: none; }
 }
 :root[data-motion='reduce'] .fire * { animation: none !important; }
 
