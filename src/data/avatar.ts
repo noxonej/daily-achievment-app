@@ -80,6 +80,9 @@ export const AVATAR_ITEMS: AvatarItem[] = [
 
   // Hair styles
   { id: 'hair-twists', slot: 'hair', name: 'Twists', rarity: 'common', unlock: free, style: 'twists' },
+  { id: 'hair-dreads', slot: 'hair', name: 'Dreadlocks', rarity: 'rare', unlock: shop(240), style: 'dreads' },
+  { id: 'hair-longdreads', slot: 'hair', name: 'Long dreads', rarity: 'epic', unlock: chest, style: 'longdreads' },
+  { id: 'hair-mullet', slot: 'hair', name: 'Mullet', rarity: 'rare', unlock: chest, style: 'mullet' },
   { id: 'hair-frosted', slot: 'hair', name: 'Frosted tips', rarity: 'rare', unlock: shop(320, 200), style: 'frosted' },
   { id: 'hair-spacebuns', slot: 'hair', name: 'Space buns', rarity: 'common', unlock: shop(60, 120), style: 'spacebuns' },
   { id: 'hair-curtains', slot: 'hair', name: 'Curtains', rarity: 'common', unlock: free, style: 'curtains' },
@@ -116,6 +119,11 @@ export const AVATAR_ITEMS: AvatarItem[] = [
 
   // Outfits
   { id: 'out-smiley', slot: 'outfit', name: 'Smiley tee', rarity: 'common', unlock: free, style: 'graphic', c1: '#e8dcc6', c2: '#c9b99c' },
+  { id: 'out-67', slot: 'outfit', name: '67 tee', rarity: 'rare', unlock: shop(167), style: 'num67', c1: '#f8fafc', c2: '#111827' },
+  { id: 'out-67-gold', slot: 'outfit', name: 'Golden 67 jersey', rarity: 'legendary', unlock: chest, style: 'num67', c1: '#111827', c2: '#facc15' },
+  { id: 'out-rasta', slot: 'outfit', name: 'Island stripes tee', rarity: 'rare', unlock: shop(220), style: 'rasta', c1: '#16a34a', c2: '#facc15' },
+  { id: 'out-ducktee', slot: 'outfit', name: 'Rubber duck tee', rarity: 'common', unlock: shop(80), style: 'duck', c1: '#38bdf8', c2: '#facc15' },
+  { id: 'out-pizza', slot: 'outfit', name: 'Pizza slice tee', rarity: 'rare', unlock: chest, style: 'pizza', c1: '#1f2937', c2: '#f59e0b' },
   { id: 'out-babytee', slot: 'outfit', name: 'Star baby tee', rarity: 'common', unlock: shop(60, 120), style: 'babytee', c1: '#f9a8d4', c2: '#ec4899' },
   { id: 'out-chromepuffer', slot: 'outfit', name: 'Chrome puffer', rarity: 'epic', unlock: chest, style: 'chromepuffer' },
   { id: 'out-meshjersey', slot: 'outfit', name: 'Mesh jersey', rarity: 'rare', unlock: shop(350, 220), style: 'meshjersey', c1: '#1d4ed8', c2: '#f8fafc' },
@@ -155,6 +163,8 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'hw-sportvisor', slot: 'headwear', name: 'Sport visor', rarity: 'common', unlock: shop(40, 80), style: 'sportvisor', c1: '#f8fafc', c2: '#a855f7' },
   { id: 'hw-headband', slot: 'headwear', name: 'Sweatband', rarity: 'common', unlock: free, style: 'headband', c1: '#ef4444' },
   { id: 'hw-cap', slot: 'headwear', name: 'Cap', rarity: 'common', unlock: shop(40, 80), style: 'cap', c1: '#2563eb', c2: '#1e40af' },
+  { id: 'hw-rasta', slot: 'headwear', name: 'Island tam', rarity: 'rare', unlock: shop(200), style: 'tam' },
+  { id: 'hw-duck', slot: 'headwear', name: 'Rubber duck hat', rarity: 'epic', unlock: chest, style: 'duck' },
   { id: 'hw-beanie', slot: 'headwear', name: 'Beanie', rarity: 'common', unlock: shop(50, 100), style: 'beanie', c1: '#f59e0b', c2: '#b45309' },
   { id: 'hw-headphones', slot: 'headwear', name: 'Headphones', rarity: 'rare', unlock: shop(350, 220), style: 'headphones', c1: '#111827', c2: '#22d3ee' },
   { id: 'hw-flowers', slot: 'headwear', name: 'Flower crown', rarity: 'rare', unlock: shop(420, 260), style: 'flowers' },
@@ -175,6 +185,20 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'hw-devil', slot: 'headwear', name: 'Devil horns', rarity: 'epic', unlock: chest, style: 'devil' },
 
   // Eyewear
+  // Hands: gloves, watches and wristbands
+  { id: 'hands-none', slot: 'hands', name: 'None', rarity: 'common', unlock: free, style: 'none' },
+  { id: 'hands-sweatband', slot: 'hands', name: 'Sweatbands', rarity: 'common', unlock: shop(40), style: 'bands', c1: '#f8fafc', c2: '#ef4444' },
+  { id: 'hands-bracelet', slot: 'hands', name: 'Bead bracelet', rarity: 'common', unlock: shop(50), style: 'bracelet', c1: '#f472b6', c2: '#38bdf8' },
+  { id: 'hands-watch', slot: 'hands', name: 'Sport watch', rarity: 'common', unlock: shop(70), style: 'watch', c1: '#111827', c2: '#22d3ee' },
+  { id: 'hands-goldwatch', slot: 'hands', name: 'Gold watch', rarity: 'epic', unlock: chest, style: 'watch', c1: '#facc15', c2: '#fff7d6' },
+  { id: 'hands-smartwatch', slot: 'hands', name: 'Smartwatch', rarity: 'rare', unlock: shop(260), style: 'watch', c1: '#334155', c2: '#a3e635' },
+  { id: 'hands-gloves', slot: 'hands', name: 'Winter gloves', rarity: 'common', unlock: shop(60), style: 'gloves', c1: '#dc2626', c2: '#f8fafc' },
+  { id: 'hands-boxing', slot: 'hands', name: 'Boxing gloves', rarity: 'rare', unlock: chest, style: 'boxing', c1: '#dc2626', c2: '#fef2f2' },
+  { id: 'hands-goalie', slot: 'hands', name: 'Goalie gloves', rarity: 'rare', unlock: shop(240), style: 'gloves', c1: '#a3e635', c2: '#111827' },
+  { id: 'hands-gaming', slot: 'hands', name: 'Gaming gloves', rarity: 'epic', unlock: chest, style: 'gloves', c1: '#111827', c2: '#a855f7' },
+  { id: 'hands-diamond', slot: 'hands', name: 'Iced-out watch', rarity: 'legendary', unlock: chest, style: 'watch', c1: '#e0f2fe', c2: '#ffffff' },
+  { id: 'hands-gauntlet', slot: 'hands', name: 'Power gauntlet', rarity: 'legendary', unlock: chest, style: 'boxing', c1: '#facc15', c2: '#a855f7' },
+
   { id: 'face-none', slot: 'face', name: 'None', rarity: 'common', unlock: free, style: 'none' },
   { id: 'face-oval', slot: 'face', name: 'Tiny tinted shades', rarity: 'common', unlock: shop(60, 120), style: 'oval', c1: '#f472b6' },
   { id: 'face-oval-blue', slot: 'face', name: 'Ice tint shades', rarity: 'common', unlock: shop(60, 120), style: 'oval', c1: '#38bdf8' },
@@ -245,6 +269,7 @@ export const AVATAR_SLOTS: Array<{ id: AvatarSlot; label: string; icon: string }
   { id: 'hairColor', label: 'Color', icon: '🎨' },
   { id: 'headwear', label: 'Hats', icon: '👑' },
   { id: 'face', label: 'Eyewear', icon: '🕶' },
+  { id: 'hands', label: 'Hands', icon: '⌚' },
   { id: 'pet', label: 'Pets', icon: '🐶' },
   { id: 'backdrop', label: 'Scene', icon: '🌅' },
   { id: 'skin', label: 'Skin', icon: '🙌' },
@@ -258,6 +283,7 @@ export const DEFAULT_LOOK: Character = {
   outfit: 'out-smiley',
   headwear: 'hw-none',
   face: 'face-none',
+  hands: 'hands-none',
   backdrop: 'bg-y2k',
   pet: 'pet-none',
 };
@@ -323,16 +349,46 @@ export function chestPool(ctx: OwnershipContext): AvatarItem[] {
 }
 
 /** Weighted random pick by rarity; returns null when everything has been collected. */
-export function rollChest(ctx: OwnershipContext, rand: () => number = Math.random): AvatarItem | null {
+/** Chance of each rarity from a chest (out of 100). The better the item, the rarer the drop. */
+export const CHEST_ODDS: Array<[Rarity, number]> = [
+  ['common', 62],
+  ['rare', 26],
+  ['epic', 9.5],
+  ['legendary', 2.5],
+];
+/** Your very first chest is a lucky one: always epic or better. */
+export const FIRST_CHEST_ODDS: Array<[Rarity, number]> = [
+  ['epic', 75],
+  ['legendary', 25],
+];
+
+/**
+ * Rolls a chest: first the rarity (by the odds above, so having many common items in the game
+ * doesn't change your chances), then an item of that rarity you don't own yet. If none is left
+ * at that rarity it steps down, then up, so a chest is never wasted while items remain.
+ */
+export function rollChest(ctx: OwnershipContext, rand: () => number = Math.random, first = false): AvatarItem | null {
   const pool = chestPool(ctx);
   if (pool.length === 0) return null;
-  const total = pool.reduce((s, i) => s + RARITY[i.rarity].weight, 0);
+  const odds = first ? FIRST_CHEST_ODDS : CHEST_ODDS;
+  const total = odds.reduce((a, [, w]) => a + w, 0);
   let r = rand() * total;
-  for (const i of pool) {
-    r -= RARITY[i.rarity].weight;
-    if (r <= 0) return i;
+  let rarity: Rarity = odds[odds.length - 1][0];
+  for (const [k, w] of odds) {
+    r -= w;
+    if (r <= 0) {
+      rarity = k;
+      break;
+    }
   }
-  return pool[pool.length - 1];
+  const order: Rarity[] = ['common', 'rare', 'epic', 'legendary'];
+  const start = order.indexOf(rarity);
+  const tryOrder = [...order.slice(0, start + 1).reverse(), ...order.slice(start + 1)];
+  for (const k of tryOrder) {
+    const options = pool.filter((i) => i.rarity === k);
+    if (options.length) return options[Math.floor(rand() * options.length)];
+  }
+  return pool[Math.floor(rand() * pool.length)];
 }
 
 export const CHEST_DUPLICATE_SHARDS = 150;

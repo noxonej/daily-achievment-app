@@ -979,3 +979,8 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
 }
 .box-particle { border-radius: 2px; }
 :root[data-motion='reduce'] .coin-fly, :root[data-motion='reduce'] .open-flash { display: none; }
+
+/* Badge crest: a light sweep across the frame (always on Legend badges). */
+.crest-shine { animation: crest-shine 3.6s ease-in-out infinite; }
+@keyframes crest-shine { 0%, 60% { transform: rotate(20deg) translateX(0); } 100% { transform: rotate(20deg) translateX(110px); } }
+:root[data-motion='reduce'] .crest-shine { animation: none; opacity: 0; }

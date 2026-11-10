@@ -122,7 +122,7 @@ export interface UnlockedAchievement {
   unlockedAt: string;
 }
 
-export type AvatarSlot = 'skin' | 'expression' | 'hair' | 'hairColor' | 'outfit' | 'headwear' | 'face' | 'backdrop' | 'pet';
+export type AvatarSlot = 'skin' | 'expression' | 'hair' | 'hairColor' | 'outfit' | 'headwear' | 'face' | 'hands' | 'backdrop' | 'pet';
 export type CosmeticSlot = AvatarSlot;
 
 /** The avatar's look: one item id per slot. */
@@ -422,7 +422,7 @@ export interface AppState {
   createdAt: string;
 }
 
-export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum';
+export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'legend';
 
 export interface Achievement {
   id: string;
@@ -453,6 +453,14 @@ export interface DerivedStats {
   activeThisWeek: number;
   /** Missed days forgiven as rest days (one in any 7) so the streak carries on. */
   graceDates: string[];
+  /** For badges: total focus minutes, km run, chests opened, nights of sleep logged, mood check-ins, money goals reached, perfect weeks. */
+  focusTotal: number;
+  kmRun: number;
+  chestsOpened: number;
+  nightsLogged: number;
+  moodDays: number;
+  savingsReached: number;
+  perfectWeeks: number;
 }
 
 /** The stats that are plain numbers (what achievements can count). */

@@ -275,8 +275,10 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
   function openIt() {
     if (phase !== 'closed') return;
     // A small chance (6%) of a Skip Pass instead of an item.
-    const skip = Math.random() < SKIP_PASS_CHANCE;
-    const won = skip ? null : rollChest(ctx);
+    // The very first chest is a lucky one (epic or legendary, never a Skip Pass).
+    const first = (state.chestsOpened ?? 0) === 0;
+    const skip = !first && Math.random() < SKIP_PASS_CHANCE;
+    const won = skip ? null : rollChest(ctx, Math.random, first);
     setPrize(skip ? 'skip' : won);
     setPhase('shake');
     try {
@@ -348,7 +350,9 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
             </div>
           </div>
           <p className="mt-6 font-display text-2xl font-extrabold text-white">{phase === 'closed' ? 'Tap to open' : 'Opening…'}</p>
-          <p className="text-sm text-slate-400 mt-1">Could be common, rare, epic, legendary… or a Skip Pass</p>
+          <p className="text-sm text-slate-400 mt-1">
+            {(state.chestsOpened ?? 0) === 0 ? 'Your first chest is a lucky one: epic or better!' : 'Common 62% · Rare 26% · Epic 9.5% · Legendary 2.5%'}
+          </p>
         </button>
       ) : (
         <div className="flex flex-col items-center text-center">

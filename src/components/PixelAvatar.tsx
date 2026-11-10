@@ -71,6 +71,9 @@ const HAIR: Record<string, string[]> = {
   twists: ['', '...H.H.H.H.H', '...HHHHHHHHH', '..HHHLHHHLHH', '..HHHHHHHHHH', '..HHHHHHHHHH', '..DDDDDDDDDD', '..D........D'],
   frosted: ['..F...F...F', '..HF.FHF.FH', '..HHHHHHHHHHF', '.FHHHHHHHHHHH', '.HHHHHHHHHHHH', '..HHHHHHHHHH', '..HHHHHHHHHH', '..HH.H.H.HHH', '..H........H'],
   spacebuns: ['', '..HH......HH', '.HHLH....HLHH', '.HHHHHHHHHHHH', '..HHHHHHHHHH', '..HHHHHHHHHH', '..HHHHHHHHHH', '..H........H'],
+  dreads: ['', '', '...H.HH.HH.H', '..HHHHHHHHHH', '.HHHLHHHHLHHH', '.HHHHHHHHHHHH', '.HD.HHHHHH.DH', '.HD........DH', '.HH........HH', '.HD........DH', '.HH........HH', '.D..........D'],
+  longdreads: ['', '', '...H.HH.HH.H', '..HHHHHHHHHH', '.HHHLHHHHLHHH', '.HHHHHHHHHHHH', '.HD.HHHHHH.DH', '.HD........DH', '.HH........HH', '.HD........DH', '.HH........HH', '.HD........DH', '.HH........HH', '.HD........DH', '.HH........HH', '.D..........D'],
+  mullet: ['', '', '', '....HHHHHH', '...HLLHHHHH', '..HHHHHHHHHH', '..HHHHHHHHHH', '..HHHHHHHHHH', '..HH.HH...HH', '.HH........HH', '.HH........HH', '.HH........HH', '.H..........H'],
   curtains: ['', '', '', '....HHHHHH', '...HHHHHHHH', '..HHHHHHHHHH', '..HHHHHDHHHH', '..HHHH..HHHH', '..HHH....HHH', '..HH......HH', '..H........H'],
 };
 /** Hair that hangs behind the head (drawn first), 14 wide from x=9. */
@@ -78,6 +81,7 @@ const HAIR_BACK: Record<string, string[]> = {
   long: ['', '', '', '', '', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH'],
   bob: ['', '', '', '', '', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH', '.HHHHHHHHHHHH'],
 };
+HAIR_BACK.longdreads = ['', '', '', '', '', 'H.H.HHHHHH.H.H', 'H.H.HHHHHH.H.H', 'HDH.HHHHHH.HDH', 'H.H.HHHHHH.H.H', 'HDH.HHHHHH.HDH', 'H.H.HHHHHH.H.H', 'HDH.HHHHHH.HDH', 'H.H.HHHHHH.H.H', 'D.D.HHHHHH.D.D'];
 HAIR_BACK.clips = HAIR_BACK.long;
 
 function drawHair(g: Grid, rows: string[] | undefined, hair: string) {
@@ -126,6 +130,8 @@ const HATS: Record<string, string[]> = {
   bunny: ['....WW....WW', '....WP....PW', '....WP....PW', '....WP....PW', '....WW....WW', '...PPPPPPPPPP'],
   piratehat: ['', '', '....KKKKKKKK', '...KKKKWWKKKK', '..KKKKKWWKKKKK', '.KKKKKKKKKKKKKK', '..YYYYYYYYYYYY'],
   devil: ['', '', '...R........R', '...RR......RR', '....RR....RR'],
+  tam: ['', '....GGGGGGGG', '...GGGGGGGGGG', '..YYYYYYYYYYYY', '..RRRRRRRRRRRR', '...KKKKKKKKKK'],
+  duck: ['', '........YYY', '.......YYKYOO', '.......YYYYYO', '....YYYYYYY', '...YYYYYYYYY', '....YYYYYYY'],
   crystalcrown: ['', '', '....B..V..B', '....BB.VV.BB', '....BBVVVVBB', '....SSSSSSSS'],
 };
 const HAT_PAL = (c1: string, c2: string): Record<string, string> => ({
@@ -403,7 +409,7 @@ function outfitLook(item: AvatarItem): OutfitLook {
   const c2 = item.c2 ?? shade(c1, -0.3);
   const s = item.style;
   const base: OutfitLook = { sleeves: 'long', pants: '#3f4a5c', boots: '#4a3426' };
-  if (['tee', 'graphic', 'babytee', 'chaintee', 'hawaii', 'jersey', 'meshjersey', 'overalls'].includes(s)) base.sleeves = 'short';
+  if (['tee', 'graphic', 'babytee', 'chaintee', 'hawaii', 'jersey', 'meshjersey', 'overalls', 'num67', 'rasta', 'duck', 'pizza'].includes(s)) base.sleeves = 'short';
   if (s === 'suit' || s === 'ninja' || s === 'track') base.pants = c1;
   if (s === 'ninja') base.boots = '#111827';
   if (s === 'overalls') base.pants = c1;
@@ -447,6 +453,36 @@ function drawOutfit(g: Grid, item: AvatarItem, skin: string) {
 
   const p = (pts: Array<[number, number]>, c: string) => pts.forEach(([x, y]) => put(g, x, y, c));
   switch (s) {
+    case 'num67': {
+      // A big "67" across the chest.
+      p([[15, 15], [16, 15]], skin);
+      const ink = c2;
+      p([[13, 17], [14, 17], [15, 17], [13, 18], [13, 19], [14, 19], [15, 19], [13, 20], [15, 20], [13, 21], [14, 21], [15, 21]], ink);
+      p([[16, 17], [17, 17], [18, 17], [18, 18], [18, 19], [17, 20], [17, 21]], ink);
+      break;
+    }
+    case 'rasta':
+      rect(g, 13, 15, 6, 3, '#16a34a');
+      rect(g, 13, 18, 6, 2, '#facc15');
+      rect(g, 13, 20, 6, 3, '#dc2626');
+      rect(g, 18, 15, 1, 8, '#00000033');
+      rect(g, 11, 15, 2, 2, '#16a34a');
+      rect(g, 19, 15, 2, 2, '#15803d');
+      p([[15, 15], [16, 15]], skin);
+      break;
+    case 'duck':
+      p([[15, 15], [16, 15]], skin);
+      p([[16, 17], [17, 17], [16, 18], [17, 18]], '#facc15');
+      put(g, 17, 17, '#1b1512');
+      put(g, 18, 18, '#f97316');
+      p([[13, 19], [14, 19], [15, 19], [16, 19], [17, 19], [14, 20], [15, 20], [16, 20]], '#facc15');
+      break;
+    case 'pizza':
+      p([[15, 15], [16, 15]], skin);
+      p([[13, 17], [14, 17], [15, 17], [16, 17], [17, 17], [18, 17]], '#b45309');
+      p([[14, 18], [15, 18], [16, 18], [17, 18], [15, 19], [16, 19], [15, 20], [16, 20]], '#fbbf24');
+      p([[15, 18], [16, 20]], '#dc2626');
+      break;
     case 'tee':
     case 'graphic':
     case 'babytee':
@@ -567,6 +603,42 @@ function drawOutfit(g: Grid, item: AvatarItem, skin: string) {
 }
 
 /* ------------------------------------------------------------------ compose */
+function drawHands(g: Grid, item: AvatarItem) {
+  const c1 = item.c1 ?? '#111827';
+  const c2 = item.c2 ?? shade(c1, 0.4);
+  switch (item.style) {
+    case 'watch':
+      put(g, 11, 20, c1);
+      put(g, 12, 20, c2);
+      break;
+    case 'bracelet':
+      put(g, 11, 20, c1);
+      put(g, 12, 20, c2);
+      put(g, 20, 20, c1);
+      break;
+    case 'bands':
+      put(g, 11, 20, c1);
+      put(g, 12, 20, c2);
+      put(g, 19, 20, c2);
+      put(g, 20, 20, c1);
+      break;
+    case 'gloves':
+      rect(g, 11, 20, 2, 1, c2);
+      rect(g, 19, 20, 2, 1, c2);
+      rect(g, 11, 21, 2, 2, c1);
+      rect(g, 19, 21, 2, 2, shade(c1, -0.15));
+      break;
+    case 'boxing':
+      rect(g, 11, 20, 2, 1, c2);
+      rect(g, 19, 20, 2, 1, c2);
+      rect(g, 10, 21, 3, 3, c1);
+      rect(g, 19, 21, 3, 3, shade(c1, -0.15));
+      put(g, 10, 21, shade(c1, 0.35));
+      put(g, 19, 21, shade(c1, 0.25));
+      break;
+  }
+}
+
 function compose(look: Character, mood: number | undefined): Grid {
   const g = blank();
   const skin = findItem(look.skin)?.c1 ?? '#f6c9a0';
@@ -595,6 +667,9 @@ function compose(look: Character, mood: number | undefined): Grid {
     rect(g, 18, 23, 1, ostyle.coat, shade(c, -0.22));
     rect(g, 15, 23, 2, ostyle.coat, outfit.style === 'lab' ? '#e2e8f0' : outfit.c2 ?? shade(c, -0.3));
   }
+  // 3b. hands: gloves, watches and wristbands
+  const hands = findItem(look.hands);
+  if (hands && hands.style !== 'none') drawHands(g, hands);
   // 4. head with a rounded jaw and the far side a little darker
   rect(g, 11, 6, 10, 9, skin);
   g[6][11] = null;

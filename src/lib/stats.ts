@@ -113,5 +113,12 @@ export function computeDerivedStats(state: AppState): DerivedStats {
     chestsAvailable,
     activeThisWeek,
     graceDates: [...grace],
+    focusTotal: Object.values(state.focusMinutes ?? {}).reduce((a, b) => a + b, 0),
+    kmRun: Math.floor((state.runs ?? []).reduce((a, r) => a + (r.km || 0), 0)),
+    chestsOpened: state.chestsOpened ?? 0,
+    nightsLogged: state.sleep?.log?.length ?? 0,
+    moodDays: Object.keys(state.moods ?? {}).length,
+    savingsReached: (state.money?.goals ?? []).filter((g) => (state.money.accounts.find((a) => a.id === g.accountId)?.amount ?? 0) >= g.target).length,
+    perfectWeeks,
   };
 }

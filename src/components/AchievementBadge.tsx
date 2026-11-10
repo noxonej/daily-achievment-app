@@ -1,7 +1,7 @@
 import type { Achievement } from '../lib/types';
 import { TIER_STYLES } from '../lib/achievementTiers';
 import { formatShortDate } from '../lib/date';
-import { Icon } from './Icon';
+import { BadgeCrest } from './BadgeCrest';
 
 interface AchievementBadgeProps {
   achievement: Achievement;
@@ -22,19 +22,8 @@ export function AchievementBadge({ achievement, unlockedAt, current, shineDelay 
         isUnlocked ? 'border-white/10 bg-white/[0.03]' : 'border-white/5 bg-white/[0.015]'
       }`}
     >
-      <div className="relative inline-flex items-center justify-center mb-2 w-16 h-16">
-        {isUnlocked ? (
-          <div
-            className={`badge-shine relative w-full h-full rounded-full flex items-center justify-center overflow-hidden ${tier.glow}`}
-            style={{ background: tier.gradient, ['--shine-delay' as string]: `${shineDelay}s` }}
-          >
-            <Icon name={achievement.icon} size={28} strokeWidth={2.2} className="text-white drop-shadow" />
-          </div>
-        ) : (
-          <div className="w-full h-full rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-            <Icon name={achievement.icon} size={26} className="text-slate-500" />
-          </div>
-        )}
+      <div className="relative inline-flex items-center justify-center mb-2">
+        <BadgeCrest tier={achievement.tier} icon={achievement.icon} size={70} locked={!isUnlocked} shine={isUnlocked && shineDelay < 1} />
       </div>
 
       <p className={`text-[10px] font-bold uppercase tracking-wide ${isUnlocked ? tier.labelColor : 'text-slate-500'}`}>
