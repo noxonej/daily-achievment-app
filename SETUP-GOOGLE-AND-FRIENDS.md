@@ -4,9 +4,9 @@ Both use one free Google Cloud / Firebase project. Nothing here is a secret: the
 to be in the app, and `firestore.rules` decides who can read what.
 
 ## 1. Google sign-in (backup to Google Drive)
-1. Go to https://console.cloud.google.com and create a project called **Dayforge**.
+1. Go to https://console.cloud.google.com and create a project called **Squzo**.
 2. **APIs & Services → Library** → enable **Google Drive API**.
-3. **OAuth consent screen**: app name *Dayforge*, your email, audience **External**.
+3. **OAuth consent screen**: app name *Squzo*, your email, audience **External**.
    While it's in *Testing*, add your and your friends' Gmail addresses under **Test users**.
 4. **Credentials → Create credentials → OAuth client ID** → *Web application*.
    Authorised JavaScript origins: `https://noxonej.github.io`
@@ -14,7 +14,7 @@ to be in the app, and `firestore.rules` decides who can read what.
    `GOOGLE_CLIENT_ID_DEFAULT` in `src/lib/google.ts`.
 
 ## 2. Friends (Firebase)
-1. Go to https://console.firebase.google.com → **Add project** → pick the same **Dayforge**
+1. Go to https://console.firebase.google.com → **Add project** → pick the same **Squzo**
    Google Cloud project.
 2. **Build → Authentication → Get started → Sign-in method → Google → Enable.**
    Under **Settings → Authorised domains**, add `noxonej.github.io`.
