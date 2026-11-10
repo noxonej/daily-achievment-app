@@ -298,6 +298,8 @@ export interface Sharing {
 export interface Prefs {
   /** Some days a quest asks for a bit more, less, or a different version (on unless turned off). */
   dailyTwists?: boolean;
+  /** Scroll lock: how many quests to finish before social apps count as unlocked (off when unset or 0). */
+  scrollLock?: number;
   language: string;
   theme: 'dark' | 'light' | 'system';
   timeFormat: 'auto' | '12' | '24';

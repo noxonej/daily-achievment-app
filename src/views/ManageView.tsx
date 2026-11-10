@@ -1,3 +1,4 @@
+import { ScrollLockGuide } from '../components/today/ScrollLockCard';
 import { useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { QuestFormModal } from '../components/QuestFormModal';
@@ -136,6 +137,8 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
           </button>
         </div>
       </div>
+
+      <ScrollLockSetting />
 
       </>
       )}
@@ -371,6 +374,47 @@ function AutoBackups() {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function ScrollLockSetting() {
+  const { state, dispatch } = useApp();
+  const n = state.prefs?.scrollLock ?? 0;
+  const [guide, setGuide] = useState(false);
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white"><Icon name="🔒" size="1.15em" className="icon-inline text-rose-300" />Scroll lock</p>
+          <p className="text-xs text-slate-400 mt-0.5">TikTok, Instagram and YouTube only after your quests. Today shows when you’ve earned them.</p>
+        </div>
+        <button
+          onClick={() => dispatch({ type: 'SET_PREFS', prefs: { scrollLock: n ? 0 : 3 } })}
+          className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${n ? 'bg-amber-500' : 'bg-white/10'}`}
+          aria-label="Toggle scroll lock"
+        >
+          <span className={`absolute top-1 w-5 h-5 rounded-full bg-[#fff] transition-transform ${n ? 'translate-x-6' : 'translate-x-1'}`} />
+        </button>
+      </div>
+      {n > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-400">Quests first:</span>
+          {[2, 3, 4, 5].map((k) => (
+            <button
+              key={k}
+              onClick={() => dispatch({ type: 'SET_PREFS', prefs: { scrollLock: k } })}
+              className={`w-9 h-9 rounded-lg text-sm font-bold tabular-nums ${k === n ? 'bg-amber-500 text-white' : 'bg-white/5 border border-white/10 text-slate-300'}`}
+            >
+              {k}
+            </button>
+          ))}
+          <button onClick={() => setGuide(true)} className="ml-auto text-xs font-semibold text-slate-300 underline underline-offset-2">
+            Set up on my phone
+          </button>
+        </div>
+      )}
+      <ScrollLockGuide open={guide} onClose={() => setGuide(false)} />
     </div>
   );
 }

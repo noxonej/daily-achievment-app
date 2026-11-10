@@ -30,6 +30,7 @@ import { DailyBoost } from '../components/today/DailyBoost';
 import { CoachCard } from '../components/today/CoachCard';
 import { QuickAdd } from '../components/today/QuickAdd';
 import { TodayHero } from '../components/today/TodayHero';
+import { ScrollLockCard } from '../components/today/ScrollLockCard';
 import { breathe } from '../components/Breathe';
 
 const RECAP_KEY = 'dayforge-recap-dismissed';
@@ -167,6 +168,10 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           </>
         }
       />
+
+      {(state.prefs?.scrollLock ?? 0) > 0 && (
+        <ScrollLockCard done={doneCount + (wildcard && completed.includes(wildcard.id) ? 1 : 0)} need={state.prefs!.scrollLock!} />
+      )}
 
       {/* Daily rewards: up top until today's is claimed, then it moves down next to the box. */}
       {rewardsOnTop && <CheckInCard />}

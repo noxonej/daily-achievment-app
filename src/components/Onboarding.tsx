@@ -47,6 +47,7 @@ export function Onboarding() {
   const [busyStart, setBusyStart] = useState('08:00');
   const [busyEnd, setBusyEnd] = useState('15:00');
   const [remind, setRemind] = useState(true);
+  const [lockApps, setLockApps] = useState(false);
   const [matchedLook, setMatchedLook] = useState<string | null>(null);
 
   const index = STEPS.indexOf(step);
@@ -83,6 +84,7 @@ export function Onboarding() {
         // notifications are optional
       }
     }
+    if (lockApps) dispatch({ type: 'SET_PREFS', prefs: { scrollLock: 3 } });
     dispatch({
       type: 'COMPLETE_ONBOARDING',
       profile: { name: name.trim(), focusAreas: areas, wakeTime: wake, bedTime: bed },
@@ -253,7 +255,7 @@ export function Onboarding() {
 
           {step === 'fair' && (
             <>
-              <Title title="Two quick things" sub="Then your week is ready." />
+              <Title title="A few quick things" sub="Then your week is ready." />
               <div className="rounded-2xl border border-amber-400/30 bg-amber-500/[0.07] p-4">
                 <p className="flex items-center gap-2 text-base font-bold text-white">
                   <Icon name="🏆" size={20} className="shrink-0 text-amber-300" />
@@ -287,6 +289,26 @@ export function Onboarding() {
                   </button>
                 </div>
                 {remind && <p className="text-xs text-slate-500 mt-2">Your phone will ask once if Squzo may send notifications. Tap Allow.</p>}
+              </div>
+              <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-base font-bold text-white">
+                      <Icon name="🔒" size={18} className="shrink-0 text-rose-300" />
+                      Quests before scrolling
+                    </p>
+                    <p className="text-sm text-slate-400 mt-1">TikTok, Instagram and YouTube only after 3 quests. Set it up later in Settings.</p>
+                  </div>
+                  <button
+                    role="switch"
+                    aria-checked={lockApps}
+                    aria-label="Quests before scrolling"
+                    onClick={() => setLockApps(!lockApps)}
+                    className={`shrink-0 w-12 h-7 rounded-full p-0.5 transition ${lockApps ? 'bg-amber-500' : 'bg-white/15'}`}
+                  >
+                    <span className={`block w-6 h-6 rounded-full bg-[#fff] shadow transition-transform ${lockApps ? 'translate-x-5' : ''}`} />
+                  </button>
+                </div>
               </div>
               <div className="flex-1 min-h-6" />
               <Primary onClick={() => go('preview')}>I'll play fair, build my week</Primary>
