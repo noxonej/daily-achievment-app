@@ -14,8 +14,8 @@ import {
   uploadBackup,
 } from '../lib/google';
 import { locale } from '../lib/locale';
+import { cloudBackup, cloudRestore, friendsConfigured, friendsSignIn } from '../lib/firebase';
 import { ConfirmDialog } from './ConfirmDialog';
-import { Toggle } from './AuthGate';
 
 /** Google's "G" mark, for the sign-in buttons. */
 export function GoogleG({ size = 18 }: { size?: number }) {
@@ -78,7 +78,17 @@ export function GoogleCard() {
     run('connect', async () => {
       await googleSignIn();
       const profile = await googleProfile();
-      const file = await findBackup();
+      // Same Google token, no second window: this keeps the automatic backup working for good.
+      if (friendsConfigured()) await friendsSignIn(auth.account.id).catch(() => undefined);
+      const cloud = await cloudRestore(auth.account.id).catch(() => null);
+      const file = await findBackup().catch(() => null);
+      const driveWhen = file?.modifiedTime ?? '';
+      if (cloud && isBackup(cloud.data) && cloud.savedAt >= driveWhen) {
+        auth.update({ google: { ...profile, fileId: file?.id, lastBackup: cloud.savedAt, auto: true } });
+        setPending({ data: cloud.data as unknown as AppState, when: cloud.savedAt });
+        setMsg({ ok: true, text: `Connected to ${profile.email}.` });
+        return;
+      }
       if (file) {
         // There's already a backup on this Google account: offer it instead of overwriting it.
         const data = await downloadBackup(file.id);
@@ -87,22 +97,15 @@ export function GoogleCard() {
         setMsg({ ok: true, text: `Connected to ${profile.email}.` });
         return;
       }
-      const saved = await uploadBackup(state);
-      auth.update({ google: { ...profile, fileId: saved.id, lastBackup: saved.modifiedTime, auto: true } });
-      setMsg({ ok: true, text: 'Connected and backed up.' });
-    });
-
-  const backup = () =>
-    run('backup', async () => {
-      await googleSignIn(linked?.email);
-      const id = linked?.fileId ?? (await findBackup())?.id;
-      const saved = await uploadBackup(state, id);
-      auth.update({ google: { ...linked!, fileId: saved.id, lastBackup: saved.modifiedTime } });
-      setMsg({ ok: true, text: 'Backed up to Google.' });
+      const when = (await cloudBackup(auth.account.id, state).catch((): false => false)) || (await uploadBackup(state)).modifiedTime;
+      auth.update({ google: { ...profile, lastBackup: when, auto: true } });
+      setMsg({ ok: true, text: 'Connected. Your progress now backs up by itself.' });
     });
 
   const restore = () =>
     run('restore', async () => {
+      const cloud = await cloudRestore(auth.account.id).catch(() => null);
+      if (cloud && isBackup(cloud.data)) return setPending({ data: cloud.data as unknown as AppState, when: cloud.savedAt });
       await googleSignIn(linked?.email);
       const file = await findBackup();
       if (!file) throw new Error('No backup on this Google account yet.');
@@ -130,29 +133,25 @@ export function GoogleCard() {
               <p className="text-xs text-slate-400 truncate">{linked.email}</p>
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-3">{linked.lastBackup ? `Last backup ${ago(linked.lastBackup)}` : 'Not backed up yet'}</p>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <button onClick={backup} disabled={!!busy} className="rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white text-sm font-bold py-2.5">
-              {busy === 'backup' ? 'Backing up…' : 'Back up now'}
+          <p className="flex items-center gap-1.5 text-xs text-emerald-300/90 mt-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+            Backs up by itself{linked.lastBackup ? ` · last ${ago(linked.lastBackup)}` : ''}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+            <button onClick={restore} disabled={!!busy} className="text-xs font-semibold text-slate-300 hover:text-white disabled:opacity-50">
+              {busy === 'restore' ? 'Loading…' : 'Get my backup back'}
             </button>
-            <button onClick={restore} disabled={!!busy} className="rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 text-sm font-semibold text-slate-200 py-2.5">
-              {busy === 'restore' ? 'Loading…' : 'Restore'}
-            </button>
-          </div>
-          <div className="flex items-center justify-between gap-3 mt-3">
-            <span className="text-sm text-slate-300">Back up automatically</span>
-            <Toggle on={linked.auto !== false} onChange={(v) => auth.update({ google: { ...linked, auto: v } })} label="Back up automatically" />
-          </div>
           <button
             onClick={() => {
               void googleSignOut();
               auth.update({ google: undefined });
               setMsg(null);
             }}
-            className="mt-2 text-xs font-semibold text-slate-500 hover:text-red-300"
+            className="text-xs font-semibold text-slate-500 hover:text-red-300"
           >
             Disconnect Google
           </button>
+          </div>
         </>
       ) : (
         <>
@@ -179,8 +178,8 @@ export function GoogleCard() {
 }
 
 /**
- * Backs up quietly when you leave the app (at most every 2 minutes), while the Google sign-in
- * from earlier is still fresh. Never opens a pop-up on its own.
+ * Backs up by itself, like any app: every 2 minutes when something changed, and whenever you
+ * leave the app. Never opens a pop-up.
  */
 export function useGoogleAutoBackup() {
   const auth = useAuth();
@@ -192,21 +191,42 @@ export function useGoogleAutoBackup() {
   const lastSent = useRef<string>('');
 
   useEffect(() => {
-    const onHide = () => {
+    let busy = false;
+    const save = (force: boolean) => {
       const a = authRef.current;
       const g = a?.account.google;
-      if (document.visibilityState !== 'hidden' || !a || !g || g.auto === false || !hasValidToken()) return;
-      if (g.lastBackup && Date.now() - new Date(g.lastBackup).getTime() < 2 * 60_000) return;
+      if (!a || !g || busy) return;
+      if (!force && g.lastBackup && Date.now() - new Date(g.lastBackup).getTime() < 2 * 60_000) return;
       const json = JSON.stringify(stateRef.current);
       if (json === lastSent.current) return;
-      lastSent.current = json;
-      uploadBackup(stateRef.current, g.fileId)
-        .then((r) => a.update({ google: { ...g, fileId: r.id, lastBackup: r.modifiedTime } }))
-        .catch(() => {
-          lastSent.current = '';
+      busy = true;
+      // Firebase keeps you signed in for good, so this works without any pop-up. Google Drive is
+      // the fallback while its one-hour sign-in is still fresh.
+      cloudBackup(a.account.id, stateRef.current)
+        .catch((): false => false)
+        .then(async (when) => {
+          if (when) return { when, fileId: g.fileId };
+          if (!hasValidToken()) throw new Error('no session');
+          const r = await uploadBackup(stateRef.current, g.fileId);
+          return { when: r.modifiedTime, fileId: r.id };
+        })
+        .then(({ when, fileId }) => {
+          lastSent.current = json;
+          authRef.current?.update({ google: { ...g, fileId, lastBackup: when } });
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          busy = false;
         });
     };
+    const onHide = () => document.visibilityState === 'hidden' && save(true);
+    const timer = window.setInterval(() => save(false), 2 * 60_000);
     document.addEventListener('visibilitychange', onHide);
-    return () => document.removeEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onHide);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onHide);
+    };
   }, []);
 }

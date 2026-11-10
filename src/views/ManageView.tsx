@@ -1,3 +1,4 @@
+import { GoogleCard } from '../components/GoogleConnect';
 import { Switch } from '../components/Switch';
 import { ScrollLockGuide } from '../components/today/ScrollLockCard';
 import { useRef, useState } from 'react';
@@ -129,38 +130,13 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
       {part === 'data' && (
       <>
 
+      <GoogleCard />
+
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
         <p className="text-sm font-semibold text-white">Your Data</p>
         <p className="text-xs text-slate-400 -mt-2">
-          Everything is saved on this device. Export a backup so you never lose your progress.
+          Saved on this phone, and backed up by itself to your Google account once you continue with Google. Nothing to press.
         </p>
-        <div className="flex flex-col sm:flex-row gap-2.5">
-          <button
-            onClick={handleExport}
-            className="flex-1 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm py-2.5 transition"
-          >
-            <Icon name="⬇" size="1.15em" className="icon-inline" />Export Backup
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex-1 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm py-2.5 transition"
-          >
-            <Icon name="⬆" size="1.15em" className="icon-inline" />Import Backup
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleImportFile(file);
-              e.target.value = '';
-            }}
-          />
-        </div>
-        {importError && <p className="text-xs text-red-400">{importError}</p>}
-
         <AutoBackups />
 
         <button
@@ -175,12 +151,42 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
       <details className="group rounded-2xl border border-white/10 bg-white/[0.03] [&_summary::-webkit-details-marker]:hidden">
         <summary className="flex items-center justify-between gap-3 cursor-pointer px-4 py-3.5">
           <span className="min-w-0">
-            <span className="block text-sm font-semibold text-white">Advanced: sync with GitHub</span>
-            <span className="block text-xs text-slate-400 mt-0.5">For developers. Most people should use Continue with Google instead.</span>
+            <span className="block text-sm font-semibold text-white">Advanced</span>
+            <span className="block text-xs text-slate-400 mt-0.5">Backup files and GitHub sync. Most people never need these.</span>
           </span>
           <Icon name="›" size={18} className="shrink-0 text-slate-500 transition-transform group-open:rotate-90" />
         </summary>
-        <div className="px-2 pb-2">
+        <div className="px-2 pb-2 space-y-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-2.5">
+            <p className="text-sm font-semibold text-white">Backup file</p>
+            <p className="text-xs text-slate-400 -mt-1">Save your progress as a file, or load one, for example to move it somewhere else.</p>
+        <div className="flex flex-col sm:flex-row gap-2.5">
+              <button
+                onClick={handleExport}
+                className="flex-1 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm py-2.5 transition"
+              >
+                <Icon name="⬇" size="1.15em" className="icon-inline" />Export Backup
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-sm py-2.5 transition"
+              >
+                <Icon name="⬆" size="1.15em" className="icon-inline" />Import Backup
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImportFile(file);
+                  e.target.value = '';
+                }}
+              />
+            </div>
+            {importError && <p className="text-xs text-red-400">{importError}</p>}
+          </div>
           <SyncSettings />
         </div>
       </details>

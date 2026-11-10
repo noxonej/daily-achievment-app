@@ -1,8 +1,7 @@
 rules_version = '2';
 
-// Dayforge friends. Only what the app shares is ever stored here: name, character, level,
-// streak, weekly XP and finished quests / runs / badges. Money, plans, diary and notes never
-// leave the phone.
+// Squzo. backups/{uid} is your private automatic backup (only you can read it). Friends only ever
+// see what the app shares: name, character, level, streak, weekly XP and finished quests / runs / badges.
 service cloud.firestore {
   match /databases/{db}/documents {
     function signedIn() { return request.auth != null; }
@@ -10,6 +9,11 @@ service cloud.firestore {
     // `owner` has added the signed-in user as a friend.
     function friendOf(owner) { return exists(/databases/$(db)/documents/friends/$(owner)/list/$(me())); }
     function requested(to, from) { return exists(/databases/$(db)/documents/requests/$(to)/from/$(from)); }
+
+    // Your automatic backup: only you can read or write it.
+    match /backups/{uid} {
+      allow read, write: if signedIn() && me() == uid;
+    }
 
     // Public card: needed to find someone by their friend code.
     match /profiles/{uid} {

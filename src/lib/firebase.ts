@@ -192,3 +192,35 @@ export function db(accountId: string) {
     },
   };
 }
+
+/* ---------------------------------------------------------------- automatic cloud backup */
+
+/** Firestore keeps one document per account; stay safely under its 1 MB limit. */
+const MAX_BACKUP = 900_000;
+
+/**
+ * Saves the whole app state to `backups/{uid}`. Works for as long as the person stays signed in
+ * (Firebase refreshes its own token), so it needs no pop-up and no "Back up" button.
+ * Returns false when there's no session or the state is too big for one document.
+ */
+export async function cloudBackup(accountId: string, state: unknown): Promise<string | false> {
+  if (!friendsConfigured() || !loadSession(accountId)) return false;
+  const data = JSON.stringify(state);
+  if (data.length > MAX_BACKUP) return false;
+  const api = db(accountId);
+  const savedAt = new Date().toISOString();
+  await api.set(`backups/${api.uid()}`, { data, savedAt, v: 1 });
+  return savedAt;
+}
+
+export async function cloudRestore(accountId: string): Promise<{ data: unknown; savedAt: string } | null> {
+  if (!friendsConfigured() || !loadSession(accountId)) return null;
+  const api = db(accountId);
+  const doc = await api.get<{ data?: string; savedAt?: string }>(`backups/${api.uid()}`);
+  if (!doc?.data) return null;
+  try {
+    return { data: JSON.parse(doc.data), savedAt: doc.savedAt ?? '' };
+  } catch {
+    return null;
+  }
+}
