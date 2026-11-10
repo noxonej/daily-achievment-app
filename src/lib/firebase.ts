@@ -8,8 +8,8 @@
  */
 import { googleConfigured, googleSignIn } from './google';
 
-const API_KEY_DEFAULT = '';
-const PROJECT_ID_DEFAULT = '';
+const API_KEY_DEFAULT = 'AIzaSyDUDTAX2zxf_mVHVILcaiBe_nPiR9dLuG8';
+const PROJECT_ID_DEFAULT = 'squzo-861ad';
 
 const API_KEY: string = (import.meta.env.VITE_FIREBASE_API_KEY as string | undefined) || API_KEY_DEFAULT;
 const PROJECT_ID: string = (import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined) || PROJECT_ID_DEFAULT;
