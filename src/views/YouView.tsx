@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { shortNum } from '../lib/num';
+import { locale } from '../lib/locale';
 import { InfoTip } from '../components/Guide';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
@@ -46,21 +48,21 @@ export function YouView() {
           >
             <Icon name="⚙" size={20} />
           </button>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <button onClick={() => wardrobe.open()} className="relative shrink-0 rounded-[28%]" aria-label="Open wardrobe">
               <Avatar look={state.character} size={104} className="drop-shadow-[0_14px_30px_rgba(0,0,0,0.5)]" />
               <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 border-2 border-canvas px-2 py-0.5 text-[11px] font-black text-white whitespace-nowrap">
                 LV {stats.level}
               </span>
             </button>
-            <div className="flex-1 min-w-0 pr-16">
+            <div className="flex-1 min-w-[9.5rem] pr-16">
               <p className="font-display text-xl font-extrabold text-white truncate">{name || 'Your profile'}</p>
               <p className="text-sm text-amber-300 font-semibold">{titleForLevel(stats.level)}</p>
               <div className="mt-2">
                 <ProgressBar value={xpIntoLevel} max={xpForNextLevel} heightClass="h-1.5" />
               </div>
               <p className="text-[11px] text-slate-400 mt-1 tabular-nums">
-                {xpIntoLevel}/{xpForNextLevel} XP to level {stats.level + 1}
+                {xpIntoLevel.toLocaleString(locale())}/{xpForNextLevel.toLocaleString(locale())} XP to level {stats.level + 1}
               </p>
             </div>
           </div>
@@ -129,11 +131,11 @@ function Stat({ icon, value, label, color, pulse }: { icon: string; value: numbe
   return (
     <div className="relative rounded-2xl bg-black/20 border border-white/[0.06] py-2.5 text-center">
       {pulse && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />}
-      <div className={`flex items-center justify-center gap-1.5 ${color}`}>
-        <Icon name={icon} size={16} />
-        <span className="font-display text-lg font-extrabold text-white tabular-nums">{value}</span>
+      <div className={`flex items-center justify-center gap-1.5 px-1.5 min-w-0 ${color}`}>
+        <Icon name={icon} size={16} className="shrink-0" />
+        <span className="font-display text-lg font-extrabold text-white tabular-nums truncate">{shortNum(value)}</span>
       </div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mt-0.5">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mt-0.5 px-1 truncate">{label}</p>
     </div>
   );
 }

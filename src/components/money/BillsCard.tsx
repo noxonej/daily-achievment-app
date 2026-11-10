@@ -70,7 +70,7 @@ export function SubscriptionCalculator() {
   return (
     <div className={card} id="subscriptions">
       <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4 pb-1">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white">
             <Icon name="🔁" size="1.15em" className="icon-inline text-sky-300" />
             Subscription calculator
@@ -124,7 +124,7 @@ export function SubscriptionCalculator() {
           </button>
         </>
       ) : (
-        <button onClick={() => setEditing('new')} className="m-5 mt-3 w-[calc(100%-2.5rem)] rounded-xl border border-dashed border-white/15 py-4 text-sm text-slate-400 hover:text-white">
+        <button onClick={() => setEditing('new')} className="m-5 mt-3 w-[calc(100%-2.5rem)] rounded-xl border border-dashed border-white/15 px-4 py-4 text-sm text-slate-400 hover:text-white">
           Add your first subscription to see what they really cost
         </button>
       )}

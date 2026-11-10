@@ -26,7 +26,7 @@ export function Segmented<T extends string>({
           key={o.id}
           onClick={() => onChange(o.id)}
           aria-pressed={o.id === value}
-          className={`relative min-w-0 flex items-center justify-center gap-1.5 px-1 py-2.5 font-bold transition-colors ${tight ? 'text-[13px] min-[400px]:text-sm' : 'text-sm'} ${
+          className={`seg-btn relative min-w-0 flex items-center justify-center gap-1.5 px-1 py-2.5 font-bold transition-colors ${tight ? 'seg-tight text-[13px] min-[400px]:text-sm' : 'text-sm'} ${
             o.id === value ? 'text-white' : 'text-slate-400 hover:text-slate-200'
           }`}
         >

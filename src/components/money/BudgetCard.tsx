@@ -45,9 +45,9 @@ export function BudgetCard() {
         </button>
       </div>
 
-      <div className={`mt-3 rounded-xl border px-3 py-2.5 flex items-center justify-between gap-3 ${ready < 0 ? 'border-red-400/40 bg-red-500/10' : ready > 0 ? 'border-emerald-400/40 bg-emerald-500/10' : 'border-white/10 bg-black/20'}`}>
+      <div className={`mt-3 rounded-xl border px-3 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 ${ready < 0 ? 'border-red-400/40 bg-red-500/10' : ready > 0 ? 'border-emerald-400/40 bg-emerald-500/10' : 'border-white/10 bg-black/20'}`}>
         <span className="text-xs font-bold uppercase tracking-wider text-slate-300">{ready < 0 ? 'Assigned too much' : 'Ready to assign'}</span>
-        <span className={`font-display text-xl font-extrabold tabular-nums ${ready < 0 ? 'text-red-300' : 'text-white'}`}>{fmt(Math.abs(ready))}</span>
+        <span className={`ml-auto font-display text-xl font-extrabold tabular-nums whitespace-nowrap ${ready < 0 ? 'text-red-300' : 'text-white'}`}>{fmt(Math.abs(ready))}</span>
       </div>
       <p className="text-[11px] text-slate-500 mt-1.5">
         {income

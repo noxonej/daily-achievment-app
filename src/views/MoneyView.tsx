@@ -34,6 +34,7 @@ import { CashCounter } from '../components/money/CashCounter';
 import { cryptoTotal } from '../lib/crypto';
 import { billsPerMonth, lessonOfTheDay, smartTips } from '../lib/moneyTips';
 import { AmountInput, Field, card, inputClass, primaryBtn, secondaryBtn, useMoney } from '../components/money/ui';
+import { isOwnFund } from '../store/reducer';
 import { useCountUp } from '../lib/useCountUp';
 import { takeIntent } from '../lib/intents';
 import { Modal } from '../components/Modal';
@@ -140,6 +141,7 @@ export function MoneyView() {
             onAdd={() => setEditingGoal('new')}
             onEdit={(g) => setEditingGoal(g)}
             onAddMoney={(g) => setTransferOpen({ fromKind: 'spending', toId: g.accountId })}
+            onTakeOut={(g) => setTransferOpen({ fromId: g.accountId, toKind: 'spending' })}
           />
           <WishlistCard />
           {!simple && <HistoryCard />}
@@ -462,10 +464,12 @@ function GoalsCard({
   onAdd,
   onEdit,
   onAddMoney,
+  onTakeOut,
 }: {
   onAdd: () => void;
   onEdit: (g: SavingsGoal) => void;
   onAddMoney: (g: SavingsGoal) => void;
+  onTakeOut: (g: SavingsGoal) => void;
 }) {
   const { money, fmt } = useMoney();
   const goals = money.goals.filter((g) => money.accounts.some((a) => a.id === g.accountId));
@@ -537,11 +541,16 @@ function GoalsCard({
                   </>
                 )}
               </p>
-              <div className="flex gap-2 mt-3">
-                <button onClick={() => onAddMoney(g)} className={`${primaryBtn} flex-1 py-2.5 text-sm`}>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button onClick={() => onAddMoney(g)} className={`${primaryBtn} flex-1 min-w-[7.5rem] py-2.5 text-sm`}>
                   + Add money
                 </button>
-                <button onClick={() => onEdit(g)} className={`${secondaryBtn} px-4`}>
+                {account.amount > 0 && (
+                  <button onClick={() => onTakeOut(g)} className={`${secondaryBtn} shrink-0 px-3 text-sm`}>
+                    Take out
+                  </button>
+                )}
+                <button onClick={() => onEdit(g)} className={`${secondaryBtn} shrink-0 px-4 text-sm`}>
                   Edit
                 </button>
               </div>
@@ -794,7 +803,10 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
   const [weekly, setWeekly] = useState('');
   const [where, setWhere] = useState<string>('new');
   const [start, setStart] = useState('');
+  const [saved, setSaved] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const fund = existing ? money.accounts.find((a) => a.id === existing.accountId) : undefined;
+  const ownFund = !!existing && isOwnFund(money, existing);
 
   useEffect(() => {
     if (!goal) return;
@@ -811,7 +823,9 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
       setTarget(centsToInput(goal.target));
       setWeekly(goal.weekly ? centsToInput(goal.weekly) : '');
       setWhere(goal.accountId);
+      setSaved(centsToInput(money.accounts.find((a) => a.id === goal.accountId)?.amount ?? 0));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goal]);
 
   const targetCents = parseMoney(target);
@@ -819,9 +833,10 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
   const startCents = start ? parseMoney(start) : 0;
   const moveFrom = savingsAccounts[0];
   const tooMuch = !!moveFrom && startCents !== null && startCents > Math.max(0, moveFrom.amount);
+  const savedCents = existing ? (saved.trim() === '' ? 0 : parseMoney(saved)) : 0;
   const valid =
-    !!targetCents && targetCents > 0 && weeklyCents !== null && startCents !== null && !tooMuch && name.trim() !== '';
-  const savedNow = where === 'new' ? (startCents ?? 0) : (money.accounts.find((a) => a.id === where)?.amount ?? 0);
+    !!targetCents && targetCents > 0 && weeklyCents !== null && startCents !== null && savedCents !== null && !tooMuch && name.trim() !== '';
+  const savedNow = existing ? (savedCents ?? 0) : where === 'new' ? (startCents ?? 0) : (money.accounts.find((a) => a.id === where)?.amount ?? 0);
   const preview = targetCents ? goalProgress(savedNow, targetCents, weeklyCents ?? undefined) : null;
 
   function save() {
@@ -830,8 +845,15 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
       type: 'MONEY_UPSERT_GOAL',
       goal: { id: existing?.id, name, icon, target: targetCents!, weekly: weeklyCents || undefined, accountId: where === 'new' ? undefined : where },
       newAccount:
-        where === 'new' ? { name: `${name.trim()} fund`, amount: startCents ?? 0, fromAccountId: moveFrom?.id } : undefined,
+        where === 'new' && !existing ? { name: `${name.trim()} fund`, amount: startCents ?? 0, fromAccountId: moveFrom?.id } : undefined,
     });
+    if (existing && fund && savedCents !== null && savedCents !== fund.amount) {
+      dispatch({ type: 'MONEY_SET_GOAL_SAVED', goalId: existing.id, amount: savedCents });
+    }
+    // Renaming a goal renames its own fund too, so both places show the same name.
+    if (existing && fund && ownFund && name.trim() && name.trim() !== existing.name) {
+      dispatch({ type: 'MONEY_UPSERT_ACCOUNT', account: { ...fund, amount: savedCents ?? fund.amount, name: `${name.trim()} fund` } });
+    }
     onClose();
   }
 
@@ -905,6 +927,15 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
             </Field>
           )}
 
+          {existing && fund && (
+            <Field
+              label="Saved so far"
+              hint={ownFund ? `This is the money in ${fund.name}. Change it if you saved or spent some outside the app.` : `This is everything in ${fund.name}, which other money may share.`}
+            >
+              <AmountInput value={saved} onChange={setSaved} invalid={savedCents === null} />
+            </Field>
+          )}
+
           <Field label="How much can you save per week? (optional)" hint="Used to work out when you'll reach your goal.">
             <AmountInput value={weekly} onChange={setWeekly} invalid={weeklyCents === null} />
           </Field>
@@ -929,12 +960,16 @@ function GoalModal({ goal, onClose }: { goal: SavingsGoal | 'new' | null; onClos
       <ConfirmDialog
         open={confirmDelete}
         title={`Delete the ${existing?.name ?? ''} goal?`}
-        message="Only the goal is removed. The money you saved stays in your savings."
+        message={
+          ownFund && fund
+            ? `The goal and its ${fund.name} are removed everywhere. The ${fmt(fund.amount)} in it moves back to your other money, so nothing is lost.`
+            : 'Only the goal is removed. The money you saved stays in your savings.'
+        }
         confirmLabel="Delete goal"
         danger
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
-          if (existing) undoable({ type: 'MONEY_DELETE_GOAL', goalId: existing.id }, `${existing.name} goal deleted`);
+          if (existing) undoable({ type: 'MONEY_DELETE_GOAL', goalId: existing.id, closeFund: true }, `${existing.name} goal deleted`);
           setConfirmDelete(false);
           onClose();
         }}
@@ -1095,7 +1130,7 @@ function LimitsModal({ open, onClose }: { open: boolean; onClose: () => void }) 
   );
 }
 
-type TransferPreset = { fromKind?: MoneyKind; toKind?: MoneyKind; toId?: string; amount?: number };
+type TransferPreset = { fromKind?: MoneyKind; toKind?: MoneyKind; fromId?: string; toId?: string; amount?: number };
 
 function TransferModal({ preset, onClose }: { preset: TransferPreset | null; onClose: () => void }) {
   const { money, dispatch, fmt } = useMoney();
@@ -1108,6 +1143,7 @@ function TransferModal({ preset, onClose }: { preset: TransferPreset | null; onC
     if (!preset) return;
     const fixedTo = preset.toId ? money.accounts.find((a) => a.id === preset.toId) : undefined;
     const from =
+      (preset.fromId ? money.accounts.find((a) => a.id === preset.fromId) : undefined) ??
       money.accounts.find((a) => a.kind === (preset.fromKind ?? 'spending') && a.id !== fixedTo?.id) ??
       money.accounts.find((a) => a.id !== fixedTo?.id);
     const to =

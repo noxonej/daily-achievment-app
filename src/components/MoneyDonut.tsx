@@ -80,7 +80,7 @@ export function MoneyDonut({ slices, currency }: { slices: Slice[]; currency: st
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{centerLabel}</span>
           <span
             className={`font-display font-extrabold text-white tabular-nums leading-tight mt-0.5 ${
-              valueText.length > 12 ? 'text-xl' : valueText.length > 9 ? 'text-2xl' : 'text-3xl'
+              valueText.length > 15 ? 'text-base' : valueText.length > 12 ? 'text-lg' : valueText.length > 9 ? 'text-2xl' : 'text-3xl'
             }`}
           >
             {valueText}
@@ -99,14 +99,14 @@ export function MoneyDonut({ slices, currency }: { slices: Slice[]; currency: st
             <li key={k.id}>
               <button
                 onClick={() => setActive(active === k.id ? null : k.id)}
-                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
+                className={`w-full flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-xl px-3 py-2 text-left transition ${
                   active === k.id ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]'
                 }`}
               >
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: k.color }} />
-                <span className="flex-1 text-sm font-semibold text-slate-200">{k.short}</span>
-                <span className="text-xs text-slate-500 tabular-nums w-10 text-right">{pct}%</span>
-                <span className="text-sm font-bold text-white tabular-nums">{formatMoney(amount, currency)}</span>
+                <span className="flex-1 min-w-0 text-sm font-semibold text-slate-200 truncate">{k.short}</span>
+                <span className="shrink-0 text-xs text-slate-500 tabular-nums w-10 text-right">{pct}%</span>
+                <span className="shrink-0 ml-auto text-sm font-bold text-white tabular-nums whitespace-nowrap">{formatMoney(amount, currency)}</span>
               </button>
             </li>
           );

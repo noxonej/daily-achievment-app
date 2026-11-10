@@ -94,10 +94,17 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
                     {g.target} {g.unit} · completed
                   </span>
                 </span>
-                <Icon name="🏆" size={18} className="text-amber-300" />
+                <Icon name="🏆" size={18} className="shrink-0 text-amber-300" />
+                <button
+                  onClick={() => openEdit(g)}
+                  className="shrink-0 text-slate-500 hover:text-white text-sm p-1"
+                  aria-label={`Edit ${g.title}`}
+                >
+                  <Icon name="✎" size={15} />
+                </button>
                 <button
                   onClick={() => undoable({ type: 'DELETE_GOAL', goalId: g.id }, `${g.title} deleted`)}
-                  className="text-slate-500 hover:text-red-400 text-sm px-1"
+                  className="shrink-0 text-slate-500 hover:text-red-400 text-sm p-1"
                   aria-label="Delete goal"
                 >
                   <Icon name="✕" size={15} />

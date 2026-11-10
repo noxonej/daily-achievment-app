@@ -63,27 +63,30 @@ export function MeasureQuestCard({
           <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${DIFFICULTY_COLOR[quest.difficulty]}`}>{DIFFICULTY_LABEL[quest.difficulty]}</span>
           <span className="text-[11px] font-display font-bold text-amber-300">+{quest.xp} XP</span>
         </div>
-        <button onClick={() => setAdjusting(true)} aria-label={`Adjust ${quest.title}`} className="shrink-0 -mr-1.5 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10">
-          <Icon name="⚙" size={16} />
-        </button>
       </div>
 
       <div className="mt-3">
-        <div className="flex items-baseline justify-between text-sm">
+        <div className="flex items-center justify-between gap-2 text-sm">
           {m.unit === 'glasses' ? (
-            <span className="font-display font-bold text-white tabular-nums">
+            <span className="min-w-0 font-display font-bold text-white tabular-nums">
               {fmt(litres(value), true)} L<span className="text-slate-500 font-medium"> / {fmt(litres(m.target), true)} L</span>
-              <span className="ml-2 text-[11px] font-sans font-semibold text-slate-500">
+              <span className="ml-2 text-[11px] font-sans font-semibold text-slate-500 whitespace-nowrap">
                 {value}/{m.target} × {size} ml
               </span>
             </span>
           ) : (
-            <span className="font-display font-bold text-white tabular-nums">
+            <span className="min-w-0 font-display font-bold text-white tabular-nums">
               {fmt(value, meta.decimals)}
               <span className="text-slate-500 font-medium"> / {fmt(m.target, meta.decimals)} {meta.label}</span>
             </span>
           )}
-          <span className={`text-xs font-bold tabular-nums ${completed ? 'text-emerald-300' : 'text-slate-400'}`}>{Math.floor(pct)}%</span>
+          <span className="shrink-0 flex items-center gap-1.5">
+            <span className={`text-xs font-bold tabular-nums ${completed ? 'text-emerald-300' : 'text-slate-400'}`}>{Math.floor(pct)}%</span>
+            {/* Down here, the settings button no longer squeezes the quest's name on small phones. */}
+            <button onClick={() => setAdjusting(true)} aria-label={`Adjust ${quest.title}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10">
+              <Icon name="⚙" size={16} />
+            </button>
+          </span>
         </div>
         {m.unit === 'glasses' ? (
           <div className={`mt-2 grid gap-1.5`} style={{ gridTemplateColumns: `repeat(${Math.min(m.target, 10)}, minmax(0, 1fr))` }}>

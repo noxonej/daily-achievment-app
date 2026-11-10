@@ -125,13 +125,25 @@
   --color-amber-400: #818cf8; --color-amber-500: #6366f1; --color-amber-600: #4f46e5; --color-amber-900: #312e81;
 }
 
+/* Numbers in headings, counters and money use Manrope's cleaner digits instead of
+   Space Grotesk's quirky ones; letters keep the Space Grotesk look. */
+@font-face {
+  font-family: "DF Num";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url(@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0030-0039, U+0024, U+0025, U+002B, U+002C, U+002D, U+002E, U+002F, U+003A, U+00A3, U+00A5, U+20AC, U+2212;
+}
+
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Space Grotesk", "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "DF Num", "Space Grotesk", "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 .font-display {
   letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
 }
 
 :root {
@@ -173,7 +185,10 @@ body {
 :root[data-reading] .hero-row { flex-wrap: wrap; justify-content: center; }
 :root[data-reading] .hero-stats { flex: 1 1 13rem; }
 /* Show the whole text instead of cutting it off with "…" (except in the top bar). */
-:root[data-reading] main .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+:root[data-reading] main .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; }
+/* Numbers and the small section switches keep normal spacing, so they never spill out of their pill. */
+:root[data-reading] .tabular-nums, :root[data-reading] .seg-btn { letter-spacing: 0; word-spacing: 0; }
+:root[data-reading] .seg-tight { font-size: 12px; padding-left: 1px; padding-right: 1px; }
 :root[data-reading] body { line-height: 1.65; letter-spacing: 0.012em; word-spacing: 0.05em; }
 :root[data-reading='extra'] body { line-height: 1.75; letter-spacing: 0.02em; word-spacing: 0.1em; }
 :root[data-reading] .leading-tight, :root[data-reading] .leading-snug { line-height: 1.4; }

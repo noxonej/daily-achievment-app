@@ -122,7 +122,8 @@ function Methods({ onGo }: { onGo: (t: Target) => void }) {
         {SAVING_METHODS.map((m) => {
           const isOpen = open === m.id;
           const goalName = m.action === 'goal-emergency' ? 'Emergency fund' : m.action === 'goal-52' ? '52-week challenge' : null;
-          const already = goalName ? hasGoal(goalName) : false;
+          // Goal methods read the real goal list, so deleting the goal brings the button back.
+          const already = goalName ? hasGoal(goalName) : !!done[m.id];
           return (
             <li key={m.id}>
               <button onClick={() => setOpen(isOpen ? null : m.id)} aria-expanded={isOpen} className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-white/[0.03]">
@@ -140,10 +141,10 @@ function Methods({ onGo }: { onGo: (t: Target) => void }) {
                   {m.action && (
                     <button
                       onClick={() => run(m.id, m.action!)}
-                      disabled={already || done[m.id]}
+                      disabled={already}
                       className="mt-2.5 rounded-lg bg-emerald-500/15 border border-emerald-400/30 hover:bg-emerald-500/25 disabled:opacity-60 px-3 py-1.5 text-sm font-bold text-emerald-200"
                     >
-                      {already || done[m.id] ? 'Added to your goals ✓' : m.actionLabel}
+                      {already ? (goalName ? 'Added to your goals ✓' : 'Done ✓') : m.actionLabel}
                     </button>
                   )}
                 </div>

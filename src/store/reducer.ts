@@ -164,7 +164,8 @@ export type Action =
       /** When set, a new savings account is created to hold the goal's money, starting at this many cents. */
       newAccount?: { name: string; amount: number; fromAccountId?: string };
     }
-  | { type: 'MONEY_DELETE_GOAL'; goalId: string }
+  | { type: 'MONEY_DELETE_GOAL'; goalId: string; /** Also close the goal's own fund and move its money back. */ closeFund?: boolean }
+  | { type: 'MONEY_SET_GOAL_SAVED'; goalId: string; amount: number }
   | {
       type: 'COMPLETE_ONBOARDING';
       profile: Profile;
@@ -230,6 +231,16 @@ export interface NewQuestInput {
   measure?: QuestMeasure;
 }
 
+/** True when this goal's account holds only this goal's money (no other goal shares it). */
+export function isOwnFund(m: MoneyState, goal: SavingsGoal): boolean {
+  const acct = m.accounts.find((a) => a.id === goal.accountId);
+  if (!acct || acct.kind !== 'savings') return false;
+  if (m.goals.some((g) => g.id !== goal.id && g.accountId === goal.accountId)) return false;
+  const n = acct.name.trim().toLowerCase();
+  const gn = goal.name.trim().toLowerCase();
+  return n === gn || n === `${gn} fund` || n.endsWith(' fund') || n === '52-week challenge' || n === 'emergency fund';
+}
+
 export interface NewGoalInput {
   title: string;
   description?: string;
@@ -237,6 +248,8 @@ export interface NewGoalInput {
   target: number;
   unit: string;
   icon: string;
+  /** Only used when editing: how much is done so far. */
+  progress?: number;
 }
 
 // Both recompute functions spread over `existing` first so fields they don't
@@ -522,7 +535,15 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'UPDATE_GOAL': {
       return {
         ...state,
-        goals: state.goals.map((g) => (g.id === action.goalId ? { ...g, ...action.updates } : g)),
+        goals: state.goals.map((g) => {
+          if (g.id !== action.goalId) return g;
+          const next = { ...g, ...action.updates };
+          next.target = Math.max(1, next.target);
+          next.progress = Math.max(0, Math.min(next.target, next.progress));
+          // Editing the target or progress can finish a goal or reopen a finished one.
+          next.completedAt = next.progress >= next.target ? g.completedAt ?? new Date().toISOString() : undefined;
+          return next;
+        }),
       };
     }
 
@@ -828,8 +849,26 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'MONEY_DELETE_GOAL':
-      // The money itself stays in its savings account; only the goal is removed.
-      return withMoney(state, (m) => ({ ...m, goals: m.goals.filter((g) => g.id !== action.goalId) }));
+      return withMoney(state, (m) => {
+        const goal = m.goals.find((g) => g.id === action.goalId);
+        const goals = m.goals.filter((g) => g.id !== action.goalId);
+        if (!goal || !action.closeFund || !isOwnFund(m, goal)) return { ...m, goals };
+        // The goal had its own fund: close it so it doesn't linger in Accounts, and move the
+        // money into another savings account (or spending) so none of it disappears.
+        const fund = m.accounts.find((a) => a.id === goal.accountId)!;
+        const others = m.accounts.filter((a) => a.id !== fund.id);
+        const home = others.find((a) => a.kind === 'savings') ?? others.find((a) => a.kind === 'spending') ?? others[0];
+        if (!home) return { ...m, goals };
+        const accounts = adjustAccount(others, home.id, fund.amount);
+        return { ...m, goals, accounts };
+      });
+
+    case 'MONEY_SET_GOAL_SAVED':
+      return withMoney(state, (m) => {
+        const goal = m.goals.find((g) => g.id === action.goalId);
+        if (!goal) return m;
+        return { ...m, accounts: m.accounts.map((a) => (a.id === goal.accountId ? { ...a, amount: Math.max(0, Math.round(action.amount)) } : a)) };
+      });
 
     case 'MONEY_SET_CATEGORIES':
       return withMoney(state, (m) => ({ ...m, categories: action.categories }));
