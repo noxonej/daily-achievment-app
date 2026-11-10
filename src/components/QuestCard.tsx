@@ -1,4 +1,5 @@
 import type { Quest } from '../lib/types';
+import { TwistTag } from './TwistTag';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { InfoDisclosure } from './InfoDisclosure';
 import { FloatingReward } from './FloatingReward';
@@ -52,6 +53,7 @@ export function QuestCard({ quest, completed, onToggle, periodKey }: QuestCardPr
           {quest.description && (
             <p className="text-xs text-slate-400 mt-0.5 truncate">{quest.description}</p>
           )}
+          <TwistTag quest={quest} />
           {(streak >= 2 || rate.of >= 7) && (
             <p className="mt-1 flex items-center gap-2 text-[11px] font-semibold">
               {streak >= 2 && (

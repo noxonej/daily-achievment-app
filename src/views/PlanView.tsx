@@ -5,7 +5,7 @@ import { useApp } from '../store/AppContext';
 import type { PlanCategory, PlanItem, WeekdayId } from '../lib/types';
 import {
   PLAN_CATEGORIES,
-  STARTER_ROUTINE,
+  STARTER_ROUTINES,
   WEEKDAYS,
   checkedPlanIds,
   dateOfWeekday,
@@ -87,8 +87,8 @@ export function PlanView() {
         >
           <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><Icon name="✨" size={20} /></span>
           <span className="flex-1 min-w-0">
-            <span className="block text-sm font-bold text-white">Start with a ready-made routine</span>
-            <span className="block text-xs text-slate-400">Fills your week with a sample plan you can change however you like</span>
+            <span className="block text-sm font-bold text-white">Pick a ready-made routine</span>
+            <span className="block text-xs text-slate-400">Student, gym, side hustle, calm and more. Change anything you like</span>
           </span>
           <span className="text-amber-300 font-bold">→</span>
         </button>
@@ -96,7 +96,7 @@ export function PlanView() {
         <div className="flex flex-wrap gap-2">
           <ToolbarButton onClick={() => setEventOpen(true)}><Icon name="📆" size="1.15em" className="icon-inline" />One-time event</ToolbarButton>
           <ToolbarButton onClick={() => setRemindersOpen(true)}><Icon name="🔔" size="1.15em" className="icon-inline" />Reminders</ToolbarButton>
-          {emptyDays.length > 0 && <ToolbarButton onClick={() => setStarterOpen(true)}><Icon name="✨" size="1.15em" className="icon-inline" />Fill empty days</ToolbarButton>}
+          <ToolbarButton onClick={() => setStarterOpen(true)}><Icon name="✨" size="1.15em" className="icon-inline" />Routines</ToolbarButton>
           <CategoryLegend />
         </div>
       )}
@@ -169,35 +169,67 @@ function CategoryPicker({ value, onChange }: { value?: PlanCategory; onChange: (
 }
 
 function StarterModal({ open, emptyDays, onClose }: { open: boolean; emptyDays: WeekdayId[]; onClose: () => void }) {
-  const { dispatch } = useApp();
+  const { dispatch, undoable } = useApp();
   const all = emptyDays.length === WEEKDAYS.length;
+  const [pick, setPick] = useState(STARTER_ROUTINES[0].id);
+  const routine = STARTER_ROUTINES.find((r) => r.id === pick) ?? STARTER_ROUTINES[0];
   return (
-    <Modal open={open} onClose={onClose} title="Starter routine">
+    <Modal open={open} onClose={onClose} title="Starter routines">
+      <p className="text-sm text-slate-300 mb-3">Pick the week that sounds most like you.</p>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {STARTER_ROUTINES.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => setPick(r.id)}
+            aria-pressed={r.id === pick}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+              r.id === pick ? 'bg-amber-500/20 border-amber-400 text-amber-100' : 'bg-white/5 border-white/10 text-slate-300'
+            }`}
+          >
+            <Icon name={r.icon} size={14} className="shrink-0" />
+            {r.name}
+          </button>
+        ))}
+      </div>
       <p className="text-sm text-slate-300 mb-3">
-        {all
-          ? 'A balanced week to start from: early mornings, meditation, reading, a daily hour on a skill, workouts, a Saturday side project, and a Sunday review.'
-          : `This fills only your empty days (${emptyDays.map(weekdayLabel).join(', ')}). Days you've already planned stay exactly as they are.`}
+        {routine.blurb}
+        {!all && emptyDays.length > 0 && ` "Fill empty days" adds it only to ${emptyDays.map(weekdayLabel).join(', ')}; days you've planned stay as they are.`}
       </p>
       <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 mb-5 space-y-1.5 max-h-56 overflow-y-auto">
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Monday–Friday sample</p>
-        {STARTER_ROUTINE.mon.map((i) => (
+        {routine.days.mon.map((i) => (
           <div key={i.text} className="flex items-center gap-2.5 text-sm">
             <span className={`w-2 h-2 rounded-full shrink-0 ${planCategory(i.category)?.dot ?? 'bg-slate-600'}`} />
             <span className="w-16 shrink-0 text-xs font-bold tabular-nums text-amber-300">{formatPlanTime(i.time!)}</span>
-            <span className="text-slate-200">{i.text}</span>
+            <span className="min-w-0 text-slate-200">{i.text}</span>
           </div>
         ))}
       </div>
       <p className="text-xs text-slate-500 mb-4">You can edit, delete, or add to anything afterwards. It's just a starting point.</p>
-      <button
-        onClick={() => {
-          dispatch({ type: 'PLAN_LOAD_STARTER', days: STARTER_ROUTINE });
-          onClose();
-        }}
-        className="w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 transition active:scale-[0.98]"
-      >
-        {all ? 'Use this routine' : `Fill ${emptyDays.length} empty ${emptyDays.length === 1 ? 'day' : 'days'}`}
-      </button>
+      <div className="space-y-2">
+        {(all || emptyDays.length > 0) && (
+          <button
+            onClick={() => {
+              dispatch({ type: 'PLAN_LOAD_STARTER', days: routine.days });
+              onClose();
+            }}
+            className="w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 transition active:scale-[0.98]"
+          >
+            {all ? `Use the ${routine.name} week` : `Fill ${emptyDays.length} empty ${emptyDays.length === 1 ? 'day' : 'days'}`}
+          </button>
+        )}
+        {!all && (
+          <button
+            onClick={() => {
+              undoable({ type: 'PLAN_LOAD_STARTER', days: routine.days, replace: true }, `Your week is now ${routine.name}`);
+              onClose();
+            }}
+            className="w-full rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-bold py-3 transition active:scale-[0.98]"
+          >
+            Replace my whole week with {routine.name}
+          </button>
+        )}
+      </div>
     </Modal>
   );
 }

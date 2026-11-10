@@ -4,6 +4,7 @@ import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
+import { applyDailyTwists, untwisted } from '../lib/dailyTwist';
 import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../lib/wildcard';
 import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
@@ -145,7 +146,7 @@ export type Action =
   | { type: 'DELETE_QUICK_TASK'; taskId: string }
   | { type: 'PLAN_ADD'; day: WeekdayId; text: string; time?: string; category?: PlanCategory; date?: string; note?: string }
   | { type: 'PLAN_UPDATE'; day: WeekdayId; itemId: string; text: string; time?: string; category?: PlanCategory; date?: string; note?: string }
-  | { type: 'PLAN_LOAD_STARTER'; days: Record<WeekdayId, Array<Omit<PlanItem, 'id'>>> }
+  | { type: 'PLAN_LOAD_STARTER'; days: Record<WeekdayId, Array<Omit<PlanItem, 'id'>>>; /** Swap the whole week (undoable from the screen). */ replace?: boolean }
   | { type: 'PLAN_DELETE'; day: WeekdayId; itemId: string }
   | { type: 'PLAN_TOGGLE'; itemId: string }
   | { type: 'PLAN_COPY_DAY'; from: WeekdayId; to: WeekdayId[] }
@@ -166,6 +167,7 @@ export type Action =
     }
   | { type: 'MONEY_DELETE_GOAL'; goalId: string; /** Also close the goal's own fund and move its money back. */ closeFund?: boolean }
   | { type: 'MONEY_SET_GOAL_SAVED'; goalId: string; amount: number }
+  | { type: 'SYNC_DAILY_TWIST' }
   | {
       type: 'COMPLETE_ONBOARDING';
       profile: Profile;
@@ -499,7 +501,9 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         quests: state.quests.map((q) => {
           if (q.id !== action.questId) return q;
+          // Editing a quest makes what you typed its real version, so drop today's twist.
           const updated = { ...q, ...action.updates };
+          delete updated.twist;
           if (action.updates.difficulty) updated.xp = DIFFICULTY_XP[action.updates.difficulty];
           return updated;
         }),
@@ -596,6 +600,15 @@ export function reducer(state: AppState, action: Action): AppState {
       if (events.length === all.length) return state;
       const gone = new Set(all.filter((e) => !events.includes(e)).map((e) => e.id));
       return { ...state, weekPlan: { ...plan, events, checkedIds: plan.checkedIds.filter((id) => !gone.has(id)) } };
+    }
+
+    case 'SYNC_DAILY_TWIST': {
+      if (state.prefs?.dailyTwists === false) {
+        const quests = state.quests.map(untwisted);
+        return quests.some((q, i) => q !== state.quests[i]) ? { ...state, quests } : state;
+      }
+      const quests = applyDailyTwists(state.quests, todayKey());
+      return quests === state.quests ? state : { ...state, quests };
     }
 
     case 'SYNC_WILDCARD': {
@@ -734,7 +747,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const plan = normalizePlan(state.weekPlan);
       const days = { ...plan.days };
       for (const day of Object.keys(days) as WeekdayId[]) {
-        if (days[day].length === 0) days[day] = (action.days[day] ?? []).map((i) => ({ ...i, id: planId() }));
+        if (action.replace || days[day].length === 0) days[day] = (action.days[day] ?? []).map((i) => ({ ...i, id: planId() }));
       }
       return { ...state, weekPlan: { ...plan, days } };
     }
@@ -883,9 +896,10 @@ export function reducer(state: AppState, action: Action): AppState {
       // (paused) and can be switched on any time in Settings → Quests.
       const keep = new Set(starterQuestTitles(action.profile.focusAreas));
       const quests = state.quests.map((q) =>
-        q.frequency === 'daily' && !q.custom && !q.wildcardDate ? { ...q, archived: !keep.has(q.title) } : q,
+        q.frequency === 'daily' && !q.custom && !q.wildcardDate ? { ...q, archived: !keep.has(untwisted(q).title) } : q,
       );
-      return { ...state, onboarded: true, profile: action.profile, weekPlan: { ...plan, days }, quests, wildcardEnabled: false };
+      // The daily wildcard stays on: a fresh bonus quest every day keeps the list from feeling the same.
+      return { ...state, onboarded: true, profile: action.profile, weekPlan: { ...plan, days }, quests, wildcardEnabled: true };
     }
 
     case 'SET_PROFILE':

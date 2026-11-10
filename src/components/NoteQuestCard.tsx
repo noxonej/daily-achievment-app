@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { TwistTag } from './TwistTag';
 import type { Quest } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { InfoDisclosure } from './InfoDisclosure';
@@ -67,6 +68,7 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote, periodKey 
             {quest.title}
           </p>
           {quest.description && <p className="text-xs text-slate-400 mt-0.5 truncate">{quest.description}</p>}
+          <TwistTag quest={quest} />
           {quest.details && (
             <div className="mt-1">
               <InfoDisclosure text={quest.details} />

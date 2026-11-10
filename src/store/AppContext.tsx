@@ -267,6 +267,11 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
     dispatch({ type: 'SYNC_WILDCARD' });
   }, [state.wildcardEnabled]);
 
+  // Daily twists: some days a quest asks for a bit more, a bit less, or a different version.
+  useEffect(() => {
+    dispatch({ type: 'SYNC_DAILY_TWIST' });
+  }, [state.lastOpenedDate, state.prefs?.dailyTwists]);
+
   // A Streak Shield quietly covers a missed yesterday when the app opens on a new day.
   useEffect(() => {
     dispatch({ type: 'CHECK_STREAK_SHIELDS' });

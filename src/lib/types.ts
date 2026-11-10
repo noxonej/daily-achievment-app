@@ -39,6 +39,8 @@ export interface Quest {
   noteMinWords?: number;
   /** Number-based quests (steps, km, glasses…): completes when today's/this week's total reaches the target. */
   measure?: QuestMeasure;
+  /** Today's daily twist (a slightly different amount or version), with what to go back to tomorrow. */
+  twist?: { date: string; baseTitle: string; baseDescription?: string; baseTarget?: number; baseNoteList?: number };
 }
 
 export type GoalTimeframe = 'weekly' | 'monthly' | 'yearly' | 'custom';
@@ -128,7 +130,7 @@ export type Character = Record<AvatarSlot, string>;
 
 export type WeekdayId = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
-export type PlanCategory = 'health' | 'mind' | 'study' | 'work' | 'money' | 'personal';
+export type PlanCategory = 'health' | 'eating' | 'mind' | 'study' | 'work' | 'money' | 'personal';
 
 export interface PlanItem {
   id: string;
@@ -294,6 +296,8 @@ export interface Sharing {
 }
 
 export interface Prefs {
+  /** Some days a quest asks for a bit more, less, or a different version (on unless turned off). */
+  dailyTwists?: boolean;
   language: string;
   theme: 'dark' | 'light' | 'system';
   timeFormat: 'auto' | '12' | '24';

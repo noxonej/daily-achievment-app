@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { TwistTag } from './TwistTag';
 import type { QuestMeasure } from '../lib/types';
 import { useApp } from '../store/AppContext';
 import { Modal } from './Modal';
@@ -53,6 +54,7 @@ export function MeasureQuestCard({
         <div className="min-w-0 flex-1">
           <p className={`font-semibold text-[15px] leading-tight ${completed ? 'text-emerald-300' : 'text-white'}`}>{quest.title}</p>
           {quest.description && <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{quest.description}</p>}
+          <TwistTag quest={quest} />
           {quest.details && (
             <div className="mt-1">
               <InfoDisclosure text={quest.details} />

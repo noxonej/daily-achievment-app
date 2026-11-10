@@ -54,7 +54,9 @@ export function buildRoutine({ focusAreas, wakeTime, bedTime, busy }: RoutineInp
     const d = new DayBuilder();
     d.add(wake, 'Wake up + glass of water', 'health');
     if (f.has('mind')) d.add(wake + 15, 'Meditation (10 min)', 'mind');
-    d.add(wake + 30, f.has('study') ? 'Breakfast + read 10 pages' : 'Breakfast', f.has('study') ? 'study' : 'health');
+    d.add(wake + 30, f.has('study') ? 'Breakfast + read 10 pages' : 'Breakfast', 'eating');
+    // Lunch, unless school or work already covers midday.
+    if (!busy || toMin(busy.end) <= 12 * 60 || toMin(busy.start) >= 13 * 60) d.add(12 * 60 + 30, 'Lunch', 'eating');
     let t: number;
     if (busy) {
       d.add(toMin(busy.start), 'School / work', 'work');
@@ -75,7 +77,7 @@ export function buildRoutine({ focusAreas, wakeTime, bedTime, busy }: RoutineInp
     if (f.has('health')) {
       d.add(Math.max(t, 17 * 60), 'Workout (45 min)', 'health');
     }
-    d.add(Math.max(19 * 60, t), 'Dinner + family / friends', 'personal');
+    d.add(Math.max(19 * 60, t), 'Dinner + family / friends', 'eating');
     if (f.has('money')) d.add(bed - 90, "Log today's spending", 'money');
     d.add(bed - 60, f.has('sleep') ? 'Screens off + plan tomorrow' : 'Plan tomorrow', 'mind');
     d.add(bed, 'Sleep', 'health');
@@ -88,7 +90,7 @@ export function buildRoutine({ focusAreas, wakeTime, bedTime, busy }: RoutineInp
     const w = wake + (f.has('sleep') ? 30 : 60);
     d.add(w, 'Wake up + glass of water', 'health');
     if (f.has('mind')) d.add(w + 15, 'Meditation (10 min)', 'mind');
-    d.add(w + 30, 'Breakfast', 'health');
+    d.add(w + 30, 'Breakfast', 'eating');
     if (kind === 'sat') {
       if (f.has('work') || f.has('money')) d.add(w + 120, 'Side project / money skill (2 hours)', f.has('money') ? 'money' : 'work');
       else if (f.has('study')) d.add(w + 120, 'Learn something new (1 hour)', 'study');

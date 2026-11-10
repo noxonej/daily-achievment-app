@@ -119,6 +119,24 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
         </div>
       </div>
 
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white"><Icon name="🔀" size="1.15em" className="icon-inline text-sky-300" />Daily twists</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Some days a quest changes a little: 2.5 L of water instead of 2 L, or meditate 5 minutes, or twice for 5. Same XP.
+            </p>
+          </div>
+          <button
+            onClick={() => dispatch({ type: 'SET_PREFS', prefs: { dailyTwists: state.prefs?.dailyTwists === false } })}
+            className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${state.prefs?.dailyTwists !== false ? 'bg-amber-500' : 'bg-white/10'}`}
+            aria-label="Toggle daily twists"
+          >
+            <span className={`absolute top-1 w-5 h-5 rounded-full bg-[#fff] transition-transform ${state.prefs?.dailyTwists !== false ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+      </div>
+
       </>
       )}
 
