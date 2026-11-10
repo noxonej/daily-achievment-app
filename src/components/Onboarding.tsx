@@ -1,14 +1,14 @@
 import { Switch } from './Switch';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useApp } from '../store/AppContext';
-import type { Appearance, FocusArea } from '../lib/types';
+import type { Appearance, FocusArea, Profile } from '../lib/types';
 import { FOCUS_AREAS, buildRoutine } from '../lib/routine';
 import { formatPlanTime, planCategory } from '../lib/weekPlan';
 import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
 import { Avatar } from './Avatar';
 import { AccentPicker } from './ProfileSettings';
-import { AVATAR_ITEMS, isOwned, normalizeLook, RARITY } from '../data/avatar';
+import { AVATAR_ITEMS, DEFAULT_LOOK, isOwned, normalizeLook, RARITY } from '../data/avatar';
 import { ownership } from '../store/reducer';
 import type { AvatarSlot } from '../lib/types';
 
@@ -33,6 +33,12 @@ const timeInput =
   'time-input block w-full min-w-0 max-w-full rounded-xl bg-white/5 border border-white/10 px-3 h-12 text-base text-white focus:outline-none focus:border-amber-400/60';
 
 /** First-run setup: a few questions, then a personal week plan is built and the app opens. */
+const GENDERS: Array<{ id: NonNullable<Profile['gender']>; label: string }> = [
+  { id: 'female', label: 'Girl' },
+  { id: 'male', label: 'Guy' },
+  { id: 'unsaid', label: 'Rather not say' },
+];
+
 export function Onboarding() {
   const { state, dispatch } = useApp();
   // If the name was already given when the account was created, skip straight to the goals.
@@ -49,6 +55,7 @@ export function Onboarding() {
   const [busyEnd, setBusyEnd] = useState('15:00');
   const [remind, setRemind] = useState(true);
   const [lockApps, setLockApps] = useState(false);
+  const [gender, setGender] = useState<NonNullable<Profile['gender']> | undefined>(state.profile?.gender);
   const [matchedLook, setMatchedLook] = useState<string | null>(null);
 
   const index = STEPS.indexOf(step);
@@ -64,6 +71,10 @@ export function Onboarding() {
 
   /** Colours that match the goals picked (only until the person picks a colour themselves). */
   function matchLook() {
+    // A girl's starting character gets a ponytail instead of the default twists (only if untouched).
+    if (gender === 'female' && normalizeLook(state.character).hair === DEFAULT_LOOK.hair) {
+      dispatch({ type: 'EQUIP_COSMETIC', slot: 'hair', itemId: 'hair-ponytail' });
+    }
     const first = areas[0];
     if (!first) return;
     const look = LOOK_FOR_AREA[first];
@@ -88,7 +99,7 @@ export function Onboarding() {
     if (lockApps) dispatch({ type: 'SET_PREFS', prefs: { scrollLock: 3 } });
     dispatch({
       type: 'COMPLETE_ONBOARDING',
-      profile: { name: name.trim(), focusAreas: areas, wakeTime: wake, bedTime: bed },
+      profile: { name: name.trim(), focusAreas: areas, wakeTime: wake, bedTime: bed, ...(gender ? { gender } : {}) },
       plan: withPlan ? routine : { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
     });
   }
@@ -161,6 +172,25 @@ export function Onboarding() {
                   className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 h-12 text-base text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 mb-4"
                 />
               )}
+              <div className="mb-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">I'm a</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {GENDERS.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setGender(g.id)}
+                      aria-pressed={gender === g.id}
+                      className={`rounded-xl border px-2 py-2.5 text-sm font-semibold transition ${
+                        gender === g.id ? 'border-amber-400 bg-amber-500/10 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/25'
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 mt-1.5">Only used for a few health tips and your water goal. Change it any time in Settings.</p>
+              </div>
               <div className="grid grid-cols-2 gap-2.5">
                 {FOCUS_AREAS.map((a) => {
                   const on = areas.includes(a.id);

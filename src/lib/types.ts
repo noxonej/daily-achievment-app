@@ -335,6 +335,8 @@ export interface Profile {
   focusAreas: FocusArea[];
   wakeTime: string;
   bedTime: string;
+  /** Optional. Tailors a few health tips, the water goal and the starting character. */
+  gender?: 'female' | 'male' | 'unsaid';
 }
 
 /** One logged night. `date` is the morning you woke up (YYYY-MM-DD). */

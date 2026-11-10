@@ -223,6 +223,56 @@ export function coachTips(state: AppState, stats: DerivedStats, today: string = 
     });
   }
 
+  // 12. Tips that depend on your body (only if you told the app; one a day, they take turns).
+  const g = state.profile?.gender;
+  if (g === 'female' || g === 'male') {
+    const pool: CoachTip[] =
+      g === 'female'
+        ? [
+            {
+              id: 'cycle-energy',
+              icon: '🌙',
+              title: 'Work with your cycle',
+              text: 'Energy often changes over your cycle. Many girls and women feel strongest in the two weeks after a period starts. On low days, swap a hard workout for a walk, stretching or yoga. That is smart, not lazy.',
+              action: add('Stretch 10 minutes', 'Add a stretch quest'),
+            },
+            {
+              id: 'iron',
+              icon: '🥬',
+              title: 'Iron matters more for you',
+              text: 'Girls and women need about 15 mg of iron a day, close to twice as much as boys. Beans, lentils, spinach, eggs, red meat and fortified cereal help. Vitamin C (fruit, peppers) helps your body take it in. Feeling tired all the time? Ask a doctor to check.',
+            },
+            {
+              id: 'strong-bones',
+              icon: '🏋️',
+              title: 'Lift for strong bones',
+              text: 'Strength training and jumping sports build bone, and the bones you build before about 25 protect you for life. Women lose bone faster later on, so this is one of the best investments you can make now.',
+            },
+          ]
+        : [
+            {
+              id: 'talk-it-out',
+              icon: '🗣️',
+              title: 'Strong guys talk',
+              text: 'Boys and men are less likely to talk about stress, and that makes it heavier. Telling one friend how you really feel is a power move, not a weak one.',
+              action: add('Write a short note to a friend', 'Add a quest to reach out'),
+            },
+            {
+              id: 'protein-spread',
+              icon: '🍳',
+              title: 'Spread your protein',
+              text: 'Building muscle works best with some protein at every meal (eggs, yogurt, chicken, beans, tofu) instead of one huge serving. Food first, shakes are optional.',
+            },
+            {
+              id: 'checkups',
+              icon: '🩺',
+              title: 'Go to the check-up',
+              text: 'Men skip doctor visits much more often than women. A yearly check-up and a dentist visit catch small problems before they get big and expensive.',
+            },
+          ];
+    tips.push(pool[hashString(today) % pool.length]);
+  }
+
   return tips;
 }
 

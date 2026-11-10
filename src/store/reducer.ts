@@ -895,9 +895,15 @@ export function reducer(state: AppState, action: Action): AppState {
       // Start small: 4 daily quests that match what they want to work on. The rest stay in the list
       // (paused) and can be switched on any time in Settings → Quests.
       const keep = new Set(starterQuestTitles(action.profile.focusAreas));
-      const quests = state.quests.map((q) =>
-        q.frequency === 'daily' && !q.custom && !q.wildcardDate ? { ...q, archived: !keep.has(untwisted(q).title) } : q,
-      );
+      // Water: about 2 L a day for girls and women, 2.5 L for boys and men (EFSA), in 250 ml glasses.
+      const glasses = action.profile.gender === 'male' ? 10 : 8;
+      const quests = state.quests.map((q) => {
+        const next = q.frequency === 'daily' && !q.custom && !q.wildcardDate ? { ...q, archived: !keep.has(untwisted(q).title) } : q;
+        if (next.measure?.unit === 'glasses' && !next.custom && (next.measure.size ?? 250) === 250 && !next.twist) {
+          return { ...next, title: glasses === 10 ? 'Drink 2.5L of water' : next.title, measure: { ...next.measure, target: glasses } };
+        }
+        return next;
+      });
       // The daily wildcard stays on: a fresh bonus quest every day keeps the list from feeling the same.
       return { ...state, onboarded: true, profile: action.profile, weekPlan: { ...plan, days }, quests, wildcardEnabled: true };
     }

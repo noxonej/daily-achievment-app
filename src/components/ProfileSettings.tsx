@@ -31,6 +31,31 @@ export function ProfileCard() {
         />
       </label>
       <div>
+        <span className="text-xs font-semibold text-slate-400">I'm a</span>
+        <div className="grid grid-cols-3 gap-2 mt-1.5">
+          {(
+            [
+              ['female', 'Girl'],
+              ['male', 'Guy'],
+              ['unsaid', 'Rather not say'],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => dispatch({ type: 'SET_PROFILE', profile: { gender: id } })}
+              aria-pressed={profile.gender === id}
+              className={`rounded-xl border px-2 py-2 text-xs font-semibold transition ${
+                profile.gender === id ? 'bg-amber-500/15 border-amber-400/60 text-amber-100' : 'border-white/10 text-slate-400'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <span className="block text-[11px] text-slate-500 mt-1.5">Used for a few health tips (like iron or protein) and your water goal.</span>
+      </div>
+      <div>
         <span className="text-xs font-semibold text-slate-400">What you're working on</span>
         <div className="flex flex-wrap gap-2 mt-1.5">
           {FOCUS_AREAS.map((a) => {
