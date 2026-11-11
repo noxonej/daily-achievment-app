@@ -37,7 +37,7 @@ export function createInitialState(): AppState {
     focusMinutes: {},
     runs: [],
     contentVersion: CONTENT_VERSION,
-    appearance: { accent: 'cyber', background: 'nebula' },
+    appearance: { accent: 'flame', background: 'obsidian' },
     dailyBox: { lastOpened: null, lastReward: null },
     prefs: { ...DEFAULT_PREFS, language: guessLanguage() },
     notes: [],
@@ -329,7 +329,7 @@ export function doneByHand(log: DayLog | undefined): number {
   return log.completedQuestIds.filter((id) => !skipped.has(id)).length;
 }
 
-export const CONTENT_VERSION = 3;
+export const CONTENT_VERSION = 4;
 
 function mondayKey(): string {
   const d = new Date();
@@ -365,6 +365,11 @@ function withProgress(state: AppState, quest: Quest, total: number): AppState {
  * One-time upgrades for saves made before newer built-in content existed:
  * v2 adds a daily steps quest and a weekly running quest, and turns the water quest into a glass counter.
  */
+/** The accent + background pairs first-run setup used to choose automatically (before v4). */
+const ONBOARDING_LOOKS: Array<[string, string]> = [
+  ['emerald', 'aurora'], ['violet', 'candy'], ['ocean', 'deepsea'], ['amber', 'graphite'], ['sunset', 'ember'], ['indigo', 'midnight'], ['cyber', 'nebula'],
+];
+
 export function migrateContent(state: AppState): AppState {
   const version = state.contentVersion ?? 1;
   if (version >= CONTENT_VERSION) return state;
@@ -374,8 +379,13 @@ export function migrateContent(state: AppState): AppState {
   for (const extra of version >= 2 ? [] : buildDefaultQuests().filter((q) => q.id === 'default-steps' || q.id === 'default-run')) {
     if (!quests.some((q) => q.id === extra.id)) quests = [...quests, extra];
   }
-  // v3: the futuristic Nebula look becomes the default, unless a theme was picked by hand.
-  const appearance = state.appearance?.chosen ? state.appearance : { accent: 'cyber' as const, background: 'nebula' as const };
+  // v3 made Nebula the default; v4 (the 2026 redesign) makes Obsidian the default. A theme picked by hand is kept.
+  let appearance = state.appearance?.chosen ? state.appearance : { accent: 'flame' as const, background: 'obsidian' as const };
+  // Setup used to pick colours to match your goals (accent + background in pairs). Those weren't picked
+  // by hand, so they move to the new Squzo look too. Colours picked in Settings are kept.
+  if (version < 4 && appearance.chosen && ONBOARDING_LOOKS.some(([a, b]) => a === appearance.accent && b === appearance.background)) {
+    appearance = { ...appearance, accent: 'flame', background: 'obsidian' };
+  }
   return { ...state, quests, runs: state.runs ?? [], appearance, contentVersion: CONTENT_VERSION };
 }
 
@@ -976,7 +986,7 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, notes: (state.notes ?? []).filter((n) => n.id !== action.noteId) };
 
     case 'SET_APPEARANCE':
-      return { ...state, appearance: { ...(state.appearance ?? { accent: 'cyber', background: 'nebula' }), ...action.appearance, chosen: true } };
+      return { ...state, appearance: { ...(state.appearance ?? { accent: 'flame', background: 'obsidian' }), ...action.appearance, chosen: true } };
 
     case 'SET_MOOD': {
       const moods = { ...(state.moods ?? {}) };

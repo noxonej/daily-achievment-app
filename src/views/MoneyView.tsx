@@ -22,7 +22,6 @@ import {
   splitDailyLimit,
   totalByKind,
 } from '../lib/money';
-import { MoneyDonut } from '../components/MoneyDonut';
 import { Segmented } from '../components/Segmented';
 import { CryptoPanel } from '../components/money/CryptoPanel';
 import { TipsPanel, TipCard } from '../components/money/TipsPanel';
@@ -76,8 +75,8 @@ export function MoneyView() {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 stagger">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-slate-400 text-sm">Your money</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5 flex items-center gap-1">
+          <p className="eyebrow">Your money</p>
+          <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1 flex items-center gap-1">
             Money
             <InfoTip title="Know where your money goes" text="Tell the app how much you have. When you buy something, tap I spent money. Stay under your daily limit and watch your savings goals fill up. Everything stays on your phone." />
           </h1>
@@ -102,6 +101,7 @@ export function MoneyView() {
         <SetupCard />
       ) : (
         <>
+          <MoneyHero />
           <Segmented
             value={tab}
             onChange={setTab}
@@ -127,7 +127,6 @@ export function MoneyView() {
           ) : (
           <>
           <MonthSummary />
-          <OverviewCard />
           {!simple && <TopTip onMore={() => setTab('tips')} />}
           <TodayCard
             onAddExpense={() => setExpenseOpen(true)}
@@ -272,38 +271,48 @@ function MonthSummary() {
 
 /* ---------------- Overview (donut + can / can't spend) ---------------- */
 
-function OverviewCard() {
+/** Top of Money: everything you own as one big, thin number on a mint glow, and where it sits. */
+function MoneyHero() {
   const { money, fmt } = useMoney();
   const spending = totalByKind(money.accounts, 'spending');
   const savings = totalByKind(money.accounts, 'savings');
   const crypto = cryptoTotal(money);
   const investing = totalByKind(money.accounts, 'investing') + crypto;
-
+  const total = spending + savings + investing;
+  const parts = [
+    { id: 'spending', label: 'Can spend', amount: Math.max(0, spending), color: 'bg-spend' },
+    { id: 'savings', label: 'Saved', amount: Math.max(0, savings), color: 'bg-[var(--mood)]' },
+    { id: 'investing', label: crypto > 0 ? 'Invested + crypto' : 'Invested', amount: Math.max(0, investing), color: 'bg-[var(--mood2)]' },
+  ];
+  const sum = parts.reduce((a, p) => a + p.amount, 0) || 1;
   return (
-    <div className={`${card} p-5`}>
-      <MoneyDonut
-        currency={money.currency}
-        slices={[
-          { kind: 'spending', amount: spending },
-          { kind: 'savings', amount: savings },
-          { kind: 'investing', amount: investing },
-        ]}
-      />
-      <div className="grid grid-cols-2 gap-2.5 mt-4">
-        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-3">
-          <p className="text-xs font-bold text-emerald-300"><Icon name="✅" size="1.15em" className="icon-inline" />Can spend</p>
-          <p className={`font-display text-xl font-extrabold tabular-nums mt-1 ${spending < 0 ? 'text-red-300' : 'text-white'}`}>
-            <CountUp value={spending} format={(v) => fmt(v, true)} />
-          </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Your spending money</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <p className="text-xs font-bold text-slate-300"><Icon name="🔒" size="1.15em" className="icon-inline" />Don't touch</p>
-          <p className="font-display text-xl font-extrabold text-white tabular-nums mt-1"><CountUp value={savings + investing} format={(v) => fmt(v, true)} /></p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Savings + investments{crypto > 0 ? ' + crypto' : ''}</p>
-        </div>
+    <section aria-label="Everything you have" className="relative text-center pt-2">
+      <p className="eyebrow">Everything you have</p>
+      <p className={`mt-3 num-thin text-[56px] ${total < 0 ? 'text-red-300' : 'text-white'}`}>
+        <CountUp value={total} format={(v) => fmt(v, true)} />
+      </p>
+      <div className="mt-5 flex h-3 gap-1 rounded-full overflow-hidden" aria-hidden="true">
+        {parts.map((p, i) =>
+          p.amount > 0 ? (
+            <span key={p.id} className={`${p.color} h-full rounded-full bar-in`} style={{ width: `${(p.amount / sum) * 100}%`, animationDelay: `${0.15 + i * 0.12}s` }} />
+          ) : null,
+        )}
+        {total <= 0 && <span className="h-full w-full rounded-full bg-white/[0.08]" />}
       </div>
-    </div>
+      <div className="mt-4 grid grid-cols-3 gap-2 text-left">
+        {parts.map((p) => (
+          <div key={p.id} className="min-w-0">
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 truncate">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${p.color}`} />
+              {p.label}
+            </p>
+            <p className={`mt-1 font-display text-[19px] font-normal tabular-nums truncate ${p.id === 'spending' && spending < 0 ? 'text-red-300' : 'text-white'}`}>
+              <CountUp value={p.id === 'spending' ? spending : p.amount} format={(v) => fmt(v, true)} />
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

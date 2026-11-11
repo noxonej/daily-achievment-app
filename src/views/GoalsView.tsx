@@ -37,8 +37,8 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
           <p className="text-sm text-slate-400">Monthly and yearly targets you're chasing.</p>
         ) : (
           <div>
-            <p className="text-slate-400 text-sm">Dreams in progress</p>
-            <h1 className="font-display text-2xl font-bold text-white mt-0.5">Long-Term Goals</h1>
+            <p className="eyebrow">Dreams in progress</p>
+            <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1">Long-Term Goals</h1>
           </div>
         )}
         <button

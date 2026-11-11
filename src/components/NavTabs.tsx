@@ -18,45 +18,46 @@ interface NavTabsProps {
   onChange: (v: ViewId) => void;
 }
 
+/**
+ * Floating tab bar. The open tab grows into a pill in that tab's own colour (its "mood") and shows
+ * its name; the others are icons only, so five tabs never feel crowded.
+ */
 export function NavTabs({ active, onChange }: NavTabsProps) {
   const { state, stats } = useApp();
-  const activeIndex = Math.max(0, TABS.findIndex((t) => t.id === active));
 
   return (
-    <nav className="sticky bottom-0 z-30 bg-canvas/[0.97] border-t border-white/[0.06] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.5)]">
-      <div className="max-w-2xl mx-auto relative px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
-        <div
-          className="absolute top-1.5 bottom-[max(0.375rem,env(safe-area-inset-bottom))] rounded-xl bg-amber-500/10 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-          style={{ width: `calc((100% - 0.75rem) / ${TABS.length})`, transform: `translateX(calc(${activeIndex} * 100%))` }}
-        />
-        <div className="relative grid" style={{ gridTemplateColumns: `repeat(${TABS.length}, minmax(0, 1fr))` }}>
-          {TABS.map((tab) => {
-            const isActive = tab.id === active;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onChange(tab.id)}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition-colors ${
-                  isActive ? 'text-amber-300' : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                <span key={isActive ? 'on' : 'off'} className={`leading-none ${isActive ? 'animate-nav-pop' : ''}`}>
-                  {tab.icon === 'avatar' ? (
-                    <span className={`relative block rounded-[8px] ring-2 ${isActive ? 'ring-amber-400' : 'ring-transparent'}`}>
-                      <Avatar look={state.character} size={22} />
-                      {stats.chestsAvailable > 0 && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-canvas" />
-                      )}
-                    </span>
-                  ) : (
-                    <Icon name={tab.icon} size={20} strokeWidth={isActive ? 2.3 : 1.9} />
-                  )}
-                </span>
-                {t(`nav.${tab.id}` as 'nav.today')}
-              </button>
-            );
-          })}
-        </div>
+    <nav className="fixed inset-x-0 bottom-0 z-30 pointer-events-none px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="dock pointer-events-auto max-w-md mx-auto h-[62px] p-[7px] flex items-stretch gap-1">
+        {TABS.map((tab) => {
+          const isActive = tab.id === active;
+          const label = t(`nav.${tab.id}` as 'nav.today');
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onChange(tab.id)}
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
+              style={{ flexGrow: isActive ? 2.15 : 1 }}
+              className={`relative min-w-0 basis-0 flex items-center justify-center gap-1.5 rounded-full transition-[flex-grow,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(.34,1.4,.64,1)] ${
+                isActive ? 'dock-pill text-[#15110e]' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span key={isActive ? 'on' : 'off'} className={`shrink-0 leading-none ${isActive ? 'animate-nav-pop' : ''}`}>
+                {tab.icon === 'avatar' ? (
+                  <span className={`relative block rounded-[9px] ring-2 ${isActive ? 'ring-[#15110e]/25' : 'ring-transparent'}`}>
+                    <Avatar look={state.character} size={24} />
+                    {stats.chestsAvailable > 0 && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[#181310]" />
+                    )}
+                  </span>
+                ) : (
+                  <Icon name={tab.icon} size={21} strokeWidth={isActive ? 2.3 : 1.9} />
+                )}
+              </span>
+              {isActive && <span className="dock-label min-w-0 truncate text-[13px] font-bold tracking-tight">{label}</span>}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );

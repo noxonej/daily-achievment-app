@@ -19,8 +19,8 @@ export function AchievementsView({ embedded = false }: { embedded?: boolean } = 
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-6 stagger">
       {!embedded && (
         <div>
-          <p className="text-slate-400 text-sm">Your trophy case</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Achievements</h1>
+          <p className="eyebrow">Your trophy case</p>
+          <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1">Achievements</h1>
         </div>
       )}
 

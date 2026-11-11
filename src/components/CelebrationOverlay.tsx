@@ -58,11 +58,11 @@ export function CelebrationOverlay() {
     <div className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none">
       <button
         onClick={dismissCelebration}
-        className="pointer-events-auto animate-celebrate flex items-center gap-3 bg-raised border border-amber-400/30 shadow-xl shadow-black/40 rounded-2xl px-4 py-3 max-w-sm"
+        className="toast-glass pointer-events-auto animate-celebrate flex items-center gap-3 rounded-full pl-2 pr-5 py-2 max-w-sm"
       >
-        <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><Icon name={current.icon} size={22} /></span>
+        <span className="shrink-0 w-10 h-10 rounded-full bg-[var(--mood)] text-[#15110e] flex items-center justify-center shadow-[0_0_20px_-2px_var(--mood)]"><Icon name={current.icon} size={20} /></span>
         <span className="text-left min-w-0">
-          <p className="text-[10px] uppercase tracking-wide font-bold text-amber-300">
+          <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-slate-400">
             {current.kind === 'goal' ? 'Goal Complete' : 'Achievement Unlocked'}
           </p>
           <p className="text-sm font-semibold text-white truncate">{current.title}</p>

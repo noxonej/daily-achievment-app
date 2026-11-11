@@ -109,9 +109,9 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
-      <div>
-        <p className="text-slate-400 text-sm">{formatDisplayDate(key)}</p>
-        <h1 className="font-display text-[26px] leading-tight font-extrabold text-white mt-0.5">
+      <div className="text-center pt-1">
+        <p className="eyebrow">{formatDisplayDate(key)}</p>
+        <h1 className="font-display text-[28px] leading-tight font-medium tracking-tight text-white mt-1.5">
           {greeting()}
           {state.profile?.name ? `, ${state.profile.name}` : ''}
         </h1>

@@ -110,7 +110,7 @@ export function BackgroundPicker() {
   return (
     <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 gap-2" role="radiogroup" aria-label="Background">
       {BACKGROUNDS.map((b) => {
-        const on = (state.appearance?.background ?? 'nebula') === b.id;
+        const on = (state.appearance?.background ?? 'obsidian') === b.id;
         return (
           <button
             key={b.id}

@@ -7,7 +7,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="description" content="Plan your week, build habits, track your money and savings goals, and level up every day." />
-    <meta name="theme-color" content="#05060b" />
+    <meta name="theme-color" content="#0c0a09" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -16,21 +16,11 @@
     <style>
       /* Startup screen: shown from the very first frame (no white flash), in the saved theme and colour.
          It only animates transform/opacity, so it stays smooth while the app loads underneath. */
-      html, body { margin: 0; background: #05060b; }
+      html, body { margin: 0; background: #0c0a09; }
       html[data-theme='light'], html[data-theme='light'] body { background: #f3f5fa; }
       html { --b1: #67e8f9; --b2: #0891b2; --b3: #0e7490; --bw: #22d3ee; }
-      html:not([data-accent]) { --b1: #fcd34d; --b2: #f59e0b; --b3: #d97706; --bw: #fbbf24; }
-      html[data-accent='ocean'] { --b1: #93c5fd; --b2: #3b82f6; --b3: #2563eb; --bw: #60a5fa; }
-      html[data-accent='emerald'] { --b1: #6ee7b7; --b2: #10b981; --b3: #059669; --bw: #34d399; }
-      html[data-accent='violet'] { --b1: #c4b5fd; --b2: #8b5cf6; --b3: #7c3aed; --bw: #a78bfa; }
-      html[data-accent='rose'] { --b1: #fda4af; --b2: #f43f5e; --b3: #e11d48; --bw: #fb7185; }
-      html[data-accent='sunset'] { --b1: #fdba74; --b2: #ea580c; --b3: #c2410c; --bw: #fb923c; }
-      html[data-accent='pink'] { --b1: #f9a8d4; --b2: #db2777; --b3: #be185d; --bw: #f472b6; }
-      html[data-accent='teal'] { --b1: #5eead4; --b2: #0d9488; --b3: #0f766e; --bw: #2dd4bf; }
-      html[data-accent='lime'] { --b1: #bef264; --b2: #65a30d; --b3: #4d7c0f; --bw: #a3e635; }
-      html[data-accent='indigo'] { --b1: #a5b4fc; --b2: #6366f1; --b3: #4f46e5; --bw: #818cf8; }
       #boot { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: #05060b; transition: opacity 0.35s ease, visibility 0.35s; }
+        background: #0c0a09; transition: opacity 0.35s ease, visibility 0.35s; }
       html[data-theme='light'] #boot { background: #f3f5fa; }
       #boot.hide { opacity: 0; visibility: hidden; }
       #boot .glow { position: absolute; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, var(--bw) 0%, transparent 65%);
@@ -60,7 +50,7 @@
       // Apply the saved theme before the app draws, so there's no flash of the wrong colours.
       try {
         var a = JSON.parse(localStorage.getItem('dayforge-appearance') || '{}');
-        document.documentElement.dataset.accent = a.accent || 'cyber';
+        document.documentElement.dataset.accent = a.accent || 'flame';
         if (a.accent === 'amber') delete document.documentElement.dataset.accent;
         if (a.background) document.documentElement.dataset.bg = a.background;
         var t = localStorage.getItem('dayforge-theme');

@@ -22,3 +22,11 @@ export function shortNum(n: number): string {
   }
   return String(v);
 }
+
+/** Even shorter, for big thin numbers in tight spots: 1,680 → 1.7K, 12,400 → 12K. */
+export function compactNum(n: number): string {
+  const v = Math.round(n);
+  if (Math.abs(v) < 1000) return String(v);
+  if (Math.abs(v) < 1e6) return `${Number((v / 1e3).toFixed(Math.abs(v) < 1e4 ? 1 : 0)).toLocaleString(locale())}K`;
+  return shortNum(v);
+}

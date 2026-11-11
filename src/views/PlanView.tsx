@@ -60,19 +60,19 @@ export function PlanView() {
     <div className={`mx-auto px-4 py-4 space-y-4 stagger ${mode === 'week' ? 'max-w-6xl' : 'max-w-2xl'}`}>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-slate-400 text-sm">Your routine</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5 flex items-center gap-1">
+          <p className="eyebrow">Your routine</p>
+          <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1 flex items-center gap-1">
             {t('plan.title')}
             <InfoTip title="Your week, Monday to Sunday" text="Add what you do each day, like 7:00 Wake up. It repeats every week, and you tick things off as you do them. For a one-time thing, like the dentist, choose Only once: it disappears after that day." />
           </h1>
         </div>
-        <div className="shrink-0 grid grid-cols-2 rounded-xl bg-white/5 border border-white/10 p-1 text-sm font-semibold">
+        <div className="seg shrink-0 grid grid-cols-2 rounded-full bg-white/[0.05] p-1 text-sm font-semibold">
           {(['day', 'week'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`px-3.5 py-1.5 rounded-lg transition ${
-                mode === m ? 'bg-amber-500 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`px-4 py-1.5 rounded-full transition ${
+                mode === m ? 'seg-pill seg-on' : 'text-slate-400 hover:text-white'
               }`}
             >
               {m === 'day' ? t('plan.day') : t('plan.week')}
@@ -84,14 +84,15 @@ export function PlanView() {
       {weekIsEmpty ? (
         <button
           onClick={() => setStarterOpen(true)}
-          className="w-full flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-500/[0.06] px-4 py-3.5 text-left hover:border-amber-400/60 transition"
+          className="plan-feature relative overflow-hidden w-full rounded-[28px] p-5 text-left transition active:scale-[0.99]"
         >
-          <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><Icon name="✨" size={20} /></span>
-          <span className="flex-1 min-w-0">
-            <span className="block text-sm font-bold text-white">Pick a ready-made routine</span>
-            <span className="block text-xs text-slate-400">Student, gym, side hustle, calm and more. Change anything you like</span>
+          <span className="absolute -right-6 -top-8 w-40 h-40 rounded-full bg-[#f3d9b5]/20 blur-2xl" aria-hidden="true" />
+          <span className="relative block text-[11px] font-bold uppercase tracking-[0.14em] text-[#f3e2cc]/70">Start here</span>
+          <span className="relative block mt-1 font-display text-[24px] leading-tight font-medium text-[#fbf3e8] max-w-[16rem]">Pick a ready-made routine</span>
+          <span className="relative mt-3 flex items-end justify-between gap-3">
+            <span className="text-[13px] text-[#f3e2cc]/75 max-w-[15rem]">Student, gym, side hustle, calm and more. Change anything you like.</span>
+            <span className="shrink-0 w-10 h-10 rounded-full bg-[#f3e2cc] text-[#2a1d12] flex items-center justify-center"><Icon name="›" size={20} /></span>
           </span>
-          <span className="text-amber-300 font-bold">→</span>
         </button>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -124,7 +125,7 @@ function ToolbarButton({ onClick, children }: { onClick: () => void; children: R
   return (
     <button
       onClick={onClick}
-      className="rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm font-semibold text-slate-200 px-3 py-2 transition"
+      className="rounded-full bg-white/[0.05] hover:bg-white/10 text-sm font-semibold text-slate-200 px-3.5 py-2 transition"
     >
       {children}
     </button>
@@ -339,23 +340,21 @@ function DayPicker({
             key={w.id}
             onClick={() => onSelect(w.id)}
             aria-pressed={active}
-            className={`relative flex flex-col items-center justify-center rounded-xl border py-2 transition ${
-              active
-                ? 'bg-amber-500 border-amber-400 text-white shadow-[0_4px_16px_-4px_rgba(245,158,11,0.6)]'
-                : 'bg-white/[0.03] border-white/10 text-slate-300 hover:border-white/25'
+            className={`relative flex flex-col items-center justify-center rounded-[20px] py-2.5 transition-all duration-300 ${
+              active ? 'plan-day-on -translate-y-0.5' : 'bg-white/[0.035] text-slate-300 hover:bg-white/[0.06]'
             }`}
           >
-            <span className={`text-[11px] font-bold ${active ? 'text-white/85' : 'text-slate-400'}`}>{weekdayShort(w.id)}</span>
-            <span className="font-display text-[17px] font-extrabold leading-tight tabular-nums">{date.getDate()}</span>
-            <span className={`text-[10px] font-semibold tabular-nums ${active ? 'text-white/85' : 'text-slate-500'}`}>
+            <span className={`text-[11px] font-bold ${active ? 'opacity-70' : 'text-slate-400'}`}>{weekdayShort(w.id)}</span>
+            <span className="font-display text-[20px] font-normal leading-tight tabular-nums">{date.getDate()}</span>
+            <span className={`text-[10px] font-semibold tabular-nums ${active ? 'opacity-70' : 'text-slate-500'}`}>
               {count > 0 ? count : '–'}
             </span>
             {hasEvent && (
-              <span className={`absolute bottom-1 left-1 w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-rose-400'}`} aria-label="One-time event" />
+              <span className={`absolute bottom-1 left-1 w-1.5 h-1.5 rounded-full ${active ? 'bg-[#2a1d12]' : 'bg-rose-400'}`} aria-label="One-time event" />
             )}
             {w.id === today && (
               <span
-                className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-amber-400'}`}
+                className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${active ? 'bg-[#2a1d12]' : 'bg-[var(--mood)]'}`}
                 aria-label="Today"
               />
             )}

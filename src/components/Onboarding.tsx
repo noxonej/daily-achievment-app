@@ -1,7 +1,7 @@
 import { Switch } from './Switch';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useApp } from '../store/AppContext';
-import type { Appearance, FocusArea, Profile } from '../lib/types';
+import type { FocusArea, Profile } from '../lib/types';
 import { FOCUS_AREAS, buildRoutine } from '../lib/routine';
 import { formatPlanTime, planCategory } from '../lib/weekPlan';
 import { Logo, Wordmark } from './Logo';
@@ -17,15 +17,6 @@ const STEPS: Step[] = ['welcome', 'focus', 'day', 'preview'];
  * The app's look follows what you want to work on: the first goal you pick sets the colour and
  * background (you can still change them on the character step or in Settings).
  */
-const LOOK_FOR_AREA: Record<FocusArea, { accent: Appearance['accent']; background: Appearance['background']; mood: string }> = {
-  health: { accent: 'emerald', background: 'aurora', mood: 'fresh and energetic' },
-  mind: { accent: 'violet', background: 'candy', mood: 'calm and soft' },
-  study: { accent: 'ocean', background: 'deepsea', mood: 'clear and focused' },
-  money: { accent: 'amber', background: 'graphite', mood: 'sharp and golden' },
-  work: { accent: 'sunset', background: 'ember', mood: 'bold and driven' },
-  sleep: { accent: 'indigo', background: 'midnight', mood: 'dark and restful' },
-};
-
 const timeInput =
   'time-input block w-full min-w-0 max-w-full rounded-xl bg-white/5 border border-white/10 px-3 h-12 text-base text-white focus:outline-none focus:border-amber-400/60';
 
@@ -65,16 +56,13 @@ export function Onboarding() {
     setStep(next);
   }
 
-  /** Colours that match the goals picked (only until the person picks a colour themselves). */
+  /** Small touches that match the answers (starting hair). */
   function matchLook() {
     // A girl's starting character gets a ponytail instead of the default twists (only if untouched).
     if (gender === 'female' && normalizeLook(state.character).hair === DEFAULT_LOOK.hair) {
       dispatch({ type: 'EQUIP_COSMETIC', slot: 'hair', itemId: 'hair-ponytail' });
     }
-    const first = areas[0];
-    if (!first) return;
-    const look = LOOK_FOR_AREA[first];
-    dispatch({ type: 'SET_APPEARANCE', appearance: { accent: look.accent, background: look.background } });
+    // Colours: every new account starts on the Squzo look (Obsidian + Flame), where each tab has its own glow.
   }
 
   function finish(withPlan: boolean, askReminders = true) {

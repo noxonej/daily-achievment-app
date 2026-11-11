@@ -18,11 +18,11 @@ export function Logo({ size = 32, animated = false, className = '' }: { size?: n
       aria-label={APP_NAME}
     >
       <defs>
-        {/* The tile follows the app's accent colour, so the logo always matches the theme. */}
+        {/* The tile is always Squzo teal, whatever colour the app is using. */}
         <linearGradient id={`bg${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" style={{ stopColor: 'var(--color-amber-300)' }} />
-          <stop offset="0.5" style={{ stopColor: 'var(--color-amber-500)' }} />
-          <stop offset="1" style={{ stopColor: 'var(--color-amber-600)' }} />
+          <stop offset="0" stopColor="#67e8f9" />
+          <stop offset="0.5" stopColor="#0891b2" />
+          <stop offset="1" stopColor="#0e7490" />
         </linearGradient>
         <linearGradient id={`hl${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#fff" stopOpacity=".38" />
@@ -53,8 +53,8 @@ export function Logo({ size = 32, animated = false, className = '' }: { size?: n
 
 export function Wordmark({ className = '' }: { className?: string }) {
   return (
-    <span className={`font-display font-extrabold tracking-tight text-white ${className}`}>
-      {APP_NAME_PARTS[0]}<span className="text-amber-400">{APP_NAME_PARTS[1]}</span>
+    <span className={`font-brand font-extrabold tracking-tight text-white ${className}`}>
+      {APP_NAME_PARTS[0]}<span className="brand-teal">{APP_NAME_PARTS[1]}</span>
     </span>
   );
 }

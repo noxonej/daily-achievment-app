@@ -51,12 +51,24 @@ export function WeeklyView({ embedded = false }: { onNavigate?: (v: ViewId) => v
         <p className="text-sm text-slate-400">Bigger challenges. You've got until Sunday to finish these.</p>
       ) : (
         <div>
-          <p className="text-slate-400 text-sm">This week</p>
-          <h1 className="font-display text-2xl font-bold text-white mt-0.5">Weekly Quests</h1>
+          <p className="eyebrow">This week</p>
+          <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1">Weekly Quests</h1>
           <p className="text-sm text-slate-400 mt-1">Bigger challenges. You've got until Sunday to finish these.</p>
         </div>
       )}
 
+      {embedded ? (
+        // Inside Quests the glowing "This week" card already shows the progress.
+        <div className="relative -mt-2 flex items-center justify-between gap-2">
+          {showConfetti && <Confetti count={36} />}
+          <p className="text-[11px] text-slate-500"><Icon name="🔄" size="1.15em" className="icon-inline" />{t('today.newQuestsIn', { t: resetLabel })}</p>
+          {isPerfect && (
+            <span className="text-xs font-bold text-sky-300 bg-sky-500/10 border border-sky-500/30 rounded-full px-2.5 py-1">
+              <Icon name="🛡" size="1.15em" className="icon-inline" />Perfect week
+            </span>
+          )}
+        </div>
+      ) : (
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         {showConfetti && <Confetti count={36} />}
         <div className="flex items-center justify-between mb-2">
@@ -72,6 +84,7 @@ export function WeeklyView({ embedded = false }: { onNavigate?: (v: ViewId) => v
         <ProgressBar value={doneCount} max={Math.max(activeWeekly.length, 1)} />
         <p className="text-[11px] text-slate-500 mt-2"><Icon name="🔄" size="1.15em" className="icon-inline" />{t('today.newQuestsIn', { t: resetLabel })}</p>
       </div>
+      )}
 
       {wildcard && (
         <WildcardQuestCard

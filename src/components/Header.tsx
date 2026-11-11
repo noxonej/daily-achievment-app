@@ -32,7 +32,7 @@ export function Header() {
   return (
     <header
       className={`sticky top-0 z-30 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] transition-[background-color,box-shadow] duration-300 ${
-        scrolled ? 'bg-canvas/[0.97] shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)]' : 'bg-canvas/[0.93]'
+        scrolled ? 'bg-canvas/75 backdrop-blur-xl shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)]' : 'bg-transparent'
       }`}
     >
       <div className="max-w-2xl mx-auto px-4 flex items-center gap-2.5 h-[60px]">
@@ -44,7 +44,7 @@ export function Header() {
             className="flex items-center gap-2.5 min-w-0 rounded-2xl -ml-1 pl-1 pr-2 py-1 hover:bg-white/[0.04]"
           >
             <span className="relative shrink-0">
-              <span className="absolute inset-1 rounded-xl bg-amber-400/40 blur-md" aria-hidden="true" />
+              <span className="absolute inset-1 rounded-xl bg-cyan-400/35 blur-md" aria-hidden="true" />
               <Logo size={36} className={`relative transition-transform duration-300 ${scrolled ? 'scale-90' : ''}`} />
             </span>
             <span className="min-w-0 text-left leading-none">
@@ -62,7 +62,7 @@ export function Header() {
 
         <div
           className={`flex items-center gap-1 rounded-full pl-2 pr-2.5 h-9 border transition-colors ${
-            hot ? 'bg-orange-500/15 border-orange-400/40 badge-shine' : 'bg-white/[0.04] border-white/10'
+            hot ? 'bg-orange-500/15 border-orange-400/40 badge-shine' : 'bg-white/[0.06] border-transparent backdrop-blur-md'
           }`}
           title={`${streak} day streak`}
         >
@@ -75,7 +75,7 @@ export function Header() {
         <button
           onClick={() => settings.open()}
           aria-label={t('settings.title')}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-white/[0.04] border border-white/10 text-slate-300 hover:text-white hover:bg-white/10"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-white/[0.06] backdrop-blur-md text-slate-300 hover:text-white hover:bg-white/10"
         >
           <Icon name="⚙" size={18} className="gear-spin" />
         </button>
@@ -88,7 +88,6 @@ export function Header() {
           dot={stats.chestsAvailable > 0}
         />
       </div>
-      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/35 to-transparent" />
     </header>
   );
 }

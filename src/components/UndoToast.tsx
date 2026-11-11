@@ -13,7 +13,7 @@ export function UndoToast() {
   }, [undoToast, dismissUndo]);
   if (!undoToast) return null;
   return (
-    <div className="fixed z-[65] inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] px-4 flex justify-center pointer-events-none">
+    <div className="fixed z-[65] inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] px-4 flex justify-center pointer-events-none">
       <div
         key={undoToast.id}
         role="status"
