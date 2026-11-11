@@ -20,6 +20,7 @@ import { useWardrobeOpen } from './lib/wardrobe';
 import { useApplyPrefs } from './lib/prefs';
 import { useNudges } from './lib/nudges';
 import { useGoogleAutoBackup } from './components/GoogleConnect';
+import { AutoSteps } from './components/AutoSteps';
 import { rememberInvite, useFriendsEngine } from './lib/friends';
 import { FriendToasts } from './components/FriendToasts';
 import { setIntent } from './lib/intents';
@@ -136,6 +137,7 @@ export default function App() {
       <NavTabs active={view} onChange={setView} />
       <CelebrationOverlay />
       <StreakCelebration />
+      <AutoSteps />
       <PlanReminderToast />
       <FocusTimer />
       <RunTracker />

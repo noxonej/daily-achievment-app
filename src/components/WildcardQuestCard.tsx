@@ -3,6 +3,7 @@ import { FloatingReward } from './FloatingReward';
 import { useCompletionFx } from '../lib/useCompletionFx';
 import { questReward } from '../lib/rewards';
 import { Icon } from './Icon';
+import { CompleteBurst } from './fx/CompleteBurst';
 
 interface WildcardQuestCardProps {
   quest: Quest;
@@ -24,10 +25,10 @@ export function WildcardQuestCard({ quest, completed, onToggle, periodKey }: Wil
         }`}
       >
         <div
-          className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg ${
+          className={`relative shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg ${
             completed ? 'bg-emerald-500/20' : 'bg-white/5'
           } ${justCompleted ? 'animate-pop-in' : ''}`}
-        >
+        >{justCompleted && <CompleteBurst />}
           {completed ? <Icon name="✅" size={20} className="text-emerald-300 animate-check" /> : <Icon name={quest.icon} size={19} className="text-slate-200" />}
         </div>
         <div className="min-w-0 flex-1">

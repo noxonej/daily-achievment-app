@@ -75,6 +75,27 @@ export const stepCounter = {
     running = false;
     emit();
   },
+  /**
+   * Start counting without a button. Android and most browsers allow it straight away. iPhone only
+   * lets a site read motion after a tap, so there it starts on your first tap anywhere in the app
+   * (iPhone asks "Allow motion?" once; after that it's silent).
+   */
+  auto() {
+    if (running || !stepCounter.supported()) return;
+    const DME = DeviceMotionEvent as unknown as { requestPermission?: () => Promise<'granted' | 'denied'> };
+    if (typeof DME.requestPermission !== 'function') {
+      void stepCounter.start();
+      return;
+    }
+    const onTap = () => {
+      document.removeEventListener('click', onTap, true);
+      void stepCounter.start();
+    };
+    // Android Chrome says yes without asking; iPhone refuses until a tap, so wait for the first one.
+    DME.requestPermission()
+      .then((r) => (r === 'granted' ? void stepCounter.start() : document.addEventListener('click', onTap, true)))
+      .catch(() => document.addEventListener('click', onTap, true));
+  },
   subscribe(l: Listener) {
     listeners.add(l);
     return () => {

@@ -187,6 +187,7 @@ export type Action =
   | { type: 'SET_PROGRESS'; questId: string; value: number }
   /** Change a number quest's goal, glass size or quick buttons; today's progress is kept (rescaled for a new glass size). */
   | { type: 'SET_MEASURE'; questId: string; measure: QuestMeasure }
+  | { type: 'ADD_STEPS'; steps: number }
   | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
   | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
   | { type: 'USE_SKIP_PASS'; questId: string }
@@ -1017,6 +1018,16 @@ export function reducer(state: AppState, action: Action): AppState {
       const quest = state.quests.find((q) => q.id === action.questId);
       if (!quest?.measure) return state;
       return withProgress(state, quest, Math.max(0, action.value));
+    }
+
+    case 'ADD_STEPS': {
+      // Counted steps go to every active steps quest (daily and weekly).
+      if (!(action.steps > 0)) return state;
+      let next = state;
+      for (const q of state.quests.filter((x) => x.measure?.unit === 'steps' && !x.archived)) {
+        next = withProgress(next, q, currentProgress(next, q) + Math.round(action.steps));
+      }
+      return next;
     }
 
     case 'ADD_RUN': {

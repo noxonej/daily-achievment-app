@@ -7,6 +7,7 @@ import { FloatingReward } from './FloatingReward';
 import { useCompletionFx } from '../lib/useCompletionFx';
 import { questReward } from '../lib/rewards';
 import { Icon } from './Icon';
+import { CompleteBurst } from './fx/CompleteBurst';
 import { checkNote, noteRule, splitEntries } from '../lib/questRules';
 
 const LIST_PLACEHOLDERS = ['Something that made you smile', 'Someone who helped you', 'A small win today', 'Something you learned', 'Something you have'];
@@ -57,10 +58,10 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote, periodKey 
     >
       <div className="flex items-center gap-3 mb-2.5">
         <div
-          className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg ${
+          className={`relative shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg ${
             completed ? 'bg-emerald-500/20' : 'bg-white/5'
           } ${justCompleted ? 'animate-pop-in' : ''}`}
-        >
+        >{justCompleted && <CompleteBurst />}
           {completed ? <Icon name="✅" size={20} className="text-emerald-300 animate-check" /> : <Icon name={quest.icon} size={19} className="text-slate-200" />}
         </div>
         <div className="min-w-0 flex-1">

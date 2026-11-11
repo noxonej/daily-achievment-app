@@ -318,6 +318,8 @@ export interface Prefs {
   dailyTwists?: boolean;
   /** Scroll lock: how many quests to finish before social apps count as unlocked (off when unset or 0). */
   scrollLock?: number;
+  /** Count steps by itself whenever the app is open (false = only when you press Count steps). */
+  stepsAuto?: boolean;
   language: string;
   theme: 'dark' | 'light' | 'system';
   timeFormat: 'auto' | '12' | '24';

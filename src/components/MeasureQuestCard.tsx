@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { stepCounter } from '../lib/stepCounter';
 import { TwistTag } from './TwistTag';
 import type { QuestMeasure } from '../lib/types';
@@ -13,6 +13,7 @@ import { runTracker } from '../lib/runTracker';
 import { FloatingReward } from './FloatingReward';
 import { InfoDisclosure } from './InfoDisclosure';
 import { Icon } from './Icon';
+import { CompleteBurst } from './fx/CompleteBurst';
 import { locale } from '../lib/locale';
 
 
@@ -34,6 +35,8 @@ export function MeasureQuestCard({
   onSet: (v: number) => void;
   periodKey: string;
 }) {
+  const { dispatch } = useApp();
+  const setPrefs = (prefs: { stepsAuto: boolean }) => dispatch({ type: 'SET_PREFS', prefs });
   const m = quest.measure!;
   const meta = UNIT_META[m.unit];
   const { justCompleted } = useCompletionFx(completed);
@@ -49,28 +52,19 @@ export function MeasureQuestCard({
   const counting = useSyncExternalStore(stepCounter.subscribe, stepCounter.isRunning, () => false);
   const sessionSteps = useSyncExternalStore(stepCounter.subscribe, stepCounter.session, () => 0);
   const [motionNote, setMotionNote] = useState('');
-  // Save counted steps to the quest every couple of seconds (one save per step would be too many).
-  const latest = useRef({ value, onSet });
-  latest.current = { value, onSet };
-  useEffect(() => {
-    if (!isSteps) return;
-    const flush = () => {
-      const n = stepCounter.takePending();
-      if (n) latest.current.onSet(latest.current.value + n);
-    };
-    flush();
-    const id = window.setInterval(flush, 2000);
-    return () => {
-      window.clearInterval(id);
-      flush();
-    };
-  }, [isSteps]);
+  // Steps are counted and saved by AutoSteps (App level); this button pauses or resumes it.
   const toggleCounting = async () => {
-    if (counting) return stepCounter.stop();
+    if (counting) {
+      stepCounter.stop();
+      setPrefs({ stepsAuto: false });
+      setMotionNote('Paused. Tap again to count by itself whenever the app is open.');
+      return;
+    }
+    setPrefs({ stepsAuto: true });
     const r = await stepCounter.start();
     setMotionNote(
       r === 'ok'
-        ? 'Counting while the app is open and the screen is on. Walk with your phone in your hand or pocket.'
+        ? ''
         : r === 'denied'
           ? 'Motion access was blocked. Allow "Motion & Orientation" for this site in your browser settings, or type your total from your phone’s health app.'
           : 'This device has no motion sensor here. Type your total from your phone’s health app instead.',
@@ -78,9 +72,9 @@ export function MeasureQuestCard({
   };
 
   return (
-    <div className={`relative rounded-xl border px-4 py-3.5 transition-colors ${completed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.03] border-white/10'}`}>
+    <div className={`relative rounded-xl border px-4 py-3.5 transition-colors ${justCompleted ? 'qb-bounce ' : ''}${completed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.03] border-white/10'}`}>
       <div className="flex items-center gap-3">
-        <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${completed ? 'bg-emerald-500/20' : 'bg-white/5'} ${justCompleted ? 'animate-pop-in' : ''}`}>
+        <div className={`relative shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${completed ? 'bg-emerald-500/20' : 'bg-white/5'} ${justCompleted ? 'animate-pop-in' : ''}`}>{justCompleted && <CompleteBurst />}
           {completed ? <Icon name="✅" size={20} className="text-emerald-300 animate-check" /> : <Icon name={quest.icon} size={19} className="text-slate-200" />}
         </div>
         <div className="min-w-0 flex-1">
@@ -149,12 +143,12 @@ export function MeasureQuestCard({
               type="button"
               onClick={toggleCounting}
               aria-pressed={counting}
-              className={`flex items-center gap-1.5 rounded-lg text-white text-sm font-bold px-3 py-2 ${counting ? 'bg-rose-500 hover:bg-rose-400' : 'bg-emerald-500 hover:bg-emerald-400'}`}
+              className={`flex items-center gap-1.5 rounded-lg text-white text-sm font-bold px-3 py-2 ${counting ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-white/10 hover:bg-white/15'}`}
             >
               {counting ? (
                 <>
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
-                  Stop · {fmt(sessionSteps)}
+                  Counting{sessionSteps ? ` · +${fmt(sessionSteps)}` : ''}
                 </>
               ) : (
                 <>
@@ -203,6 +197,9 @@ export function MeasureQuestCard({
             </button>
           )}
         </div>
+      )}
+      {isSteps && counting && !motionNote && (
+        <p className="text-[11px] text-slate-400 mt-2 leading-snug">Counting by itself while the app is open. Tap the green button to pause.</p>
       )}
       {isSteps && motionNote && <p className="text-[11px] text-slate-400 mt-2 leading-snug">{motionNote}</p>}
       {justCompleted && (
