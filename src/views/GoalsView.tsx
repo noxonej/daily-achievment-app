@@ -4,6 +4,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { GoalFormModal } from '../components/GoalFormModal';
 import type { LongTermGoal } from '../lib/types';
 import { Icon } from '../components/Icon';
+import { GoalJournal } from '../components/GoalJournal';
 
 const TIMEFRAME_LABEL: Record<string, string> = {
   weekly: 'This Week',
@@ -176,6 +177,8 @@ function GoalCard({
         </div>
         <ProgressBar value={goal.progress} max={goal.target} />
       </div>
+
+      <GoalJournal goal={goal} />
 
       <div className="mt-3 flex items-center justify-end gap-2">
         <button

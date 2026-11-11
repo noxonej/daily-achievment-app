@@ -1,4 +1,4 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState } from '../lib/types';
 import { claimCheckIn } from '../lib/checkIn';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
@@ -131,6 +131,8 @@ export type Action =
   | { type: 'UPDATE_GOAL'; goalId: string; updates: Partial<NewGoalInput> }
   | { type: 'ADJUST_GOAL_PROGRESS'; goalId: string; delta: number }
   | { type: 'DELETE_GOAL'; goalId: string }
+  | { type: 'ADD_GOAL_LOG'; goalId: string; entry: GoalLogEntry }
+  | { type: 'DELETE_GOAL_LOG'; goalId: string; entryId: string }
   | { type: 'UNLOCK_ACHIEVEMENTS'; ids: string[] }
   | { type: 'MARK_DAY_OPENED'; date: string }
   | { type: 'SYNC_WILDCARD' }
@@ -250,6 +252,7 @@ export interface NewGoalInput {
   target: number;
   unit: string;
   icon: string;
+  kind?: LongTermGoal['kind'];
   /** Only used when editing: how much is done so far. */
   progress?: number;
 }
@@ -532,6 +535,7 @@ export function reducer(state: AppState, action: Action): AppState {
         progress: 0,
         icon: action.goal.icon || '🎯',
         createdAt: new Date().toISOString(),
+        ...(action.goal.kind ? { kind: action.goal.kind } : {}),
       };
       return { ...state, goals: [...state.goals, g] };
     }
@@ -570,6 +574,30 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'DELETE_GOAL': {
       return { ...state, goals: state.goals.filter((g) => g.id !== action.goalId) };
+    }
+
+    case 'ADD_GOAL_LOG':
+    case 'DELETE_GOAL_LOG': {
+      return {
+        ...state,
+        goals: state.goals.map((g) => {
+          if (g.id !== action.goalId) return g;
+          const log = g.log ?? [];
+          let delta: number;
+          let nextLog: GoalLogEntry[];
+          if (action.type === 'ADD_GOAL_LOG') {
+            delta = action.entry.amount;
+            nextLog = [...log, action.entry].slice(-500);
+          } else {
+            const e = log.find((x) => x.id === action.entryId);
+            if (!e) return g;
+            delta = -e.amount;
+            nextLog = log.filter((x) => x.id !== action.entryId);
+          }
+          const progress = Math.max(0, Math.min(g.target, Math.round((g.progress + delta) * 10) / 10));
+          return { ...g, log: nextLog, progress, completedAt: progress >= g.target ? g.completedAt ?? new Date().toISOString() : undefined };
+        }),
+      };
     }
 
     case 'UNLOCK_ACHIEVEMENTS': {

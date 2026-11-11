@@ -56,6 +56,24 @@ export interface LongTermGoal {
   icon: string;
   createdAt: string;
   completedAt?: string;
+  /** What sort of goal this is, so the app can offer a journal and tips (books, sport...). */
+  kind?: 'books' | 'sport' | 'meditation' | 'skill' | 'art';
+  /** Journal: each book read, each session done. Newest last. */
+  log?: GoalLogEntry[];
+}
+
+/** One line in a goal's journal: a book, a sport session, a meditation... */
+export interface GoalLogEntry {
+  id: string;
+  /** YYYY-MM-DD */
+  date: string;
+  /** Book title, or what you practised. */
+  text?: string;
+  /** Genre, sport or meditation type. */
+  tag?: string;
+  minutes?: number;
+  /** How much it added to the goal (1 book, 5 km...). */
+  amount: number;
 }
 
 export interface QuickTask {

@@ -6,17 +6,20 @@ import { IconGrid } from './Icon';
 const ICONS = ['🎯', '📚', '💪', '🧘', '💰', '🎨', '🎵', '🌍', '💻', '🏃', '✍', '🌱', '🗣', '🧠', '🚲', '🏋', '🎸', '✈', '🍳', '🤝'];
 
 /** Ready-made long-term goals, so starting one is a single tap. */
-const GOAL_PRESETS: Array<{ title: string; description: string; timeframe: GoalTimeframe; target: number; unit: string; icon: string }> = [
-  { title: 'Read 12 books', description: 'About one book a month.', timeframe: 'yearly', target: 12, unit: 'books', icon: '📚' },
+const GOAL_PRESETS: Array<{ title: string; description: string; timeframe: GoalTimeframe; target: number; unit: string; icon: string; kind?: LongTermGoal['kind'] }> = [
+  { title: 'Read 12 books', description: 'About one book a month.', timeframe: 'yearly', target: 12, unit: 'books', icon: '📚', kind: 'books' },
+  { title: 'Do sport 150 times', description: 'About 3 a week. Log each session and get tips for your sport.', timeframe: 'yearly', target: 150, unit: 'sessions', icon: '💪', kind: 'sport' },
+  { title: 'Learn a high-income skill', description: 'Coding, AI, video editing, sales... skills people pay for.', timeframe: 'yearly', target: 50, unit: 'sessions', icon: '💻', kind: 'skill' },
+  { title: 'Learn an art skill', description: 'Drawing, music, photos, animation. One session at a time.', timeframe: 'yearly', target: 50, unit: 'sessions', icon: '🎨', kind: 'art' },
   { title: 'Run 100 km', description: 'Add every run until you hit 100.', timeframe: 'yearly', target: 100, unit: 'km', icon: '🏃' },
   { title: 'Learn 500 new words', description: 'In a language you want to speak.', timeframe: 'yearly', target: 500, unit: 'words', icon: '🗣' },
-  { title: '50 gym sessions', description: 'Roughly one a week for a year.', timeframe: 'yearly', target: 50, unit: 'sessions', icon: '🏋' },
+  { title: '50 gym sessions', description: 'Roughly one a week for a year.', timeframe: 'yearly', target: 50, unit: 'sessions', icon: '🏋', kind: 'sport' },
   { title: 'Save my first 1,000', description: 'Count each 10 you put aside.', timeframe: 'yearly', target: 100, unit: 'x 10 saved', icon: '💰' },
   { title: '30 days without junk food', description: 'Days in a row or not, every clean day counts.', timeframe: 'monthly', target: 30, unit: 'days', icon: '🥦' },
   { title: 'Learn a song on guitar', description: 'Practice sessions until you can play it.', timeframe: 'monthly', target: 20, unit: 'practices', icon: '🎸' },
   { title: 'Cook 20 new meals', description: 'Recipes you have never made before.', timeframe: 'yearly', target: 20, unit: 'meals', icon: '🍳' },
   { title: 'Finish an online course', description: 'Count each lesson you complete.', timeframe: 'custom', target: 30, unit: 'lessons', icon: '🎓' },
-  { title: 'Meditate 100 days', description: 'Build a real calm-mind habit.', timeframe: 'yearly', target: 100, unit: 'days', icon: '🧘' },
+  { title: 'Meditate 100 days', description: 'Build a real calm-mind habit.', timeframe: 'yearly', target: 100, unit: 'days', icon: '🧘', kind: 'meditation' },
   { title: 'Build a side project', description: 'Hours spent making your own thing.', timeframe: 'custom', target: 100, unit: 'hours', icon: '💻' },
   { title: 'Make 10 new friends', description: 'Real chats with new people.', timeframe: 'yearly', target: 10, unit: 'friends', icon: '🤝' },
   { title: 'Cycle 500 km', description: 'Every ride adds up.', timeframe: 'yearly', target: 500, unit: 'km', icon: '🚲' },
@@ -33,6 +36,7 @@ interface GoalFormModalProps {
     target: number;
     unit: string;
     icon: string;
+    kind?: LongTermGoal['kind'];
     progress?: number;
   }) => void;
   initial?: LongTermGoal;
@@ -46,6 +50,7 @@ export function GoalFormModal({ open, onClose, onSubmit, initial }: GoalFormModa
   const [unit, setUnit] = useState(initial?.unit ?? 'times');
   const [icon, setIcon] = useState(initial?.icon ?? '🎯');
   const [progress, setProgress] = useState(initial?.progress ?? 0);
+  const [kind, setKind] = useState<LongTermGoal['kind']>(initial?.kind);
 
   // The modal stays mounted, so fill the form again every time it opens (a new goal or a
   // different one). Before, it kept the first goal's values and editing looked broken.
@@ -58,6 +63,7 @@ export function GoalFormModal({ open, onClose, onSubmit, initial }: GoalFormModa
     setUnit(initial?.unit ?? 'times');
     setIcon(initial?.icon ?? '🎯');
     setProgress(initial?.progress ?? 0);
+    setKind(initial?.kind);
   }, [open, initial]);
 
   const valid = !!title.trim() && target > 0 && Number.isFinite(target) && progress >= 0;
@@ -71,6 +77,7 @@ export function GoalFormModal({ open, onClose, onSubmit, initial }: GoalFormModa
       target,
       unit: unit.trim() || 'times',
       icon,
+      kind,
       progress: Math.min(progress, target),
     });
     onClose();
@@ -94,6 +101,7 @@ export function GoalFormModal({ open, onClose, onSubmit, initial }: GoalFormModa
                     setTarget(p.target);
                     setUnit(p.unit);
                     setIcon(p.icon);
+                    setKind(p.kind);
                   }}
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                     title === p.title ? 'border-amber-400 bg-amber-500/20 text-amber-100' : 'border-white/10 bg-white/5 text-slate-300'

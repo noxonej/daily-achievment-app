@@ -1,6 +1,6 @@
 import type { LongTermGoal } from '../lib/types';
 
-type SeedGoal = Pick<LongTermGoal, 'title' | 'description' | 'timeframe' | 'target' | 'unit' | 'icon'>;
+type SeedGoal = Pick<LongTermGoal, 'title' | 'description' | 'timeframe' | 'target' | 'unit' | 'icon' | 'kind'>;
 
 const seeds: SeedGoal[] = [
   {
@@ -10,6 +10,16 @@ const seeds: SeedGoal[] = [
     target: 12,
     unit: 'books',
     icon: '📚',
+    kind: 'books',
+  },
+  {
+    title: 'Do sport 150 times',
+    description: 'About 3 sessions a week. Log each one: gym, football, running, anything.',
+    timeframe: 'yearly',
+    target: 150,
+    unit: 'sessions',
+    icon: '💪',
+    kind: 'sport',
   },
   {
     title: 'Meditate 100 days',
@@ -18,14 +28,16 @@ const seeds: SeedGoal[] = [
     target: 100,
     unit: 'days',
     icon: '🧘',
+    kind: 'meditation',
   },
   {
-    title: 'Learn a new skill',
-    description: 'Track your practice sessions toward mastering something new.',
+    title: 'Learn a high-income skill',
+    description: 'Coding, AI, video editing, sales... 50 practice sessions this year.',
     timeframe: 'yearly',
     target: 50,
     unit: 'sessions',
-    icon: '🎯',
+    icon: '💻',
+    kind: 'skill',
   },
 ];
 
@@ -41,5 +53,6 @@ export function buildDefaultGoals(): LongTermGoal[] {
     progress: 0,
     icon: s.icon,
     createdAt: now,
+    kind: s.kind,
   }));
 }
