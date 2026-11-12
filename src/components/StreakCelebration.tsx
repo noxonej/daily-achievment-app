@@ -34,12 +34,16 @@ export function StreakCelebration() {
     was.current = counted;
     if (!before && counted && state.streakPopDate !== today) {
       dispatch({ type: 'SET_STREAK_POP', date: today });
-      setShow(true);
-      try {
-        navigator.vibrate?.([30, 50, 60]);
-      } catch {
-        // optional
-      }
+      // Let the quest's own tick burst play first; the streak screen used to cover it instantly.
+      const t = setTimeout(() => {
+        setShow(true);
+        try {
+          navigator.vibrate?.([30, 50, 60]);
+        } catch {
+          // optional
+        }
+      }, 650);
+      return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [counted]);
@@ -118,6 +122,7 @@ function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean
         {!lit && <span className="streak-spark" aria-hidden="true" />}
         {lit && (
           <>
+            <span className="streak-rays" aria-hidden="true" />
             <span className="streak-shock" aria-hidden="true" />
             <span className="streak-shock streak-shock-2" aria-hidden="true" />
             {burst.map((b, i) => (
@@ -161,7 +166,10 @@ function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean
               <span className={`text-[11px] font-bold ${isToday ? 'text-orange-300' : 'text-slate-500'}`}>{weekdayShort(w.id).slice(0, 2)}</span>
               <span
                 className={`relative w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                  done
+                  done && isToday
+                    ? // Today holds a live fire, so it gets a dark glowing coal instead of a bright fill that drowned the flame.
+                      'bg-[radial-gradient(circle_at_50%_70%,#7c2d12,#1c0d06_75%)] border-orange-400 shadow-[0_0_16px_-2px_rgba(249,115,22,0.85)]'
+                    : done
                     ? 'bg-gradient-to-b from-yellow-300 to-orange-500 border-orange-400 text-[#fff]'
                     : isToday
                       ? 'border-orange-400/70 border-dashed'

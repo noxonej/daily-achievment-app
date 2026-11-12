@@ -66,7 +66,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
             <Icon name="✕" size={18} />
           </button>
         </div>
-        <div className="p-5">{shown.children}</div>
+        <div className={`p-5 ${closing ? '' : 'sheet-body-in'}`}>{shown.children}</div>
       </div>
     </div>
   );
