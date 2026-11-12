@@ -1071,20 +1071,20 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
 @property --mood {
   syntax: '<color>';
   inherits: true;
-  initial-value: #ff6a1a;
+  initial-value: #22d3ee;
 }
 @property --mood2 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #ff2d55;
+  initial-value: #2563eb;
 }
 :root {
-  --mood: #ff6a1a;
-  --mood2: #ff2d55;
+  --mood: #22d3ee;
+  --mood2: #2563eb;
   transition: --mood 0.9s var(--ease-out, ease), --mood2 0.9s var(--ease-out, ease);
 }
-/* Today: sunrise ember. Plan: warm sand. Money: fresh mint. Quests: volt lime. You: pearl. */
-:root[data-view='today'] { --mood: #ff6a1a; --mood2: #ff2d55; }
+/* Today: Squzo teal-blue, like the app icon. Plan: warm sand. Money: fresh mint. Quests: volt lime. You: pearl. */
+:root[data-view='today'] { --mood: #22d3ee; --mood2: #2563eb; }
 :root[data-view='plan'] { --mood: #d7a46c; --mood2: #8a5a33; }
 :root[data-view='money'] { --mood: #2fd59b; --mood2: #1a8f8f; }
 :root[data-view='quests'] { --mood: #a6e22e; --mood2: #3fae2a; }

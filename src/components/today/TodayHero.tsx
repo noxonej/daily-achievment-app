@@ -110,7 +110,7 @@ export function TodayHero({
             <linearGradient id="todayArc" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0" style={{ stopColor: 'var(--mood2)' }} />
               <stop offset="0.6" style={{ stopColor: 'var(--mood)' }} />
-              <stop offset="1" stopColor="#ffe2c4" />
+              <stop offset="1" stopColor="#e6fbff" />
             </linearGradient>
           </defs>
           {/* tick marks */}
