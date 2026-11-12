@@ -193,6 +193,8 @@ interface Ctx {
 }
 
 let ctxRef: Ctx | null = null;
+/** The account connected to Squzo's cloud right now (null when signed out of friends). */
+export const connectedAccountId = (): string | null => (ctxRef && loadSession(ctxRef.accountId) ? ctxRef.accountId : null);
 let syncing = false;
 
 async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
