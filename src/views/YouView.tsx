@@ -20,12 +20,17 @@ import { settings } from '../lib/settingsNav';
 import { t } from '../lib/prefs';
 import { wardrobe } from '../lib/wardrobe';
 import { levelFromTotalXp, titleForLevel } from '../lib/xp';
+import { MAX_SHIELDS, SHIELD_PRICE } from '../lib/stats';
+import { seasonLabel, seasonTheme } from '../lib/seasons';
 
 type Section = 'stats' | 'badges' | 'friends' | 'diary';
 
 /** Profile hub: your character and level up top, then stats, badges and your diary. Settings open from the gear. */
 export function YouView() {
-  const { state, stats } = useApp();
+  const { state, stats, dispatch } = useApp();
+  const shields = state.streakShields ?? 0;
+  const canBuyShield = shields < MAX_SHIELDS;
+  const trophies = Object.entries(state.seasonClaims ?? {}).filter(([, t]) => t.includes(2)).map(([k]) => k).sort();
   const wantFriends = useIntent('you-friends');
   const wantDiary = useIntent('you-diary');
   const [section, setSection] = useState<Section>(wantFriends ? 'friends' : wantDiary ? 'diary' : 'stats');
@@ -106,6 +111,35 @@ export function YouView() {
                 </span>
               )}
             </div>
+          )}
+          {trophies.length > 0 && (
+            <div className="relative flex flex-wrap gap-1.5 mt-3 text-[11px] font-semibold">
+              {trophies.map((k) => (
+                <span key={k} className="pc-pill flex items-center gap-1 rounded-full px-2.5 py-1" title={`Gold in the ${seasonLabel(k)} season`} style={{ color: seasonTheme(k).color }}>
+                  <Icon name="🏆" size={12} />
+                  {seasonLabel(k).split(' · ')[1]}
+                </span>
+              ))}
+            </div>
+          )}
+          {canBuyShield && stats.currentStreak >= 3 && (
+            <button
+              onClick={() => dispatch({ type: 'BUY_STREAK_SHIELD' })}
+              disabled={stats.availableShards < SHIELD_PRICE}
+              className="pc-pill relative mt-3 w-full flex items-center justify-between gap-2 rounded-2xl px-3.5 py-2.5 text-left text-xs font-semibold disabled:opacity-50"
+            >
+              <span className="flex items-center gap-2">
+                <Icon name="🛡" size={16} />
+                <span>
+                  <span className="block font-bold">Protect your {stats.currentStreak}-day streak</span>
+                  <span className="block opacity-70">A shield saves it if you miss a day ({shields}/{MAX_SHIELDS})</span>
+                </span>
+              </span>
+              <span className="flex items-center gap-1 font-bold whitespace-nowrap">
+                <Coin size={14} />
+                {SHIELD_PRICE}
+              </span>
+            </button>
           )}
           <button onClick={() => wardrobe.open()} className="pc-cta relative mt-4 w-full flex items-center justify-center gap-2 rounded-full font-bold py-3.5">
             <Icon name="👕" size={18} />
