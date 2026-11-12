@@ -313,6 +313,8 @@ export interface Sharing {
   streak: boolean;
   level: boolean;
   badges: boolean;
+  /** Show me on the public weekly leaderboard (first name, level, weekly XP). Off unless turned on. */
+  global?: boolean;
 }
 
 export interface Prefs {
@@ -457,6 +459,8 @@ export interface AppState {
   shieldedDates: string[];
   /** Coins spent buying streak shields (in the You tab). */
   shieldCoinsSpent?: number;
+  /** Season tiers claimed, by season ("2026-11": [0, 1]). */
+  seasonClaims?: Record<string, number[]>;
   /** Extra reward chests won from the daily box. */
   bonusChests: number;
   /** Daily rewards track: the day (1–7) claimed last, when, and how many in a row this week. */

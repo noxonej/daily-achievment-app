@@ -21,6 +21,7 @@ import { t } from '../lib/prefs';
 import { wardrobe } from '../lib/wardrobe';
 import { levelFromTotalXp, titleForLevel } from '../lib/xp';
 import { MAX_SHIELDS, SHIELD_PRICE } from '../lib/stats';
+import { seasonLabel, seasonTheme } from '../lib/seasons';
 
 type Section = 'stats' | 'badges' | 'friends' | 'diary';
 
@@ -29,6 +30,7 @@ export function YouView() {
   const { state, stats, dispatch } = useApp();
   const shields = state.streakShields ?? 0;
   const canBuyShield = shields < MAX_SHIELDS;
+  const trophies = Object.entries(state.seasonClaims ?? {}).filter(([, t]) => t.includes(2)).map(([k]) => k).sort();
   const wantFriends = useIntent('you-friends');
   const wantDiary = useIntent('you-diary');
   const [section, setSection] = useState<Section>(wantFriends ? 'friends' : wantDiary ? 'diary' : 'stats');
@@ -108,6 +110,16 @@ export function YouView() {
                   {state.skipPasses} skip {state.skipPasses === 1 ? 'pass' : 'passes'}
                 </span>
               )}
+            </div>
+          )}
+          {trophies.length > 0 && (
+            <div className="relative flex flex-wrap gap-1.5 mt-3 text-[11px] font-semibold">
+              {trophies.map((k) => (
+                <span key={k} className="pc-pill flex items-center gap-1 rounded-full px-2.5 py-1" title={`Gold in the ${seasonLabel(k)} season`} style={{ color: seasonTheme(k).color }}>
+                  <Icon name="🏆" size={12} />
+                  {seasonLabel(k).split(' · ')[1]}
+                </span>
+              ))}
             </div>
           )}
           {canBuyShield && stats.currentStreak >= 3 && (

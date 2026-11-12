@@ -173,6 +173,20 @@ export function db(accountId: string) {
       await call(`/${path}`, { method: 'DELETE' });
     },
 
+    /** How many documents in a top-level collection match a number filter (e.g. level >= 10). */
+    async count(collection: string, where?: [string, 'GREATER_THAN' | 'GREATER_THAN_OR_EQUAL', number]): Promise<number> {
+      const structuredQuery: Record<string, unknown> = { from: [{ collectionId: collection }] };
+      if (where) structuredQuery.where = { fieldFilter: { field: { fieldPath: where[0] }, op: where[1], value: enc(where[2]) } };
+      const res = await call(':runAggregationQuery', {
+        method: 'POST',
+        body: JSON.stringify({ structuredAggregationQuery: { structuredQuery, aggregations: [{ alias: 'n', count: {} }] } }),
+      });
+      if (res.status === 404) return 0;
+      const rows = (await res.json()) as Array<{ result?: { aggregateFields?: { n?: FsValue } } }>;
+      const n = rows[0]?.result?.aggregateFields?.n;
+      return n ? Number(dec(n)) : 0;
+    },
+
     /** Documents in `parent/collection`, optionally filtered by one field and sorted. */
     async query<T>(
       parent: string,
