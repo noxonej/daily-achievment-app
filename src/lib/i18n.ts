@@ -702,7 +702,7 @@ export const DEFAULT_PREFS: Prefs = {
   splash: true,
   simple: true,
   daily: 'quotes',
-  nudges: false,
+  nudges: true,
   nudgeTime: '19:00',
 };
 

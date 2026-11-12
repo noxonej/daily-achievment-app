@@ -3,15 +3,15 @@ import type { Rank } from '../lib/ranks';
 
 /**
  * A rank's badge: a faceted shield in the tier's colour with one, two or three chevrons for the
- * division. Higher tiers grow wings (Elite+) and a crown (Titan+); Squzo Legend gets a star.
+ * division. Higher tiers grow wings (Gold+) and a crown (Diamond+); Squzo Legend gets a star.
  */
 export function RankBadge({ rank, size = 40, className = '', shine = false }: { rank: Rank; size?: number; className?: string; shine?: boolean }) {
   const id = useId().replace(/:/g, '');
   const { c1, c2, c3 } = rank.tier;
   const t = rank.tierIndex;
   const legend = rank.division === 0;
-  const wings = t >= 3;
-  const crown = t >= 6;
+  const wings = t >= 2;
+  const crown = t >= 4;
   // Chevrons stack upward: I = 1, II = 2, III = 3.
   const chevrons = Array.from({ length: rank.division }, (_, i) => 41 - i * 7);
   return (

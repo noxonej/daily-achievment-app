@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState, createContext, useContext } from 'react';
 import { PROPERTIES, decorFor, type DecorItem } from './catalog';
 import type { WorldState } from '../lib/types';
 
@@ -7,6 +7,13 @@ import type { WorldState } from '../lib/types';
  * walls, floor and your things in fixed spots. The sky outside follows the real time of day, the
  * shelf shows your real badges and the books you logged.
  */
+/** The spot being decorated, so each Spot can glow or dim with plain SVG attributes (they survive the pixel render). */
+const HighlightCtx = createContext<{ highlight?: string; id: string }>({ id: '' });
+
+/** Pixel size of the room, so it matches your pixel-art character. */
+const PX_W = 160;
+const PX_H = 120;
+
 export function HomeScene({
   world,
   trophies,
@@ -22,7 +29,7 @@ export function HomeScene({
   /** Your character, laid over the floor. */
   children?: React.ReactNode;
 }) {
-  const id = useId().replace(/:/g, '');
+  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const wall = decorFor(world, 'wall');
   const floor = decorFor(world, 'floor');
@@ -33,10 +40,43 @@ export function HomeScene({
   const win = t >= 6 ? { x: 150, y: 40, w: 150, h: 150 } : { x: 162 - t * 3, y: 58 - t * 3, w: 96 + t * 8, h: 82 + t * 7 };
   const shade = (hex: string, f: number) => mix(hex, '#000000', f);
 
+  // The room is drawn as vector art, then rendered to a small canvas and scaled up with crisp pixels,
+  // so it has the same pixel-art look as your character. If that ever fails, the vector art shows.
+  const svgRef = useRef<SVGSVGElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastMarkup = useRef('');
+  const [pixel, setPixel] = useState(false);
+  useEffect(() => {
+    const svg = svgRef.current;
+    const canvas = canvasRef.current;
+    if (!svg || !canvas) return;
+    const markup = new XMLSerializer().serializeToString(svg);
+    if (markup === lastMarkup.current) return;
+    lastMarkup.current = markup;
+    const img = new Image();
+    img.onload = () => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.imageSmoothingEnabled = true;
+      ctx.clearRect(0, 0, PX_W, PX_H);
+      ctx.drawImage(img, 0, 0, PX_W, PX_H);
+      setPixel(true);
+    };
+    img.onerror = () => setPixel(false);
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+  });
+
   return (
+    <HighlightCtx.Provider value={{ highlight, id }}>
     <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[28px] bg-[#120e0b]">
-      <svg viewBox="0 0 400 300" className="absolute inset-0 w-full h-full" aria-label={`${property.name}`} role="img">
+      <canvas ref={canvasRef} width={PX_W} height={PX_H} className="absolute inset-0 w-full h-full [image-rendering:pixelated]" aria-hidden="true" style={{ opacity: pixel ? 1 : 0 }} />
+      {/* The wrapper hides the vector art once the pixel version is ready (styles on the svg itself would end up in the render). */}
+      <div className="absolute inset-0" style={{ opacity: pixel ? 0 : 1 }}>
+      <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" className="w-full h-full" aria-label={`${property.name}`} role="img">
         <defs>
+          <filter id={`glow${id}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#38bdf8" floodOpacity="1" />
+          </filter>
           <linearGradient id={`sky${id}`} x1="0" y1="0" x2="0" y2="1">
             {time === 'day' && (
               <>
@@ -116,13 +156,20 @@ export function HomeScene({
         <rect width="400" height="300" fill={`url(#light${id})`} pointerEvents="none" />
         {time === 'night' && <rect width="400" height="300" fill="#0a0d24" opacity="0.18" pointerEvents="none" />}
       </svg>
+      </div>
       {children && <div className="absolute left-1/2 bottom-[7%] -translate-x-1/2 w-[27%]">{children}</div>}
     </div>
+    </HighlightCtx.Provider>
   );
 }
 
 function Spot({ on, children }: { on: boolean; children: React.ReactNode }) {
-  return <g className={on ? 'world-spot-on' : 'world-spot'}>{children}</g>;
+  const { highlight, id } = useContext(HighlightCtx);
+  return (
+    <g filter={on ? `url(#glow${id})` : undefined} opacity={highlight && !on ? 0.55 : 1}>
+      {children}
+    </g>
+  );
 }
 
 /* ---------------------------------------------------------------- textures */

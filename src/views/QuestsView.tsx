@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useApp } from '../store/AppContext';
 import { InfoTip } from '../components/Guide';
 import { t } from '../lib/prefs';
 import { Segmented } from '../components/Segmented';
@@ -14,7 +15,10 @@ type Section = 'weekly' | 'goals' | 'rewards';
 /** Weekly quests and long-term (monthly / yearly) goals in one place. */
 export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const wantGoals = useIntent('quests-goals');
-  const [section, setSection] = useState<Section>(wantGoals ? 'goals' : 'weekly');
+  const { state } = useApp();
+  // Long-term goals come first: open on them whenever you have one.
+  const hasGoals = state.goals.some((g) => !g.completedAt);
+  const [section, setSection] = useState<Section>(wantGoals || hasGoals ? 'goals' : 'weekly');
   return (
     <div>
       <div className="max-w-2xl mx-auto px-4 pt-4">
@@ -29,8 +33,8 @@ export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
           value={section}
           onChange={setSection}
           options={[
-            { id: 'weekly', label: t('quests.week'), icon: '🗡' },
             { id: 'goals', label: t('quests.goals'), icon: '🏆' },
+            { id: 'weekly', label: t('quests.week'), icon: '🗡' },
             { id: 'rewards', label: 'Rewards', icon: 'df:chest' },
           ]}
         />

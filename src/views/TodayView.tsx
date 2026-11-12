@@ -31,12 +31,15 @@ import { CoachCard } from '../components/today/CoachCard';
 import { QuickAdd } from '../components/today/QuickAdd';
 import { TodayHero } from '../components/today/TodayHero';
 import { ScrollLockCard } from '../components/today/ScrollLockCard';
-import { breathe } from '../components/Breathe';
 
 const RECAP_KEY = 'dayforge-recap-dismissed';
-import { focusTimer } from '../lib/focusTimer';
-import { runTracker } from '../lib/runTracker';
 import { setIntent } from '../lib/intents';
+import { YearGoalCard } from '../components/today/YearGoalCard';
+import { ReminderPrompt } from '../components/today/ReminderPrompt';
+import { ProofSheet } from '../components/ProofSheet';
+import { WellnessRow } from '../components/today/WellnessRow';
+import { proofFor } from '../lib/proof';
+import type { Quest } from '../lib/types';
 
 function greeting(d: Date = new Date()): string {
   const h = d.getHours();
@@ -62,6 +65,13 @@ function QuickAction({ icon, label, onClick }: { icon: string; label: string; on
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch, stats } = useApp();
+  // Proof: quests like "Read 20 pages" ask what you read before they count (or, for number quests, right after).
+  const [proof, setProof] = useState<{ quest: Quest; after: boolean } | null>(null);
+  function tick(quest: Quest, isDone: boolean) {
+    const swapped = !!state.dayLogs[todayKey()]?.swaps?.[quest.id];
+    if (!isDone && !swapped && proofFor(quest) && !state.dayLogs[todayKey()]?.proofs?.[quest.id]) setProof({ quest, after: false });
+    else dispatch({ type: 'TOGGLE_QUEST', questId: quest.id });
+  }
   // Every Monday, last week's recap sits at the top of Today until dismissed.
   const [showRecap, setShowRecap] = useState(() => {
     try {
@@ -180,10 +190,17 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <ScrollLockCard done={doneCount + (wildcard && completed.includes(wildcard.id) ? 1 : 0)} need={state.prefs!.scrollLock!} />
       )}
 
+      {/* How you feel and the wellness tools come first: they set up the rest of the day. */}
+      <MoodCheckIn />
+
+      <WellnessRow />
+
       {/* Daily rewards: up top until today's is claimed, then it moves down next to the box. */}
       {rewardsOnTop && <CheckInCard />}
 
       <GettingStarted onNavigate={onNavigate} />
+
+      <ReminderPrompt />
 
       {showRecap && (
         <WeekRecap
@@ -202,12 +219,30 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <NowNextCard onOpenPlan={() => onNavigate('plan')} />
 
+      <YearGoalCard onNavigate={onNavigate} />
+
+      <ProofSheet
+        quest={proof?.quest ?? null}
+        after={proof?.after}
+        onClose={() => setProof(null)}
+        onSkip={() => {
+          if (proof && !proof.after) dispatch({ type: 'TOGGLE_QUEST', questId: proof.quest.id });
+          setProof(null);
+        }}
+        onConfirm={(text) => {
+          if (proof) {
+            if (!proof.after) dispatch({ type: 'TOGGLE_QUEST', questId: proof.quest.id });
+            dispatch({ type: 'PROOF_QUEST', questId: proof.quest.id, text });
+          }
+          setProof(null);
+        }}
+      />
+
       {showConfetti && <PerfectDayFx onDone={() => setShowConfetti(false)} />}
 
       {/* Simple mode keeps Today to the essentials: what's now, your quests, the box and your mood. */}
       {!simple && <TodayPlanCard onOpen={() => onNavigate('plan')} />}
 
-      {!simple && <MoodCheckIn />}
 
       {!simple && <DailyInsight activeDailyCount={activeDaily.length} doneCount={doneCount} />}
 
@@ -215,7 +250,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <WildcardQuestCard
           quest={wildcard}
           completed={completed.includes(wildcard.id)}
-          onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: wildcard.id })}
+          onToggle={() => tick(wildcard, completed.includes(wildcard.id))}
           periodKey={key}
         />
       )}
@@ -246,7 +281,12 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 quest={quest}
                 value={log?.progress?.[quest.id] ?? 0}
                 completed={completed.includes(quest.id)}
-                onSet={(value) => dispatch({ type: 'SET_PROGRESS', questId: quest.id, value })}
+                onSet={(value) => {
+                  const target = quest.measure?.target ?? Infinity;
+                  const was = log?.progress?.[quest.id] ?? 0;
+                  dispatch({ type: 'SET_PROGRESS', questId: quest.id, value });
+                  if (was < target && value >= target && proofFor(quest) && !log?.proofs?.[quest.id]) setProof({ quest, after: true });
+                }}
                 periodKey={key}
               />
             ) : quest.promptForNote ? (
@@ -263,7 +303,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 key={quest.id}
                 quest={quest}
                 completed={completed.includes(quest.id)}
-                onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
+                onToggle={() => tick(quest, completed.includes(quest.id))}
                 periodKey={key}
               />
               )}
@@ -275,11 +315,9 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <QuickAdd />
 
-      <div className="grid grid-cols-3 min-[420px]:grid-cols-6 gap-1.5">
-        <QuickAction icon="⏱" label={t('now.focus')} onClick={() => focusTimer.open()} />
-        <QuickAction icon="🌬" label="Breathe" onClick={() => breathe.open()} />
-        <QuickAction icon="🌙" label="Sleep" onClick={() => sleepTool.open()} />
-        <QuickAction icon="df:run" label={t('qa.run')} onClick={() => runTracker.open()} />
+      <DailyBoost />
+
+      <div className="grid grid-cols-2 gap-1.5">
         <QuickAction
           icon="df:spend"
           label={t('qa.spent')}
@@ -302,11 +340,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         }}
       />
 
-      {simple && <MoodCheckIn />}
-
       <CoachCard onNavigate={onNavigate} max={simple ? 1 : 2} />
-
-      <DailyBoost />
 
       <InstallCard />
 

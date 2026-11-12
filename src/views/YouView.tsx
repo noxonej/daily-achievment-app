@@ -8,7 +8,7 @@ import { Segmented } from '../components/Segmented';
 import { Avatar } from '../components/Avatar';
 import { Coin } from '../components/Coin';
 import { RankBadge } from '../components/RankBadge';
-import { rankForLevel } from '../lib/ranks';
+import { rankForLevel, rarityLabel } from '../lib/ranks';
 import { Icon } from '../components/Icon';
 import { StatsView } from './StatsView';
 import { AchievementsView } from './AchievementsView';
@@ -44,6 +44,7 @@ export function YouView() {
               <p className="pc-sub flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em]">
                 <RankBadge rank={rankForLevel(stats.level)} size={18} className="-my-1" />
                 {titleForLevel(stats.level)}
+                {rankForLevel(stats.level).index > 0 && <span className="normal-case tracking-normal font-semibold opacity-75">· {rarityLabel(rankForLevel(stats.level).index)}</span>}
               </p>
               <p className="pc-ink font-display text-[28px] font-medium tracking-tight leading-tight truncate">{name || 'Your profile'}</p>
             </div>

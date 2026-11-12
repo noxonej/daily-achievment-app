@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useBackToClose } from '../lib/backstack';
 import { t } from '../lib/prefs';
 import { doneByHand } from '../store/reducer';
@@ -74,7 +75,8 @@ export function DailyBoxCard() {
           </button>
         )}
       </div>
-      {opening && <BoxOpening onClose={() => setOpening(false)} />}
+      {/* Rendered on <body> so no card animation underneath can show through or clip it. */}
+      {opening && createPortal(<BoxOpening onClose={() => setOpening(false)} />, document.body)}
     </>
   );
 }
@@ -117,7 +119,7 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
   const mythic = RARITY.mythic;
 
   return (
-    <div data-overlay className="theme-dark fixed inset-0 z-[80] bg-black/[0.92] flex flex-col items-center justify-center px-6 backdrop-in">
+    <div data-overlay className="theme-dark box-stage fixed inset-0 z-[80] flex flex-col items-center justify-center px-6 backdrop-in">
       {!busy && (
         <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
           <Icon name="✕" size={20} />

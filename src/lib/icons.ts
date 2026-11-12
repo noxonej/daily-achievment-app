@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  Sofa, Frame, LampFloor, Grid3x3, RectangleHorizontal,
+  Sofa, Frame, LampFloor, Grid3x3, RectangleHorizontal, Users, Building2, Mic, Ear, Video, Flag, Puzzle, Send, PersonStanding, Cat,
   Activity, Archive, Award, Backpack, Banknote, Bath, Bed, BedDouble, Bell, BookOpen, Brush, Bus, Cake, Calculator,
   Calendar, CalendarDays, Car, ChartColumn, Check, ChefHat, CircleCheck, CircleDashed, Clapperboard, ClipboardList,
   Cloud, CloudSun, Coffee, Compass, CookingPot, Crown, CupSoda, Diamond, Dices, Dog, Download, Droplet, Dumbbell,
@@ -45,6 +45,7 @@ const EMOJI_ICONS: Record<string, LucideIcon> = {
   '👨': User, '🔧': Wrench, '💠': Diamond, '🌠': Sparkles, '☄': Orbit, '🎂': Cake, '🍲': CookingPot,
   '📮': Mailbox, '🧼': Bath, '🥤': CupSoda, '🗒': StickyNote, '🤝': Handshake, '🥾': Footprints, '🌤': CloudSun,
   '🙌': Hand, '🔁': Repeat,
+  '👥': Users, '🏢': Building2, '🎤': Mic, '📲': Smartphone, '👂': Ear, '💶': Banknote, '📨': Send, '👋': Hand, '🎥': Video, '🧍': PersonStanding, '🦁': Cat, '🙋': Hand, '🏁': Flag, '🧩': Puzzle,
   // UI-only ids (not used as saved data)
   '⬅': ArrowLeft, '⏱': Timer, '▶': Play, '⏸': Pause, '↺': RotateCcw, '↩': Undo2, 'ℹ': Info, '⋮': EllipsisVertical,
   '😞': Frown, '😕': Annoyed, '😐': Meh, '🙂': Smile, '😄': Laugh, '📤': Share, '➕': SquarePlus, '🔐': ShieldCheck,

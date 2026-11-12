@@ -5,6 +5,8 @@ import { GoalFormModal } from '../components/GoalFormModal';
 import type { LongTermGoal } from '../lib/types';
 import { Icon } from '../components/Icon';
 import { GoalJournal } from '../components/GoalJournal';
+import { GoalPlanBox } from '../components/GoalPlanBox';
+import { byPriority } from '../lib/goalCoach';
 
 const TIMEFRAME_LABEL: Record<string, string> = {
   weekly: 'This Week',
@@ -18,7 +20,7 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<LongTermGoal | null>(null);
 
-  const active = state.goals.filter((g) => !g.completedAt);
+  const active = state.goals.filter((g) => !g.completedAt).sort(byPriority);
   const completed = state.goals.filter((g) => !!g.completedAt);
 
   function openAdd() {
@@ -34,7 +36,7 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
       <div className="flex items-center justify-between">
         {embedded ? (
-          <p className="text-sm text-slate-400">Monthly and yearly targets you're chasing.</p>
+          <p className="text-sm text-slate-400">Your big dreams for the year, with a plan to get there.</p>
         ) : (
           <div>
             <p className="eyebrow">Dreams in progress</p>
@@ -144,9 +146,9 @@ function GoalCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className={`rounded-2xl border p-4 ${goal.timeframe === 'yearly' ? 'goal-yearly border-amber-400/30' : 'border-white/10 bg-white/[0.03]'}`}>
       <div className="flex items-start gap-3">
-        <span className="shrink-0 w-10 h-10 rounded-xl bg-white/5 text-amber-300 flex items-center justify-center"><Icon name={goal.icon} size={20} /></span>
+        <span className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${goal.timeframe === 'yearly' ? 'bg-amber-400/15 text-amber-200' : 'bg-white/5 text-amber-300'}`}><Icon name={goal.icon} size={20} /></span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-white text-[15px]">{goal.title}</p>
@@ -177,6 +179,8 @@ function GoalCard({
         </div>
         <ProgressBar value={goal.progress} max={goal.target} />
       </div>
+
+      <GoalPlanBox goal={goal} />
 
       <GoalJournal goal={goal} />
 

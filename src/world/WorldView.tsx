@@ -341,6 +341,16 @@ function GarageSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pendi
 /* ---------------------------------------------------------------- shared bits */
 
 function Requirements({ unlock, stats, compact = false }: { unlock: Unlock; stats: DerivedStats; compact?: boolean }) {
+  if (unlock.chest) {
+    return (
+      <ul className={`mt-2 flex flex-wrap gap-1.5 ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
+        <li className="flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold bg-violet-500/15 text-violet-200">
+          <Icon name="df:chest" size={10} />
+          Chest drop only
+        </li>
+      </ul>
+    );
+  }
   const rows: Array<{ ok: boolean; text: string }> = [{ ok: stats.level >= unlock.level, text: `Level ${unlock.level}` }];
   if (unlock.milestone) rows.push({ ok: stats[unlock.milestone.stat] >= unlock.milestone.target, text: unlock.milestone.label });
   if (unlock.coins > 0) rows.push({ ok: stats.availableShards >= unlock.coins, text: `${unlock.coins.toLocaleString()} coins` });

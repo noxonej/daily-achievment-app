@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { DECOR_SLOTS, PAINTS, VEHICLES, WORLD_DROP_CHANCE, rollWorldDrop, worldOf, type WorldDrop } from '../world/catalog';
+import { VehicleArt } from '../world/VehicleArt';
 import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { ownership } from '../store/reducer';
@@ -268,7 +270,7 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
   // closed → shake (anticipation) → opening (lid swings up, light, sparkles) → reveal
   const [phase, setPhase] = useState<'closed' | 'shake' | 'opening' | 'reveal'>('closed');
   // undefined = not opened yet, null = coins (everything owned), 'skip' = a Skip Pass.
-  const [prize, setPrize] = useState<AvatarItem | null | 'skip' | undefined>(undefined);
+  const [prize, setPrize] = useState<AvatarItem | null | 'skip' | { world: WorldDrop } | undefined>(undefined);
   const look = normalizeLook(state.character);
   const ctx = useMemo(() => ownership(state, stats), [state, stats]);
 
@@ -278,8 +280,10 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
     // The very first chest is a lucky one (epic or legendary, never a Skip Pass).
     const first = (state.chestsOpened ?? 0) === 0;
     const skip = !first && Math.random() < SKIP_PASS_CHANCE;
-    const won = skip ? null : rollChest(ctx, Math.random, first);
-    setPrize(skip ? 'skip' : won);
+    // Sometimes a chest holds something for your World (home decor, paint or even a vehicle).
+    const worldDrop = !first && !skip && Math.random() < WORLD_DROP_CHANCE ? rollWorldDrop(worldOf(state)) : null;
+    const won = skip || worldDrop ? null : rollChest(ctx, Math.random, first);
+    setPrize(skip ? 'skip' : worldDrop ? { world: worldDrop } : won);
     setPhase('shake');
     try {
       navigator.vibrate?.([20, 60, 20, 60, 30]);
@@ -295,17 +299,18 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
       }
     }, 700);
     setTimeout(() => {
-      dispatch({ type: 'OPEN_CHEST', itemId: won?.id ?? null, skip });
+      dispatch({ type: 'OPEN_CHEST', itemId: won?.id ?? null, skip, worldId: worldDrop?.id });
       setPhase('reveal');
     }, 1400);
   }
 
-  const item = prize && prize !== 'skip' ? prize : null;
-  const r = item ? RARITY[item.rarity] : prize === 'skip' ? { ...RARITY.epic, hex: '#14b8a6', text: 'text-teal-300', label: 'Rare drop' } : RARITY.legendary;
+  const drop = prize && typeof prize === 'object' && 'world' in prize ? prize.world : null;
+  const item = prize && prize !== 'skip' && !drop ? (prize as AvatarItem) : null;
+  const r = drop ? RARITY[drop.rarity] : item ? RARITY[item.rarity] : prize === 'skip' ? { ...RARITY.epic, hex: '#14b8a6', text: 'text-teal-300', label: 'Rare drop' } : RARITY.legendary;
   const remaining = stats.chestsAvailable;
 
   return (
-    <div className="theme-dark fixed inset-0 z-[80] bg-black/[0.92] flex flex-col items-center justify-center px-6 backdrop-in">
+    <div className="theme-dark box-stage fixed inset-0 z-[80] flex flex-col items-center justify-center px-6 backdrop-in">
       <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
         <Icon name="✕" size={20} />
       </button>
@@ -351,14 +356,25 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
           </div>
           <p className="mt-6 font-display text-2xl font-extrabold text-white">{phase === 'closed' ? 'Tap to open' : 'Opening…'}</p>
           <p className="text-sm text-slate-400 mt-1">
-            {(state.chestsOpened ?? 0) === 0 ? 'Your first chest is a lucky one: epic or better!' : 'Common 62% · Rare 26% · Epic 9.5% · Legendary 2.5%'}
+            {(state.chestsOpened ?? 0) === 0 ? 'Your first chest is a lucky one: epic or better!' : 'Common 62% · Rare 26% · Epic 9.5% · Legendary 2.5% · sometimes a World item'}
           </p>
         </button>
       ) : (
         <div className="flex flex-col items-center text-center">
           <div className="relative">
             <div className="absolute inset-[-60px] rounded-full prize-rays" style={{ ['--ray' as string]: r.hex }} />
-            {prize === 'skip' ? (
+            {drop ? (
+              <div className="relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-br from-sky-500 to-indigo-700" style={{ boxShadow: `0 0 60px -6px ${r.hex}` }}>
+                {drop.kind === 'vehicle' && VEHICLES.find((v) => v.id === drop.id) ? (
+                  <VehicleArt vehicle={VEHICLES.find((v) => v.id === drop.id)!} paint={PAINTS.find((p) => p.id === VEHICLES.find((v) => v.id === drop.id)!.paint)?.hex ?? '#888'} className="w-[150px]" />
+                ) : (
+                  <span className="flex flex-col items-center gap-2">
+                    <Icon name={drop.kind === 'paint' ? '🎨' : DECOR_SLOTS.find((x) => x.id === drop.slot)?.icon ?? '🏠'} size={64} strokeWidth={1.6} className="text-white" />
+                    {drop.color && <span className="w-16 h-3 rounded-full ring-2 ring-white/50" style={{ background: drop.color }} />}
+                  </span>
+                )}
+              </div>
+            ) : prize === 'skip' ? (
               <div className="relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-br from-teal-400 to-emerald-600" style={{ boxShadow: `0 0 60px -6px ${r.hex}` }}>
                 <Icon name="⏭" size={96} strokeWidth={1.6} className="text-[#fff]" />
               </div>
@@ -368,18 +384,35 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
               </div>
             )}
           </div>
-          <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text} fade-up`}>{item ? r.label : prize === 'skip' ? 'Rare drop' : 'Bonus'}</p>
+          <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text} fade-up`}>{drop ? `${r.label} · World` : item ? r.label : prize === 'skip' ? 'Rare drop' : 'Bonus'}</p>
           <p className="font-display text-3xl font-extrabold text-white mt-1 fade-up [animation-delay:.1s]">
-            {item ? item.name : prize === 'skip' ? 'Skip Pass' : `+${CHEST_DUPLICATE_SHARDS} coins`}
+            {drop ? drop.name : item ? item.name : prize === 'skip' ? 'Skip Pass' : `+${CHEST_DUPLICATE_SHARDS} coins`}
           </p>
           <p className="text-sm text-slate-400 mt-1 fade-up [animation-delay:.15s] max-w-xs">
-            {item
+            {drop
+              ? drop.kind === 'vehicle'
+                ? 'A chest-only vehicle! Find it in your garage on the World tab.'
+                : drop.kind === 'paint'
+                  ? 'A chest-only paint for your vehicles. Use it in the garage.'
+                  : 'A chest-only item for your home. Nobody can buy this one.'
+              : item
               ? `New ${AVATAR_SLOTS.find((s) => s.id === item.slot)?.label.toLowerCase()} added to your wardrobe`
               : prize === 'skip'
                 ? 'Skip one daily quest on a busy day without losing your streak. Use it from the Today screen.'
                 : "You've collected everything a chest can give!"}
           </p>
           <div className="flex gap-2.5 mt-7 fade-up [animation-delay:.2s]">
+            {drop?.kind === 'decor' && drop.slot && (
+              <button
+                onClick={() => {
+                  dispatch({ type: 'WORLD_PLACE', slot: drop.slot!, itemId: drop.id });
+                  onClose();
+                }}
+                className="rounded-2xl bg-amber-500 hover:bg-amber-400 text-white font-bold px-5 py-3"
+              >
+                Put it in my home
+              </button>
+            )}
             {item && (
               <button
                 onClick={() => {

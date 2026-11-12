@@ -2,13 +2,14 @@ import { useApp } from '../store/AppContext';
 import { weekKey } from '../lib/date';
 import { shortNum } from '../lib/num';
 import { Icon } from './Icon';
+import { byPriority } from '../lib/goalCoach';
 
 /** Each card gets its own glow so a row of them never looks repeated. */
 const GLOWS = [
-  { core: '#d4f74a', mid: '#5c8a12' },
-  { core: '#8ef0b0', mid: '#1f7a55' },
-  { core: '#f3e86a', mid: '#7c7414' },
-  { core: '#b6f27a', mid: '#3c7a22' },
+  { core: '#67e8f9', mid: '#0e7490' },
+  { core: '#93c5fd', mid: '#1d4ed8' },
+  { core: '#5eead4', mid: '#0f766e' },
+  { core: '#a5b4fc', mid: '#4338ca' },
 ];
 
 interface Program {
@@ -29,11 +30,12 @@ export function QuestPrograms({ onOpen }: { onOpen: (section: 'weekly' | 'goals'
   const key = weekKey();
   const weekly = state.quests.filter((q) => q.frequency === 'weekly' && !q.archived && q.wildcardWeekKey !== key);
   const doneWeekly = weekly.filter((q) => state.weekLogs[key]?.completedQuestIds.includes(q.id)).length;
-  const goals = state.goals.filter((g) => !g.completedAt);
+  const goals = state.goals.filter((g) => !g.completedAt).sort(byPriority);
 
   const programs: Program[] = [
+    // Yearly goals lead: they are the big dreams.
+    ...goals.map((g) => ({ id: g.id, title: g.title, value: g.progress, target: Math.max(g.target, 1), sub: g.timeframe === 'yearly' ? `${g.unit} · this year` : g.unit, onOpen: () => onOpen('goals') })),
     { id: 'week', title: 'This week', value: doneWeekly, target: Math.max(weekly.length, 1), sub: weekly.length ? 'weekly quests' : 'no weekly quests yet', onOpen: () => onOpen('weekly') },
-    ...goals.map((g) => ({ id: g.id, title: g.title, value: g.progress, target: Math.max(g.target, 1), sub: g.unit, onOpen: () => onOpen('goals') })),
   ];
 
   return (

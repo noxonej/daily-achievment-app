@@ -8,7 +8,7 @@ import { wardrobe } from '../lib/wardrobe';
 import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
 import { RankBadge } from './RankBadge';
-import { RANK_COUNT, rankAt, rankForLevel } from '../lib/ranks';
+import { RANK_COUNT, rankAt, rankForLevel, rarityLabel } from '../lib/ranks';
 import { settings } from '../lib/settingsNav';
 import { t } from '../lib/prefs';
 
@@ -192,6 +192,9 @@ function LevelPopover({ onClose, into, need, level }: { onClose: () => void; int
           <p className="text-[11px] text-slate-400 tabular-nums">
             {rank.nextLevel ? `Next rank at level ${rank.nextLevel}` : 'The highest rank there is'}
           </p>
+          <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-violet-500/15 border border-violet-400/30 px-2 py-px text-[10.5px] font-bold text-violet-200" title="Estimated share of players who reach this rank">
+            {rarityLabel(rank.index)}{rank.index > 0 ? ' of players' : ''}
+          </p>
         </div>
       </div>
       <div className="mt-3 flex items-baseline justify-between text-[11px] tabular-nums">
@@ -208,6 +211,7 @@ function LevelPopover({ onClose, into, need, level }: { onClose: () => void; int
             <div key={r.index} data-current={r.index === rank.index ? '' : undefined} className={`shrink-0 w-[60px] flex flex-col items-center gap-1 ${reached ? '' : 'opacity-35 grayscale'}`}>
               <RankBadge rank={r} size={r.index === rank.index ? 40 : 32} />
               <span className={`text-[9px] leading-tight text-center ${r.index === rank.index ? 'font-bold text-white' : 'text-slate-400'}`}>{r.name}</span>
+              <span className="text-[8.5px] leading-none text-violet-300/80 tabular-nums">{r.index === 0 ? '100%' : rarityLabel(r.index).replace('Top ', '')}</span>
               <span className="text-[9px] text-slate-500 tabular-nums">LV {r.startLevel}</span>
             </div>
           );
