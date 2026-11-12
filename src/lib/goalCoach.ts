@@ -186,6 +186,12 @@ function per(n: number) {
   return n >= 10 ? Math.ceil(n) : Math.ceil(n * 10) / 10;
 }
 
+/** "1 book", "1.5 books": singular only for exactly one. */
+function amount(n: number, unit: string) {
+  const v = per(n);
+  return `${v} ${v === 1 && /s$/.test(unit) && !/\s/.test(unit) ? unit.slice(0, -1) : unit}`;
+}
+
 /** Where you stand on a goal and the next concrete step, worked out from the dates and your progress. */
 export function goalPlan(g: LongTermGoal, now = Date.now()): GoalPlan {
   const target = Math.max(g.target, 1);
@@ -195,7 +201,7 @@ export function goalPlan(g: LongTermGoal, now = Date.now()): GoalPlan {
   const unit = g.unit || 'steps';
   if (g.completedAt || left === 0) return { daysLeft: null, timeUsed: 1, done: 1, status: 'done', action: 'Done. Set the next, bigger goal.' };
   if (!span) {
-    return { daysLeft: null, timeUsed: 0, done, status: done > 0 ? 'on-track' : 'just-started', action: `${per(left)} ${unit} to go. Do a little every week.` };
+    return { daysLeft: null, timeUsed: 0, done, status: done > 0 ? 'on-track' : 'just-started', action: `${amount(left, unit)} to go. Do a little every week.` };
   }
   const start = new Date(g.createdAt).getTime() || now;
   const usedDays = Math.max(0, (now - start) / 86_400_000);
@@ -205,10 +211,10 @@ export function goalPlan(g: LongTermGoal, now = Date.now()): GoalPlan {
   const perWeek = left / weeksLeft;
   const action =
     g.timeframe === 'weekly'
-      ? `${per(left / daysLeft)} ${unit} a day finishes it this week.`
+      ? `${amount(left / daysLeft, unit)} a day finishes it this week.`
       : perWeek < 1
-        ? `About ${per(left / Math.max(1, daysLeft / 30))} ${unit} a month gets you there.`
-        : `${per(perWeek)} ${unit} a week gets you there.`;
+        ? `About ${amount(left / Math.max(1, daysLeft / 30), unit)} a month gets you there.`
+        : `${amount(perWeek, unit)} a week gets you there.`;
   let status: GoalPlan['status'];
   if (usedDays < 7 && g.progress === 0) status = 'just-started';
   else if (done >= timeUsed + 0.05) status = 'ahead';

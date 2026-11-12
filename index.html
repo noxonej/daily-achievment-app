@@ -50,7 +50,7 @@
       // Apply the saved theme before the app draws, so there's no flash of the wrong colours.
       try {
         var a = JSON.parse(localStorage.getItem('dayforge-appearance') || '{}');
-        document.documentElement.dataset.accent = a.accent || 'flame';
+        document.documentElement.dataset.accent = a.accent || 'squzo';
         if (a.accent === 'amber') delete document.documentElement.dataset.accent;
         if (a.background) document.documentElement.dataset.bg = a.background;
         var t = localStorage.getItem('dayforge-theme');

@@ -13,7 +13,7 @@ export function MoodCheckIn() {
   const picked = MOODS.find((m) => m.value === mood);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="mood-card rounded-2xl p-4">
       <p className="text-sm font-semibold text-white mb-3">
         {picked ? (
           <>

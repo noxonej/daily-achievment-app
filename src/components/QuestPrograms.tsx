@@ -6,10 +6,10 @@ import { byPriority } from '../lib/goalCoach';
 
 /** Each card gets its own glow so a row of them never looks repeated. */
 const GLOWS = [
-  { core: '#d4f74a', mid: '#5c8a12' },
-  { core: '#8ef0b0', mid: '#1f7a55' },
-  { core: '#f3e86a', mid: '#7c7414' },
-  { core: '#b6f27a', mid: '#3c7a22' },
+  { core: '#67e8f9', mid: '#0e7490' },
+  { core: '#93c5fd', mid: '#1d4ed8' },
+  { core: '#5eead4', mid: '#0f766e' },
+  { core: '#a5b4fc', mid: '#4338ca' },
 ];
 
 interface Program {

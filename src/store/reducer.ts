@@ -1,6 +1,6 @@
 import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState, DecorSlot } from '../lib/types';
 import { PROOF_BONUS } from '../lib/proof';
-import { DECOR, PAINTS, PROPERTIES, VEHICLES, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
+import { DECOR, PAINTS, PROPERTIES, VEHICLES, worldChestPool, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
 import { claimCheckIn } from '../lib/checkIn';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
@@ -39,7 +39,7 @@ export function createInitialState(): AppState {
     focusMinutes: {},
     runs: [],
     contentVersion: CONTENT_VERSION,
-    appearance: { accent: 'flame', background: 'obsidian' },
+    appearance: { accent: 'squzo', background: 'obsidian' },
     dailyBox: { lastOpened: null, lastReward: null },
     prefs: { ...DEFAULT_PREFS, language: guessLanguage() },
     notes: [],
@@ -148,7 +148,7 @@ export type Action =
   | { type: 'WORLD_FEATURE'; vehicleId: string }
   | { type: 'WORLD_PAINT'; vehicleId: string; paint: string }
   /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
-  | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean }
+  | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean; worldId?: string }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
   /** Saves a quest's proof answer for today; the first proof per quest per day gives a small coin bonus. */
   | { type: 'PROOF_QUEST'; questId: string; text: string }
@@ -339,7 +339,7 @@ export function doneByHand(log: DayLog | undefined): number {
   return log.completedQuestIds.filter((id) => !skipped.has(id)).length;
 }
 
-export const CONTENT_VERSION = 5;
+export const CONTENT_VERSION = 6;
 
 function mondayKey(): string {
   const d = new Date();
@@ -390,14 +390,16 @@ export function migrateContent(state: AppState): AppState {
     if (!quests.some((q) => q.id === extra.id)) quests = [...quests, extra];
   }
   // v3 made Nebula the default; v4 (the 2026 redesign) makes Obsidian the default. A theme picked by hand is kept.
-  let appearance = state.appearance?.chosen ? state.appearance : { accent: 'flame' as const, background: 'obsidian' as const };
+  let appearance = state.appearance?.chosen ? state.appearance : { accent: 'squzo' as const, background: 'obsidian' as const };
   // Setup used to pick colours to match your goals (accent + background in pairs). Those weren't picked
   // by hand, so they move to the new Squzo look too. Colours picked in Settings are kept.
   if (version < 4 && appearance.chosen && ONBOARDING_LOOKS.some(([a, b]) => a === appearance.accent && b === appearance.background)) {
-    appearance = { ...appearance, accent: 'flame', background: 'obsidian' };
+    appearance = { ...appearance, accent: 'squzo', background: 'obsidian' };
   }
   // v5: reminders and the daily quote are on for everyone (you can still switch them off in Settings).
   const prefs = version < 5 && state.prefs ? { ...state.prefs, nudges: true, daily: state.prefs.daily === 'off' ? ('quotes' as const) : state.prefs.daily } : state.prefs;
+  // v6: the default colour became Squzo blue (the app icon's colour). Flame was the old default, so it moves too.
+  if (version < 6 && appearance.accent === 'flame') appearance = { ...appearance, accent: 'squzo' };
   return { ...state, quests, runs: state.runs ?? [], appearance, prefs, contentVersion: CONTENT_VERSION };
 }
 
@@ -772,6 +774,12 @@ export function reducer(state: AppState, action: Action): AppState {
       if (stats.chestsAvailable <= 0) return state;
       const chestsOpened = (state.chestsOpened ?? 0) + 1;
       if (action.skip) return { ...state, chestsOpened, skipPasses: (state.skipPasses ?? 0) + 1 };
+      if (action.worldId) {
+        const world = worldOf(state);
+        if (!worldChestPool(world).some((d) => d.id === action.worldId)) return state;
+        // Chest drops cost nothing: they're stored as paid with 0 coins.
+        return { ...state, chestsOpened, world: { ...world, paid: { ...world.paid, [action.worldId]: 0 } } };
+      }
       if (action.itemId === null) {
         return { ...state, chestsOpened, bonusShards: (state.bonusShards ?? 0) + CHEST_DUPLICATE_SHARDS };
       }
@@ -1054,7 +1062,7 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, notes: (state.notes ?? []).filter((n) => n.id !== action.noteId) };
 
     case 'SET_APPEARANCE':
-      return { ...state, appearance: { ...(state.appearance ?? { accent: 'flame', background: 'obsidian' }), ...action.appearance, chosen: true } };
+      return { ...state, appearance: { ...(state.appearance ?? { accent: 'squzo', background: 'obsidian' }), ...action.appearance, chosen: true } };
 
     case 'SET_MOOD': {
       const moods = { ...(state.moods ?? {}) };

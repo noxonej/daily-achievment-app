@@ -341,7 +341,7 @@ export interface Prefs {
   reading?: 'normal' | 'roomy' | 'extra';
 }
 
-export type Accent = 'flame' | 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose' | 'sunset' | 'pink' | 'teal' | 'lime' | 'indigo';
+export type Accent = 'squzo' | 'flame' | 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose' | 'sunset' | 'pink' | 'teal' | 'lime' | 'indigo';
 export type BgTheme = 'obsidian' | 'nebula' | 'graphite' | 'midnight' | 'black' | 'aurora' | 'ember' | 'deepsea' | 'candy';
 export interface Appearance {
   accent: Accent;

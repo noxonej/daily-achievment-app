@@ -21,7 +21,7 @@ export function levelFromTotalXp(totalXp: number): {
   return { level, xpIntoLevel: remaining, xpForNextLevel: needed };
 }
 
-/** Your rank name (Rookie I … Squzo Legend); see ranks.ts. */
+/** Your rank name (Iron I … Squzo Legend); see ranks.ts. */
 export function titleForLevel(level: number): string {
   return rankForLevel(level).name;
 }

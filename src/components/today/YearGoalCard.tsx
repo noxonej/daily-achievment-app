@@ -45,8 +45,8 @@ export function YearGoalCard({ onNavigate }: { onNavigate: (v: ViewId) => void }
             {plan.done > 0 && <circle cx="32" cy="32" r={r} fill="none" stroke="url(#yg)" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${c * plan.done} ${c}`} className="arc-draw" />}
             <defs>
               <linearGradient id="yg" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#fde68a" />
-                <stop offset="1" stopColor="#f59e0b" />
+                <stop offset="0" stopColor="#a5f3fc" />
+                <stop offset="1" stopColor="#2563eb" />
               </linearGradient>
             </defs>
           </svg>

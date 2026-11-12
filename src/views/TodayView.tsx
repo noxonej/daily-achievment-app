@@ -31,15 +31,13 @@ import { CoachCard } from '../components/today/CoachCard';
 import { QuickAdd } from '../components/today/QuickAdd';
 import { TodayHero } from '../components/today/TodayHero';
 import { ScrollLockCard } from '../components/today/ScrollLockCard';
-import { breathe } from '../components/Breathe';
 
 const RECAP_KEY = 'dayforge-recap-dismissed';
-import { focusTimer } from '../lib/focusTimer';
-import { runTracker } from '../lib/runTracker';
 import { setIntent } from '../lib/intents';
 import { YearGoalCard } from '../components/today/YearGoalCard';
 import { ReminderPrompt } from '../components/today/ReminderPrompt';
 import { ProofSheet } from '../components/ProofSheet';
+import { WellnessRow } from '../components/today/WellnessRow';
 import { proofFor } from '../lib/proof';
 import type { Quest } from '../lib/types';
 
@@ -192,6 +190,11 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <ScrollLockCard done={doneCount + (wildcard && completed.includes(wildcard.id) ? 1 : 0)} need={state.prefs!.scrollLock!} />
       )}
 
+      {/* How you feel and the wellness tools come first: they set up the rest of the day. */}
+      <MoodCheckIn />
+
+      <WellnessRow />
+
       {/* Daily rewards: up top until today's is claimed, then it moves down next to the box. */}
       {rewardsOnTop && <CheckInCard />}
 
@@ -240,7 +243,6 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       {/* Simple mode keeps Today to the essentials: what's now, your quests, the box and your mood. */}
       {!simple && <TodayPlanCard onOpen={() => onNavigate('plan')} />}
 
-      {!simple && <MoodCheckIn />}
 
       {!simple && <DailyInsight activeDailyCount={activeDaily.length} doneCount={doneCount} />}
 
@@ -315,11 +317,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <DailyBoost />
 
-      <div className="grid grid-cols-3 min-[420px]:grid-cols-6 gap-1.5">
-        <QuickAction icon="⏱" label={t('now.focus')} onClick={() => focusTimer.open()} />
-        <QuickAction icon="🌬" label="Breathe" onClick={() => breathe.open()} />
-        <QuickAction icon="🌙" label="Sleep" onClick={() => sleepTool.open()} />
-        <QuickAction icon="df:run" label={t('qa.run')} onClick={() => runTracker.open()} />
+      <div className="grid grid-cols-2 gap-1.5">
         <QuickAction
           icon="df:spend"
           label={t('qa.spent')}
@@ -341,8 +339,6 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           onNavigate('you');
         }}
       />
-
-      {simple && <MoodCheckIn />}
 
       <CoachCard onNavigate={onNavigate} max={simple ? 1 : 2} />
 

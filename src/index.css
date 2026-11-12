@@ -84,6 +84,10 @@
 :root[data-bg='candy'] { --bg: #0f0614; --surface: #1c1024; --raised: #281733; }
 
 /* Accent colour: every amber-* utility follows the chosen accent (data-accent on <html>). */
+:root[data-accent='squzo'] {
+  --color-amber-50: #ecfeff; --color-amber-100: #cffafe; --color-amber-200: #a5f3fc; --color-amber-300: #67e8f9;
+  --color-amber-400: #22c3ee; --color-amber-500: #0aa5d6; --color-amber-600: #0b7fb3; --color-amber-900: #0c3d5e;
+}
 :root[data-accent='flame'] {
   --color-amber-50: #fff4ec; --color-amber-100: #ffe4cf; --color-amber-200: #ffc9a1; --color-amber-300: #ffa96b;
   --color-amber-400: #ff8a3d; --color-amber-500: #f2661c; --color-amber-600: #d24f0c; --color-amber-900: #6b2507;
@@ -608,6 +612,7 @@ input[type='date']::-webkit-date-and-time-value {
   --color-rose-50: #9f1239; --color-rose-100: #9f1239; --color-rose-200: #be123c; --color-rose-300: #be123c; --color-rose-400: #e11d48;
 }
 :root[data-theme='light']:not([data-accent]) { --color-amber-50: #92400e; --color-amber-100: #92400e; --color-amber-200: #b45309; --color-amber-300: #b45309; --color-amber-400: #d97706; --color-amber-500: #d97706; --color-amber-600: #b45309; }
+:root[data-theme='light'][data-accent='squzo'] { --color-amber-50: #0c4a6e; --color-amber-100: #0c4a6e; --color-amber-200: #0369a1; --color-amber-300: #0369a1; --color-amber-400: #0891b2; --color-amber-500: #0891b2; --color-amber-600: #0369a1; }
 :root[data-theme='light'][data-accent='flame'] { --color-amber-50: #9a3412; --color-amber-100: #9a3412; --color-amber-200: #c2410c; --color-amber-300: #c2410c; --color-amber-400: #ea580c; --color-amber-500: #ea580c; --color-amber-600: #c2410c; }
 :root[data-theme='light'][data-accent='cyber'] { --color-amber-50: #155e75; --color-amber-100: #155e75; --color-amber-200: #0e7490; --color-amber-300: #0e7490; --color-amber-400: #0891b2; --color-amber-500: #0891b2; --color-amber-600: #0e7490; }
 :root[data-theme='light'][data-accent='ocean'] { --color-amber-50: #1e40af; --color-amber-100: #1e40af; --color-amber-200: #1d4ed8; --color-amber-300: #1d4ed8; --color-amber-400: #2563eb; --color-amber-500: #2563eb; --color-amber-600: #1d4ed8; }
@@ -647,6 +652,7 @@ input[type='date']::-webkit-date-and-time-value {
 :root[data-theme='light'][data-accent='violet'] .theme-dark { --color-amber-50: #f5f3ff; --color-amber-100: #ede9fe; --color-amber-200: #ddd6fe; --color-amber-300: #c4b5fd; --color-amber-400: #a78bfa; --color-amber-500: #8b5cf6; --color-amber-600: #7c3aed; }
 :root[data-theme='light'][data-accent='rose'] .theme-dark { --color-amber-50: #fff1f2; --color-amber-100: #ffe4e6; --color-amber-200: #fecdd3; --color-amber-300: #fda4af; --color-amber-400: #fb7185; --color-amber-500: #f43f5e; --color-amber-600: #e11d48; }
 :root[data-theme='light'][data-accent='sunset'] .theme-dark { --color-amber-50: #fff7ed; --color-amber-100: #ffedd5; --color-amber-200: #fed7aa; --color-amber-300: #fdba74; --color-amber-400: #fb923c; --color-amber-500: #ea580c; --color-amber-600: #c2410c; }
+:root[data-theme='light'][data-accent='squzo'] .theme-dark { --color-amber-50: #ecfeff; --color-amber-100: #cffafe; --color-amber-200: #a5f3fc; --color-amber-300: #67e8f9; --color-amber-400: #22c3ee; --color-amber-500: #0aa5d6; --color-amber-600: #0b7fb3; }
 :root[data-theme='light'][data-accent='flame'] .theme-dark { --color-amber-50: #fff4ec; --color-amber-100: #ffe4cf; --color-amber-200: #ffc9a1; --color-amber-300: #ffa96b; --color-amber-400: #ff8a3d; --color-amber-500: #f2661c; --color-amber-600: #d24f0c; }
 :root[data-theme='light'][data-accent='pink'] .theme-dark { --color-amber-50: #fdf2f8; --color-amber-100: #fce7f3; --color-amber-200: #fbcfe8; --color-amber-300: #f9a8d4; --color-amber-400: #f472b6; --color-amber-500: #db2777; --color-amber-600: #be185d; }
 :root[data-theme='light'][data-accent='teal'] .theme-dark { --color-amber-50: #f0fdfa; --color-amber-100: #ccfbf1; --color-amber-200: #99f6e4; --color-amber-300: #5eead4; --color-amber-400: #2dd4bf; --color-amber-500: #0d9488; --color-amber-600: #0f766e; }
@@ -1083,12 +1089,12 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
   --mood2: #2563eb;
   transition: --mood 0.9s var(--ease-out, ease), --mood2 0.9s var(--ease-out, ease);
 }
-/* Today: Squzo teal-blue, like the app icon. Plan: warm sand. Money: fresh mint. Quests: volt lime. You: pearl. */
+/* Every tab glows in a shade of the app icon's blue, each a little different. */
 :root[data-view='today'] { --mood: #22d3ee; --mood2: #2563eb; }
-:root[data-view='plan'] { --mood: #d7a46c; --mood2: #8a5a33; }
-:root[data-view='money'] { --mood: #2fd59b; --mood2: #1a8f8f; }
-:root[data-view='quests'] { --mood: #a6e22e; --mood2: #3fae2a; }
-:root[data-view='you'] { --mood: #e9dcc9; --mood2: #9b8cff; }
+:root[data-view='plan'] { --mood: #7dd3fc; --mood2: #3b5bdb; }
+:root[data-view='money'] { --mood: #2dd4bf; --mood2: #0e7490; }
+:root[data-view='quests'] { --mood: #60a5fa; --mood2: #06b6d4; }
+:root[data-view='you'] { --mood: #a5d8ff; --mood2: #6366f1; }
 
 .font-brand { letter-spacing: -0.01em; }
 /* Outfit reads best a touch lighter than the old font: headings stay strong but not heavy. */
@@ -1292,13 +1298,13 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
 
 /* Plan: warm bronze, like a calm interior (first reference). */
 .plan-day-on {
-  background: linear-gradient(180deg, #f1dcbf, #d7b48a);
-  color: #2a1d12;
-  box-shadow: 0 12px 26px -12px rgba(215, 164, 108, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  background: linear-gradient(180deg, #d9f6ff, #8fd8f5);
+  color: #062234;
+  box-shadow: 0 12px 26px -12px rgba(56, 189, 248, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 .plan-feature {
-  background: linear-gradient(135deg, #8a6e52 0%, #5d4935 55%, #3f3125 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 240, 220, 0.18), 0 24px 40px -26px rgba(138, 110, 82, 0.9);
+  background: linear-gradient(135deg, #1d6fa3 0%, #164a7a 55%, #10284a 100%);
+  box-shadow: inset 0 1px 0 rgba(220, 245, 255, 0.18), 0 24px 40px -26px rgba(29, 111, 163, 0.9);
 }
 .toast-glass {
   background: rgba(28, 22, 18, 0.82);
@@ -1318,14 +1324,14 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
 .rank-pop { animation: rank-pop 0.7s var(--ease-spring, ease) 1s backwards, rank-shine 4.5s ease-in-out 2s infinite; }
 
 /* ===================== World (home + garage) ===================== */
-:root[data-view='world'] { --mood: #f5b544; --mood2: #8b5cf6; }
+:root[data-view='world'] { --mood: #38bdf8; --mood2: #8b5cf6; }
 .world-scene-in { animation: rise-in 0.6s var(--ease-out, ease) both; }
 .world-home-here { background: color-mix(in srgb, var(--mood) 12%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--mood) 55%, transparent); }
 /* While decorating, everything but the chosen spot dims a little and the spot glows. */
 .world-spot, .world-spot-on { transition: opacity 0.35s ease, filter 0.35s ease; }
 svg:has(.world-spot-on) .world-spot { opacity: 0.55; }
-.world-spot-on { filter: drop-shadow(0 0 6px rgba(245, 181, 68, 0.95)); animation: spot-pulse 1.6s ease-in-out infinite; }
-@keyframes spot-pulse { 50% { filter: drop-shadow(0 0 12px rgba(245, 181, 68, 1)); } }
+.world-spot-on { filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.95)); animation: spot-pulse 1.6s ease-in-out infinite; }
+@keyframes spot-pulse { 50% { filter: drop-shadow(0 0 12px rgba(56, 189, 248, 1)); } }
 @keyframes neon-flicker { 0%, 100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: 0.55; } 95% { opacity: 1; } 97% { opacity: 0.75; } }
 .world-neon { animation: neon-flicker 5s linear infinite; }
 /* Your character breathes gently while standing in the room. */
@@ -1359,17 +1365,17 @@ svg:has(.world-spot-on) .world-spot { opacity: 0.55; }
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(120% 90% at 0% 0%, rgba(245, 181, 68, 0.16), transparent 55%),
+    radial-gradient(120% 90% at 0% 0%, rgba(34, 211, 238, 0.16), transparent 55%),
     radial-gradient(100% 80% at 100% 100%, rgba(139, 92, 246, 0.12), transparent 60%),
     rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(245, 181, 68, 0.28);
-  box-shadow: 0 10px 30px -18px rgba(245, 181, 68, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 10px 30px -18px rgba(34, 211, 238, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .year-card { transition: transform 0.2s ease; }
 .year-card:active { transform: scale(0.985); }
 :root[data-theme='light'] .year-card, :root[data-theme='light'] .goal-yearly {
   background:
-    radial-gradient(120% 90% at 0% 0%, rgba(245, 181, 68, 0.22), transparent 55%),
+    radial-gradient(120% 90% at 0% 0%, rgba(34, 211, 238, 0.2), transparent 55%),
     radial-gradient(100% 80% at 100% 100%, rgba(139, 92, 246, 0.1), transparent 60%),
     #fffdf8;
 }
@@ -1379,3 +1385,19 @@ svg:has(.world-spot-on) .world-spot { opacity: 0.55; }
 }
 .year-tip { background: rgba(0, 0, 0, 0.25); }
 :root[data-theme='light'] .year-tip { background: rgba(255, 255, 255, 0.7); }
+
+/* ===================== Recharge tiles + mood card (2026-11-12) ===================== */
+.wellness-tile {
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--w1) 22%, transparent), transparent 70%), rgba(255, 255, 255, 0.035);
+  border: 1px solid color-mix(in srgb, var(--w1) 30%, transparent);
+}
+.wellness-icon {
+  background: linear-gradient(145deg, var(--w1), var(--w2));
+  box-shadow: 0 8px 18px -8px var(--w1), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+:root[data-theme='light'] .wellness-tile { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--w1) 20%, transparent), transparent 70%), #fff; }
+.mood-card {
+  background: radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--mood) 14%, transparent), transparent 60%), rgba(255, 255, 255, 0.03);
+  border: 1px solid color-mix(in srgb, var(--mood) 22%, rgba(255, 255, 255, 0.08));
+}
+:root[data-theme='light'] .mood-card { background: radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--mood) 14%, transparent), transparent 60%), #fff; }

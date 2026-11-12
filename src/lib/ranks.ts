@@ -1,6 +1,6 @@
 /**
  * Ranks: a competitive-style ladder on top of levels. Nine tiers with three divisions each
- * (Hustler I, II, III), then Squzo Legend. Worked out from your level, so nothing is stored
+ * (Bronze I, II, III), then Squzo Legend. Worked out from your level, so nothing is stored
  * and a rank can never drop.
  */
 export interface Tier {
@@ -13,15 +13,15 @@ export interface Tier {
 }
 
 export const TIERS: Tier[] = [
-  { id: 'rookie', name: 'Rookie', c1: '#9aa1ad', c2: '#e3e7ee', c3: '#4b5160' },
-  { id: 'hustler', name: 'Hustler', c1: '#c57b3f', c2: '#f3c193', c3: '#6b3a17' },
-  { id: 'challenger', name: 'Challenger', c1: '#b9c6d6', c2: '#f4f8fc', c3: '#56657a' },
-  { id: 'elite', name: 'Elite', c1: '#f0b93a', c2: '#ffe9a6', c3: '#8a5d07' },
-  { id: 'vanguard', name: 'Vanguard', c1: '#22c7b0', c2: '#a8fff0', c3: '#0b5f55' },
-  { id: 'champion', name: 'Champion', c1: '#3b82f6', c2: '#bcd6ff', c3: '#1a3c8f' },
-  { id: 'titan', name: 'Titan', c1: '#8b5cf6', c2: '#ddd0ff', c3: '#40238f' },
-  { id: 'mythic', name: 'Mythic', c1: '#ef4444', c2: '#ffc2c2', c3: '#7a1414' },
-  { id: 'apex', name: 'Apex', c1: '#ff7a2e', c2: '#ffe0b8', c3: '#8a2c00' },
+  { id: 'rookie', name: 'Iron', c1: '#8a8f99', c2: '#d7dbe2', c3: '#3d424c' },
+  { id: 'hustler', name: 'Bronze', c1: '#c57b3f', c2: '#f3c193', c3: '#6b3a17' },
+  { id: 'challenger', name: 'Silver', c1: '#b9c6d6', c2: '#f4f8fc', c3: '#56657a' },
+  { id: 'elite', name: 'Gold', c1: '#f0b93a', c2: '#ffe9a6', c3: '#8a5d07' },
+  { id: 'vanguard', name: 'Platinum', c1: '#5fd4d0', c2: '#e2fffd', c3: '#1f6b72' },
+  { id: 'champion', name: 'Emerald', c1: '#22c55e', c2: '#bbf7d0', c3: '#14532d' },
+  { id: 'titan', name: 'Diamond', c1: '#38bdf8', c2: '#e0f7ff', c3: '#1e40af' },
+  { id: 'mythic', name: 'Master', c1: '#8b5cf6', c2: '#ddd0ff', c3: '#40238f' },
+  { id: 'apex', name: 'Grandmaster', c1: '#ef4444', c2: '#ffc2c2', c3: '#7a1414' },
   { id: 'legend', name: 'Squzo Legend', c1: '#22d3ee', c2: '#f5d0fe', c3: '#4c1d95' },
 ];
 
