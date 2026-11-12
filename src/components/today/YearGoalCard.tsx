@@ -42,7 +42,7 @@ export function YearGoalCard({ onNavigate }: { onNavigate: (v: ViewId) => void }
         <span className="relative shrink-0 w-16 h-16">
           <svg viewBox="0 0 64 64" className="w-16 h-16 -rotate-90" aria-hidden="true">
             <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(255,255,255,.1)" strokeWidth="6" />
-            <circle cx="32" cy="32" r={r} fill="none" stroke="url(#yg)" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${c * plan.done} ${c}`} className="arc-draw" />
+            {plan.done > 0 && <circle cx="32" cy="32" r={r} fill="none" stroke="url(#yg)" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${c * plan.done} ${c}`} className="arc-draw" />}
             <defs>
               <linearGradient id="yg" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0" stopColor="#fde68a" />

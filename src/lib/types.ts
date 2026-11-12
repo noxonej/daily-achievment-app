@@ -123,6 +123,8 @@ export interface DayLog {
   swaps?: Record<string, { title: string; description?: string; icon: string }>;
   /** Daily quests skipped with a Skip Pass: they count as done for streaks and perfect days, but give no XP. */
   skipped?: string[];
+  /** Proof answers ("what did you read?"), keyed by quest id. */
+  proofs?: Record<string, string>;
 }
 
 export interface WeekLog {

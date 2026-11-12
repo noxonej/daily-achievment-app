@@ -4,7 +4,7 @@ import { titleForLevel } from '../lib/xp';
 import { Confetti } from './Confetti';
 import { Icon } from './Icon';
 import { RankBadge } from './RankBadge';
-import { rankForLevel } from '../lib/ranks';
+import { rankForLevel, rankRarity, formatPct } from '../lib/ranks';
 
 export function CelebrationOverlay() {
   const { celebrations, dismissCelebration } = useApp();
@@ -47,6 +47,11 @@ export function CelebrationOverlay() {
                 <RankBadge rank={rank} size={ranked ? 96 : 56} shine className={ranked ? 'rank-pop' : ''} />
                 {ranked && <p className="mt-2 text-[11px] font-black tracking-[0.3em] text-amber-200">NEW RANK</p>}
                 <p className="text-white font-display text-xl font-bold mt-1">{titleForLevel(current.level)}</p>
+                {rank.index > 0 && (
+                  <p className="mt-1 text-sm text-violet-200">
+                    Only about <b className="text-white">{formatPct(rankRarity(rank.index))}</b> of players get this far
+                  </p>
+                )}
               </div>
             );
           })()}

@@ -66,3 +66,26 @@ export function rankForLevel(level: number): Rank {
 }
 
 export const RANK_COUNT = STARTS.length;
+
+/**
+ * Roughly what share of players ever reach this rank or higher, in percent. An estimate from how
+ * habit apps usually go (most people stop in the first weeks), not live data: it falls smoothly
+ * from 100% at Rookie I to 0.01% at Squzo Legend.
+ */
+export function rankRarity(index: number): number {
+  const i = Math.max(0, Math.min(STARTS.length - 1, index));
+  return 100 * Math.exp(-(Math.log(10000) / (STARTS.length - 1)) * i);
+}
+
+/** "Top 4.6%", "Top 0.21%", "Everyone starts here". */
+export function rarityLabel(index: number): string {
+  if (index === 0) return 'Everyone starts here';
+  return `Top ${formatPct(rankRarity(index))}`;
+}
+
+export function formatPct(p: number): string {
+  if (p >= 10) return `${Math.round(p)}%`;
+  if (p >= 1) return `${p.toFixed(1).replace(/\.0$/, '')}%`;
+  if (p >= 0.1) return `${p.toFixed(1)}%`;
+  return `${p.toFixed(2)}%`;
+}

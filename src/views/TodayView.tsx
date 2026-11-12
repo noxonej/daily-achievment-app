@@ -39,6 +39,9 @@ import { runTracker } from '../lib/runTracker';
 import { setIntent } from '../lib/intents';
 import { YearGoalCard } from '../components/today/YearGoalCard';
 import { ReminderPrompt } from '../components/today/ReminderPrompt';
+import { ProofSheet } from '../components/ProofSheet';
+import { proofFor } from '../lib/proof';
+import type { Quest } from '../lib/types';
 
 function greeting(d: Date = new Date()): string {
   const h = d.getHours();
@@ -64,6 +67,13 @@ function QuickAction({ icon, label, onClick }: { icon: string; label: string; on
 
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch, stats } = useApp();
+  // Proof: quests like "Read 20 pages" ask what you read before they count (or, for number quests, right after).
+  const [proof, setProof] = useState<{ quest: Quest; after: boolean } | null>(null);
+  function tick(quest: Quest, isDone: boolean) {
+    const swapped = !!state.dayLogs[todayKey()]?.swaps?.[quest.id];
+    if (!isDone && !swapped && proofFor(quest) && !state.dayLogs[todayKey()]?.proofs?.[quest.id]) setProof({ quest, after: false });
+    else dispatch({ type: 'TOGGLE_QUEST', questId: quest.id });
+  }
   // Every Monday, last week's recap sits at the top of Today until dismissed.
   const [showRecap, setShowRecap] = useState(() => {
     try {
@@ -208,6 +218,23 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <YearGoalCard onNavigate={onNavigate} />
 
+      <ProofSheet
+        quest={proof?.quest ?? null}
+        after={proof?.after}
+        onClose={() => setProof(null)}
+        onSkip={() => {
+          if (proof && !proof.after) dispatch({ type: 'TOGGLE_QUEST', questId: proof.quest.id });
+          setProof(null);
+        }}
+        onConfirm={(text) => {
+          if (proof) {
+            if (!proof.after) dispatch({ type: 'TOGGLE_QUEST', questId: proof.quest.id });
+            dispatch({ type: 'PROOF_QUEST', questId: proof.quest.id, text });
+          }
+          setProof(null);
+        }}
+      />
+
       {showConfetti && <PerfectDayFx onDone={() => setShowConfetti(false)} />}
 
       {/* Simple mode keeps Today to the essentials: what's now, your quests, the box and your mood. */}
@@ -221,7 +248,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <WildcardQuestCard
           quest={wildcard}
           completed={completed.includes(wildcard.id)}
-          onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: wildcard.id })}
+          onToggle={() => tick(wildcard, completed.includes(wildcard.id))}
           periodKey={key}
         />
       )}
@@ -252,7 +279,12 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 quest={quest}
                 value={log?.progress?.[quest.id] ?? 0}
                 completed={completed.includes(quest.id)}
-                onSet={(value) => dispatch({ type: 'SET_PROGRESS', questId: quest.id, value })}
+                onSet={(value) => {
+                  const target = quest.measure?.target ?? Infinity;
+                  const was = log?.progress?.[quest.id] ?? 0;
+                  dispatch({ type: 'SET_PROGRESS', questId: quest.id, value });
+                  if (was < target && value >= target && proofFor(quest) && !log?.proofs?.[quest.id]) setProof({ quest, after: true });
+                }}
                 periodKey={key}
               />
             ) : quest.promptForNote ? (
@@ -269,7 +301,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 key={quest.id}
                 quest={quest}
                 completed={completed.includes(quest.id)}
-                onToggle={() => dispatch({ type: 'TOGGLE_QUEST', questId: quest.id })}
+                onToggle={() => tick(quest, completed.includes(quest.id))}
                 periodKey={key}
               />
               )}

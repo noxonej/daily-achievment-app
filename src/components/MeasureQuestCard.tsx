@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { stepCounter } from '../lib/stepCounter';
 import { TwistTag } from './TwistTag';
+import { QuestBadges } from './QuestBadges';
 import type { QuestMeasure } from '../lib/types';
 import { useApp } from '../store/AppContext';
 import { Modal } from './Modal';
@@ -81,6 +82,7 @@ export function MeasureQuestCard({
           <p className={`font-semibold text-[15px] leading-tight ${completed ? 'text-emerald-300' : 'text-white'}`}>{quest.title}</p>
           {quest.description && <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{quest.description}</p>}
           <TwistTag quest={quest} />
+          <QuestBadges quest={quest} />
           {quest.details && (
             <div className="mt-1">
               <InfoDisclosure text={quest.details} />

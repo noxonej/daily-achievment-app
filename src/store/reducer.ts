@@ -1,4 +1,5 @@
 import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState, DecorSlot } from '../lib/types';
+import { PROOF_BONUS } from '../lib/proof';
 import { DECOR, PAINTS, PROPERTIES, VEHICLES, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
 import { claimCheckIn } from '../lib/checkIn';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
@@ -149,6 +150,8 @@ export type Action =
   /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
   | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
+  /** Saves a quest's proof answer for today; the first proof per quest per day gives a small coin bonus. */
+  | { type: 'PROOF_QUEST'; questId: string; text: string }
   | { type: 'SET_FREE_NOTE'; note: string }
   | { type: 'ADD_QUICK_TASK'; text: string }
   | { type: 'TOGGLE_QUICK_TASK'; taskId: string }
@@ -400,6 +403,19 @@ export function migrateContent(state: AppState): AppState {
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case 'PROOF_QUEST': {
+      const key = todayKey();
+      const log = state.dayLogs[key];
+      const text = action.text.trim().slice(0, 500);
+      if (!log || !text) return state;
+      const first = !log.proofs?.[action.questId];
+      return {
+        ...state,
+        bonusShards: (state.bonusShards ?? 0) + (first ? PROOF_BONUS : 0),
+        dayLogs: { ...state.dayLogs, [key]: { ...log, proofs: { ...(log.proofs ?? {}), [action.questId]: text } } },
+      };
+    }
+
     case 'TOGGLE_QUEST': {
       const quest = state.quests.find((q) => q.id === action.questId);
       if (!quest) return state;

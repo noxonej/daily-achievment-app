@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Modal } from './Modal';
 import { useApp } from '../store/AppContext';
+import { questRarity, rarityText } from '../lib/rarity';
+import { proofFor } from '../lib/proof';
 import { QUEST_LIBRARY, type LibraryQuest } from '../data/questLibrary';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import type { Frequency } from '../lib/types';
@@ -127,6 +129,9 @@ export function QuestLibraryModal({ open, onClose }: QuestLibraryModalProps) {
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold text-white truncate">{item.title}</span>
                       <span className="block text-xs text-slate-400 truncate">{item.description}</span>
+                      <span className="block text-[10.5px] font-semibold text-violet-300/90">
+                        ~{rarityText(questRarity(item))} of people do this{proofFor(item) ? ' · asks for proof' : ''}
+                      </span>
                     </span>
                     <span className="shrink-0 flex flex-col items-end gap-1">
                       <span
