@@ -31,12 +31,13 @@ import { useSettingsPage } from './lib/settingsNav';
 const PlanView = lazy(() => import('./views/PlanView').then((m) => ({ default: m.PlanView })));
 const MoneyView = lazy(() => import('./views/MoneyView').then((m) => ({ default: m.MoneyView })));
 const QuestsView = lazy(() => import('./views/QuestsView').then((m) => ({ default: m.QuestsView })));
+const WorldView = lazy(() => import('./world/WorldView').then((m) => ({ default: m.WorldView })));
 const YouView = lazy(() => import('./views/YouView').then((m) => ({ default: m.YouView })));
 const SettingsScreen = lazy(() => import('./components/SettingsScreen').then((m) => ({ default: m.SettingsScreen })));
 const Onboarding = lazy(() => import('./components/Onboarding').then((m) => ({ default: m.Onboarding })));
 const Wardrobe = lazy(() => import('./components/Wardrobe').then((m) => ({ default: m.Wardrobe })));
 
-const VIEW_ORDER: ViewId[] = ['today', 'plan', 'money', 'quests', 'you'];
+const VIEW_ORDER: ViewId[] = ['today', 'plan', 'quests', 'world', 'money', 'you'];
 
 export default function App() {
   const { state, stats, dispatch, saveFailed } = useApp();
@@ -73,6 +74,7 @@ export default function App() {
       void import('./views/MoneyView');
       void import('./views/QuestsView');
       void import('./views/YouView');
+      void import('./world/WorldView');
       void import('./components/SettingsScreen');
       void import('./components/Wardrobe');
       void import('./components/Onboarding');
@@ -144,9 +146,10 @@ export default function App() {
         <Suspense fallback={<div className="min-h-[70vh]" />}>
           <div key={view} className={directionRef.current === 'right' ? 'animate-view-right' : 'animate-view-left'}>
             {view === 'today' && <TodayView onNavigate={setView} />}
-            {view === 'plan' && <PlanView />}
+            {view === 'plan' && <PlanView onBack={() => setView('today')} />}
             {view === 'money' && <MoneyView />}
             {view === 'quests' && <QuestsView onNavigate={setView} />}
+            {view === 'world' && <WorldView />}
             {view === 'you' && <YouView />}
           </div>
         </Suspense>

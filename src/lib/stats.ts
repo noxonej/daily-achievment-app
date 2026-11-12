@@ -1,3 +1,4 @@
+import { worldSpent } from '../world/catalog';
 import type { AppState, DayLog, DerivedStats } from './types';
 import { addDaysToKey, daysBetween, todayKey } from './date';
 import { levelFromTotalXp } from './xp';
@@ -94,7 +95,7 @@ export function computeDerivedStats(state: AppState): DerivedStats {
   // Items that no longer exist cost nothing, so coins spent on retired items are refunded automatically.
   const shardsSpent = (state.unlockedCosmeticIds ?? []).reduce((sum, id) => sum + paidFor(findItem(id), state.purchases?.[id]), 0);
   const rewardsSpent = (state.redemptions ?? []).reduce((n, r) => n + r.cost, 0);
-  const availableShards = Math.max(0, totalXp + (state.bonusShards ?? 0) - shardsSpent - rewardsSpent);
+  const availableShards = Math.max(0, totalXp + (state.bonusShards ?? 0) - shardsSpent - rewardsSpent - worldSpent(state));
   const perfectWeeks = weekLogsArr.filter((l) => l.perfectWeek && l.weeklyQuestCount > 0).length;
   const chestsEarned = totalPerfectDays + perfectWeeks + (level - 1) + (state.bonusChests ?? 0);
   const chestsAvailable = Math.max(0, chestsEarned - (state.chestsOpened ?? 0));

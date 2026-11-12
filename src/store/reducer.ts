@@ -1,4 +1,5 @@
-import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState } from '../lib/types';
+import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState, DecorSlot } from '../lib/types';
+import { DECOR, PAINTS, PROPERTIES, VEHICLES, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
 import { claimCheckIn } from '../lib/checkIn';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
@@ -139,6 +140,12 @@ export type Action =
   | { type: 'SET_WILDCARD_ENABLED'; enabled: boolean }
   | { type: 'UNLOCK_COSMETIC'; itemId: string }
   | { type: 'EQUIP_COSMETIC'; slot: CosmeticSlot; itemId: string }
+  /** World: buy a home, decor, vehicle, paint or garage spot (applies it right away; paint goes on vehicleId). */
+  | { type: 'WORLD_BUY'; id: string; vehicleId?: string }
+  | { type: 'WORLD_MOVE'; property: string }
+  | { type: 'WORLD_PLACE'; slot: DecorSlot; itemId: string }
+  | { type: 'WORLD_FEATURE'; vehicleId: string }
+  | { type: 'WORLD_PAINT'; vehicleId: string; paint: string }
   /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
   | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
@@ -690,6 +697,49 @@ export function reducer(state: AppState, action: Action): AppState {
         unlockedCosmeticIds: [...state.unlockedCosmeticIds, action.itemId],
         purchases: { ...(state.purchases ?? {}), [action.itemId]: item.unlock.cost },
       };
+    }
+
+    case 'WORLD_BUY': {
+      const world = worldOf(state);
+      const unlock = unlockOf(action.id);
+      if (!unlock || owns(world, action.id)) return state;
+      const vehicle = VEHICLES.find((v) => v.id === action.id);
+      if (vehicle && ownedVehicles(world).length >= garageSpots(world)) return state;
+      if (!canUnlock(unlock, computeDerivedStats(state)).ok) return state;
+      const next = { ...world, paid: { ...world.paid, [action.id]: unlock.coins } };
+      if (PROPERTIES.some((p) => p.id === action.id)) next.property = action.id;
+      const decor = DECOR.find((d) => d.id === action.id);
+      if (decor) next.decor = { ...world.decor, [decor.slot]: decor.id };
+      if (vehicle) next.vehicle = vehicle.id;
+      if (PAINTS.some((p) => p.id === action.id) && action.vehicleId && owns(world, action.vehicleId)) {
+        next.paints = { ...(world.paints ?? {}), [action.vehicleId]: action.id };
+      }
+      return { ...state, world: next };
+    }
+
+    case 'WORLD_MOVE': {
+      const world = worldOf(state);
+      if (!PROPERTIES.some((p) => p.id === action.property) || !owns(world, action.property)) return state;
+      return { ...state, world: { ...world, property: action.property } };
+    }
+
+    case 'WORLD_PLACE': {
+      const world = worldOf(state);
+      const item = DECOR.find((d) => d.id === action.itemId && d.slot === action.slot);
+      if (!item || !ownsDecor(world, item)) return state;
+      return { ...state, world: { ...world, decor: { ...world.decor, [action.slot]: item.id } } };
+    }
+
+    case 'WORLD_FEATURE': {
+      const world = worldOf(state);
+      if (!owns(world, action.vehicleId)) return state;
+      return { ...state, world: { ...world, vehicle: action.vehicleId } };
+    }
+
+    case 'WORLD_PAINT': {
+      const world = worldOf(state);
+      if (!owns(world, action.vehicleId) || !owns(world, action.paint)) return state;
+      return { ...state, world: { ...world, paints: { ...(world.paints ?? {}), [action.vehicleId]: action.paint } } };
     }
 
     case 'EQUIP_COSMETIC': {

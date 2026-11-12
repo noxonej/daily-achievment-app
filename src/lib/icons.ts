@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Sofa, Frame, LampFloor, Grid3x3, RectangleHorizontal,
   Activity, Archive, Award, Backpack, Banknote, Bath, Bed, BedDouble, Bell, BookOpen, Brush, Bus, Cake, Calculator,
   Calendar, CalendarDays, Car, ChartColumn, Check, ChefHat, CircleCheck, CircleDashed, Clapperboard, ClipboardList,
   Cloud, CloudSun, Coffee, Compass, CookingPot, Crown, CupSoda, Diamond, Dices, Dog, Download, Droplet, Dumbbell,
@@ -22,6 +23,7 @@ import {
  * Every emoji is drawn as a matching line icon instead, so saved quests, goals and categories keep working.
  */
 const EMOJI_ICONS: Record<string, LucideIcon> = {
+  '🛋': Sofa, '🖼': Frame, '🪴': Sprout, '🧱': Grid3x3, '🟫': RectangleHorizontal, '🛋️': Sofa, '🕯': LampFloor,
   '⛓': Link, '🥇': Medal, '🚫': Ban, '🏷': Tag, '🚲': Bike, '🌊': Waves, '⏰': AlarmClock, '🩺': Stethoscope, '🎯': Target, '✕': X, '🔥': Flame, '🏆': Trophy, '✨': Sparkles, '📚': Library, '🗓': CalendarDays, '🚗': Car,
   '✓': Check, '📝': NotebookPen, '📅': Calendar, '✅': CircleCheck, '🧘': Flower2, '💪': Dumbbell, '💻': Laptop,
   '💰': Wallet, '💸': Banknote, '✎': Pencil, '💎': Gem, '⚡': Zap, '🎉': PartyPopper, '📖': BookOpen,

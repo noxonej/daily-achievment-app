@@ -38,7 +38,7 @@ type Mode = 'day' | 'week';
 const inputClass =
   'rounded-xl bg-white/5 border border-white/10 px-3 h-11 text-[15px] text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 focus:bg-white/[0.07] transition';
 
-export function PlanView() {
+export function PlanView({ onBack }: { onBack?: () => void } = {}) {
   const { state } = useApp();
   const today = todayWeekday();
   const [day, setDay] = useState<WeekdayId>(today);
@@ -60,6 +60,12 @@ export function PlanView() {
     <div className={`mx-auto px-4 py-4 space-y-4 stagger ${mode === 'week' ? 'max-w-6xl' : 'max-w-2xl'}`}>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
+          {onBack && (
+            <button onClick={onBack} className="-ml-1 mb-2 flex items-center gap-1 rounded-full bg-white/[0.06] hover:bg-white/10 pl-1.5 pr-3 py-1 text-[13px] font-semibold text-slate-300">
+              <Icon name="⬅" size={14} />
+              Today
+            </button>
+          )}
           <p className="eyebrow">Your routine</p>
           <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1 flex items-center gap-1">
             {t('plan.title')}

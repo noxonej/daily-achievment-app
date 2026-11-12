@@ -26,6 +26,7 @@ export const KEYS = [
   'common.save', 'common.cancel', 'common.delete', 'common.done', 'common.back', 'common.pin', 'common.unpin',
   'settings.general',
   'settings.help', 'settings.simple', 'settings.simpleHint',
+  'nav.world',
 ] as const;
 
 export type TKey = (typeof KEYS)[number];
@@ -84,6 +85,7 @@ const S: Record<string, string[]> = {
     'Save', 'Cancel', 'Delete', 'Done', 'Back', 'Pin', 'Unpin',
     'General',
     'How it works', 'Simple mode', 'Shows only the main things. Turn off to see every card and extra.',
+    'World',
   ],
   lt: [
     'Šiandien', 'Planas', 'Pinigai', 'Užduotys', 'Tu',
