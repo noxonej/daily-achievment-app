@@ -509,7 +509,7 @@ function SoundsPage() {
   const [prefs, setPrefs] = usePrefs();
   return (
     <Group>
-      <SwitchRow label={t('prefs.sounds')} hint="Chime when a focus session ends." on={prefs.sounds} onChange={(v) => setPrefs({ sounds: v })} />
+      <SwitchRow label={t('prefs.sounds')} hint="A pling when you tick a quest, and a chime when a focus session ends." on={prefs.sounds} onChange={(v) => setPrefs({ sounds: v })} />
       <SwitchRow
         label={t('prefs.haptics')}
         hint="Little buzzes when you finish quests and open boxes (Android)."
