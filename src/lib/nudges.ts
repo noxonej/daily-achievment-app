@@ -161,8 +161,45 @@ export interface NudgeStatus {
   /** Ready-made messages for the next days, so the service worker can show them with the app closed. */
   evening: Record<string, Line>;
   morning: Record<string, Line>;
-  /** Extra reminders (midday and afternoon) for days the app hasn't been opened yet. */
+  /** Extra reminders (midday and afternoon) for days no quest is done yet. */
   comeback?: Record<string, Line>;
+  /** The last call before midnight when a streak is at risk. */
+  lastCall?: Record<string, Line>;
+  lastCallAt?: number;
+}
+
+/** Reminder moments through the day, in minutes after midnight. Each one fires at most once a day. */
+export const MIDDAY = 12 * 60 + 30;
+export const AFTERNOON = 16 * 60;
+const LAST_CALL = 21 * 60 + 30;
+
+type Moment = { kind: string; from: number; to: number; onlyIfNotDone: boolean };
+
+/** Morning boost, midday + afternoon pushes, the evening streak check and a last call. */
+export function reminderMoments(morningAt: number, eveningAt: number): Moment[] {
+  const lastCall = Math.max(LAST_CALL, eveningAt + 120);
+  const list: Moment[] = [
+    { kind: 'morning', from: morningAt, to: morningAt + 180, onlyIfNotDone: false },
+    { kind: 'midday', from: MIDDAY, to: MIDDAY + 120, onlyIfNotDone: true },
+    { kind: 'afternoon', from: AFTERNOON, to: AFTERNOON + 120, onlyIfNotDone: true },
+    { kind: 'evening', from: eveningAt, to: Math.min(eveningAt + 150, 23 * 60 + 50), onlyIfNotDone: true },
+  ];
+  if (lastCall < 23 * 60 + 30) list.push({ kind: 'lastcall', from: lastCall, to: 23 * 60 + 50, onlyIfNotDone: true });
+  // A moment that would overlap the evening check is dropped so you never get two at once.
+  return list.filter((m) => m.kind === 'evening' || m.kind === 'morning' || m.kind === 'lastcall' || Math.abs(m.from - eveningAt) >= 90);
+}
+
+const LAST: Line[] = [
+  { title: 'Last call 🔥', body: 'Your {n}-day streak ends at midnight. One tiny quest saves it.' },
+  { title: '{name}, it’s now or never', body: 'Two minutes before bed keeps {n} days alive.' },
+  { title: 'Don’t sleep on your streak', body: 'Literally. Tick one quest, then sleep proud.' },
+  { title: 'Midnight is coming', body: '{n} days of work. Protect them with one quest.' },
+];
+
+export function pickLastCall(streak: number, name: string, date: string): Line {
+  if (streak <= 0) return pickNudge(0, name, date, 'l');
+  const line = LAST[hashString(`last|${date}`) % LAST.length];
+  return fill(line, { n: streak, next: streak + 1, name: name.trim() || 'friend' });
 }
 
 /**
@@ -223,6 +260,7 @@ export function useNudges(state: AppState, stats: DerivedStats) {
       const evening: Record<string, Line> = {};
       const morning: Record<string, Line> = {};
       const comeback: Record<string, Line> = {};
+      const lastCall: Record<string, Line> = {};
       let quotes: Awaited<ReturnType<typeof loadQuotes>> | null = null;
       if (prefs.nudges && prefs.daily !== 'off') quotes = await loadQuotes().catch(() => null);
       for (let i = 0; i < 7; i++) {
@@ -231,10 +269,11 @@ export function useNudges(state: AppState, stats: DerivedStats) {
         evening[d] = pickNudge(i === 0 ? streak : i === 1 && doneToday ? streak : 0, name, d);
         const q = quotes ? quoteOfDay(poolFor(quotes, prefs.daily), d) : null;
         comeback[d] = pickNudge(0, name, d, 'c');
+        lastCall[d] = pickLastCall(i === 0 ? streak : i === 1 && doneToday ? streak : 0, name, d);
         morning[d] = q ? { title: q.kind === 'verse' ? 'Verse of the day' : 'Your daily boost', body: `“${q.text}” — ${q.by}` } : pickNudge(0, name, d, 'm');
       }
       if (!alive) return;
-      await writeStatus({ enabled: prefs.nudges, date: today, doneToday, eveningAt, morningAt, evening, morning, comeback });
+      await writeStatus({ enabled: prefs.nudges, date: today, doneToday, eveningAt, morningAt, evening, morning, comeback, lastCall });
       if (prefs.nudges) void registerPeriodic();
     })();
     return () => {
@@ -251,20 +290,21 @@ export function useNudges(state: AppState, stats: DerivedStats) {
       const m = nowMinutes();
       const s = live.current;
       const fired = await readFired();
-      if (m >= eveningAt && m < 23 * 60 + 50 && !s.doneToday && fired.evening !== d && document.visibilityState === 'hidden') {
-        await markFired('evening', d);
-        const n = pickNudge(s.streak, s.name, d);
-        showSystemNotification(n.title, n.body, `nudge-${d}`);
-      }
-      if (m >= morningAt && m < morningAt + 180 && fired.morning !== d && document.visibilityState === 'hidden') {
-        await markFired('morning', d);
-        let line = pickNudge(0, s.name, d, 'm');
+      if (document.visibilityState !== 'hidden') return;
+      const moment = reminderMoments(morningAt, eveningAt).find((x) => m >= x.from && m < x.to && fired[x.kind] !== d && !(x.onlyIfNotDone && s.doneToday));
+      if (!moment) return;
+      await markFired(moment.kind, d);
+      let line: Line;
+      if (moment.kind === 'morning') {
+        line = pickNudge(0, s.name, d, 'm');
         if (s.daily !== 'off') {
           const q = quoteOfDay(poolFor(await loadQuotes(), s.daily), d);
           if (q) line = { title: q.kind === 'verse' ? 'Verse of the day' : 'Your daily boost', body: `“${q.text}” — ${q.by}` };
         }
-        showSystemNotification(line.title, line.body, `boost-${d}`);
-      }
+      } else if (moment.kind === 'lastcall') line = pickLastCall(s.streak, s.name, d);
+      else if (moment.kind === 'evening') line = pickNudge(s.streak, s.name, d);
+      else line = pickNudge(s.streak, s.name, d, moment.kind);
+      showSystemNotification(line.title, line.body, `${moment.kind}-${d}`);
     }
     void check();
     const t = setInterval(() => void check(), 60_000);

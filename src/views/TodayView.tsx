@@ -37,6 +37,8 @@ const RECAP_KEY = 'dayforge-recap-dismissed';
 import { focusTimer } from '../lib/focusTimer';
 import { runTracker } from '../lib/runTracker';
 import { setIntent } from '../lib/intents';
+import { YearGoalCard } from '../components/today/YearGoalCard';
+import { ReminderPrompt } from '../components/today/ReminderPrompt';
 
 function greeting(d: Date = new Date()): string {
   const h = d.getHours();
@@ -185,6 +187,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <GettingStarted onNavigate={onNavigate} />
 
+      <ReminderPrompt />
+
       {showRecap && (
         <WeekRecap
           offset={-1}
@@ -201,6 +205,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       )}
 
       <NowNextCard onOpenPlan={() => onNavigate('plan')} />
+
+      <YearGoalCard onNavigate={onNavigate} />
 
       {showConfetti && <PerfectDayFx onDone={() => setShowConfetti(false)} />}
 
@@ -275,6 +281,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       <QuickAdd />
 
+      <DailyBoost />
+
       <div className="grid grid-cols-3 min-[420px]:grid-cols-6 gap-1.5">
         <QuickAction icon="⏱" label={t('now.focus')} onClick={() => focusTimer.open()} />
         <QuickAction icon="🌬" label="Breathe" onClick={() => breathe.open()} />
@@ -305,8 +313,6 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       {simple && <MoodCheckIn />}
 
       <CoachCard onNavigate={onNavigate} max={simple ? 1 : 2} />
-
-      <DailyBoost />
 
       <InstallCard />
 

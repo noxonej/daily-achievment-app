@@ -336,7 +336,7 @@ export function doneByHand(log: DayLog | undefined): number {
   return log.completedQuestIds.filter((id) => !skipped.has(id)).length;
 }
 
-export const CONTENT_VERSION = 4;
+export const CONTENT_VERSION = 5;
 
 function mondayKey(): string {
   const d = new Date();
@@ -393,7 +393,9 @@ export function migrateContent(state: AppState): AppState {
   if (version < 4 && appearance.chosen && ONBOARDING_LOOKS.some(([a, b]) => a === appearance.accent && b === appearance.background)) {
     appearance = { ...appearance, accent: 'flame', background: 'obsidian' };
   }
-  return { ...state, quests, runs: state.runs ?? [], appearance, contentVersion: CONTENT_VERSION };
+  // v5: reminders and the daily quote are on for everyone (you can still switch them off in Settings).
+  const prefs = version < 5 && state.prefs ? { ...state.prefs, nudges: true, daily: state.prefs.daily === 'off' ? ('quotes' as const) : state.prefs.daily } : state.prefs;
+  return { ...state, quests, runs: state.runs ?? [], appearance, prefs, contentVersion: CONTENT_VERSION };
 }
 
 export function reducer(state: AppState, action: Action): AppState {

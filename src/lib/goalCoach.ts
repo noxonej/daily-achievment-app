@@ -165,3 +165,95 @@ export function logUnit(g: Pick<LongTermGoal, 'unit'>): 'km' | 'hours' | 'one' {
   if (/hour|\bh\b/.test(u)) return 'hours';
   return 'one';
 }
+
+// ---- Pace and strategy (every goal, with or without a journal) ----
+
+const SPAN_DAYS: Record<string, number> = { weekly: 7, monthly: 30, yearly: 365 };
+
+export interface GoalPlan {
+  /** Days left until the goal's year (or month/week) is over; null for custom goals. */
+  daysLeft: number | null;
+  /** 0..1 of the time used up so far. */
+  timeUsed: number;
+  /** 0..1 of the target reached. */
+  done: number;
+  status: 'ahead' | 'on-track' | 'behind' | 'just-started' | 'done';
+  /** One clear line: what to do this week (or month) to make it. */
+  action: string;
+}
+
+function per(n: number) {
+  return n >= 10 ? Math.ceil(n) : Math.ceil(n * 10) / 10;
+}
+
+/** Where you stand on a goal and the next concrete step, worked out from the dates and your progress. */
+export function goalPlan(g: LongTermGoal, now = Date.now()): GoalPlan {
+  const target = Math.max(g.target, 1);
+  const done = Math.min(1, g.progress / target);
+  const left = Math.max(0, target - g.progress);
+  const span = SPAN_DAYS[g.timeframe];
+  const unit = g.unit || 'steps';
+  if (g.completedAt || left === 0) return { daysLeft: null, timeUsed: 1, done: 1, status: 'done', action: 'Done. Set the next, bigger goal.' };
+  if (!span) {
+    return { daysLeft: null, timeUsed: 0, done, status: done > 0 ? 'on-track' : 'just-started', action: `${per(left)} ${unit} to go. Do a little every week.` };
+  }
+  const start = new Date(g.createdAt).getTime() || now;
+  const usedDays = Math.max(0, (now - start) / 86_400_000);
+  const daysLeft = Math.max(1, Math.ceil(span - usedDays));
+  const timeUsed = Math.min(1, usedDays / span);
+  const weeksLeft = Math.max(1, daysLeft / 7);
+  const perWeek = left / weeksLeft;
+  const action =
+    g.timeframe === 'weekly'
+      ? `${per(left / daysLeft)} ${unit} a day finishes it this week.`
+      : perWeek < 1
+        ? `About ${per(left / Math.max(1, daysLeft / 30))} ${unit} a month gets you there.`
+        : `${per(perWeek)} ${unit} a week gets you there.`;
+  let status: GoalPlan['status'];
+  if (usedDays < 7 && g.progress === 0) status = 'just-started';
+  else if (done >= timeUsed + 0.05) status = 'ahead';
+  else if (done >= timeUsed - 0.08) status = 'on-track';
+  else status = 'behind';
+  return { daysLeft, timeUsed, done, status, action };
+}
+
+/** How winners hit year-long goals. One a day, so the advice keeps changing. */
+const STRATEGY: GoalTip[] = [
+  { title: 'Make it tiny', text: 'Turn the year into one small weekly step. A big goal only feels big until you split it.' },
+  { title: 'Give it a time', text: 'Put it in your Plan on a fixed day and time. Goals with a time slot get done 2 to 3 times more often.' },
+  { title: 'Never miss twice', text: 'Missed a week? Fine. Just never miss two in a row. That one rule saves most goals.' },
+  { title: 'Tell someone', text: 'Tell a friend your goal and send them your progress every month. You will not want to report a zero.' },
+  { title: 'Track it the same day', text: 'Log progress right after you do it. What gets measured gets improved.' },
+  { title: 'Remove the friction', text: 'Make the first step take 10 seconds: shoes by the door, book on your pillow, laptop open on the course.' },
+  { title: 'Reward the milestones', text: 'At 25%, 50% and 75%, give yourself a treat from Rewards. Your brain loves a finish line.' },
+  { title: 'Think in seasons', text: 'Every 3 months, look back: what worked, what didn’t? Change the plan, not the goal.' },
+  { title: 'Identity first', text: 'Don’t say “I want to read”, say “I’m a reader”. Every session is a vote for who you are becoming.' },
+  { title: 'Bad days count', text: 'On a low day, do the smallest version: one page, five minutes, one push-up. It keeps the chain alive.' },
+  { title: 'Stack it', text: 'Attach it to something you already do: “after dinner, I practise 10 minutes”.' },
+  { title: 'Compound effect', text: '1% better each day is 37 times better after a year. Small and steady beats big and rare.' },
+];
+
+/** Up to two tips for a goal: one that fits the kind of goal (if any) and one on how to hit it. */
+export function goalTips(g: LongTermGoal, day = Math.floor(Date.now() / 86_400_000)): GoalTip[] {
+  const out: GoalTip[] = [];
+  const own = goalTip(g, day);
+  if (own) out.push(own);
+  const plan = goalPlan(g);
+  if (plan.status === 'behind') out.push({ title: 'Catch up without stress', text: 'Add one extra session this week and one next week. Spread it out, never cram.' });
+  else out.push(pick(STRATEGY, day + g.id.length));
+  return out;
+}
+
+export const STATUS_LABEL: Record<GoalPlan['status'], string> = {
+  ahead: 'Ahead of plan',
+  'on-track': 'On track',
+  behind: 'Behind, catch up',
+  'just-started': 'Just started',
+  done: 'Done',
+};
+
+/** Yearly goals first, then monthly, weekly and custom, so the big dreams stay on top. */
+export function byPriority(a: LongTermGoal, b: LongTermGoal): number {
+  const rank: Record<string, number> = { yearly: 0, monthly: 1, weekly: 2, custom: 3 };
+  return (rank[a.timeframe] ?? 4) - (rank[b.timeframe] ?? 4);
+}

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { SavePanel } from '../components/money/SavePanel';
-import { useSimple } from '../lib/prefs';
 import { InfoTip } from '../components/Guide';
 import type { MoneyAccount, MoneyKind, SavingsGoal, SpendCategory } from '../lib/types';
 import { todayKey, parseKey } from '../lib/date';
@@ -53,19 +52,16 @@ export function MoneyView() {
   const [transferOpen, setTransferOpen] = useState<TransferPreset | null>(null);
   const [editing, setEditing] = useState<MoneyAccount | 'new' | null>(null);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | 'new' | null>(null);
-  const [tab, setTab] = useState<'overview' | 'save' | 'crypto' | 'tips'>('overview');
-  // From the Save tab: jump to a card on the overview (money plan, budget, subscriptions, wishlist).
+  // Simple by design: Home has only what you use every day. Everything else is one tap away in Tools.
+  const [tab, setTab] = useState<'home' | 'tools' | 'learn'>('home');
+  const [tool, setTool] = useState<ToolId | null>(null);
   function goTo(id: string) {
-    setTab('overview');
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      el?.classList.add('attention');
-      setTimeout(() => el?.classList.remove('attention'), 1400);
-    }, 120);
+    const map: Record<string, ToolId> = { 'money-plan': 'plan', budget: 'budget', bills: 'bills', wishlist: 'wishlist' };
+    setTab('tools');
+    setTool(map[id] ?? null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   const [countOpen, setCountOpen] = useState(false);
-  const simple = useSimple();
   useEffect(() => {
     if (takeIntent('add-expense') && money.setupDone) setExpenseOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,55 +100,86 @@ export function MoneyView() {
           <MoneyHero />
           <Segmented
             value={tab}
-            onChange={setTab}
+            onChange={(v) => {
+              setTab(v);
+              setTool(null);
+            }}
             options={[
-              { id: 'overview', label: 'Overview', icon: '💰' },
-              { id: 'save', label: 'Save', icon: '🐷' },
-              { id: 'crypto', label: 'Assets', icon: '📈' },
-              { id: 'tips', label: 'Tips', icon: '💡' },
+              { id: 'home', label: 'Home', icon: '💰' },
+              { id: 'tools', label: 'Tools', icon: '🔧' },
+              { id: 'learn', label: 'Learn', icon: '💡' },
             ]}
           />
-          {tab === 'crypto' ? (
-            <div className="animate-view-in">
-              <CryptoPanel />
-            </div>
-          ) : tab === 'save' ? (
-            <div className="animate-view-in">
-              <SavePanel onGo={goTo} />
-            </div>
-          ) : tab === 'tips' ? (
+          {tab === 'learn' ? (
             <div className="animate-view-in">
               <TipsPanel />
             </div>
+          ) : tab === 'tools' ? (
+            <div key={tool ?? 'grid'} className="animate-view-in space-y-4">
+              {!tool ? (
+                <ToolGrid onOpen={setTool} />
+              ) : (
+                <>
+                  <button onClick={() => setTool(null)} className="flex items-center gap-1.5 text-sm font-semibold text-slate-300 hover:text-white">
+                    <Icon name="‹" size={18} /> All tools
+                  </button>
+                  {tool === 'month' && (
+                    <>
+                      <MonthSummary />
+                      <MonthCard />
+                      <HistoryCard />
+                    </>
+                  )}
+                  {tool === 'plan' && <MoneyPlanCard onChangeMode={() => setTool('save')} />}
+                  {tool === 'budget' && <BudgetCard />}
+                  {tool === 'bills' && (
+                    <>
+                      <BillsCard />
+                      <SubscriptionCalculator />
+                    </>
+                  )}
+                  {tool === 'wishlist' && <WishlistCard />}
+                  {tool === 'save' && <SavePanel onGo={goTo} />}
+                  {tool === 'assets' && <CryptoPanel />}
+                  {tool === 'accounts' && (
+                    <AccountsCard
+                      onCount={() => setCountOpen(true)}
+                      onEdit={(a) => setEditing(a)}
+                      onAdd={() => setEditing('new')}
+                      onTransfer={() => setTransferOpen({})}
+                    />
+                  )}
+                </>
+              )}
+            </div>
           ) : (
-          <>
-          <MonthSummary />
-          {!simple && <TopTip onMore={() => setTab('tips')} />}
-          <TodayCard
-            onAddExpense={() => setExpenseOpen(true)}
-            onEditLimits={() => setLimitsOpen(true)}
-            onSaveLeftover={(amount) => setTransferOpen({ fromKind: 'spending', toKind: 'savings', amount })}
-          />
-          <MoneyPlanCard onChangeMode={() => setTab('save')} />
-          <BudgetCard />
-          <SubscriptionCalculator />
-          <GoalsCard
-            onAdd={() => setEditingGoal('new')}
-            onEdit={(g) => setEditingGoal(g)}
-            onAddMoney={(g) => setTransferOpen({ fromKind: 'spending', toId: g.accountId })}
-            onTakeOut={(g) => setTransferOpen({ fromId: g.accountId, toKind: 'spending' })}
-          />
-          <WishlistCard />
-          {!simple && <HistoryCard />}
-          {!simple && <MonthCard />}
-          <BillsCard />
-          <AccountsCard
-            onCount={() => setCountOpen(true)}
-            onEdit={(a) => setEditing(a)}
-            onAdd={() => setEditing('new')}
-            onTransfer={() => setTransferOpen({})}
-          />
-          </>
+            <div className="animate-view-in space-y-4">
+              <TodayCard
+                onAddExpense={() => setExpenseOpen(true)}
+                onEditLimits={() => setLimitsOpen(true)}
+                onSaveLeftover={(amount) => setTransferOpen({ fromKind: 'spending', toKind: 'savings', amount })}
+              />
+              <GoalsCard
+                onAdd={() => setEditingGoal('new')}
+                onEdit={(g) => setEditingGoal(g)}
+                onAddMoney={(g) => setTransferOpen({ fromKind: 'spending', toId: g.accountId })}
+                onTakeOut={(g) => setTransferOpen({ fromId: g.accountId, toKind: 'spending' })}
+              />
+              <TopTip onMore={() => setTab('learn')} />
+              <button
+                onClick={() => setTab('tools')}
+                className="w-full flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] hover:border-white/20 px-4 py-3.5 text-left transition"
+              >
+                <span className="w-9 h-9 rounded-xl bg-[color-mix(in_srgb,var(--mood)_15%,transparent)] text-[var(--mood)] flex items-center justify-center">
+                  <Icon name="🧰" size={18} />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[15px] font-semibold text-white">More money tools</span>
+                  <span className="block text-xs text-slate-400 truncate">Budget, bills, wishlist, accounts, month report, investing</span>
+                </span>
+                <Icon name="›" size={18} className="text-slate-400" />
+              </button>
+            </div>
           )}
         </>
       )}
@@ -163,6 +190,41 @@ export function MoneyView() {
       <TransferModal preset={transferOpen} onClose={() => setTransferOpen(null)} />
       <AccountModal account={editing} onClose={() => setEditing(null)} />
       <GoalModal goal={editingGoal} onClose={() => setEditingGoal(null)} />
+    </div>
+  );
+}
+
+/* ---------------- Tools ---------------- */
+
+type ToolId = 'month' | 'plan' | 'budget' | 'bills' | 'wishlist' | 'save' | 'accounts' | 'assets';
+
+const TOOLS: Array<{ id: ToolId; icon: string; title: string; text: string }> = [
+  { id: 'month', icon: '📊', title: 'This month', text: 'In, out and what is left' },
+  { id: 'plan', icon: '🧭', title: 'Money plan', text: 'How much to save each month' },
+  { id: 'budget', icon: '🎯', title: 'Budget', text: 'Limits per category' },
+  { id: 'bills', icon: '🧾', title: 'Bills & subs', text: 'What you pay every month' },
+  { id: 'wishlist', icon: '🛍', title: 'Wishlist', text: 'Wait before you buy' },
+  { id: 'save', icon: '🐷', title: 'Save more', text: 'Proven saving methods' },
+  { id: 'accounts', icon: '🏦', title: 'Accounts', text: 'Cash, bank, savings' },
+  { id: 'assets', icon: '📈', title: 'Investing', text: 'Stocks and crypto' },
+];
+
+function ToolGrid({ onOpen }: { onOpen: (id: ToolId) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-2.5">
+      {TOOLS.map((tl) => (
+        <button
+          key={tl.id}
+          onClick={() => onOpen(tl.id)}
+          className="rounded-2xl border border-white/10 bg-white/[0.03] hover:border-white/20 p-3.5 text-left transition active:scale-[0.98]"
+        >
+          <span className="w-9 h-9 rounded-xl bg-[color-mix(in_srgb,var(--mood)_14%,transparent)] text-[var(--mood)] flex items-center justify-center">
+            <Icon name={tl.icon} size={18} />
+          </span>
+          <span className="block mt-2.5 text-[15px] font-semibold text-white">{tl.title}</span>
+          <span className="block text-xs text-slate-400">{tl.text}</span>
+        </button>
+      ))}
     </div>
   );
 }

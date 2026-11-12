@@ -1,7 +1,7 @@
 /* Dayforge service worker: makes the app open offline and lets Android show notifications.
  * Pages: network first (so updates arrive right away), falling back to the cached copy offline.
  * Built files (hashed names) and icons: cache first, since a given URL never changes. */
-const CACHE = 'dayforge-v4';
+const CACHE = 'dayforge-v5';
 const STATUS_CACHE = 'dayforge-status';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './favicon.svg', './app-icon-192.png', './app-icon-512.png'];
 
@@ -86,15 +86,17 @@ async function maybeNudge() {
   // If the app wasn't opened today, no quest is done yet.
   const done = status.date === today && status.doneToday;
   let note = null;
-  if (minutes >= status.eveningAt && minutes < 23 * 60 + 50 && !done && fired.evening !== today && status.evening[today]) {
-    note = { kind: 'evening', tag: `nudge-${today}`, ...status.evening[today] };
-  } else if (minutes >= status.morningAt && minutes < status.morningAt + 180 && fired.morning !== today && status.morning[today]) {
-    note = { kind: 'morning', tag: `boost-${today}`, ...status.morning[today] };
-  } else if (status.date !== today && status.comeback && status.comeback[today]) {
-    // The app hasn't been opened today: one extra reminder around midday and one in the afternoon.
-    if (minutes >= 12 * 60 + 30 && minutes < 14 * 60 + 30 && fired.midday !== today) note = { kind: 'midday', tag: `comeback-${today}`, ...status.comeback[today] };
-    else if (minutes >= 16 * 60 && minutes < 18 * 60 && fired.afternoon !== today) note = { kind: 'afternoon', tag: `comeback-${today}`, ...(status.evening[today] || status.comeback[today]) };
-  }
+  // Same moments as the app (src/lib/nudges.ts reminderMoments): morning boost, midday, afternoon, evening, last call.
+  const lastCall = Math.max(21 * 60 + 30, status.eveningAt + 120);
+  const moments = [
+    { kind: 'morning', from: status.morningAt, to: status.morningAt + 180, any: true, msg: status.morning[today] },
+    { kind: 'midday', from: 750, to: 870, msg: status.comeback && status.comeback[today] },
+    { kind: 'afternoon', from: 960, to: 1080, msg: status.evening[today] || (status.comeback && status.comeback[today]) },
+    { kind: 'evening', from: status.eveningAt, to: Math.min(status.eveningAt + 150, 1430), msg: status.evening[today] },
+    { kind: 'lastcall', from: lastCall, to: 1430, msg: status.lastCall && status.lastCall[today] },
+  ].filter((x) => x.kind === 'evening' || x.kind === 'morning' || x.kind === 'lastcall' || Math.abs(x.from - status.eveningAt) >= 90);
+  const m = moments.find((x) => x.msg && minutes >= x.from && minutes < x.to && fired[x.kind] !== today && (x.any || !done));
+  if (m) note = { kind: m.kind, tag: `${m.kind}-${today}`, ...m.msg };
   if (!note) return;
   // Don't notify if the app is open and on screen.
   const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });

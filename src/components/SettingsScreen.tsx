@@ -446,7 +446,7 @@ function NotificationsPage() {
       <Group title="Motivation">
         <SwitchRow
           label="Motivation reminders"
-          hint={`If you haven't done a quest by the evening, a push to keep your streak (${NUDGE_COUNT} different ones, never the same two days in a row). Plus a morning boost with your daily quote.`}
+          hint={`Up to 5 a day: a morning boost with your daily quote, a push at lunch and in the afternoon if nothing is done yet, the evening streak check and a last call before midnight. ${NUDGE_COUNT}+ different messages. Once you finish a quest, the pushes stop for the day.`}
           on={prefs.nudges}
           onChange={toggleNudges}
         />

@@ -144,7 +144,8 @@ const ENABLED_KEY = 'week-plan-live-reminders';
 
 export function loadLiveRemindersEnabled(): boolean {
   try {
-    return localStorage.getItem(ENABLED_KEY) === '1';
+    // On unless you switched it off.
+    return localStorage.getItem(ENABLED_KEY) !== '0';
   } catch {
     return false;
   }

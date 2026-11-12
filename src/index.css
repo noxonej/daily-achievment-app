@@ -1343,3 +1343,39 @@ svg:has(.world-spot-on) .world-spot { opacity: 0.55; }
 .wheel-spin { animation: wheel-spin 0.7s linear 1; }
 :root[data-motion='reduce'] :is(.world-neon, .world-idle, .garage-beam, .world-spot-on, .vehicle-in, .world-scene-in) { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { :is(.world-neon, .world-idle, .garage-beam, .world-spot-on, .vehicle-in, .world-scene-in) { animation: none !important; } }
+
+/* ===================== Glitch fixes + yearly goals + reminders (2026-11-12) ===================== */
+/* The shine stripe on badges must stay inside the badge (it used to stick out as a diagonal bar). */
+.badge-shine { overflow: hidden; isolation: isolate; }
+/* Daily box stage: fully opaque, so nothing on the page shows through behind the prize. */
+.box-stage {
+  background:
+    radial-gradient(70% 50% at 50% 42%, rgba(124, 58, 237, 0.28), transparent 70%),
+    radial-gradient(120% 80% at 50% 100%, rgba(34, 211, 238, 0.08), transparent 60%),
+    #07060a;
+}
+/* "Your year" on Today and yearly goal cards on Quests: warm gold, a step above normal cards. */
+.year-card, .goal-yearly {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(245, 181, 68, 0.16), transparent 55%),
+    radial-gradient(100% 80% at 100% 100%, rgba(139, 92, 246, 0.12), transparent 60%),
+    rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(245, 181, 68, 0.28);
+  box-shadow: 0 10px 30px -18px rgba(245, 181, 68, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.year-card { transition: transform 0.2s ease; }
+.year-card:active { transform: scale(0.985); }
+:root[data-theme='light'] .year-card, :root[data-theme='light'] .goal-yearly {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(245, 181, 68, 0.22), transparent 55%),
+    radial-gradient(100% 80% at 100% 100%, rgba(139, 92, 246, 0.1), transparent 60%),
+    #fffdf8;
+}
+.reminder-prompt {
+  background: radial-gradient(120% 100% at 0% 0%, rgba(34, 211, 238, 0.16), transparent 60%), rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
+.year-tip { background: rgba(0, 0, 0, 0.25); }
+:root[data-theme='light'] .year-tip { background: rgba(255, 255, 255, 0.7); }
