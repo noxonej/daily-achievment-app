@@ -1309,3 +1309,37 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
 :root[data-theme='light'] .toast-glass { background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 20px 40px -18px rgba(15, 23, 42, 0.35); }
 .bg-spend { background-color: #f3ede6; }
 :root[data-theme='light'] .bg-spend { background-color: #3a2f27; }
+
+/* Rank badges: a soft light sweeps across the bigger ones. */
+@keyframes rank-shine { 0%, 70% { filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)) brightness(1); } 80% { filter: drop-shadow(0 4px 14px rgba(255,255,255,.35)) brightness(1.25); } 100% { filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)) brightness(1); } }
+.rank-shine { animation: rank-shine 4.5s ease-in-out infinite; }
+:root[data-motion='reduce'] .rank-shine { animation: none; }
+@keyframes rank-pop { 0% { transform: scale(0.2) rotate(-20deg); opacity: 0; } 60% { transform: scale(1.15) rotate(4deg); opacity: 1; } 100% { transform: none; } }
+.rank-pop { animation: rank-pop 0.7s var(--ease-spring, ease) 1s backwards, rank-shine 4.5s ease-in-out 2s infinite; }
+
+/* ===================== World (home + garage) ===================== */
+:root[data-view='world'] { --mood: #f5b544; --mood2: #8b5cf6; }
+.world-scene-in { animation: rise-in 0.6s var(--ease-out, ease) both; }
+.world-home-here { background: color-mix(in srgb, var(--mood) 12%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--mood) 55%, transparent); }
+/* While decorating, everything but the chosen spot dims a little and the spot glows. */
+.world-spot, .world-spot-on { transition: opacity 0.35s ease, filter 0.35s ease; }
+svg:has(.world-spot-on) .world-spot { opacity: 0.55; }
+.world-spot-on { filter: drop-shadow(0 0 6px rgba(245, 181, 68, 0.95)); animation: spot-pulse 1.6s ease-in-out infinite; }
+@keyframes spot-pulse { 50% { filter: drop-shadow(0 0 12px rgba(245, 181, 68, 1)); } }
+@keyframes neon-flicker { 0%, 100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: 0.55; } 95% { opacity: 1; } 97% { opacity: 0.75; } }
+.world-neon { animation: neon-flicker 5s linear infinite; }
+/* Your character breathes gently while standing in the room. */
+@keyframes world-idle { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1.5%) scaleY(1.01); } }
+.world-idle { transform-origin: 50% 100%; animation: world-idle 3.2s ease-in-out infinite; }
+
+.garage-scene { background: radial-gradient(120% 80% at 50% 0%, #2a2c33 0%, #15161a 55%, #0b0b0d 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+.garage-beam { background: conic-gradient(from 180deg at 50% -10%, transparent 160deg, rgba(255, 244, 220, 0.16) 175deg, rgba(255, 244, 220, 0.22) 180deg, rgba(255, 244, 220, 0.16) 185deg, transparent 200deg); animation: beam-sway 6s ease-in-out infinite alternate; }
+@keyframes beam-sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+.garage-floor { background: linear-gradient(180deg, #1c1d22, #0e0e10); border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.garage-floor::before { content: ''; position: absolute; inset: 30% 0 auto; height: 2px; background: repeating-linear-gradient(90deg, rgba(245, 181, 68, 0.5) 0 18px, transparent 18px 36px); }
+@keyframes vehicle-in { from { opacity: 0; transform: translateX(-14%); } to { opacity: 1; transform: none; } }
+.vehicle-in { animation: vehicle-in 0.7s var(--ease-out, ease) both; }
+@keyframes wheel-spin { to { transform: rotate(360deg); } }
+.wheel-spin { animation: wheel-spin 0.7s linear 1; }
+:root[data-motion='reduce'] :is(.world-neon, .world-idle, .garage-beam, .world-spot-on, .vehicle-in, .world-scene-in) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { :is(.world-neon, .world-idle, .garage-beam, .world-spot-on, .vehicle-in, .world-scene-in) { animation: none !important; } }

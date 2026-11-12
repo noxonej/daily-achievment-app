@@ -384,6 +384,22 @@ export interface SleepState {
 /** 1 = awful … 5 = great */
 export type Mood = 1 | 2 | 3 | 4 | 5;
 
+export type DecorSlot = 'wall' | 'floor' | 'art' | 'seat' | 'desk' | 'lamp' | 'plant' | 'rug' | 'shelf';
+
+/** Your World: home, decor, vehicles. Item lists live in src/world/catalog.ts; only ids are saved. */
+export interface WorldState {
+  /** The home you live in now. */
+  property: string;
+  /** What's placed in each spot (unset = the home's own wall/floor or the default). */
+  decor: Partial<Record<DecorSlot, string>>;
+  /** Coins paid per world item id (homes, decor, vehicles, paint, garage spots). */
+  paid: Record<string, number>;
+  /** The vehicle shown in the garage. */
+  vehicle?: string;
+  /** Paint per vehicle id. */
+  paints?: Record<string, string>;
+}
+
 export interface AppState {
   quests: Quest[];
   goals: LongTermGoal[];
@@ -444,6 +460,8 @@ export interface AppState {
   /** Sleep calculator settings and sleep log. */
   sleep?: SleepState;
   createdAt: string;
+  /** Home, garage and vehicles (added in content v4; missing on older saves). */
+  world?: WorldState;
 }
 
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'legend';

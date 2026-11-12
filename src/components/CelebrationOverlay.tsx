@@ -3,6 +3,8 @@ import { useApp } from '../store/AppContext';
 import { titleForLevel } from '../lib/xp';
 import { Confetti } from './Confetti';
 import { Icon } from './Icon';
+import { RankBadge } from './RankBadge';
+import { rankForLevel } from '../lib/ranks';
 
 export function CelebrationOverlay() {
   const { celebrations, dismissCelebration } = useApp();
@@ -37,7 +39,17 @@ export function CelebrationOverlay() {
             ))}
           </p>
           <p className="lv-num font-display text-[120px] leading-none font-black tabular-nums mt-1">{current.level}</p>
-          <p className="text-white font-display text-xl font-bold mt-1 fade-up [animation-delay:.9s]">{titleForLevel(current.level)}</p>
+          {(() => {
+            const rank = rankForLevel(current.level);
+            const ranked = rank.startLevel === current.level && current.level > 1;
+            return (
+              <div className="mt-2 flex flex-col items-center fade-up [animation-delay:.9s]">
+                <RankBadge rank={rank} size={ranked ? 96 : 56} shine className={ranked ? 'rank-pop' : ''} />
+                {ranked && <p className="mt-2 text-[11px] font-black tracking-[0.3em] text-amber-200">NEW RANK</p>}
+                <p className="text-white font-display text-xl font-bold mt-1">{titleForLevel(current.level)}</p>
+              </div>
+            );
+          })()}
           <div className="mt-4 flex justify-center gap-2 fade-up [animation-delay:1.05s]">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/20 border border-violet-400/40 px-3 py-1 text-xs font-bold text-violet-100">
               <Icon name="df:chest" size={14} /> +1 reward chest

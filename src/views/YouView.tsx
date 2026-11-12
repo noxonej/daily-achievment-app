@@ -7,6 +7,8 @@ import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
 import { Avatar } from '../components/Avatar';
 import { Coin } from '../components/Coin';
+import { RankBadge } from '../components/RankBadge';
+import { rankForLevel } from '../lib/ranks';
 import { Icon } from '../components/Icon';
 import { StatsView } from './StatsView';
 import { AchievementsView } from './AchievementsView';
@@ -39,7 +41,10 @@ export function YouView() {
           <span className="mood-orb -top-24 -left-20 w-72 h-72 opacity-60" aria-hidden="true" />
           <div className="relative flex items-start gap-2">
             <div className="flex-1 min-w-0">
-              <p className="pc-sub text-[11px] font-bold uppercase tracking-[0.14em]">{titleForLevel(stats.level)}</p>
+              <p className="pc-sub flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em]">
+                <RankBadge rank={rankForLevel(stats.level)} size={18} className="-my-1" />
+                {titleForLevel(stats.level)}
+              </p>
               <p className="pc-ink font-display text-[28px] font-medium tracking-tight leading-tight truncate">{name || 'Your profile'}</p>
             </div>
             <span className="pc-ink mt-1">

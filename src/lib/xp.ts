@@ -1,3 +1,4 @@
+import { rankForLevel } from './ranks';
 // XP required to go from level L to L+1 grows linearly, so leveling up
 // takes a little more each time without becoming punishing.
 export function xpForLevel(level: number): number {
@@ -20,24 +21,9 @@ export function levelFromTotalXp(totalXp: number): {
   return { level, xpIntoLevel: remaining, xpForNextLevel: needed };
 }
 
-const TITLES: Array<{ min: number; title: string }> = [
-  { min: 1, title: 'Novice' },
-  { min: 5, title: 'Apprentice' },
-  { min: 10, title: 'Adventurer' },
-  { min: 15, title: 'Achiever' },
-  { min: 20, title: 'Champion' },
-  { min: 30, title: 'Master' },
-  { min: 45, title: 'Grandmaster' },
-  { min: 60, title: 'Legend' },
-  { min: 80, title: 'Mythic' },
-];
-
+/** Your rank name (Rookie I … Squzo Legend); see ranks.ts. */
 export function titleForLevel(level: number): string {
-  let title = TITLES[0].title;
-  for (const t of TITLES) {
-    if (level >= t.min) title = t.title;
-  }
-  return title;
+  return rankForLevel(level).name;
 }
 
 export const DIFFICULTY_XP: Record<string, number> = {

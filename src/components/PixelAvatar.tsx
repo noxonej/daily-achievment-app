@@ -778,8 +778,11 @@ export function PixelAvatar({
   title,
   mood,
   framing,
+  bare = false,
 }: {
   look: Partial<Character> | undefined;
+  /** No backdrop: just the character (standing in a World scene). */
+  bare?: boolean;
   mood?: number;
   /** "head" zooms in on the face (small pictures do this automatically), "full" shows the whole body. */
   framing?: 'head' | 'bust' | 'full';
@@ -813,7 +816,7 @@ export function PixelAvatar({
         <clipPath id={clip}>{shape === 'circle' ? <circle cx="50" cy="50" r="50" /> : <rect width="100" height="100" rx={shape === 'rounded' ? 24 : 0} />}</clipPath>
       </defs>
       <g clipPath={`url(#${clip})`}>
-        <Backdrop item={findItem(l.backdrop)!} x={{ id }} />
+        {!bare && <Backdrop item={findItem(l.backdrop)!} x={{ id }} />}
         {!crop && <ellipse cx="50" cy="91.5" rx="19" ry="3" fill="#000" opacity=".3" />}
         <g transform={`translate(${tx} ${ty}) scale(${s})`} shapeRendering="crispEdges">
           {rects.map(([x, y, w, c], i) => (

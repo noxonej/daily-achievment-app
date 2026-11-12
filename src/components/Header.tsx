@@ -7,6 +7,8 @@ import { Avatar } from './Avatar';
 import { wardrobe } from '../lib/wardrobe';
 import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
+import { RankBadge } from './RankBadge';
+import { RANK_COUNT, rankAt, rankForLevel } from '../lib/ranks';
 import { settings } from '../lib/settingsNav';
 import { t } from '../lib/prefs';
 
@@ -15,6 +17,7 @@ export function Header() {
   const { state, stats } = useApp();
   const { xpIntoLevel, xpForNextLevel } = levelFromTotalXp(stats.totalXp);
   const title = titleForLevel(stats.level);
+  const rank = rankForLevel(stats.level);
   const [scrolled, setScrolled] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
 
@@ -50,8 +53,9 @@ export function Header() {
             <span className="min-w-0 text-left leading-none">
               <Wordmark className="block text-[18px]" />
               <span className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 truncate">
-                <span className="rounded-md bg-amber-500/15 text-amber-300 px-1.5 py-px font-bold tabular-nums">LV {stats.level}</span>
-                <span className="truncate">{title}</span>
+                <RankBadge rank={rank} size={15} className="shrink-0 -my-1" />
+                <span className="truncate text-slate-300">{title}</span>
+                <span className="text-slate-500 font-bold tabular-nums">· LV {stats.level}</span>
               </span>
             </span>
           </button>
@@ -172,16 +176,44 @@ function LevelPopover({ onClose, into, need, level }: { onClose: () => void; int
     };
   }, [onClose]);
   const pct = need > 0 ? Math.min(100, (into / need) * 100) : 0;
+  const rank = rankForLevel(level);
+  const ladderRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Start the ladder at your own rank.
+    ladderRef.current?.querySelector('[data-current]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, []);
   return (
-    <div ref={ref} role="dialog" aria-label="Your level" className="absolute left-0 top-full mt-2 w-64 rounded-2xl border border-white/10 bg-raised p-4 shadow-2xl popover-in z-40">
-      <p className="text-xs font-bold uppercase tracking-wider text-amber-300">Level {level}</p>
-      <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
-        <div className="h-full rounded-full bg-amber-400 transition-all duration-700" style={{ width: `${pct}%` }} />
+    <div ref={ref} role="dialog" aria-label="Your rank" className="absolute left-0 top-full mt-2 w-[19rem] bg-raised border border-white/10 shadow-2xl max-w-[calc(100vw-2rem)] rounded-3xl p-4 popover-in z-40">
+      <div className="flex items-center gap-3">
+        <RankBadge rank={rank} size={56} shine />
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Your rank</p>
+          <p className="font-display text-xl font-semibold text-white truncate">{rank.name}</p>
+          <p className="text-[11px] text-slate-400 tabular-nums">
+            {rank.nextLevel ? `Next rank at level ${rank.nextLevel}` : 'The highest rank there is'}
+          </p>
+        </div>
       </div>
-      <p className="text-sm text-white font-semibold mt-2 tabular-nums">
-        {into} / {need} XP
-      </p>
-      <p className="text-xs text-slate-400 mt-1 leading-relaxed">Finish quests to earn XP. Every new level gives you a reward chest.</p>
+      <div className="mt-3 flex items-baseline justify-between text-[11px] tabular-nums">
+        <span className="font-bold text-white">Level {level}</span>
+        <span className="text-slate-400">{into} / {need} XP</span>
+      </div>
+      <div className="mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+        <div className="h-full rounded-full bg-[var(--mood)] transition-all duration-700" style={{ width: `${pct}%` }} />
+      </div>
+      <div ref={ladderRef} className="mt-4 -mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar" aria-label="All ranks">
+        {Array.from({ length: RANK_COUNT }, (_, i) => rankAt(i)).map((r) => {
+          const reached = r.index <= rank.index;
+          return (
+            <div key={r.index} data-current={r.index === rank.index ? '' : undefined} className={`shrink-0 w-[60px] flex flex-col items-center gap-1 ${reached ? '' : 'opacity-35 grayscale'}`}>
+              <RankBadge rank={r} size={r.index === rank.index ? 40 : 32} />
+              <span className={`text-[9px] leading-tight text-center ${r.index === rank.index ? 'font-bold text-white' : 'text-slate-400'}`}>{r.name}</span>
+              <span className="text-[9px] text-slate-500 tabular-nums">LV {r.startLevel}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-slate-400 mt-3 leading-relaxed">Finish quests to earn XP. Every level gives a reward chest, and new ranks come as you level up. A rank never goes down.</p>
     </div>
   );
 }

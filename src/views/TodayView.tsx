@@ -109,7 +109,14 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
-      <div className="text-center pt-1">
+      <div className="relative text-center pt-1">
+        <button
+          onClick={() => onNavigate('plan')}
+          className="absolute right-0 top-0 flex items-center gap-1.5 rounded-full bg-white/[0.06] hover:bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-slate-200"
+        >
+          <Icon name="df:plan" size={14} />
+          {t('nav.plan')}
+        </button>
         <p className="eyebrow">{formatDisplayDate(key)}</p>
         <h1 className="font-display text-[28px] leading-tight font-medium tracking-tight text-white mt-1.5">
           {greeting()}

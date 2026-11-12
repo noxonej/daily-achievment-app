@@ -3,13 +3,14 @@ import { t } from '../lib/prefs';
 import { Avatar } from './Avatar';
 import { useApp } from '../store/AppContext';
 
-export type ViewId = 'today' | 'plan' | 'money' | 'quests' | 'you';
+/** 'plan' is still a screen (opened from Today) but no longer has its own tab. */
+export type ViewId = 'today' | 'plan' | 'quests' | 'world' | 'money' | 'you';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'today', label: 'Today', icon: 'df:today' },
-  { id: 'plan', label: 'Plan', icon: 'df:plan' },
-  { id: 'money', label: 'Money', icon: 'df:money' },
   { id: 'quests', label: 'Quests', icon: 'df:quests' },
+  { id: 'world', label: 'World', icon: '🏠' },
+  { id: 'money', label: 'Money', icon: 'df:money' },
   { id: 'you', label: 'You', icon: 'avatar' },
 ];
 
@@ -29,7 +30,8 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
     <nav className="fixed inset-x-0 bottom-0 z-30 pointer-events-none px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="dock pointer-events-auto max-w-md mx-auto h-[62px] p-[7px] flex items-stretch gap-1">
         {TABS.map((tab) => {
-          const isActive = tab.id === active;
+          // Plan lives inside Today now, so Today stays lit while you're in it.
+          const isActive = tab.id === active || (active === 'plan' && tab.id === 'today');
           const label = t(`nav.${tab.id}` as 'nav.today');
           return (
             <button
