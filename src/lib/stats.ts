@@ -4,6 +4,10 @@ import { addDaysToKey, daysBetween, todayKey } from './date';
 import { levelFromTotalXp } from './xp';
 import { findItem, paidFor } from '../data/avatar';
 
+/** Coins for one streak shield, and how many you can hold at once. */
+export const SHIELD_PRICE = 250;
+export const MAX_SHIELDS = 2;
+
 /** A day keeps the streak going if at least one quest was finished (or skipped with a Skip Pass), like Duolingo. */
 export function dayCountsForStreak(log: DayLog | undefined): boolean {
   return !!log && log.completedQuestIds.length > 0;
@@ -95,7 +99,7 @@ export function computeDerivedStats(state: AppState): DerivedStats {
   // Items that no longer exist cost nothing, so coins spent on retired items are refunded automatically.
   const shardsSpent = (state.unlockedCosmeticIds ?? []).reduce((sum, id) => sum + paidFor(findItem(id), state.purchases?.[id]), 0);
   const rewardsSpent = (state.redemptions ?? []).reduce((n, r) => n + r.cost, 0);
-  const availableShards = Math.max(0, totalXp + (state.bonusShards ?? 0) - shardsSpent - rewardsSpent - worldSpent(state));
+  const availableShards = Math.max(0, totalXp + (state.bonusShards ?? 0) - shardsSpent - rewardsSpent - worldSpent(state) - (state.shieldCoinsSpent ?? 0));
   const perfectWeeks = weekLogsArr.filter((l) => l.perfectWeek && l.weeklyQuestCount > 0).length;
   const chestsEarned = totalPerfectDays + perfectWeeks + (level - 1) + (state.bonusChests ?? 0);
   const chestsAvailable = Math.max(0, chestsEarned - (state.chestsOpened ?? 0));
