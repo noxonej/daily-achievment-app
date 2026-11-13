@@ -28,6 +28,17 @@ export function StreakCelebration() {
   const counted = dayCountsForStreak(state.dayLogs[today]);
   const was = useRef(counted);
   const [show, setShow] = useState(false);
+  const [closing, setClosing] = useState(false);
+  // Fade the screen away, then let the streak pill in the header catch the new number.
+  const close = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(() => {
+      setShow(false);
+      setClosing(false);
+      window.dispatchEvent(new Event('squzo:streak-landed'));
+    }, 340);
+  };
 
   useEffect(() => {
     const before = was.current;
@@ -49,7 +60,7 @@ export function StreakCelebration() {
   }, [counted]);
 
   if (!show) return null;
-  return <StreakScreen streak={stats.currentStreak} best={stats.currentStreak > 1 && stats.currentStreak >= stats.longestStreak} onClose={() => setShow(false)} />;
+  return <StreakScreen streak={stats.currentStreak} best={stats.currentStreak > 1 && stats.currentStreak >= stats.longestStreak} closing={closing} onClose={close} />;
 }
 
 /** Count up from `from` to `to` over `ms`, starting after `delay`. */
@@ -75,7 +86,7 @@ function useCountUp(from: number, to: number, delay: number, ms: number) {
  * shockwave and a ring of sparks; the number rolls up and punches in; the week lights day by day;
  * embers drift up the whole screen.
  */
-function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean; onClose: () => void }) {
+function StreakScreen({ streak, best, closing, onClose }: { streak: number; best: boolean; closing: boolean; onClose: () => void }) {
   const { state, stats } = useApp();
   const rest = new Set(stats.graceDates);
   const today = todayKey();
@@ -105,7 +116,7 @@ function StreakScreen({ streak, best, onClose }: { streak: number; best: boolean
   const title = streak === 1 ? 'Streak started!' : 'day streak!';
 
   return (
-    <div data-overlay className="theme-dark fixed inset-0 z-[85] flex flex-col items-center justify-center px-6 bg-[#090604] overflow-hidden backdrop-in" role="dialog" aria-label={`${streak} day streak`}>
+    <div data-overlay className={`theme-dark fixed inset-0 z-[85] flex flex-col items-center justify-center px-6 bg-[#090604] overflow-hidden ${closing ? 'streak-out' : 'backdrop-in'}`} role="dialog" aria-label={`${streak} day streak`}>
       <div className={`absolute inset-0 pointer-events-none streak-warm ${lit ? 'on' : ''}`} />
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         {embers.map((e, i) => (

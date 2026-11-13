@@ -23,7 +23,7 @@ export function FriendToasts({ onOpen }: { onOpen: () => void }) {
               dismissFriendToast(t.id);
               onOpen();
             }}
-            className="pointer-events-auto toast-drop flex items-center gap-3 bg-raised border border-white/10 shadow-xl shadow-black/40 rounded-2xl pl-2 pr-4 py-2 max-w-sm w-full text-left"
+            className={`pointer-events-auto flex ${t.leaving ? 'toast-out' : 'toast-drop'} items-center gap-3 bg-raised border border-white/10 shadow-xl shadow-black/40 rounded-2xl pl-2 pr-4 py-2 max-w-sm w-full text-left`}
           >
             <span className="relative w-10 h-10 shrink-0">
               {look ? (

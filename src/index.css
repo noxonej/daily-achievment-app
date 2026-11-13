@@ -1388,3 +1388,23 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 @keyframes tile-try { 0% { transform: scale(0.94); } 100% { transform: none; } }
 .tryon-chip { animation: pop-in 0.22s var(--ease-out) both; }
 :root[data-motion='reduce'] :is(.tryon-tag, .wardrobe-tile.is-trying, .tryon-chip) { animation: none; }
+
+/* Toasts leave the way they came: the top one lifts and shrinks back toward the header (next to the
+   streak), the bottom one sinks. Ease-in on the way out, so it speeds up as it goes (feels natural). */
+@keyframes toast-out { to { opacity: 0; transform: translateY(-14px) scale(0.9); filter: blur(2px); } }
+@keyframes toast-out-down { to { opacity: 0; transform: translateY(14px) scale(0.97); } }
+@keyframes toast-in-up { from { opacity: 0; transform: translateY(14px) scale(0.97); } }
+@keyframes overlay-out { to { opacity: 0; } }
+.toast-out { animation: toast-out 0.32s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none !important; }
+.toast-out-down { animation: toast-out-down 0.24s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none !important; }
+.toast-in-up { animation: toast-in-up 0.32s var(--ease-out) both; }
+.overlay-out { animation: overlay-out 0.32s ease-in forwards; pointer-events: none; }
+/* Streak screen leaves by sinking and fading (it was cut off instantly before). */
+@keyframes streak-out { to { opacity: 0; transform: scale(1.03); filter: blur(3px); } }
+.streak-out { animation: streak-out 0.34s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
+@keyframes streak-land { 0% { transform: scale(1); } 35% { transform: scale(1.14); } 65% { transform: scale(0.97); } 100% { transform: scale(1); } }
+.streak-land { animation: streak-land 0.55s var(--ease-out); }
+:root[data-motion='reduce'] :is(.streak-out, .streak-land, .toast-out, .toast-out-down, .toast-in-up, .overlay-out) { animation-duration: 0.01ms; }
+/* Trying something on: a quick, soft settle instead of a big pop, so browsing stays calm. */
+@keyframes avatar-swap { from { opacity: 0.55; scale: 0.97; } to { opacity: 1; scale: 1; } }
+.avatar-swap { animation: avatar-swap 0.2s var(--ease-out); }

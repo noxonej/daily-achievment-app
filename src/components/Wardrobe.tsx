@@ -165,7 +165,7 @@ export function Wardrobe() {
             onContextMenu={(e) => e.preventDefault()}
             aria-label={trying.length ? 'Hold to compare with your current look' : 'Your character'}
           >
-            <Avatar look={shown} size={168} />
+            <Avatar key={JSON.stringify(shown)} look={shown} size={168} className="avatar-swap" />
             {trying.length > 0 && (
               <span key={comparing ? 'now' : 'try'} className="tryon-tag absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-[10px] font-bold whitespace-nowrap">
                 {comparing ? 'Your look now' : 'Trying on'}

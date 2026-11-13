@@ -31,6 +31,21 @@ export function Header() {
 
   const streak = stats.currentStreak;
   const hot = streak >= 7;
+  // When the streak screen closes, the pill gives a small bump: the new number "lands" here.
+  const [landed, setLanded] = useState(false);
+  useEffect(() => {
+    let t = 0;
+    const on = () => {
+      setLanded(true);
+      window.clearTimeout(t);
+      t = window.setTimeout(() => setLanded(false), 600);
+    };
+    window.addEventListener('squzo:streak-landed', on);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('squzo:streak-landed', on);
+    };
+  }, []);
 
   return (
     <header
@@ -64,7 +79,7 @@ export function Header() {
         <div className="flex-1" />
 
         <div
-          className={`flex items-center gap-1 rounded-full pl-2 pr-2.5 h-9 border transition-colors ${
+          className={`flex items-center gap-1 rounded-full pl-2 pr-2.5 h-9 border transition-colors ${landed ? 'streak-land ' : ''}${
             hot ? 'bg-orange-500/15 border-orange-400/40 badge-shine' : 'bg-white/[0.06] border-transparent backdrop-blur-md'
           }`}
           title={`${streak} day streak`}
