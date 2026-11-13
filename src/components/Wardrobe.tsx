@@ -47,7 +47,10 @@ export function Wardrobe() {
   useBackToClose(open, () => wardrobe.close());
   const { state, stats, dispatch } = useApp();
   const [slot, setSlot] = useState<AvatarSlot>('outfit');
-  const [preview, setPreview] = useState<AvatarItem | null>(null);
+  // Try-on: one item per category, so you can see a whole outfit together before buying any of it.
+  const [tryOn, setTryOn] = useState<Partial<Record<AvatarSlot, AvatarItem>>>({});
+  const [comparing, setComparing] = useState(false);
+  const [compact, setCompact] = useState(false);
   const [chestOpen, setChestOpen] = useState(false);
   const look = normalizeLook(state.character);
   useEffect(() => {
@@ -57,149 +60,201 @@ export function Wardrobe() {
 
   useEffect(() => {
     if (!open) {
-      setPreview(null);
+      setTryOn({});
       setChestOpen(false);
+      setCompact(false);
     }
   }, [open]);
 
   const owned = (i: AvatarItem) => isOwned(i, ctx);
-  const collected = AVATAR_ITEMS.filter(owned).length;
+  const counts = useMemo(() => {
+    const c = {} as Record<AvatarSlot, { have: number; total: number }>;
+    for (const s of AVATAR_SLOTS) c[s.id] = { have: 0, total: 0 };
+    for (const i of AVATAR_ITEMS) {
+      c[i.slot].total++;
+      if (isOwned(i, ctx)) c[i.slot].have++;
+    }
+    return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.unlockedCosmeticIds, state.wonCosmeticIds, stats.level, stats.longestStreak]);
   const items = AVATAR_ITEMS.filter((i) => i.slot === slot);
-  const shown: Character = preview ? { ...look, [preview.slot]: preview.id } : look;
+  const trying = Object.values(tryOn).filter(Boolean) as AvatarItem[];
+  const tried: Partial<Character> = Object.fromEntries(trying.map((i) => [i.slot, i.id]));
+  const shown: Character = comparing ? look : { ...look, ...tried };
+  const slotInfo = AVATAR_SLOTS.find((s) => s.id === slot)!;
+  const here = counts[slot];
 
   if (!open) return null;
 
   function tap(item: AvatarItem) {
     if (owned(item)) {
       dispatch({ type: 'EQUIP_COSMETIC', slot: item.slot, itemId: item.id });
-      setPreview(null);
+      setTryOn(({ [item.slot]: _drop, ...rest }) => rest);
       try {
         navigator.vibrate?.(8);
       } catch {
         // optional
       }
     } else {
-      setPreview(item);
+      // Tap again to take it off.
+      setTryOn((t) => {
+        if (t[item.slot]?.id === item.id) {
+          const { [item.slot]: _drop, ...rest } = t;
+          return rest;
+        }
+        return { ...t, [item.slot]: item };
+      });
     }
   }
 
-  const previewOwned = preview ? owned(preview) : false;
-  const canBuy = preview?.unlock.kind === 'shop' && !previewOwned && stats.availableShards >= preview.unlock.cost;
+  const buyable = trying.filter((i) => i.unlock.kind === 'shop');
+  const total = buyable.reduce((sum, i) => sum + (i.unlock.kind === 'shop' ? i.unlock.cost : 0), 0);
+  const canBuy = buyable.length > 0 && stats.availableShards >= total;
+  const lockedOther = trying.length - buyable.length;
+  function buyAll() {
+    if (!canBuy) return;
+    for (const i of buyable) {
+      dispatch({ type: 'UNLOCK_COSMETIC', itemId: i.id });
+      dispatch({ type: 'EQUIP_COSMETIC', slot: i.slot, itemId: i.id });
+    }
+    setTryOn((t) => Object.fromEntries(Object.entries(t).filter(([, i]) => i && i.unlock.kind !== 'shop')));
+    try {
+      navigator.vibrate?.([10, 40, 18]);
+    } catch {
+      // optional
+    }
+  }
+  const hint = (i: AvatarItem) =>
+    i.unlock.kind === 'chest' ? 'Win it from a chest' : i.unlock.kind === 'box' ? 'Daily box prize' : unlockLabel(i);
 
   return (
     <div data-overlay className="fixed inset-0 z-[75] bg-canvas flex flex-col backdrop-in">
       {/* top bar */}
-      <div className="flex items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+      <div className="shrink-0 flex items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-1">
         <button onClick={() => wardrobe.close()} aria-label="Close" className="w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
           <Icon name="⬅" size={20} />
         </button>
-        <h2 className="font-display text-lg font-extrabold text-white flex-1">Wardrobe</h2>
-        <span className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-sm font-bold text-amber-200 tabular-nums">
+        <h2 className="font-display text-lg font-bold text-white flex-1">Wardrobe</h2>
+        <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-sm font-bold text-white tabular-nums" aria-label={`${stats.availableShards} coins`}>
           <Icon name="💎" size={15} />
           {stats.availableShards}
         </span>
         <button
           onClick={() => stats.chestsAvailable > 0 && setChestOpen(true)}
-          className={`relative flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-bold tabular-nums ${
-            stats.chestsAvailable > 0 ? 'bg-violet-500/15 border-violet-400/50 text-violet-100' : 'bg-white/5 border-white/10 text-slate-500'
+          disabled={stats.chestsAvailable === 0}
+          className={`relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold tabular-nums transition ${
+            stats.chestsAvailable > 0 ? 'bg-violet-500 text-[#fff] active:scale-95' : 'bg-white/[0.06] text-slate-500'
           }`}
           aria-label={`${stats.chestsAvailable} chests to open`}
         >
           <Icon name="df:chest" size={15} />
-          {stats.chestsAvailable}
-          {stats.chestsAvailable > 0 && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />}
+          {stats.chestsAvailable > 0 ? `Open ${stats.chestsAvailable}` : 0}
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="max-w-xl mx-auto px-4">
-          {/* hero */}
-          <div className="relative flex flex-col items-center pt-2">
-            <div
-              className={`relative rounded-[28%] p-1 transition-shadow ${
-                preview ? `${RARITY[preview.rarity].glow}` : 'shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]'
-              }`}
-              style={preview ? { background: RARITY[preview.rarity].hex } : undefined}
-            >
-              <Avatar key={JSON.stringify(shown)} look={shown} size={190} className="animate-pop-in" />
-            </div>
-            <p className="mt-3 text-xs text-slate-500">
-              {preview ? `Trying on: ${preview.name}` : 'Tap anything to try it on'} · {collected}/{AVATAR_ITEMS.length} collected
-            </p>
-          </div>
-
-          {stats.chestsAvailable > 0 && (
-            <button
-              onClick={() => setChestOpen(true)}
-              className="mt-4 w-full flex items-center gap-3 rounded-2xl border border-violet-400/40 bg-gradient-to-r from-violet-600/25 to-fuchsia-600/15 p-3 text-left"
-            >
-              <span className="shrink-0 animate-chest-wiggle">
-                <ChestArt size={54} />
+      {/* stage: your character stays in view while you browse, so every try-on is visible */}
+      <div className="shrink-0 px-4">
+        <div className={`wardrobe-stage relative mx-auto flex flex-col items-center ${compact ? 'is-compact' : ''}`}>
+          <button
+            type="button"
+            className="wardrobe-avatar relative rounded-[28%] select-none"
+            onPointerDown={() => trying.length && setComparing(true)}
+            onPointerUp={() => setComparing(false)}
+            onPointerLeave={() => setComparing(false)}
+            onPointerCancel={() => setComparing(false)}
+            onContextMenu={(e) => e.preventDefault()}
+            aria-label={trying.length ? 'Hold to compare with your current look' : 'Your character'}
+          >
+            <Avatar look={shown} size={168} />
+            {trying.length > 0 && (
+              <span key={comparing ? 'now' : 'try'} className="tryon-tag absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-[10px] font-bold whitespace-nowrap">
+                {comparing ? 'Your look now' : 'Trying on'}
               </span>
-              <span className="flex-1">
-                <span className="block text-sm font-bold text-white">
-                  {stats.chestsAvailable} reward {stats.chestsAvailable === 1 ? 'chest' : 'chests'} to open
+            )}
+          </button>
+          <p className="mt-3 text-[11px] text-slate-400 h-4">
+            {trying.length ? 'Hold your character to compare' : 'Tap any item to try it on, even before you buy it'}
+          </p>
+        </div>
+
+        {/* categories, each with its own collected count */}
+        <div className="-mx-4 px-4 mt-2 flex gap-1.5 overflow-x-auto no-scrollbar" role="tablist" aria-label="Categories">
+          {AVATAR_SLOTS.map((s) => {
+            const on = slot === s.id;
+            const c = counts[s.id];
+            return (
+              <button
+                key={s.id}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setSlot(s.id)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
+                  on ? 'bg-amber-500 text-white' : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.08]'
+                }`}
+              >
+                <Icon name={s.icon} size={15} />
+                {s.label}
+                <span className={`text-[11px] tabular-nums ${on ? 'text-white/80' : 'text-slate-500'}`}>
+                  {c.have}/{c.total}
                 </span>
-                <span className="block text-xs text-violet-200/80">Won from perfect days, perfect weeks and level-ups</span>
-              </span>
-              <span className="rounded-xl bg-violet-500 text-white text-sm font-bold px-3.5 py-2">Open</span>
-            </button>
-          )}
+                {tryOn[s.id] && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" aria-label="trying one on" />}
+              </button>
+            );
+          })}
+        </div>
 
-          {/* slot tabs */}
-          <div className="sticky top-0 z-10 -mx-4 px-4 pt-4 pb-3 bg-canvas">
-            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-              {AVATAR_SLOTS.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setSlot(s.id)}
-                  aria-pressed={slot === s.id}
-                  className={`shrink-0 flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
-                    slot === s.id ? 'bg-amber-500 border-amber-400 text-white' : 'bg-white/[0.03] border-white/10 text-slate-300'
-                  }`}
-                >
-                  <Icon name={s.icon} size={15} />
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="mt-3 mb-2 flex items-center gap-3">
+          <p className="text-[13px] text-slate-300 whitespace-nowrap">
+            <b className="text-white font-semibold">{slotInfo.label}</b>
+            <span className="tabular-nums">
+              {' '}
+              · {here.have} / {here.total} collected
+            </span>
+          </p>
+          <span className="flex-1 h-1.5 rounded-full bg-white/[0.07] overflow-hidden">
+            <span className="block h-full rounded-full bg-amber-500 transition-[width] duration-700" style={{ width: `${(here.have / Math.max(1, here.total)) * 100}%` }} />
+          </span>
+          {here.have === here.total && <span className="text-[11px] font-bold text-emerald-300">Complete</span>}
+        </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto overscroll-contain" onScroll={(e) => setCompact(e.currentTarget.scrollTop > 24)}>
+        <div className="max-w-xl mx-auto px-4 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {/* items */}
           <div key={slot} className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 rows-stagger">
             {items.map((item) => {
               const isOwnedItem = owned(item);
               const equipped = look[item.slot] === item.id;
+              const isTrying = tryOn[item.slot]?.id === item.id;
               const r = RARITY[item.rarity];
               return (
                 <button
                   key={item.id}
                   onClick={() => tap(item)}
-                  className={`relative flex flex-col items-center rounded-2xl border-2 p-1.5 pb-2 transition ${
-                    equipped ? 'border-amber-400 bg-amber-500/10' : `${r.border} ${r.bg}`
-                  } ${preview?.id === item.id ? 'ring-2 ring-white/60' : ''} ${item.rarity !== 'common' && !equipped ? r.glow : ''}`}
+                  aria-pressed={equipped || isTrying}
+                  className={`wardrobe-tile relative flex flex-col items-center rounded-2xl border-[1.5px] p-1.5 pb-2 ${
+                    equipped ? 'border-amber-400 bg-amber-500/10' : isTrying ? 'is-trying border-white/60 bg-white/[0.06]' : `${r.border} bg-white/[0.03]`
+                  }`}
                 >
                   <div className="relative">
-                    <Avatar look={{ ...look, [item.slot]: item.id }} size={84} framing={HEAD_SLOTS.has(item.slot) ? 'head' : 'full'} className={isOwnedItem ? '' : 'saturate-[.7] brightness-90'} />
+                    <Avatar look={{ ...look, [item.slot]: item.id }} size={84} framing={HEAD_SLOTS.has(item.slot) ? 'head' : 'full'} className={isOwnedItem || isTrying ? '' : 'saturate-[.75]'} />
                     {!isOwnedItem && (
-                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-canvas border border-white/15 flex items-center justify-center text-slate-200">
+                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-raised border border-white/10 flex items-center justify-center text-slate-300">
                         <Icon name={item.unlock.kind === 'chest' ? 'df:chest' : item.unlock.kind === 'box' ? '📦' : '🔒'} size={12} />
                       </span>
                     )}
                     {equipped && (
-                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 border-2 border-canvas flex items-center justify-center text-white">
+                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 border-2 border-canvas flex items-center justify-center text-[#fff]">
                         <Icon name="✓" size={12} strokeWidth={3} className="animate-check" />
                       </span>
                     )}
                   </div>
                   <span className="mt-1.5 text-[11px] font-bold text-white leading-tight text-center line-clamp-1">{item.name}</span>
-                  <span className={`text-[10px] font-semibold ${equipped ? 'text-amber-300' : isOwnedItem ? 'text-emerald-300' : r.text}`}>
-                    {equipped ? 'Wearing' : isOwnedItem ? 'Owned' : unlockLabel(item)}
+                  <span className={`text-[10px] font-semibold ${equipped ? 'text-amber-300' : isTrying ? 'text-white' : isOwnedItem ? 'text-emerald-300' : 'text-slate-400'}`}>
+                    {equipped ? 'Wearing' : isTrying ? 'Trying on' : isOwnedItem ? 'Owned' : unlockLabel(item)}
                   </span>
                   {item.rarity !== 'common' && (
-                    <span className={`absolute top-1 left-1 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-black/60 ${r.text}`}>
-                      {r.label}
-                    </span>
+                    <span className={`absolute top-1.5 left-1.5 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-canvas/80 ${r.text}`}>{r.label}</span>
                   )}
                 </button>
               );
@@ -220,39 +275,55 @@ export function Wardrobe() {
               <Icon name="🔥" size="1.1em" className="icon-inline text-orange-400" />
               <b className="text-slate-200">Milestones:</b> streaks and levels unlock exclusive gear automatically.
             </p>
+            <p className="pt-1 text-slate-500 tabular-nums">
+              All categories: {AVATAR_SLOTS.reduce((s, x) => s + counts[x.id].have, 0)} / {AVATAR_ITEMS.length} collected
+            </p>
           </div>
         </div>
       </div>
 
-      {preview && (
-        <div className="border-t border-white/10 bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sheet-in">
-          <div className="max-w-xl mx-auto flex items-center gap-3">
-            <Avatar look={shown} size={52} />
-            <div className="flex-1 min-w-0">
-              <p className={`text-[10px] font-black uppercase tracking-wider ${RARITY[preview.rarity].text}`}>{RARITY[preview.rarity].label}</p>
-              <p className="font-display font-bold text-white truncate">{preview.name}</p>
-              <p className="text-xs text-slate-400 truncate">
-                {previewOwned ? 'You own this' : preview.unlock.kind === 'chest' ? 'Win it from a reward chest' : preview.unlock.kind === 'box' ? 'Very rare prize from the daily box' : unlockLabel(preview)}
-              </p>
+      {trying.length > 0 && (
+        <div className="shrink-0 border-t border-white/10 bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sheet-in">
+          <div className="max-w-xl mx-auto">
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4">
+              {trying.map((i) => (
+                <button
+                  key={i.id}
+                  onClick={() => tap(i)}
+                  className="tryon-chip shrink-0 flex items-center gap-1.5 rounded-full bg-white/[0.06] pl-2.5 pr-2 py-1 text-xs"
+                  aria-label={`Take off ${i.name}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full`} style={{ background: RARITY[i.rarity].hex }} aria-hidden="true" />
+                  <span className="font-semibold text-white">{i.name}</span>
+                  <span className="text-slate-400">{hint(i)}</span>
+                  <Icon name="✕" size={12} className="text-slate-500" />
+                </button>
+              ))}
             </div>
-            {preview.unlock.kind === 'shop' && !previewOwned ? (
-              <button
-                disabled={!canBuy}
-                onClick={() => {
-                  dispatch({ type: 'UNLOCK_COSMETIC', itemId: preview.id });
-                  dispatch({ type: 'EQUIP_COSMETIC', slot: preview.slot, itemId: preview.id });
-                  setPreview(null);
-                }}
-                className="shrink-0 flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-white/10 disabled:text-slate-500 text-white text-sm font-bold px-4 py-2.5"
-              >
-                <Icon name="💎" size={15} />
-                {canBuy ? `Buy ${preview.unlock.cost}` : `Need ${preview.unlock.cost}`}
-              </button>
-            ) : (
-              <button onClick={() => setPreview(null)} className="shrink-0 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-slate-200 px-4 py-2.5">
+            <div className="mt-2.5 flex items-center gap-2">
+              <p className="flex-1 min-w-0 text-[11px] text-slate-400 leading-snug">
+                {buyable.length === 0
+                  ? 'These can only be won, not bought. Open chests to get them.'
+                  : canBuy
+                    ? lockedOther
+                      ? `Buys ${buyable.length} now. ${lockedOther} more can only be won.`
+                      : `You'll have ${stats.availableShards - total} coins left.`
+                    : `You need ${total - stats.availableShards} more coins. Every XP is a coin.`}
+              </p>
+              <button onClick={() => setTryOn({})} className="shrink-0 rounded-xl bg-white/[0.06] text-sm font-semibold text-slate-200 px-3.5 py-2.5">
                 Take off
               </button>
-            )}
+              {buyable.length > 0 && (
+                <button
+                  disabled={!canBuy}
+                  onClick={buyAll}
+                  className="shrink-0 flex items-center gap-1.5 rounded-xl bg-amber-500 disabled:bg-white/10 disabled:text-slate-500 text-white text-sm font-bold px-4 py-2.5"
+                >
+                  <Icon name="💎" size={15} />
+                  {buyable.length > 1 ? `Buy all · ${total}` : `Buy · ${total}`}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
