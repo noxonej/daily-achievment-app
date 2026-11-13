@@ -59,6 +59,17 @@ service cloud.firestore {
       allow read: if signedIn();
     }
 
+    // Apple Health steps inbox: an iPhone Shortcut writes today's step total here, the app reads it.
+    // The document name is a long random secret only your app and your Shortcut know; it holds a single
+    // number and nothing about who you are, so no sign-in is needed.
+    match /stepsInbox/{token} {
+      allow get: if token.size() >= 24;
+      allow create, update: if token.size() >= 24
+        && request.resource.data.keys().hasOnly(['steps'])
+        && request.resource.data.steps is number
+        && request.resource.data.steps >= 0 && request.resource.data.steps < 200000;
+    }
+
     // Cheers from friends.
     match /cheers/{uid}/items/{id} {
       allow read, delete: if signedIn() && me() == uid;

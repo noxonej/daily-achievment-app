@@ -199,6 +199,8 @@ export type Action =
   /** Change a number quest's goal, glass size or quick buttons; today's progress is kept (rescaled for a new glass size). */
   | { type: 'SET_MEASURE'; questId: string; measure: QuestMeasure }
   | { type: 'ADD_STEPS'; steps: number }
+  | { type: 'SYNC_STEPS_TOTAL'; steps: number }
+  | { type: 'SET_STEPS_TOKEN'; token: string }
   | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
   | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
   | { type: 'USE_SKIP_PASS'; questId: string }
@@ -1118,6 +1120,29 @@ export function reducer(state: AppState, action: Action): AppState {
       }
       return next;
     }
+
+    case 'SYNC_STEPS_TOTAL': {
+      // Today's total from the phone's own step counter (Apple Health via a Shortcut, or a ?steps= link).
+      // It already includes steps the app counted itself, so daily quests take the bigger number, and
+      // weekly quests only get what's new, so nothing is counted twice.
+      const total = Math.round(action.steps);
+      if (!(total > 0)) return state;
+      const today = todayKey();
+      const before = state.stepSync?.date === today ? state.stepSync.steps : 0;
+      const stepQuests = state.quests.filter((x) => x.measure?.unit === 'steps' && !x.archived);
+      const daily = stepQuests.find((q) => q.frequency === 'daily');
+      const dailyBefore = daily ? currentProgress(state, daily) : before;
+      const gained = Math.max(0, total - Math.max(dailyBefore, before));
+      let next: AppState = { ...state, stepSync: { date: today, steps: Math.max(total, before), at: new Date().toISOString() } };
+      for (const q of stepQuests) {
+        if (q.frequency === 'daily') next = withProgress(next, q, Math.max(currentProgress(next, q), total));
+        else if (gained > 0) next = withProgress(next, q, currentProgress(next, q) + gained);
+      }
+      return next;
+    }
+
+    case 'SET_STEPS_TOKEN':
+      return state.stepsToken ? state : { ...state, stepsToken: action.token };
 
     case 'ADD_RUN': {
       if (!(action.km > 0)) return state;

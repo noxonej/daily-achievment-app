@@ -18,6 +18,9 @@ export const friendsConfigured = (): boolean => googleConfigured() && !!API_KEY 
 
 const BASE = () => `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
+/** Public address of one Firestore document, usable without signing in (the rules decide what's allowed). */
+export const publicDocUrl = (path: string) => `${BASE()}/${path}?key=${API_KEY}`;
+
 /* ---------------------------------------------------------------- auth */
 
 export interface FbSession {
