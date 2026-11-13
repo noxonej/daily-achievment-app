@@ -1408,3 +1408,8 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 /* Trying something on: a quick, soft settle instead of a big pop, so browsing stays calm. */
 @keyframes avatar-swap { from { opacity: 0.55; scale: 0.97; } to { opacity: 1; scale: 1; } }
 .avatar-swap { animation: avatar-swap 0.2s var(--ease-out); }
+/* Characters blink every few seconds (eyelids drawn over open eyes for a moment). */
+@keyframes px-blink { 0%, 93%, 100% { opacity: 0; } 94%, 97% { opacity: 1; } }
+.px-blink { opacity: 0; animation: px-blink 4.6s steps(1, end) infinite; }
+:root[data-motion='reduce'] .px-blink { animation: none; }
+@media (prefers-reduced-motion: reduce) { .px-blink { animation: none; } }
