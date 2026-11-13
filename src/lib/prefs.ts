@@ -1,3 +1,4 @@
+import { THEME_COLOR } from './theme';
 import { useEffect, useSyncExternalStore } from 'react';
 import type { Prefs } from './types';
 import { DEFAULT_PREFS, LANGUAGES, translate, type TKey } from './i18n';
@@ -61,7 +62,7 @@ export function useApplyPrefs(raw: Partial<Prefs> | undefined) {
     const root = document.documentElement;
     if (theme === 'light') root.dataset.theme = 'light';
     else delete root.dataset.theme;
-    const bg = theme === 'light' ? '#f3f5fa' : getComputedStyle(root).getPropertyValue('--bg').trim() || '#05060b';
+    const bg = THEME_COLOR[theme];
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
     try {
       localStorage.setItem(THEME_KEY, prefs.theme);

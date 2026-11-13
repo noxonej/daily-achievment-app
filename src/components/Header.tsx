@@ -47,7 +47,6 @@ export function Header() {
             className="flex items-center gap-2.5 min-w-0 rounded-2xl -ml-1 pl-1 pr-2 py-1 hover:bg-white/[0.04]"
           >
             <span className="relative shrink-0">
-              <span className="absolute inset-1 rounded-xl bg-cyan-400/35 blur-md" aria-hidden="true" />
               <Logo size={36} className={`relative transition-transform duration-300 ${scrolled ? 'scale-90' : ''}`} />
             </span>
             <span className="min-w-0 text-left leading-none">
@@ -144,7 +143,7 @@ function AvatarRing({
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - (drawn ? Math.max(0.02, shown) : 0))}
-          style={{ transition: 'stroke-dashoffset .9s cubic-bezier(.22,1,.36,1)', filter: 'drop-shadow(0 0 4px var(--color-amber-400))' }}
+          style={{ transition: 'stroke-dashoffset .9s cubic-bezier(.22,1,.36,1)' }}
         />
       </svg>
       <span className="absolute inset-[5px] rounded-full overflow-hidden bg-raised">
