@@ -15,13 +15,13 @@ export function SeasonCard() {
   const next = SEASON_TIERS.find((t) => pts < t.points);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" style={{ ['--season' as string]: theme.color }}>
       <div className="flex items-center gap-3">
-        <span className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: `${theme.color}22`, color: theme.color }}>
+        <span className="season-ink shrink-0 w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: `${theme.color}22` }}>
           <Icon name={theme.icon} size={22} />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: theme.color }}>
+          <p className="season-ink text-[11px] font-bold uppercase tracking-wider">
             Season · {left} {left === 1 ? 'day' : 'days'} left
           </p>
           <p className="font-display font-semibold text-white truncate">{seasonLabel(key)}</p>
@@ -33,7 +33,7 @@ export function SeasonCard() {
       </div>
 
       <div className="relative mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${Math.min(100, (pts / max) * 100)}%`, background: theme.color }} />
+        <div className="season-fill h-full rounded-full" style={{ width: `${Math.min(100, (pts / max) * 100)}%` }} />
       </div>
 
       <div className="grid grid-cols-3 gap-2 mt-3">

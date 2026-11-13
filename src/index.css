@@ -1413,3 +1413,12 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 .px-blink { opacity: 0; animation: px-blink 4.6s steps(1, end) infinite; }
 :root[data-motion='reduce'] .px-blink { animation: none; }
 @media (prefers-reduced-motion: reduce) { .px-blink { animation: none; } }
+
+/* Season card: each month's colour, deepened in light mode so it stays readable on white. */
+.season-ink { color: var(--season); }
+.season-fill { background: var(--season); }
+:root[data-theme='light'] .season-ink { color: color-mix(in oklab, var(--season) 45%, #1d1b18); }
+:root[data-theme='light'] .season-fill { background: color-mix(in oklab, var(--season) 70%, #1d1b18); }
+/* Daily rewards ready to claim: a quiet brand tint instead of a glow. */
+.checkin-ready { background: radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--color-amber-500) 13%, transparent), transparent 65%), rgba(255, 255, 255, 0.03); }
+:root[data-theme='light'] .checkin-ready { background: radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--color-amber-400) 8%, transparent), transparent 65%), #ffffff; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 6px 18px -12px rgba(16, 24, 40, 0.18); }
