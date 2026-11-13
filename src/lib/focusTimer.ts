@@ -75,6 +75,32 @@ export function playChime() {
   }
 }
 
+/** A short, bright "pling" when a quest is ticked: two quick notes going up. */
+export function playTick(crit = false) {
+  try {
+    if (!soundsOn) return;
+    unlockAudio();
+    if (!audio) return;
+    const now = audio.currentTime;
+    const notes = crit ? [880, 1174.66, 1567.98] : [987.77, 1318.51];
+    notes.forEach((freq, i) => {
+      const o = audio!.createOscillator();
+      const g = audio!.createGain();
+      o.type = 'triangle';
+      o.frequency.value = freq;
+      const t = now + i * 0.07;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+      o.connect(g).connect(audio!.destination);
+      o.start(t);
+      o.stop(t + 0.25);
+    });
+  } catch {
+    // sound is a nice-to-have
+  }
+}
+
 export const focusTimer = {
   open(label?: string) {
     set({ open: true, ...(label !== undefined && !state.endAt && !state.pausedLeftMs ? { label } : {}) });

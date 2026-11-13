@@ -1,3 +1,4 @@
+import { useId } from 'react';
 /**
  * Squzo coin: the in-app money (saved as "shards" in the data). A crisp pixel-art gold coin,
  * in the spirit of pixel adventure games but with a cleaner palette: dark rim, warm gold face,
@@ -31,6 +32,7 @@ const RECTS = MAP.flatMap((row, y) =>
 );
 
 export function Coin({ size = 16, shine = false, className = '' }: { size?: number | string; shine?: boolean; className?: string }) {
+  const clip = `coin${useId().replace(/:/g, '')}`;
   return (
     <svg
       viewBox="0 0 12 12"
@@ -44,7 +46,19 @@ export function Coin({ size = 16, shine = false, className = '' }: { size?: numb
       {RECTS.map((r) => (
         <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width="1.02" height="1.02" fill={r.fill} />
       ))}
-      {shine && <rect className="coin-glint" x="-3" y="0" width="2" height="12" fill="#fff" opacity=".55" transform="skewX(-20)" />}
+      {shine && (
+        // The glint is clipped to the coin itself, so it no longer shows as a white bar over the empty corners.
+        <>
+          <clipPath id={clip}>
+            {RECTS.map((r) => (
+              <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width="1.02" height="1.02" />
+            ))}
+          </clipPath>
+          <g clipPath={`url(#${clip})`}>
+            <rect className="coin-glint" x="-3" y="0" width="2" height="12" fill="#fff" opacity=".55" transform="skewX(-20)" />
+          </g>
+        </>
+      )}
     </svg>
   );
 }

@@ -17,11 +17,11 @@ export function WildcardQuestCard({ quest, completed, onToggle, periodKey }: Wil
   const { xp, crit } = questReward(periodKey, quest.id, quest.xp);
 
   return (
-    <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-r from-rose-500/60 via-amber-500/60 to-amber-400/60">
+    <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-r from-orange-400/55 to-yellow-400/35">
       <button
         onClick={onToggle}
         className={`w-full flex items-center gap-3 rounded-[15px] px-4 py-3.5 text-left transition-all active:scale-[0.99] ${
-          completed ? 'bg-emerald-500/10' : 'bg-canvas'
+          completed ? 'bg-emerald-500/10' : 'bg-surface'
         }`}
       >
         <div

@@ -16,7 +16,7 @@ import { Toggle } from './AuthGate';
 import { AccountSettings } from './AccountSettings';
 import { GoogleCard, GoogleG } from './GoogleConnect';
 import { googleConfigured } from '../lib/google';
-import { AccentPicker, BackgroundPicker, ProfileCard } from './ProfileSettings';
+import { ProfileCard } from './ProfileSettings';
 import { AboutPage } from './AboutPage';
 import { InstallCard } from './InstallCard';
 import { ManageView } from '../views/ManageView';
@@ -250,9 +250,9 @@ function SwitchRow({ label, hint, on, onChange }: { label: string; hint?: string
 }
 
 const THEME_CARDS: Array<{ id: Prefs['theme']; key: TKey; bg: string; card: string; line: string }> = [
-  { id: 'light', key: 'appearance.light', bg: '#eef1f6', card: '#ffffff', line: '#cbd5e1' },
-  { id: 'dark', key: 'appearance.dark', bg: '#05060b', card: '#171b2e', line: '#334155' },
-  { id: 'system', key: 'appearance.system', bg: 'linear-gradient(135deg, #eef1f6 50%, #05060b 50%)', card: '', line: '' },
+  { id: 'dark', key: 'appearance.dark', bg: '#0b0d11', card: '#1b1e23', line: '#3a3f47' },
+  { id: 'light', key: 'appearance.light', bg: '#f4f6f8', card: '#ffffff', line: '#cfd5de' },
+  { id: 'system', key: 'appearance.system', bg: 'linear-gradient(135deg, #f4f6f8 50%, #0b0d11 50%)', card: '', line: '' },
 ];
 
 function AppearancePage() {
@@ -262,13 +262,6 @@ function AppearancePage() {
       <section>
         <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{t('appearance.theme')}</p>
         <ThemePicker />
-      </section>
-
-      <section>
-        <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{t('appearance.accent')}</p>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <AccentPicker />
-        </div>
       </section>
 
       <section>
@@ -302,13 +295,6 @@ function AppearancePage() {
           </p>
         </div>
       </section>
-
-      {prefs.theme !== 'light' && (
-        <section>
-          <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{t('appearance.background')}</p>
-          <BackgroundPicker />
-        </section>
-      )}
 
       <Group>
         <SwitchRow label={t('prefs.reduceMotion')} on={prefs.reduceMotion} onChange={(v) => setPrefs({ reduceMotion: v })} />
@@ -509,7 +495,7 @@ function SoundsPage() {
   const [prefs, setPrefs] = usePrefs();
   return (
     <Group>
-      <SwitchRow label={t('prefs.sounds')} hint="Chime when a focus session ends." on={prefs.sounds} onChange={(v) => setPrefs({ sounds: v })} />
+      <SwitchRow label={t('prefs.sounds')} hint="A pling when you tick a quest, and a chime when a focus session ends." on={prefs.sounds} onChange={(v) => setPrefs({ sounds: v })} />
       <SwitchRow
         label={t('prefs.haptics')}
         hint="Little buzzes when you finish quests and open boxes (Android)."

@@ -80,13 +80,13 @@ const saved = (n: number): Milestone => ({ stat: 'savingsReached', target: n, la
 const focus = (min: number): Milestone => ({ stat: 'focusTotal', target: min, label: `Focus for ${Math.round(min / 60)} hours in total` });
 
 export const PROPERTIES: Property[] = [
-  { id: 'room', name: 'Rented room', blurb: 'Small, but it is yours. Everyone starts somewhere.', unlock: free, view: 'city', wall: 'wall-cream', floor: 'floor-oak', tier: 1 },
-  { id: 'studio', name: 'Studio apartment', blurb: 'Your own front door and a bigger window.', unlock: at(5, 600), view: 'park', wall: 'wall-sage', floor: 'floor-oak', tier: 2 },
-  { id: 'city', name: 'City apartment', blurb: 'High up, with the lights of the city outside.', unlock: at(10, 1500, streak(7)), view: 'skyline', wall: 'wall-stone', floor: 'floor-walnut', tier: 3 },
-  { id: 'loft', name: 'Industrial loft', blurb: 'Brick, tall windows and room to think.', unlock: at(18, 3000, quests(250)), view: 'skyline', wall: 'wall-brick', floor: 'floor-concrete', tier: 4 },
-  { id: 'house', name: 'Small house', blurb: 'A garden of your own, and quiet mornings.', unlock: at(25, 5000, streak(30)), view: 'garden', wall: 'wall-cream', floor: 'floor-walnut', tier: 5 },
-  { id: 'villa', name: 'Modern villa', blurb: 'Glass walls, open hills, pure calm.', unlock: at(40, 9000, goals(3)), view: 'hills', wall: 'wall-white', floor: 'floor-marble', tier: 6 },
-  { id: 'mansion', name: 'Seaside mansion', blurb: 'The ocean from every room. You built this.', unlock: at(60, 16000, streak(100)), view: 'sea', wall: 'wall-white', floor: 'floor-marble', tier: 7 },
+  { id: 'room', name: 'The Launchpad', blurb: 'A small rented room in Old Town. Everyone starts somewhere.', unlock: free, view: 'city', wall: 'wall-cream', floor: 'floor-oak', tier: 1 },
+  { id: 'studio', name: 'Parkside Studio', blurb: 'Your own front door, with the park right outside.', unlock: at(5, 600), view: 'park', wall: 'wall-sage', floor: 'floor-oak', tier: 2 },
+  { id: 'city', name: 'Skyline Apartment', blurb: 'Twelve floors up. At night the city lights are yours.', unlock: at(10, 1500, streak(7)), view: 'skyline', wall: 'wall-stone', floor: 'floor-walnut', tier: 3 },
+  { id: 'loft', name: 'Brickworks Loft', blurb: 'Old factory brick, tall windows and room to think.', unlock: at(18, 3000, quests(250)), view: 'skyline', wall: 'wall-brick', floor: 'floor-concrete', tier: 4 },
+  { id: 'house', name: 'Willow Lane House', blurb: 'A garden of your own, and quiet mornings.', unlock: at(25, 5000, streak(30)), view: 'garden', wall: 'wall-cream', floor: 'floor-walnut', tier: 5 },
+  { id: 'villa', name: 'Hillcrest Villa', blurb: 'Glass walls, open hills, pure calm.', unlock: at(40, 9000, goals(3)), view: 'hills', wall: 'wall-white', floor: 'floor-marble', tier: 6 },
+  { id: 'mansion', name: 'Seacliff Estate', blurb: 'The ocean from every room. You built this.', unlock: at(60, 16000, streak(100)), view: 'sea', wall: 'wall-white', floor: 'floor-marble', tier: 7 },
 ];
 
 export const DECOR: DecorItem[] = [

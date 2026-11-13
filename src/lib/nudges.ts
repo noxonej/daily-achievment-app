@@ -4,6 +4,7 @@ import { addDaysToKey, todayKey } from './date';
 import { hashString } from './hash';
 import { fullPrefs } from './prefs';
 import { showSystemNotification } from './notify';
+import { syncPush } from './push';
 import { loadQuotes, poolFor, quoteOfDay } from './quotes';
 
 /**
@@ -273,7 +274,9 @@ export function useNudges(state: AppState, stats: DerivedStats) {
         morning[d] = q ? { title: q.kind === 'verse' ? 'Verse of the day' : 'Your daily boost', body: `“${q.text}” — ${q.by}` } : pickNudge(0, name, d, 'm');
       }
       if (!alive) return;
-      await writeStatus({ enabled: prefs.nudges, date: today, doneToday, eveningAt, morningAt, evening, morning, comeback, lastCall });
+      const status = { enabled: prefs.nudges, date: today, doneToday, eveningAt, morningAt, evening, morning, comeback, lastCall };
+      await writeStatus(status);
+      void syncPush(status);
       if (prefs.nudges) void registerPeriodic();
     })();
     return () => {
