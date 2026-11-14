@@ -393,7 +393,17 @@ export interface SleepState {
 /** 1 = awful … 5 = great */
 export type Mood = 1 | 2 | 3 | 4 | 5;
 
-export type DecorSlot = 'wall' | 'floor' | 'art' | 'seat' | 'desk' | 'lamp' | 'plant' | 'rug' | 'shelf';
+export type DecorSlot =
+  | 'wall' | 'floor' | 'window' | 'light' | 'poster' | 'art' | 'shelf'
+  | 'bed' | 'lamp' | 'seat' | 'table' | 'rug' | 'plant' | 'desk' | 'tech' | 'chair' | 'collectible';
+
+/** How a car is customised (each part is bought once, then usable on every car). */
+export interface CarMods {
+  rim?: string;
+  spoiler?: string;
+  kit?: string;
+  stance?: string;
+}
 
 /** Your World: home, decor, vehicles. Item lists live in src/world/catalog.ts; only ids are saved. */
 export interface WorldState {
@@ -407,6 +417,8 @@ export interface WorldState {
   vehicle?: string;
   /** Paint per vehicle id. */
   paints?: Record<string, string>;
+  /** Wheels, spoiler, body kit and stance per car id (added 2026-11-14). */
+  mods?: Record<string, CarMods>;
 }
 
 export interface AppState {

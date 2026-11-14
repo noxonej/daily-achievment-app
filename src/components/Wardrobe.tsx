@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DECOR_SLOTS, PAINTS, VEHICLES, WORLD_DROP_CHANCE, rollWorldDrop, worldOf, type WorldDrop } from '../world/catalog';
-import { VehicleArt } from '../world/VehicleArt';
+import { DECOR_SLOTS, VEHICLES, WORLD_DROP_CHANCE, rollWorldDrop, vehicleHex, worldOf, type WorldDrop } from '../world/catalog';
+import { VehicleDraw } from '../world/VehicleDraw';
 import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { ownership } from '../store/reducer';
@@ -408,7 +408,7 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
             {drop ? (
               <div className="prize-card relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-b from-[#26324a] to-[#141a28] ring-1 ring-white/15" style={{ boxShadow: `0 24px 50px -20px #000, inset 0 0 0 2px ${r.hex}66` }}>
                 {drop.kind === 'vehicle' && VEHICLES.find((v) => v.id === drop.id) ? (
-                  <VehicleArt vehicle={VEHICLES.find((v) => v.id === drop.id)!} paint={PAINTS.find((p) => p.id === VEHICLES.find((v) => v.id === drop.id)!.paint)?.hex ?? '#888'} className="w-[150px]" />
+                  <VehicleDraw vehicle={VEHICLES.find((v) => v.id === drop.id)!} hex={vehicleHex(worldOf(state), VEHICLES.find((v) => v.id === drop.id)!)} spin className="w-[220px]" />
                 ) : (
                   <span className="flex flex-col items-center gap-2">
                     <Icon name={drop.kind === 'paint' ? '🎨' : DECOR_SLOTS.find((x) => x.id === drop.slot)?.icon ?? '🏠'} size={64} strokeWidth={1.6} className="text-white" />

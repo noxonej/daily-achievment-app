@@ -65,7 +65,7 @@ export const LANGUAGES: Array<{ code: string; name: string; native: string }> = 
 
 const S: Record<string, string[]> = {
   en: [
-    'Today', 'Plan', 'Money', 'Quests', 'You',
+    'Today', 'Plan', 'Money', 'Goals', 'You',
     'Good morning', 'Good afternoon', 'Good evening', 'Good night',
     'Daily quests', 'done', 'New quests in {t}',
     'Right now', 'Next', 'Mark done', 'Focus', 'Day complete',
@@ -88,7 +88,7 @@ const S: Record<string, string[]> = {
     'World',
   ],
   lt: [
-    'Šiandien', 'Planas', 'Pinigai', 'Užduotys', 'Tu',
+    'Šiandien', 'Planas', 'Pinigai', 'Tikslai', 'Tu',
     'Labas rytas', 'Laba diena', 'Labas vakaras', 'Labanakt',
     'Dienos užduotys', 'atlikta', 'Naujos užduotys po {t}',
     'Dabar', 'Toliau', 'Pažymėti atliktu', 'Fokusas', 'Diena baigta',
@@ -110,7 +110,7 @@ const S: Record<string, string[]> = {
     'Kaip tai veikia', 'Paprastas režimas', 'Rodo tik svarbiausius dalykus. Išjunk, jei nori matyti viską.',
   ],
   lv: [
-    'Šodien', 'Plāns', 'Nauda', 'Uzdevumi', 'Tu',
+    'Šodien', 'Plāns', 'Nauda', 'Mērķi', 'Tu',
     'Labrīt', 'Labdien', 'Labvakar', 'Ar labu nakti',
     'Dienas uzdevumi', 'paveikts', 'Jauni uzdevumi pēc {t}',
     'Tagad', 'Nākamais', 'Atzīmēt kā paveiktu', 'Fokuss', 'Diena pabeigta',
@@ -131,7 +131,7 @@ const S: Record<string, string[]> = {
     'Vispārīgi',
   ],
   et: [
-    'Täna', 'Plaan', 'Raha', 'Ülesanded', 'Sina',
+    'Täna', 'Plaan', 'Raha', 'Eesmärgid', 'Sina',
     'Tere hommikust', 'Tere päevast', 'Tere õhtust', 'Head ööd',
     'Päeva ülesanded', 'tehtud', 'Uued ülesanded {t} pärast',
     'Praegu', 'Järgmine', 'Märgi tehtuks', 'Fookus', 'Päev tehtud',
@@ -152,7 +152,7 @@ const S: Record<string, string[]> = {
     'Üldine',
   ],
   pl: [
-    'Dziś', 'Plan', 'Pieniądze', 'Zadania', 'Ty',
+    'Dziś', 'Plan', 'Pieniądze', 'Cele', 'Ty',
     'Dzień dobry', 'Dzień dobry', 'Dobry wieczór', 'Dobranoc',
     'Zadania dnia', 'zrobione', 'Nowe zadania za {t}',
     'Teraz', 'Dalej', 'Oznacz jako zrobione', 'Skupienie', 'Dzień ukończony',
@@ -173,7 +173,7 @@ const S: Record<string, string[]> = {
     'Ogólne',
   ],
   ru: [
-    'Сегодня', 'План', 'Деньги', 'Задания', 'Ты',
+    'Сегодня', 'План', 'Деньги', 'Цели', 'Ты',
     'Доброе утро', 'Добрый день', 'Добрый вечер', 'Доброй ночи',
     'Задания дня', 'выполнено', 'Новые задания через {t}',
     'Сейчас', 'Далее', 'Отметить выполненным', 'Фокус', 'День завершён',
@@ -194,7 +194,7 @@ const S: Record<string, string[]> = {
     'Общие',
   ],
   uk: [
-    'Сьогодні', 'План', 'Гроші', 'Завдання', 'Ти',
+    'Сьогодні', 'План', 'Гроші', 'Цілі', 'Ти',
     'Доброго ранку', 'Доброго дня', 'Доброго вечора', 'На добраніч',
     'Завдання дня', 'виконано', 'Нові завдання через {t}',
     'Зараз', 'Далі', 'Позначити виконаним', 'Фокус', 'День завершено',
@@ -215,7 +215,7 @@ const S: Record<string, string[]> = {
     'Загальні',
   ],
   de: [
-    'Heute', 'Plan', 'Geld', 'Quests', 'Du',
+    'Heute', 'Plan', 'Geld', 'Ziele', 'Du',
     'Guten Morgen', 'Guten Tag', 'Guten Abend', 'Gute Nacht',
     'Tägliche Quests', 'erledigt', 'Neue Quests in {t}',
     'Gerade jetzt', 'Als Nächstes', 'Als erledigt markieren', 'Fokus', 'Tag geschafft',
@@ -236,7 +236,7 @@ const S: Record<string, string[]> = {
     'Allgemein',
   ],
   fr: [
-    "Aujourd'hui", 'Plan', 'Argent', 'Quêtes', 'Toi',
+    "Aujourd'hui", 'Plan', 'Argent', 'Objectifs', 'Toi',
     'Bonjour', 'Bon après-midi', 'Bonsoir', 'Bonne nuit',
     'Quêtes du jour', 'faites', 'Nouvelles quêtes dans {t}',
     'En ce moment', 'Ensuite', 'Marquer comme fait', 'Concentration', 'Journée terminée',
@@ -257,7 +257,7 @@ const S: Record<string, string[]> = {
     'Général',
   ],
   es: [
-    'Hoy', 'Plan', 'Dinero', 'Misiones', 'Tú',
+    'Hoy', 'Plan', 'Dinero', 'Metas', 'Tú',
     'Buenos días', 'Buenas tardes', 'Buenas noches', 'Buenas noches',
     'Misiones del día', 'hechas', 'Nuevas misiones en {t}',
     'Ahora mismo', 'Siguiente', 'Marcar como hecha', 'Enfoque', 'Día completado',
@@ -278,7 +278,7 @@ const S: Record<string, string[]> = {
     'General',
   ],
   it: [
-    'Oggi', 'Piano', 'Soldi', 'Missioni', 'Tu',
+    'Oggi', 'Piano', 'Soldi', 'Obiettivi', 'Tu',
     'Buongiorno', 'Buon pomeriggio', 'Buonasera', 'Buonanotte',
     'Missioni del giorno', 'fatte', 'Nuove missioni tra {t}',
     'Adesso', 'Prossimo', 'Segna come fatto', 'Concentrazione', 'Giornata completata',
@@ -299,7 +299,7 @@ const S: Record<string, string[]> = {
     'Generale',
   ],
   pt: [
-    'Hoje', 'Plano', 'Dinheiro', 'Missões', 'Você',
+    'Hoje', 'Plano', 'Dinheiro', 'Metas', 'Você',
     'Bom dia', 'Boa tarde', 'Boa noite', 'Boa noite',
     'Missões do dia', 'feitas', 'Novas missões em {t}',
     'Agora', 'Próximo', 'Marcar como feito', 'Foco', 'Dia concluído',
@@ -320,7 +320,7 @@ const S: Record<string, string[]> = {
     'Geral',
   ],
   nl: [
-    'Vandaag', 'Plan', 'Geld', 'Quests', 'Jij',
+    'Vandaag', 'Plan', 'Geld', 'Doelen', 'Jij',
     'Goedemorgen', 'Goedemiddag', 'Goedenavond', 'Goedenacht',
     'Dagelijkse quests', 'gedaan', 'Nieuwe quests over {t}',
     'Nu', 'Hierna', 'Markeer als gedaan', 'Focus', 'Dag voltooid',
@@ -341,7 +341,7 @@ const S: Record<string, string[]> = {
     'Algemeen',
   ],
   sv: [
-    'Idag', 'Plan', 'Pengar', 'Uppdrag', 'Du',
+    'Idag', 'Plan', 'Pengar', 'Mål', 'Du',
     'God morgon', 'God eftermiddag', 'God kväll', 'God natt',
     'Dagens uppdrag', 'klara', 'Nya uppdrag om {t}',
     'Just nu', 'Nästa', 'Markera som klar', 'Fokus', 'Dagen klar',
@@ -362,7 +362,7 @@ const S: Record<string, string[]> = {
     'Allmänt',
   ],
   nb: [
-    'I dag', 'Plan', 'Penger', 'Oppdrag', 'Du',
+    'I dag', 'Plan', 'Penger', 'Mål', 'Du',
     'God morgen', 'God ettermiddag', 'God kveld', 'God natt',
     'Dagens oppdrag', 'fullført', 'Nye oppdrag om {t}',
     'Akkurat nå', 'Neste', 'Merk som fullført', 'Fokus', 'Dagen er fullført',
@@ -383,7 +383,7 @@ const S: Record<string, string[]> = {
     'Generelt',
   ],
   da: [
-    'I dag', 'Plan', 'Penge', 'Opgaver', 'Dig',
+    'I dag', 'Plan', 'Penge', 'Mål', 'Dig',
     'Godmorgen', 'God eftermiddag', 'Godaften', 'Godnat',
     'Dagens opgaver', 'færdige', 'Nye opgaver om {t}',
     'Lige nu', 'Næste', 'Markér som færdig', 'Fokus', 'Dagen er klaret',
@@ -404,7 +404,7 @@ const S: Record<string, string[]> = {
     'Generelt',
   ],
   fi: [
-    'Tänään', 'Suunnitelma', 'Raha', 'Tehtävät', 'Sinä',
+    'Tänään', 'Suunnitelma', 'Raha', 'Tavoitteet', 'Sinä',
     'Hyvää huomenta', 'Hyvää iltapäivää', 'Hyvää iltaa', 'Hyvää yötä',
     'Päivän tehtävät', 'tehty', 'Uudet tehtävät {t} päästä',
     'Juuri nyt', 'Seuraavaksi', 'Merkitse tehdyksi', 'Keskittyminen', 'Päivä valmis',
@@ -425,7 +425,7 @@ const S: Record<string, string[]> = {
     'Yleiset',
   ],
   cs: [
-    'Dnes', 'Plán', 'Peníze', 'Úkoly', 'Ty',
+    'Dnes', 'Plán', 'Peníze', 'Cíle', 'Ty',
     'Dobré ráno', 'Dobré odpoledne', 'Dobrý večer', 'Dobrou noc',
     'Denní úkoly', 'hotovo', 'Nové úkoly za {t}',
     'Právě teď', 'Další', 'Označit jako hotové', 'Soustředění', 'Den dokončen',
@@ -446,7 +446,7 @@ const S: Record<string, string[]> = {
     'Obecné',
   ],
   ro: [
-    'Azi', 'Plan', 'Bani', 'Misiuni', 'Tu',
+    'Azi', 'Plan', 'Bani', 'Obiective', 'Tu',
     'Bună dimineața', 'Bună ziua', 'Bună seara', 'Noapte bună',
     'Misiunile zilei', 'făcute', 'Misiuni noi în {t}',
     'Chiar acum', 'Urmează', 'Marchează ca făcut', 'Concentrare', 'Zi încheiată',
@@ -467,7 +467,7 @@ const S: Record<string, string[]> = {
     'General',
   ],
   hu: [
-    'Ma', 'Terv', 'Pénz', 'Küldetések', 'Te',
+    'Ma', 'Terv', 'Pénz', 'Célok', 'Te',
     'Jó reggelt', 'Szép napot', 'Jó estét', 'Jó éjszakát',
     'Napi küldetések', 'kész', 'Új küldetések {t} múlva',
     'Most', 'Következő', 'Megjelölés késznek', 'Fókusz', 'Nap teljesítve',
@@ -488,7 +488,7 @@ const S: Record<string, string[]> = {
     'Általános',
   ],
   el: [
-    'Σήμερα', 'Πλάνο', 'Χρήματα', 'Αποστολές', 'Εσύ',
+    'Σήμερα', 'Πλάνο', 'Χρήματα', 'Στόχοι', 'Εσύ',
     'Καλημέρα', 'Καλό απόγευμα', 'Καλησπέρα', 'Καληνύχτα',
     'Ημερήσιες αποστολές', 'έγιναν', 'Νέες αποστολές σε {t}',
     'Τώρα', 'Επόμενο', 'Σήμανση ως ολοκληρωμένο', 'Συγκέντρωση', 'Η μέρα ολοκληρώθηκε',
@@ -509,7 +509,7 @@ const S: Record<string, string[]> = {
     'Γενικά',
   ],
   tr: [
-    'Bugün', 'Plan', 'Para', 'Görevler', 'Sen',
+    'Bugün', 'Plan', 'Para', 'Hedefler', 'Sen',
     'Günaydın', 'Tünaydın', 'İyi akşamlar', 'İyi geceler',
     'Günlük görevler', 'tamam', 'Yeni görevler {t} sonra',
     'Şu an', 'Sıradaki', 'Tamamlandı olarak işaretle', 'Odak', 'Gün tamamlandı',
@@ -530,7 +530,7 @@ const S: Record<string, string[]> = {
     'Genel',
   ],
   id: [
-    'Hari ini', 'Rencana', 'Uang', 'Misi', 'Kamu',
+    'Hari ini', 'Rencana', 'Uang', 'Tujuan', 'Kamu',
     'Selamat pagi', 'Selamat siang', 'Selamat malam', 'Selamat tidur',
     'Misi harian', 'selesai', 'Misi baru dalam {t}',
     'Sekarang', 'Berikutnya', 'Tandai selesai', 'Fokus', 'Hari selesai',
@@ -551,7 +551,7 @@ const S: Record<string, string[]> = {
     'Umum',
   ],
   vi: [
-    'Hôm nay', 'Kế hoạch', 'Tiền', 'Nhiệm vụ', 'Bạn',
+    'Hôm nay', 'Kế hoạch', 'Tiền', 'Mục tiêu', 'Bạn',
     'Chào buổi sáng', 'Chào buổi chiều', 'Chào buổi tối', 'Chúc ngủ ngon',
     'Nhiệm vụ hằng ngày', 'xong', 'Nhiệm vụ mới sau {t}',
     'Ngay bây giờ', 'Tiếp theo', 'Đánh dấu đã xong', 'Tập trung', 'Hoàn thành ngày',
@@ -572,7 +572,7 @@ const S: Record<string, string[]> = {
     'Chung',
   ],
   tl: [
-    'Ngayon', 'Plano', 'Pera', 'Mga quest', 'Ikaw',
+    'Ngayon', 'Plano', 'Pera', 'Mga layunin', 'Ikaw',
     'Magandang umaga', 'Magandang hapon', 'Magandang gabi', 'Magandang gabi',
     'Mga quest ngayong araw', 'tapos', 'Bagong quest sa loob ng {t}',
     'Ngayon mismo', 'Susunod', 'Markahang tapos', 'Focus', 'Tapos na ang araw',
@@ -593,7 +593,7 @@ const S: Record<string, string[]> = {
     'Pangkalahatan',
   ],
   hi: [
-    'आज', 'योजना', 'पैसे', 'क्वेस्ट', 'आप',
+    'आज', 'योजना', 'पैसे', 'लक्ष्य', 'आप',
     'सुप्रभात', 'नमस्कार', 'शुभ संध्या', 'शुभ रात्रि',
     'आज के क्वेस्ट', 'पूरे', 'नए क्वेस्ट {t} में',
     'अभी', 'अगला', 'पूरा चिह्नित करें', 'फ़ोकस', 'दिन पूरा',
@@ -614,7 +614,7 @@ const S: Record<string, string[]> = {
     'सामान्य',
   ],
   ja: [
-    '今日', 'プラン', 'お金', 'クエスト', 'あなた',
+    '今日', 'プラン', 'お金', '目標', 'あなた',
     'おはようございます', 'こんにちは', 'こんばんは', 'おやすみなさい',
     'デイリークエスト', '完了', '新しいクエストまで {t}',
     'いま', '次', '完了にする', '集中', '今日は達成',
@@ -635,7 +635,7 @@ const S: Record<string, string[]> = {
     '一般',
   ],
   ko: [
-    '오늘', '계획', '돈', '퀘스트', '나',
+    '오늘', '계획', '돈', '목표', '나',
     '좋은 아침이에요', '좋은 오후예요', '좋은 저녁이에요', '잘 자요',
     '일일 퀘스트', '완료', '새 퀘스트까지 {t}',
     '지금', '다음', '완료로 표시', '집중', '오늘 완료',
@@ -656,7 +656,7 @@ const S: Record<string, string[]> = {
     '일반',
   ],
   zh: [
-    '今天', '计划', '钱', '任务', '我',
+    '今天', '计划', '钱', '目标', '我',
     '早上好', '下午好', '晚上好', '晚安',
     '每日任务', '已完成', '{t} 后刷新任务',
     '现在', '下一项', '标记为完成', '专注', '今日完成',

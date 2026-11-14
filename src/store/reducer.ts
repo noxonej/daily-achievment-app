@@ -1,6 +1,6 @@
 import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState, DecorSlot } from '../lib/types';
 import { PROOF_BONUS } from '../lib/proof';
-import { DECOR, PAINTS, PROPERTIES, VEHICLES, worldChestPool, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
+import { DECOR, PAINTS, PARTS, PROPERTIES, VEHICLES, canFit, worldChestPool, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
 import { claimCheckIn } from '../lib/checkIn';
 import { SEASON_TIERS, claimedTiers, seasonKey, seasonPoints } from '../lib/seasons';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
@@ -148,6 +148,7 @@ export type Action =
   | { type: 'WORLD_PLACE'; slot: DecorSlot; itemId: string }
   | { type: 'WORLD_FEATURE'; vehicleId: string }
   | { type: 'WORLD_PAINT'; vehicleId: string; paint: string }
+  | { type: 'WORLD_MOD'; vehicleId: string; partId: string }
   /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
   | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean; worldId?: string }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
@@ -739,6 +740,10 @@ export function reducer(state: AppState, action: Action): AppState {
       if (PAINTS.some((p) => p.id === action.id) && action.vehicleId && owns(world, action.vehicleId)) {
         next.paints = { ...(world.paints ?? {}), [action.vehicleId]: action.id };
       }
+      const bought = PARTS.find((p) => p.id === action.id);
+      if (bought && action.vehicleId && owns(world, action.vehicleId)) {
+        next.mods = { ...(world.mods ?? {}), [action.vehicleId]: { ...(world.mods?.[action.vehicleId] ?? {}), [bought.kind]: bought.value } };
+      }
       return { ...state, world: next };
     }
 
@@ -765,6 +770,15 @@ export function reducer(state: AppState, action: Action): AppState {
       const world = worldOf(state);
       if (!owns(world, action.vehicleId) || !owns(world, action.paint)) return state;
       return { ...state, world: { ...world, paints: { ...(world.paints ?? {}), [action.vehicleId]: action.paint } } };
+    }
+
+    case 'WORLD_MOD': {
+      const world = worldOf(state);
+      const vehicle = VEHICLES.find((v) => v.id === action.vehicleId);
+      const p = PARTS.find((x) => x.id === action.partId);
+      if (!vehicle?.car || !p || !owns(world, vehicle.id) || !canFit(world, vehicle, p)) return state;
+      const mods = { ...(world.mods ?? {}), [vehicle.id]: { ...(world.mods?.[vehicle.id] ?? {}), [p.kind]: p.value } };
+      return { ...state, world: { ...world, mods } };
     }
 
     case 'EQUIP_COSMETIC': {

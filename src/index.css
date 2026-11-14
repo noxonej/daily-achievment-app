@@ -1526,3 +1526,66 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 @keyframes qc-wash { 0% { transform: scaleX(0); opacity: 1; } 60% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
 :root[data-motion='reduce'] :is(.qc-fill, .qc-ring, .qc-chip, .qb-bounce::before) { display: none; }
 @media (prefers-reduced-motion: reduce) { :is(.qc-fill, .qc-ring, .qc-chip, .qb-bounce::before) { display: none; } }
+
+/* ---------------------------------------------------------------- World room (2026-11-14) */
+.room-viewport { cursor: grab; }
+.room-viewport:active { cursor: grabbing; }
+.room-camera { will-change: transform; }
+.room-dim { opacity: 0.35; filter: saturate(0.6); transition: opacity 0.5s var(--ease-out, ease), filter 0.5s; }
+.room-viewport g { transition: opacity 0.5s var(--ease-out, ease); }
+.room-pin { display: block; width: 12px; height: 12px; border-radius: 999px; font-size: 0;
+  background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: rm-pin 2.6s ease-in-out infinite, rm-pin-out 0.8s ease 6s forwards; }
+@keyframes rm-pin { 0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.3); } 50% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.3); } }
+@keyframes rm-pin-out { to { opacity: 0; } }
+.room-drop { animation: rm-drop 0.75s cubic-bezier(.3, 1.35, .45, 1) both; }
+@keyframes rm-drop { 0% { transform: translateY(-46px) scale(0.92); opacity: 0; } 45% { opacity: 1; } 70% { transform: translateY(0) scale(1.03, 0.96); } 100% { transform: none; } }
+.room-dust circle { transform-box: fill-box; transform-origin: center; animation: rm-dust 0.8s ease-out both; }
+@keyframes rm-dust { 0% { transform: scale(0.2); opacity: 0; } 30% { opacity: 0.45; } 100% { transform: translateX(var(--dx, 0)) scale(1.6); opacity: 0; } }
+.room-sway { animation: rm-sway 5.5s ease-in-out infinite; }
+@keyframes rm-sway { 0%, 100% { transform: rotate(-1.2deg); } 50% { transform: rotate(1.2deg); } }
+.room-curtain { animation: rm-curtain 7s ease-in-out infinite; }
+@keyframes rm-curtain { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(1.6deg); } }
+.room-twinkle { animation: rm-twinkle 3.2s ease-in-out infinite; }
+@keyframes rm-twinkle { 0%, 100% { opacity: 0.95; } 50% { opacity: 0.35; } }
+.room-fish { animation: rm-fish 9s ease-in-out infinite; }
+.room-fish-2 { animation-duration: 12s; animation-direction: reverse; }
+@keyframes rm-fish { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-18px) translateY(2px); } }
+.room-bubble { animation: rm-bubble 3s ease-in infinite; }
+@keyframes rm-bubble { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 0.7; } 100% { transform: translateY(-40px); opacity: 0; } }
+.room-screen { animation: rm-screen 6s ease-in-out infinite; }
+@keyframes rm-screen { 0%, 100% { opacity: 0.9; } 40% { opacity: 0.78; } 42% { opacity: 0.95; } 70% { opacity: 0.84; } }
+.room-steam { animation: rm-steam 3.6s ease-in-out infinite; }
+@keyframes rm-steam { 0% { transform: translateY(4px); opacity: 0; } 40% { opacity: 0.4; } 100% { transform: translateY(-10px); opacity: 0; } }
+.room-clouds { animation: rm-clouds 60s linear infinite alternate; }
+@keyframes rm-clouds { from { transform: translateX(-30px); } to { transform: translateX(30px); } }
+.room-waves { animation: rm-waves 4s linear infinite; }
+@keyframes rm-waves { to { stroke-dashoffset: -48; } }
+.room-spin-flat { transform-box: fill-box; transform-origin: center; animation: rm-spin-flat 1.6s linear infinite; }
+@keyframes rm-spin-flat { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(0.92); } }
+.room-breathe { animation: rm-breathe 3.8s ease-in-out infinite; }
+@keyframes rm-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025, 1.04); } }
+
+/* garage showroom */
+.show-stage { background: radial-gradient(90% 70% at 50% 18%, #30323a 0%, #17181d 55%, #0c0c0f 100%); }
+.show-cone { position: absolute; left: 50%; top: -10%; width: 90%; height: 100%; transform: translateX(-50%);
+  background: radial-gradient(50% 60% at 50% 0%, rgba(255, 246, 228, 0.2), transparent 70%); pointer-events: none; }
+.show-floor { position: absolute; inset: auto 0 0; height: 36%; background: linear-gradient(180deg, #1b1c21, #0d0d10); }
+.show-floor::before { content: ''; position: absolute; left: 50%; top: 8%; width: 80%; height: 46%; transform: translateX(-50%);
+  background: radial-gradient(50% 50% at 50% 50%, rgba(255, 246, 228, 0.14), transparent 70%); }
+.show-in { animation: show-in 0.8s cubic-bezier(.2, .9, .25, 1) both; }
+@keyframes show-in { from { opacity: 0; transform: translateX(-18%); } to { opacity: 1; transform: none; } }
+.show-swap { animation: show-swap 0.45s var(--ease-out, ease) both; }
+@keyframes show-swap { 0% { filter: brightness(1.6); transform: translateY(-3px); } 100% { filter: none; transform: none; } }
+.car-card-lock { filter: saturate(0.7) brightness(0.88); }
+.sheet-up { animation: sheet-up 0.42s cubic-bezier(.2, .9, .25, 1) both; }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+
+:root[data-motion='reduce'] :is([class*='room-'], .show-in, .show-swap, .sheet-up, .room-dust circle) { animation: none !important; }
+:root[data-motion='reduce'] .room-camera { transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  :is([class*='room-'], .show-in, .show-swap, .sheet-up, .room-dust circle) { animation: none !important; }
+  .room-camera { transition: none !important; }
+}
+.car-tile { background: linear-gradient(180deg, #2a2b31, #18191d); }
+:root[data-theme='light'] .car-tile { background: radial-gradient(90% 80% at 50% 20%, #ffffff, #e4e7ec); }
