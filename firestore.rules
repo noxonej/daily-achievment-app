@@ -43,6 +43,43 @@ service cloud.firestore {
       allow create, delete: if signedIn() && me() == uid;
     }
 
+    // Public weekly leaderboard: only people who turned it on (first name, level, weekly XP).
+    match /boards/{week}/players/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && me() == uid;
+    }
+
+    // Push reminders: your reminder plan + push address, written by the app, read by the server.
+    match /push/{uid} {
+      allow read, write: if signedIn() && me() == uid;
+    }
+
+    // Public settings the server writes (e.g. the push public key, which is public by design).
+    match /config/{doc} {
+      allow read: if true;
+    }
+
+    // Motivational push plan per phone, keyed by a long random token made on that phone (no sign-in
+    // needed). Write-only for the app; only the push sender (admin) can read it.
+    match /pushQueue/{token} {
+      allow create, update: if token.size() >= 32 && token.size() <= 64
+        && request.resource.data.keys().hasOnly(['data', 'updatedAt'])
+        && request.resource.data.data is string
+        && request.resource.data.data.size() < 60000
+        && request.resource.data.updatedAt is int;
+    }
+
+    // Apple Health steps inbox: an iPhone Shortcut writes today's step total here, the app reads it.
+    // The document name is a long random secret only your app and your Shortcut know; it holds a single
+    // number and nothing about who you are, so no sign-in is needed.
+    match /stepsInbox/{token} {
+      allow get: if token.size() >= 24;
+      allow create, update: if token.size() >= 24
+        && request.resource.data.keys().hasOnly(['steps'])
+        && request.resource.data.steps is number
+        && request.resource.data.steps >= 0 && request.resource.data.steps < 200000;
+    }
+
     // Cheers from friends.
     match /cheers/{uid}/items/{id} {
       allow read, delete: if signedIn() && me() == uid;

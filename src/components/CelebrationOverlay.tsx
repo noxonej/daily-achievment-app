@@ -5,23 +5,25 @@ import { Confetti } from './Confetti';
 import { Icon } from './Icon';
 import { RankBadge } from './RankBadge';
 import { rankForLevel, rankRarity, formatPct } from '../lib/ranks';
+import { useExit } from '../lib/useExit';
 
 export function CelebrationOverlay() {
   const { celebrations, dismissCelebration } = useApp();
-  const current = celebrations[0];
+  // The toast and the level-up screen animate away (instead of vanishing) before the next one comes.
+  const { shown: current, leaving } = useExit(celebrations[0], 320);
 
   useEffect(() => {
-    if (!current || current.kind === 'levelup') return;
+    if (!current || current.kind === 'levelup' || leaving) return;
     const t = setTimeout(() => dismissCelebration(), 3200);
     return () => clearTimeout(t);
-  }, [current, dismissCelebration]);
+  }, [current, leaving, dismissCelebration]);
 
   if (!current) return null;
 
   if (current.kind === 'levelup') {
     // Cinematic: flash, spinning light rays, shockwaves, the number slamming in, letters dropping.
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-hidden" role="dialog" aria-label={`Level ${current.level}`}>
+      <div className={`fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-hidden ${leaving ? 'overlay-out' : ''}`} role="dialog" aria-label={`Level ${current.level}`}>
         <div className="absolute inset-0 bg-[#04060a]/92 backdrop-in" onClick={dismissCelebration} />
         <div className="absolute w-[170vmax] h-[170vmax] fx-rays pointer-events-none" />
         <div className="absolute inset-0 fx-flash pointer-events-none" />
@@ -75,9 +77,9 @@ export function CelebrationOverlay() {
     <div className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none">
       <button
         onClick={dismissCelebration}
-        className="toast-glass pointer-events-auto animate-celebrate flex items-center gap-3 rounded-full pl-2 pr-5 py-2 max-w-sm"
+        className={`toast-glass pointer-events-auto flex ${leaving ? 'toast-out' : 'animate-celebrate'} items-center gap-3 rounded-full pl-2 pr-5 py-2 max-w-sm`}
       >
-        <span className="shrink-0 w-10 h-10 rounded-full bg-[var(--mood)] text-[#15110e] flex items-center justify-center shadow-[0_0_20px_-2px_var(--mood)]"><Icon name={current.icon} size={20} /></span>
+        <span className="shrink-0 w-10 h-10 rounded-full bg-amber-500 text-[#fff] flex items-center justify-center"><Icon name={current.icon} size={20} /></span>
         <span className="text-left min-w-0">
           <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-slate-400">
             {current.kind === 'goal' ? 'Goal Complete' : 'Achievement Unlocked'}

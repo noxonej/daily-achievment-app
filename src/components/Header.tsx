@@ -31,6 +31,21 @@ export function Header() {
 
   const streak = stats.currentStreak;
   const hot = streak >= 7;
+  // When the streak screen closes, the pill gives a small bump: the new number "lands" here.
+  const [landed, setLanded] = useState(false);
+  useEffect(() => {
+    let t = 0;
+    const on = () => {
+      setLanded(true);
+      window.clearTimeout(t);
+      t = window.setTimeout(() => setLanded(false), 600);
+    };
+    window.addEventListener('squzo:streak-landed', on);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('squzo:streak-landed', on);
+    };
+  }, []);
 
   return (
     <header
@@ -47,7 +62,6 @@ export function Header() {
             className="flex items-center gap-2.5 min-w-0 rounded-2xl -ml-1 pl-1 pr-2 py-1 hover:bg-white/[0.04]"
           >
             <span className="relative shrink-0">
-              <span className="absolute inset-1 rounded-xl bg-cyan-400/35 blur-md" aria-hidden="true" />
               <Logo size={36} className={`relative transition-transform duration-300 ${scrolled ? 'scale-90' : ''}`} />
             </span>
             <span className="min-w-0 text-left leading-none">
@@ -65,7 +79,7 @@ export function Header() {
         <div className="flex-1" />
 
         <div
-          className={`flex items-center gap-1 rounded-full pl-2 pr-2.5 h-9 border transition-colors ${
+          className={`flex items-center gap-1 rounded-full pl-2 pr-2.5 h-9 border transition-colors ${landed ? 'streak-land ' : ''}${
             hot ? 'bg-orange-500/15 border-orange-400/40 badge-shine' : 'bg-white/[0.06] border-transparent backdrop-blur-md'
           }`}
           title={`${streak} day streak`}
@@ -144,7 +158,7 @@ function AvatarRing({
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - (drawn ? Math.max(0.02, shown) : 0))}
-          style={{ transition: 'stroke-dashoffset .9s cubic-bezier(.22,1,.36,1)', filter: 'drop-shadow(0 0 4px var(--color-amber-400))' }}
+          style={{ transition: 'stroke-dashoffset .9s cubic-bezier(.22,1,.36,1)' }}
         />
       </svg>
       <span className="absolute inset-[5px] rounded-full overflow-hidden bg-raised">

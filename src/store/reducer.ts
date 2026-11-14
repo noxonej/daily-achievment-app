@@ -1,7 +1,8 @@
 import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState, DecorSlot } from '../lib/types';
 import { PROOF_BONUS } from '../lib/proof';
-import { DECOR, PAINTS, PROPERTIES, VEHICLES, worldChestPool, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
+import { DECOR, PAINTS, PARTS, PROPERTIES, VEHICLES, canFit, worldChestPool, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
 import { claimCheckIn } from '../lib/checkIn';
+import { SEASON_TIERS, claimedTiers, seasonKey, seasonPoints } from '../lib/seasons';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
@@ -11,7 +12,7 @@ import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../l
 import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
 import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, boxPool, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
-import { computeDerivedStats, dayCountsForStreak, graceDays } from '../lib/stats';
+import { MAX_SHIELDS, SHIELD_PRICE, computeDerivedStats, dayCountsForStreak, graceDays } from '../lib/stats';
 import { checkNote } from '../lib/questRules';
 import type { BoxReward } from '../lib/dailyBox';
 import { DEFAULT_PREFS, guessLanguage } from '../lib/i18n';
@@ -147,6 +148,7 @@ export type Action =
   | { type: 'WORLD_PLACE'; slot: DecorSlot; itemId: string }
   | { type: 'WORLD_FEATURE'; vehicleId: string }
   | { type: 'WORLD_PAINT'; vehicleId: string; paint: string }
+  | { type: 'WORLD_MOD'; vehicleId: string; partId: string }
   /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
   | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean; worldId?: string }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
@@ -198,6 +200,8 @@ export type Action =
   /** Change a number quest's goal, glass size or quick buttons; today's progress is kept (rescaled for a new glass size). */
   | { type: 'SET_MEASURE'; questId: string; measure: QuestMeasure }
   | { type: 'ADD_STEPS'; steps: number }
+  | { type: 'SYNC_STEPS_TOTAL'; steps: number }
+  | { type: 'SET_STEPS_TOKEN'; token: string }
   | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
   | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
   | { type: 'USE_SKIP_PASS'; questId: string }
@@ -228,6 +232,8 @@ export type Action =
   | { type: 'USE_QUEST_SWAP'; questId: string; replacement: { title: string; description?: string; icon: string } }
   /** Spends Streak Shields on missed days right before today, if that keeps an existing streak alive. */
   | { type: 'CHECK_STREAK_SHIELDS' }
+  | { type: 'BUY_STREAK_SHIELD' }
+  | { type: 'CLAIM_SEASON_TIER'; tier: number }
   | { type: 'DELETE_RUN'; runId: string }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
@@ -734,6 +740,10 @@ export function reducer(state: AppState, action: Action): AppState {
       if (PAINTS.some((p) => p.id === action.id) && action.vehicleId && owns(world, action.vehicleId)) {
         next.paints = { ...(world.paints ?? {}), [action.vehicleId]: action.id };
       }
+      const bought = PARTS.find((p) => p.id === action.id);
+      if (bought && action.vehicleId && owns(world, action.vehicleId)) {
+        next.mods = { ...(world.mods ?? {}), [action.vehicleId]: { ...(world.mods?.[action.vehicleId] ?? {}), [bought.kind]: bought.value } };
+      }
       return { ...state, world: next };
     }
 
@@ -760,6 +770,15 @@ export function reducer(state: AppState, action: Action): AppState {
       const world = worldOf(state);
       if (!owns(world, action.vehicleId) || !owns(world, action.paint)) return state;
       return { ...state, world: { ...world, paints: { ...(world.paints ?? {}), [action.vehicleId]: action.paint } } };
+    }
+
+    case 'WORLD_MOD': {
+      const world = worldOf(state);
+      const vehicle = VEHICLES.find((v) => v.id === action.vehicleId);
+      const p = PARTS.find((x) => x.id === action.partId);
+      if (!vehicle?.car || !p || !owns(world, vehicle.id) || !canFit(world, vehicle, p)) return state;
+      const mods = { ...(world.mods ?? {}), [vehicle.id]: { ...(world.mods?.[vehicle.id] ?? {}), [p.kind]: p.value } };
+      return { ...state, world: { ...world, mods } };
     }
 
     case 'EQUIP_COSMETIC': {
@@ -1116,6 +1135,29 @@ export function reducer(state: AppState, action: Action): AppState {
       return next;
     }
 
+    case 'SYNC_STEPS_TOTAL': {
+      // Today's total from the phone's own step counter (Apple Health via a Shortcut, or a ?steps= link).
+      // It already includes steps the app counted itself, so daily quests take the bigger number, and
+      // weekly quests only get what's new, so nothing is counted twice.
+      const total = Math.round(action.steps);
+      if (!(total > 0)) return state;
+      const today = todayKey();
+      const before = state.stepSync?.date === today ? state.stepSync.steps : 0;
+      const stepQuests = state.quests.filter((x) => x.measure?.unit === 'steps' && !x.archived);
+      const daily = stepQuests.find((q) => q.frequency === 'daily');
+      const dailyBefore = daily ? currentProgress(state, daily) : before;
+      const gained = Math.max(0, total - Math.max(dailyBefore, before));
+      let next: AppState = { ...state, stepSync: { date: today, steps: Math.max(total, before), at: new Date().toISOString() } };
+      for (const q of stepQuests) {
+        if (q.frequency === 'daily') next = withProgress(next, q, Math.max(currentProgress(next, q), total));
+        else if (gained > 0) next = withProgress(next, q, currentProgress(next, q) + gained);
+      }
+      return next;
+    }
+
+    case 'SET_STEPS_TOKEN':
+      return state.stepsToken ? state : { ...state, stepsToken: action.token };
+
     case 'ADD_RUN': {
       if (!(action.km > 0)) return state;
       const km = Math.round(action.km * 100) / 100;
@@ -1354,6 +1396,25 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'MONEY_DELETE_BILL':
       return withMoney(state, (m) => ({ ...m, bills: (m.bills ?? []).filter((x) => x.id !== action.billId) }));
+
+    case 'CLAIM_SEASON_TIER': {
+      const key = seasonKey();
+      const tier = SEASON_TIERS[action.tier];
+      const claimed = claimedTiers(state, key);
+      if (!tier || claimed.includes(action.tier) || seasonPoints(state, key) < tier.points) return state;
+      return {
+        ...state,
+        bonusShards: (state.bonusShards ?? 0) + tier.reward.coins,
+        bonusChests: (state.bonusChests ?? 0) + (tier.reward.chest ? 1 : 0),
+        seasonClaims: { ...(state.seasonClaims ?? {}), [key]: [...claimed, action.tier] },
+      };
+    }
+
+    case 'BUY_STREAK_SHIELD': {
+      if ((state.streakShields ?? 0) >= MAX_SHIELDS) return state;
+      if (computeDerivedStats(state).availableShards < SHIELD_PRICE) return state;
+      return { ...state, streakShields: (state.streakShields ?? 0) + 1, shieldCoinsSpent: (state.shieldCoinsSpent ?? 0) + SHIELD_PRICE };
+    }
 
     case 'CHECK_STREAK_SHIELDS': {
       let shields = state.streakShields ?? 0;

@@ -35,7 +35,7 @@ export function CheckInCard() {
     <section
       aria-label="Daily rewards"
       className={`relative overflow-hidden rounded-2xl border p-4 ${
-        v.claimedToday ? 'border-white/10 bg-white/[0.03]' : 'border-amber-400/40 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/[0.06] to-transparent shadow-[0_0_30px_-14px_var(--color-amber-400)]'
+        v.claimedToday ? 'border-white/10 bg-white/[0.03]' : 'checkin-ready border-amber-400/35'
       }`}
     >
       <div className="flex items-center justify-between gap-3">

@@ -16,6 +16,8 @@ import { InfoDisclosure } from './InfoDisclosure';
 import { Icon } from './Icon';
 import { CompleteBurst } from './fx/CompleteBurst';
 import { locale } from '../lib/locale';
+import { HealthStepsSetup } from './HealthStepsSetup';
+import { todayKey } from '../lib/date';
 
 
 function fmt(n: number, decimals?: boolean) {
@@ -36,7 +38,7 @@ export function MeasureQuestCard({
   onSet: (v: number) => void;
   periodKey: string;
 }) {
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
   const setPrefs = (prefs: { stepsAuto: boolean }) => dispatch({ type: 'SET_PREFS', prefs });
   const m = quest.measure!;
   const meta = UNIT_META[m.unit];
@@ -51,6 +53,9 @@ export function MeasureQuestCard({
   const entryNum = Number(entry.replace(/[\s,]/g, m.unit === 'km' ? '.' : ''));
   const isSteps = m.unit === 'steps';
   const counting = useSyncExternalStore(stepCounter.subscribe, stepCounter.isRunning, () => false);
+  const stepStatus = useSyncExternalStore(stepCounter.subscribe, stepCounter.status, () => 'off' as const);
+  const [healthOpen, setHealthOpen] = useState(false);
+  const synced = state.stepSync?.date === todayKey() ? state.stepSync : undefined;
   const sessionSteps = useSyncExternalStore(stepCounter.subscribe, stepCounter.session, () => 0);
   const [motionNote, setMotionNote] = useState('');
   // Steps are counted and saved by AutoSteps (App level); this button pauses or resumes it.
@@ -200,10 +205,28 @@ export function MeasureQuestCard({
           )}
         </div>
       )}
-      {isSteps && counting && !motionNote && (
-        <p className="text-[11px] text-slate-400 mt-2 leading-snug">Counting by itself while the app is open. Tap the green button to pause.</p>
+      {isSteps && (
+        <div className="mt-2.5 flex items-center gap-2">
+          <p className="flex-1 min-w-0 text-[11px] text-slate-400 leading-snug" aria-live="polite">
+            {motionNote ||
+              (synced
+                ? `Apple Health: ${fmt(synced.steps)} at ${new Date(synced.at).toLocaleTimeString(locale(), { hour: 'numeric', minute: '2-digit' })}${counting ? ' · counting while open' : ''}`
+                : stepStatus === 'counting'
+                  ? 'Counting by itself while the app is open.'
+                  : stepStatus === 'needs-tap'
+                    ? 'Tap anywhere once to start counting (iPhone asks for Motion the first time).'
+                    : stepStatus === 'denied'
+                      ? 'Motion access is off. Allow "Motion & Orientation" for this site in Settings → Safari.'
+                      : stepStatus === 'no-sensor'
+                        ? 'No motion sensor here. Type your total, or sync from Apple Health.'
+                        : 'Paused. Tap Count steps to count while the app is open.')}
+          </p>
+          <button onClick={() => setHealthOpen(true)} className="shrink-0 rounded-full bg-white/[0.06] hover:bg-white/10 text-[11px] font-bold text-amber-300 px-2.5 py-1">
+            {state.stepsToken ? 'Health sync' : 'Sync all-day steps'}
+          </button>
+        </div>
       )}
-      {isSteps && motionNote && <p className="text-[11px] text-slate-400 mt-2 leading-snug">{motionNote}</p>}
+      {isSteps && <HealthStepsSetup open={healthOpen} onClose={() => setHealthOpen(false)} />}
       {justCompleted && (
         <span className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none" aria-hidden="true">
           <span className="complete-sweep" />

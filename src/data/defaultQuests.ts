@@ -139,7 +139,7 @@ const seeds: SeedQuest[] = [
   {
     id: 'default-steps',
     title: 'Walk 8,000 steps',
-    description: "Check your phone's Health or Fitness app and enter today's steps.",
+    description: 'Counts by itself while Squzo is open. Sync Apple Health for every step of your day.',
     frequency: 'daily',
     difficulty: 'medium',
     icon: '👟',

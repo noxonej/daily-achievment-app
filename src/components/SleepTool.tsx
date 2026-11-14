@@ -119,7 +119,7 @@ function Stars() {
   return (
     <div className="pointer-events-none fixed inset-0" aria-hidden="true">
       {stars.map(([x, y], i) => (
-        <span key={i} className="absolute w-[3px] h-[3px] rounded-full bg-white twinkle" style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${(i % 5) * 0.7}s` }} />
+        <span key={i} className="absolute w-[3px] h-[3px] rounded-full bg-white star-twinkle" style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${(i % 5) * 0.7}s` }} />
       ))}
     </div>
   );

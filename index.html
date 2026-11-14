@@ -7,7 +7,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="description" content="Plan your week, build habits, track your money and savings goals, and level up every day." />
-    <meta name="theme-color" content="#0c0a09" />
+    <meta name="theme-color" content="#0b0d11" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -16,12 +16,12 @@
     <style>
       /* Startup screen: shown from the very first frame (no white flash), in the saved theme and colour.
          It only animates transform/opacity, so it stays smooth while the app loads underneath. */
-      html, body { margin: 0; background: #0c0a09; }
-      html[data-theme='light'], html[data-theme='light'] body { background: #f3f5fa; }
-      html { --b1: #67e8f9; --b2: #0891b2; --b3: #0e7490; --bw: #22d3ee; }
+      html, body { margin: 0; background: #0b0d11; }
+      html[data-theme='light'], html[data-theme='light'] body { background: #f4f6f8; }
+      html { --b1: #67e8f9; --b2: #0891b2; --b3: #0e7490; --bw: #38bdf8; }
       #boot { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: #0c0a09; transition: opacity 0.35s ease, visibility 0.35s; }
-      html[data-theme='light'] #boot { background: #f3f5fa; }
+        background: #0b0d11; transition: opacity 0.35s ease, visibility 0.35s; }
+      html[data-theme='light'] #boot { background: #f4f6f8; }
       #boot.hide { opacity: 0; visibility: hidden; }
       #boot .glow { position: absolute; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, var(--bw) 0%, transparent 65%);
         opacity: 0; animation: boot-glow 2s ease-out 0.1s forwards; }
@@ -34,7 +34,8 @@
         color: #fff; animation: boot-fade 0.45s ease-out 0.9s both; }
       #boot .tag { position: relative; margin-top: 10px; font: 600 13px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.18em; text-transform: uppercase;
         color: #94a3b8; animation: boot-fade 0.45s ease-out 1.35s both; }
-      html[data-theme='light'] #boot .word { color: #0f172a; }
+      html[data-theme='light'] #boot .word { color: #10161f; }
+      html[data-theme='light'] #boot .word span { color: #0b6fb0; }
       #boot .word span { color: var(--bw); }
       @keyframes boot-in { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
       @keyframes boot-draw { to { stroke-dashoffset: 0; } }
@@ -49,14 +50,10 @@
     <script>
       // Apply the saved theme before the app draws, so there's no flash of the wrong colours.
       try {
-        var a = JSON.parse(localStorage.getItem('dayforge-appearance') || '{}');
-        document.documentElement.dataset.accent = a.accent || 'squzo';
-        if (a.accent === 'amber') delete document.documentElement.dataset.accent;
-        if (a.background) document.documentElement.dataset.bg = a.background;
         var t = localStorage.getItem('dayforge-theme');
         if (t === 'light' || (t === 'system' && window.matchMedia && !matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.dataset.theme = 'light';
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f3f5fa');
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f4f6f8');
           // Dark status-bar text on the light theme (read by iPhone when the app starts).
           document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').setAttribute('content', 'default');
         }
