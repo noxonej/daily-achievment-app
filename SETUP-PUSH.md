@@ -1,33 +1,41 @@
-# Turn on real push notifications
+# Switch on notifications + Apple Health steps (one-time, about 5 minutes)
 
-Squzo's reminders now come from a tiny server (`functions/index.js`), so they arrive even when the app is closed. You set it up once. It takes about 15 minutes and works from a laptop browser (no installs).
+Squzo's motivational notifications are sent by a small free job on GitHub (it runs every 15 minutes).
+The same job also publishes `firestore.rules` to Firebase by itself, which the Apple Health step sync
+needs. It only needs **one key** from Firebase. No credit card, no Blaze plan, no Cloud Shell.
 
-## 1. Switch Firebase to pay-as-you-go (Blaze)
+## 1. Get the key from Firebase
 1. Open https://console.firebase.google.com and pick **squzo-861ad**.
-2. Bottom left: **Upgrade** → **Blaze**. Add a card.
-3. Set a **budget alert** of $1 so you get an email if anything ever costs money.
+2. Click the gear ⚙ (top left) → **Project settings** → **Service accounts**.
+3. Click **Generate new private key** → **Generate key**. A `.json` file downloads.
 
-At Squzo's size this is normally **$0**: the server runs 96 times a day, and the free amount is 2 million runs a month. At most you might see a few cents for storing the server code.
+Treat this file like a password: never post it in a chat, an issue or the code.
 
-## 2. Send the server up (Google Cloud Shell, in your browser)
-1. Open https://shell.cloud.google.com, signed in with the same Google account.
-2. Paste these lines one by one:
+## 2. Give it to GitHub as a secret
+1. Open https://github.com/noxonej/daily-achievment-app/settings/secrets/actions
+2. **New repository secret**.
+3. Name: `FIREBASE_SERVICE_ACCOUNT`
+4. Secret: open the downloaded `.json` file in a text editor, copy **everything**, paste it.
+5. **Add secret**. You can delete the downloaded file now.
 
-```bash
-git clone -b claude/squzo-retention-pack https://github.com/noxonej/daily-achievment-app
-cd daily-achievment-app/functions && npm install && cd ..
-npx firebase-tools login --no-localhost
-npx firebase-tools deploy --only functions,firestore:rules --project squzo-861ad
-```
+## 3. Start it
+1. Open https://github.com/noxonej/daily-achievment-app/actions/workflows/push.yml
+2. **Run workflow** → **Run workflow**. After a minute it should be green ✓.
+   The log says `Published firestore.rules` the first time and `Push round: {...}` every time.
 
-The login step shows a link: open it, allow, and paste the code back. If deploy asks to turn on APIs (Cloud Functions, Cloud Build, Artifact Registry, Cloud Scheduler), answer **Y**. If it fails the very first time, wait 2 minutes and run the deploy line again (Google is still switching the APIs on).
+From then on it runs by itself every 15 minutes.
 
-This also publishes `firestore.rules`, so you don't need to paste them by hand.
+## 4. On your phone
+- **iPhone:** open Squzo in Safari → Share → **Add to Home Screen**, then open it from the home screen
+  (Apple only allows notifications for home-screen apps). **Android:** Chrome is enough.
+- Settings → Notifications → **Daily motivation** on → **Allow**.
+- When it says *"Delivered by Squzo's server"*, you're done. Close the app; the next message comes on time.
 
-## 3. Try it
-1. Wait 15 minutes (the server makes its push keys on its first run).
-2. iPhone: add Squzo to the home screen first, then open it from there. Android: any Chrome works.
-3. Open Squzo, make sure you are signed in with Google and notifications are allowed.
-4. Close the app. You will get the next reminder (morning, 12:30, 16:00, evening, last call) on time.
-
-To check that it runs: Firebase console → **Functions** → `sendReminders` → **Logs**.
+## Good to know
+- GitHub sometimes starts the job a few minutes late. Messages may come up to ~15 minutes after the
+  planned time, and never more than 45 minutes late (so never in the middle of the night).
+- GitHub pauses scheduled jobs in a repository with no commits for 60 days. If that ever happens, it
+  emails you; open the Actions tab and click **Enable workflow**.
+- Cost: $0. Public repositories get GitHub Actions for free, and Firebase's free plan easily covers it.
+- Already on the Blaze plan? `functions/index.js` is the same sender as a Firebase function; you can
+  use that instead (`firebase deploy --only functions`), but don't run both.

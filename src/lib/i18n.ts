@@ -704,6 +704,9 @@ export const DEFAULT_PREFS: Prefs = {
   daily: 'quotes',
   nudges: true,
   nudgeTime: '19:00',
+  nudgesPerDay: 3,
+  nudgeFrom: '09:00',
+  nudgeTo: '21:00',
 };
 
 /** Best match between the phone's languages and the ones the app has. */

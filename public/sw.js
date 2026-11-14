@@ -1,7 +1,7 @@
 /* Dayforge service worker: makes the app open offline and lets Android show notifications.
  * Pages: network first (so updates arrive right away), falling back to the cached copy offline.
  * Built files (hashed names) and icons: cache first, since a given URL never changes. */
-const CACHE = 'dayforge-v5';
+const CACHE = 'dayforge-v6';
 const STATUS_CACHE = 'dayforge-status';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './favicon.svg', './app-icon-192.png', './app-icon-512.png'];
 
@@ -63,47 +63,33 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Motivational reminders with the app closed (installed app on Android: periodic background sync).
-// The app writes today's status and ready-made messages into the cache; here we only decide whether to show one.
-function localDate(d) {
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
+// Motivational notifications with the app closed when the push sender isn't set up (installed app on
+// Android: periodic background sync). The app saves the plan (src/lib/motivation.ts) into the cache.
 async function readJson(cache, url) {
   const res = await cache.match(url);
   return res ? res.json() : null;
 }
 
+function dayBefore(date) {
+  return new Date(Date.parse(date + 'T12:00:00Z') - 86400000).toISOString().slice(0, 10);
+}
+
 async function maybeNudge() {
   const cache = await caches.open(STATUS_CACHE);
   const status = await readJson(cache, './__dayforge-status.json');
-  if (!status || !status.enabled) return;
-  const now = new Date();
-  const today = localDate(now);
-  const minutes = now.getHours() * 60 + now.getMinutes();
-  const fired = (await readJson(cache, './__dayforge-fired.json')) || {};
-  // If the app wasn't opened today, no quest is done yet.
-  const done = status.date === today && status.doneToday;
-  let note = null;
-  // Same moments as the app (src/lib/nudges.ts reminderMoments): morning boost, midday, afternoon, evening, last call.
-  const lastCall = Math.max(21 * 60 + 30, status.eveningAt + 120);
-  const moments = [
-    { kind: 'morning', from: status.morningAt, to: status.morningAt + 180, any: true, msg: status.morning[today] },
-    { kind: 'midday', from: 750, to: 870, msg: status.comeback && status.comeback[today] },
-    { kind: 'afternoon', from: 960, to: 1080, msg: status.evening[today] || (status.comeback && status.comeback[today]) },
-    { kind: 'evening', from: status.eveningAt, to: Math.min(status.eveningAt + 150, 1430), msg: status.evening[today] },
-    { kind: 'lastcall', from: lastCall, to: 1430, msg: status.lastCall && status.lastCall[today] },
-  ].filter((x) => x.kind === 'evening' || x.kind === 'morning' || x.kind === 'lastcall' || Math.abs(x.from - status.eveningAt) >= 90);
-  const m = moments.find((x) => x.msg && minutes >= x.from && minutes < x.to && fired[x.kind] !== today && (x.any || !done));
-  if (m) note = { kind: m.kind, tag: `${m.kind}-${today}`, ...m.msg };
-  if (!note) return;
+  // The push sender delivers them: nothing to do here (avoids doubles).
+  if (!status || !status.enabled || status.pushActive || !Array.isArray(status.plan)) return;
+  const now = Date.now();
+  const sent = (await readJson(cache, './__dayforge-sent.json')) || {};
+  const due = status.plan.find((x) => x.at <= now && now - x.at < 45 * 60 * 1000 && !sent[x.tag]);
+  if (!due) return;
   // Don't notify if the app is open and on screen.
   const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
   if (windows.some((w) => w.visibilityState === 'visible')) return;
-  fired[note.kind] = today;
-  await cache.put('./__dayforge-fired.json', new Response(JSON.stringify(fired), { headers: { 'content-type': 'application/json' } }));
-  await self.registration.showNotification(note.title, { body: note.body, tag: note.tag, icon: './app-icon-192.png', badge: './app-icon-192.png' });
+  sent[due.tag] = true;
+  await cache.put('./__dayforge-sent.json', new Response(JSON.stringify(sent), { headers: { 'content-type': 'application/json' } }));
+  const line = due.risk && status.lastDone === dayBefore(due.date) ? due.risk : due;
+  await self.registration.showNotification(line.title, { body: line.body, tag: due.tag, icon: './app-icon-192.png', badge: './app-icon-192.png' });
 }
 
 self.addEventListener('periodicsync', (event) => {
@@ -125,6 +111,7 @@ self.addEventListener('push', (event) => {
       await self.registration.showNotification(note.title || 'Squzo', {
         body: note.body || '',
         tag: note.tag,
+        data: { url: './' },
         icon: './app-icon-192.png',
         badge: './app-icon-192.png',
       });

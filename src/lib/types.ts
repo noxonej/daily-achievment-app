@@ -339,6 +339,11 @@ export interface Prefs {
   nudges: boolean;
   /** Evening check time for the "you haven't done a quest yet" reminder, HH:MM. */
   nudgeTime: string;
+  /** Motivational notifications a day (1–3, default 3). */
+  nudgesPerDay?: number;
+  /** Quiet hours: no notifications before nudgeFrom or after nudgeTo ("HH:MM"). */
+  nudgeFrom?: string;
+  nudgeTo?: string;
   /** Easier reading: bigger gaps, text and line spacing for people who find dense screens hard to read. */
   reading?: 'normal' | 'roomy' | 'extra';
 }
