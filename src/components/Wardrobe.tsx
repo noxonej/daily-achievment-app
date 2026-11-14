@@ -18,7 +18,7 @@ import {
 import { useWardrobeOpen, wardrobe } from '../lib/wardrobe';
 import { Avatar } from './Avatar';
 import { ChestArt } from './Chest';
-import { Coin } from './Coin';
+import { OpenBurst, PrizeHalo, StageLight } from './fx/RewardFx';
 import { Icon } from './Icon';
 
 function unlockLabel(item: AvatarItem): string {
@@ -381,7 +381,8 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
   const remaining = stats.chestsAvailable;
 
   return (
-    <div className="theme-dark box-stage fixed inset-0 z-[80] flex flex-col items-center justify-center px-6 backdrop-in">
+    <div className="theme-dark box-stage fixed inset-0 z-[80] flex flex-col items-center justify-center px-6 backdrop-in" style={{ ['--ray' as string]: r.hex }}>
+      <StageLight lit={phase === 'opening' || phase === 'reveal'} />
       <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
         <Icon name="✕" size={20} />
       </button>
@@ -389,38 +390,8 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
       {phase !== 'reveal' ? (
         <button onClick={openIt} className="flex flex-col items-center" aria-label="Open chest">
           <div className="relative">
-            {phase === 'opening' && (
-              <>
-                <span className="open-flash" aria-hidden="true" />
-                <span className="box-shockwave" aria-hidden="true" />
-                {Array.from({ length: 12 }, (_, i) => {
-                  const side = i % 2 ? 1 : -1;
-                  const dx = side * (30 + ((i * 37) % 110));
-                  return (
-                    <span
-                      key={`c${i}`}
-                      className="coin-fly"
-                      aria-hidden="true"
-                      style={{ ['--dx' as string]: `${dx}px`, ['--up' as string]: `${120 + ((i * 53) % 90)}px`, animationDelay: `${(i % 6) * 0.05}s` }}
-                    >
-                      <Coin size={22} />
-                    </span>
-                  );
-                })}
-                {Array.from({ length: 16 }, (_, i) => {
-                  const a = (i / 16) * Math.PI * 2;
-                  const d = 110 + (i % 3) * 28;
-                  return (
-                    <span
-                      key={i}
-                      className="box-particle"
-                      aria-hidden="true"
-                      style={{ ['--dx' as string]: `${Math.cos(a) * d}px`, ['--dy' as string]: `${Math.sin(a) * d - 40}px`, animationDelay: `${(i % 4) * 0.03}s` }}
-                    />
-                  );
-                })}
-              </>
-            )}
+            {phase === 'shake' && <span className="chest-leak" style={{ ['--ray' as string]: r.hex }} aria-hidden="true" />}
+            {phase === 'opening' && <OpenBurst color={r.hex} />}
             <div className={phase === 'closed' ? 'animate-float-soft' : phase === 'shake' ? 'box-shake' : 'chest-pop'}>
               <ChestArt size={230} open={phase === 'opening'} glow={r.hex} shine={phase === 'closed'} />
             </div>
@@ -433,9 +404,9 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
       ) : (
         <div className="flex flex-col items-center text-center">
           <div className="relative">
-            <div className="absolute inset-[-60px] rounded-full prize-rays" style={{ ['--ray' as string]: r.hex }} />
+            <PrizeHalo color={r.hex} big={drop?.rarity === 'legendary' || item?.rarity === 'legendary'} />
             {drop ? (
-              <div className="relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-br from-sky-500 to-indigo-700" style={{ boxShadow: `0 0 60px -6px ${r.hex}` }}>
+              <div className="prize-card relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-b from-[#26324a] to-[#141a28] ring-1 ring-white/15" style={{ boxShadow: `0 24px 50px -20px #000, inset 0 0 0 2px ${r.hex}66` }}>
                 {drop.kind === 'vehicle' && VEHICLES.find((v) => v.id === drop.id) ? (
                   <VehicleArt vehicle={VEHICLES.find((v) => v.id === drop.id)!} paint={PAINTS.find((p) => p.id === VEHICLES.find((v) => v.id === drop.id)!.paint)?.hex ?? '#888'} className="w-[150px]" />
                 ) : (
@@ -446,11 +417,11 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
                 )}
               </div>
             ) : prize === 'skip' ? (
-              <div className="relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-br from-teal-400 to-emerald-600" style={{ boxShadow: `0 0 60px -6px ${r.hex}` }}>
+              <div className="prize-card relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-b from-teal-500 to-emerald-700" style={{ boxShadow: `0 24px 50px -20px #000` }}>
                 <Icon name="⏭" size={96} strokeWidth={1.6} className="text-[#fff]" />
               </div>
             ) : (
-              <div className="relative rounded-[28%] p-1.5 animate-prize-in" style={{ background: r.hex, boxShadow: `0 0 60px -6px ${r.hex}` }}>
+              <div className="prize-card relative rounded-[28%] p-1.5 animate-prize-in" style={{ background: `linear-gradient(160deg, ${r.hex}, color-mix(in srgb, ${r.hex} 55%, #000))`, boxShadow: `0 24px 50px -20px #000` }}>
                 <Avatar look={item ? { ...look, [item.slot]: item.id } : look} size={180} />
               </div>
             )}
