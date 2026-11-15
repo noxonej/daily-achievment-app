@@ -4,13 +4,14 @@ import { Avatar } from './Avatar';
 import { useApp } from '../store/AppContext';
 
 /** 'plan' is still a screen (opened from Today) but no longer has its own tab. */
-export type ViewId = 'today' | 'plan' | 'quests' | 'world' | 'money' | 'you';
+export type ViewId = 'today' | 'plan' | 'quests' | 'world' | 'money' | 'coach' | 'you';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'today', label: 'Today', icon: 'df:today' },
   { id: 'quests', label: 'Quests', icon: 'df:quests' },
   { id: 'world', label: 'World', icon: '🏠' },
   { id: 'money', label: 'Money', icon: 'df:money' },
+  { id: 'coach', label: 'Coach', icon: '💬' },
   { id: 'you', label: 'You', icon: 'avatar' },
 ];
 
