@@ -7,6 +7,7 @@ import { Avatar } from '../components/Avatar';
 import { Coin } from '../components/Coin';
 import { Icon } from '../components/Icon';
 import { useCountUp } from '../lib/useCountUp';
+import { useIntent } from '../lib/intents';
 import type { DecorSlot, DerivedStats, WorldState } from '../lib/types';
 import {
   DECOR,
@@ -41,7 +42,8 @@ export interface Pending {
  */
 export function WorldView() {
   const { stats, dispatch } = useApp();
-  const [section, setSection] = useState<Section>('room');
+  const toGarage = useIntent('world-garage');
+  const [section, setSection] = useState<Section>(toGarage ? 'garage' : 'room');
   const [pending, setPending] = useState<Pending | null>(null);
   const [bought, setBought] = useState<{ id: string; key: number } | null>(null);
   const coins = useCountUp(stats.availableShards, 700);
@@ -70,7 +72,7 @@ export function WorldView() {
         </div>
         <span className="shrink-0 flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5" aria-label={`${stats.availableShards} coins`}>
           <Coin size={16} />
-          <span className="font-display text-[17px] tabular-nums text-white">{coins.toLocaleString()}</span>
+          <span className="num-px text-[22px] text-white">{coins.toLocaleString()}</span>
         </span>
       </div>
 

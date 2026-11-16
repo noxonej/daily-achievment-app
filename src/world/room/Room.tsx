@@ -518,7 +518,7 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
 
         {/* your character, standing on the rug */}
         {children && (
-          <div className="absolute pointer-events-none" style={{ left: `${(608 / ROOM_W) * 100}%`, bottom: `${((ROOM_H - 532) / ROOM_H) * 100}%`, width: `${(96 / ROOM_W) * 100}%`, transform: 'translateX(-50%)' }}>
+          <div className="absolute pointer-events-none" style={{ left: `${(608 / ROOM_W) * 100}%`, bottom: `${((ROOM_H - 532) / ROOM_H) * 100}%`, width: `${(172 / ROOM_W) * 100}%`, transform: 'translateX(-50%)' }}>
             {children}
           </div>
         )}

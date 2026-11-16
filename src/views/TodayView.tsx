@@ -23,6 +23,7 @@ import { MoodCheckIn } from '../components/MoodCheckIn';
 import { InstallCard } from '../components/InstallCard';
 import { WeekRecap } from '../components/WeekRecap';
 import { DailyBoxCard } from '../components/DailyBox';
+import { YourWorldCard } from '../world/WorldCard';
 import { CheckInCard } from '../components/today/CheckInCard';
 import { sleepTool } from '../components/SleepTool';
 import { QuestSwapModal } from '../components/QuestSwapModal';
@@ -334,6 +335,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       {!rewardsOnTop && <CheckInCard />}
 
       <DailyBoxCard />
+
+      <YourWorldCard onOpen={() => onNavigate('world')} />
 
       <FriendsPeek
         onOpen={() => {
