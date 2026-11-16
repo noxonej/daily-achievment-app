@@ -58,7 +58,7 @@ export interface FriendsState {
   requests: FriendRequest[];
   feed: ActivityItem[];
   cheers: Cheer[];
-  toasts: Array<{ id: string; icon: string; text: string; look?: string }>;
+  toasts: Array<{ id: string; icon: string; text: string; look?: string; leaving?: boolean }>;
   global?: GlobalPlayer[];
   rarity?: RealRarity;
 }
@@ -101,7 +101,10 @@ export function useFriends(): FriendsState {
 }
 
 export function dismissFriendToast(id: string) {
-  set({ toasts: current.toasts.filter((t) => t.id !== id) });
+  // Mark it as leaving first so it can slide away, then remove it.
+  if (!current.toasts.some((t) => t.id === id && !t.leaving)) return;
+  set({ toasts: current.toasts.map((t) => (t.id === id ? { ...t, leaving: true } : t)) });
+  setTimeout(() => set({ toasts: current.toasts.filter((t) => t.id !== id) }), 300);
 }
 
 function toast(icon: string, text: string, look?: string) {

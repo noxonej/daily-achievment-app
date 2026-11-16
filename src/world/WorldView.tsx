@@ -105,6 +105,10 @@ function HomeSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pending
   const { state, dispatch } = useApp();
   const world = worldOf(state);
   const [slot, setSlot] = useState<DecorSlot | null>(null);
+  // Try a piece in your room before you get it: the scene shows it until you pick something else.
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const preview = previewId ? DECOR.find((d) => d.id === previewId) ?? null : null;
+  const sceneWorld = preview ? { ...world, decor: { ...world.decor, [preview.slot]: preview.id } } : world;
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const books = useMemo(() => state.goals.filter((g) => g.kind === 'books').reduce((n, g) => n + (g.log?.length ?? 0), 0), [state.goals]);
   const trophies = state.unlockedAchievements.length;
@@ -114,13 +118,24 @@ function HomeSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pending
   return (
     <>
       <div className="relative world-scene-in">
-        <HomeScene world={world} trophies={trophies} books={books} highlight={slot ?? undefined}>
-          <Avatar look={state.character} size={200} bare className="w-full h-auto world-idle" />
+        <HomeScene world={sceneWorld} trophies={trophies} books={books} highlight={slot ?? undefined}>
+          <Avatar look={state.character} size={200} bare alive className="w-full h-auto world-idle" />
         </HomeScene>
-        <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/45 backdrop-blur-md pl-3 pr-3.5 py-1.5">
+        <div className="theme-dark absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/45 backdrop-blur-md pl-3 pr-3.5 py-1.5">
           <span className="text-[11px] font-bold text-white/70 tabular-nums">{property.tier}/7</span>
           <span className="text-[13px] font-semibold text-white">{property.name}</span>
         </div>
+        {preview && (
+          <button
+            key={preview.id}
+            onClick={() => setPreviewId(null)}
+            className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-amber-500 pl-3 pr-2.5 py-1.5 text-[12px] font-semibold text-[#fff] toast-in-up"
+            aria-label={`Stop previewing ${preview.name}`}
+          >
+            Preview
+            <Icon name="✕" size={13} />
+          </button>
+        )}
       </div>
 
       {/* decorate */}
@@ -128,7 +143,13 @@ function HomeSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pending
         <div className="flex items-baseline justify-between">
           <p className="eyebrow">Decorate</p>
           {slot && (
-            <button onClick={() => setSlot(null)} className="text-xs font-semibold text-slate-400 hover:text-white">
+            <button
+              onClick={() => {
+                setSlot(null);
+                setPreviewId(null);
+              }}
+              className="text-xs font-semibold text-slate-400 hover:text-white"
+            >
               Done
             </button>
           )}
@@ -137,7 +158,10 @@ function HomeSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pending
           {DECOR_SLOTS.map((s) => (
             <button
               key={s.id}
-              onClick={() => setSlot(slot === s.id ? null : s.id)}
+              onClick={() => {
+                setSlot(slot === s.id ? null : s.id);
+                setPreviewId(null);
+              }}
               aria-pressed={slot === s.id}
               className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
                 slot === s.id ? 'seg-pill seg-on' : 'bg-white/[0.05] text-slate-300 hover:bg-white/10'
@@ -162,9 +186,14 @@ function HomeSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pending
                   stats={stats}
                   owned={owned}
                   active={placed}
+                  previewing={previewId === item.id}
                   activeLabel="Placed"
                   ownedLabel="Place"
-                  onUse={() => dispatch({ type: 'WORLD_PLACE', slot: item.slot, itemId: item.id })}
+                  onPreview={owned ? undefined : () => setPreviewId(previewId === item.id ? null : item.id)}
+                  onUse={() => {
+                    dispatch({ type: 'WORLD_PLACE', slot: item.slot, itemId: item.id });
+                    setPreviewId(null);
+                  }}
                   onBuy={() => onBuy({ id: item.id, name: item.name, coins: item.unlock.coins })}
                 />
               );
@@ -185,7 +214,7 @@ function HomeSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pending
             return (
               <div key={p.id} className={`relative overflow-hidden rounded-[24px] p-4 ${here ? 'world-home-here' : 'bg-white/[0.035]'}`}>
                 <div className="flex items-start gap-3">
-                  <span className={`shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center font-display text-lg ${owned ? 'bg-[var(--mood)] text-[#15110e]' : 'bg-white/[0.06] text-slate-400'}`}>
+                  <span className={`shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center font-display text-lg ${owned ? 'bg-amber-500 text-[#fff]' : 'bg-white/[0.06] text-slate-400'}`}>
                     {p.tier}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -229,7 +258,7 @@ function GarageSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pendi
 
   return (
     <>
-      <div className="garage-scene relative overflow-hidden rounded-[28px] aspect-[16/11] world-scene-in">
+      <div className="garage-scene theme-dark relative overflow-hidden rounded-[28px] aspect-[16/11] world-scene-in">
         <div className="absolute inset-x-0 top-0 h-full garage-beam" aria-hidden="true" />
         <div className="absolute inset-x-0 bottom-0 h-[34%] garage-floor" aria-hidden="true" />
         <div key={featured.id + paint.id} className={`absolute bottom-[13%] left-1/2 -translate-x-1/2 vehicle-in ${['bike', 'racebike', 'scooter'].includes(featured.kind) ? 'w-[62%]' : 'w-[84%]'}`}>
@@ -392,7 +421,11 @@ function ItemCard({
   ownedLabel,
   onUse,
   onBuy,
+  onPreview,
+  previewing = false,
 }: {
+  onPreview?: () => void;
+  previewing?: boolean;
   name: string;
   swatch?: string;
   unlock: Unlock;
@@ -406,10 +439,15 @@ function ItemCard({
 }) {
   const gate = canUnlock(unlock, stats);
   return (
-    <div className={`rounded-[20px] p-3 ${active ? 'world-home-here' : 'bg-white/[0.035]'}`}>
+    <div className={`rounded-[20px] p-3 transition-shadow ${active ? 'world-home-here' : previewing ? 'bg-white/[0.06] ring-1 ring-white/40' : 'bg-white/[0.035]'}`}>
       <div className="flex items-center gap-2">
         {swatch && <span className="shrink-0 w-5 h-5 rounded-full" style={{ background: swatch, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.2)' }} />}
-        <p className="min-w-0 text-[13px] font-semibold text-white leading-tight">{name}</p>
+        <p className="flex-1 min-w-0 text-[13px] font-semibold text-white leading-tight">{name}</p>
+        {onPreview && (
+          <button onClick={onPreview} aria-pressed={previewing} className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${previewing ? 'bg-amber-500 text-white' : 'bg-white/[0.08] text-slate-300'}`}>
+            {previewing ? 'Showing' : 'Try'}
+          </button>
+        )}
       </div>
       {!owned && <Requirements unlock={unlock} stats={stats} compact />}
       <div className="mt-2">

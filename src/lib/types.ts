@@ -463,6 +463,10 @@ export interface AppState {
   seasonClaims?: Record<string, number[]>;
   /** Extra reward chests won from the daily box. */
   bonusChests: number;
+  /** Secret address an iPhone Shortcut uses to send today's Apple Health steps (see healthSteps.ts). */
+  stepsToken?: string;
+  /** The last step total that came from Apple Health (or a ?steps= link) and when. */
+  stepSync?: { date: string; steps: number; at: string };
   /** Daily rewards track: the day (1–7) claimed last, when, and how many in a row this week. */
   checkIn?: { day: number; last: string; inARow: number };
   /** Sleep calculator settings and sleep log. */

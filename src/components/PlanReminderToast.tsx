@@ -2,16 +2,18 @@ import { useApp } from '../store/AppContext';
 import { useLivePlanReminders } from '../lib/planReminders';
 import { formatPlanTime } from '../lib/weekPlan';
 import { Icon } from './Icon';
+import { useExit } from '../lib/useExit';
 
 export function PlanReminderToast() {
   const { state, dispatch } = useApp();
-  const { reminder, dismiss } = useLivePlanReminders(state);
+  const { reminder: live, dismiss } = useLivePlanReminders(state);
+  const { shown: reminder, leaving } = useExit(live, 320);
   if (!reminder) return null;
   return (
     <div className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[60] px-4 flex justify-center pointer-events-none">
       <div
         role="alert"
-        className="pointer-events-auto w-full max-w-md rounded-2xl border border-amber-400/40 bg-raised/95 shadow-2xl p-4 animate-pop-in"
+        className={`pointer-events-auto w-full max-w-md rounded-2xl border border-amber-400/40 bg-raised/95 shadow-2xl p-4 ${leaving ? 'toast-out' : 'animate-pop-in'}`}
       >
         <div className="flex items-start gap-3">
           <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><Icon name="🔔" size={22} /></span>

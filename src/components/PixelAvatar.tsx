@@ -779,8 +779,11 @@ export function PixelAvatar({
   mood,
   framing,
   bare = false,
+  alive = false,
 }: {
   look: Partial<Character> | undefined;
+  /** Big, featured pictures (World, wardrobe, profile): the character blinks now and then. */
+  alive?: boolean;
   /** No backdrop: just the character (standing in a World scene). */
   bare?: boolean;
   mood?: number;
@@ -810,6 +813,13 @@ export function PixelAvatar({
   const tx = mode === 'head' ? -7.5 * s : mode === 'bust' ? -2.5 * s : 50 - 16 * s;
   const ty = mode === 'head' ? 0.5 * s : mode === 'bust' ? 2 * s : 7;
   const clip = `${id}c`;
+  // Blinking: only for wide-open eyes with nothing covering them (glasses, masks).
+  const faceKey = findItem(l.expression)?.style ?? 'happy';
+  const eyes = (FACES[faceKey === 'mood' ? (m ? MOOD_FACE[m] : 'happy') : faceKey] ?? FACES.happy).eyes;
+  const canBlink = alive && eyes[0] === 'open' && eyes[1] === 'open' && (!l.face || l.face === 'face-none');
+  const skin = findItem(l.skin)?.c1 ?? '#f6c9a0';
+  // Each character blinks on its own rhythm, so two on screen never blink together.
+  const blinkDelay = `${-((id.charCodeAt(id.length - 2) * 7) % 40) / 10}s`;
   return (
     <svg viewBox="0 0 100 100" width={size} height={size} className={className} role="img" aria-label={title ?? 'Avatar'}>
       <defs>
@@ -822,6 +832,14 @@ export function PixelAvatar({
           {rects.map(([x, y, w, c], i) => (
             <rect key={i} x={x} y={y} width={w} height={1.02} fill={c} />
           ))}
+          {canBlink && (
+            <g className="px-blink" style={{ animationDelay: blinkDelay }} aria-hidden="true">
+              <rect x={13} y={9} width={2} height={1.02} fill={shade(skin, -0.18)} />
+              <rect x={17} y={9} width={2} height={1.02} fill={shade(skin, -0.18)} />
+              <rect x={13} y={10} width={2} height={1.02} fill={EYE} />
+              <rect x={17} y={10} width={2} height={1.02} fill={EYE} />
+            </g>
+          )}
         </g>
       </g>
     </svg>

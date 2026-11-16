@@ -19,7 +19,7 @@ export function BadgeCrest({ tier, icon, size = 72, locked = false, shine = fals
     return (
       <span className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
         <svg viewBox="0 0 64 66" width={size} height={size} aria-hidden="true" className="absolute inset-0">
-          <path d={SHIELD} fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.14)" strokeWidth="2" strokeLinejoin="round" />
+          <path d={SHIELD} fill="rgba(255,255,255,0.03)" stroke="currentColor" className="text-white/15" strokeWidth="2" strokeLinejoin="round" />
           <path d={INNER} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
         </svg>
         <Icon name={icon} size={size * 0.36} className="relative text-slate-600" />

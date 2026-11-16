@@ -3,7 +3,6 @@ import { useApp } from '../store/AppContext';
 import { FOCUS_AREAS } from '../lib/routine';
 import type { FocusArea } from '../lib/types';
 import { Icon } from './Icon';
-import { ACCENTS, BACKGROUNDS } from '../lib/theme';
 
 /** Name and the areas you're working on (the starter plan was built from these). */
 export function ProfileCard() {
@@ -79,56 +78,3 @@ export function ProfileCard() {
     </div>
   );
 }
-
-export function AccentPicker() {
-  const { state, dispatch } = useApp();
-  return (
-    <div className="flex flex-wrap gap-3" role="radiogroup" aria-label="Accent colour">
-      {ACCENTS.map((a) => {
-        const on = (state.appearance?.accent ?? 'cyber') === a.id;
-        return (
-          <button
-            key={a.id}
-            role="radio"
-            aria-checked={on}
-            aria-label={a.label}
-            title={a.label}
-            onClick={() => dispatch({ type: 'SET_APPEARANCE', appearance: { accent: a.id } })}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition ${on ? 'ring-2 ring-white ring-offset-2 ring-offset-canvas scale-110' : 'hover:scale-105'}`}
-            style={{ background: a.hex }}
-          >
-            {on && <Icon name="✓" size={16} strokeWidth={3} className="text-[#fff] animate-check" />}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-export function BackgroundPicker() {
-  const { state, dispatch } = useApp();
-  return (
-    <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 gap-2" role="radiogroup" aria-label="Background">
-      {BACKGROUNDS.map((b) => {
-        const on = (state.appearance?.background ?? 'obsidian') === b.id;
-        return (
-          <button
-            key={b.id}
-            role="radio"
-            aria-checked={on}
-            onClick={() => dispatch({ type: 'SET_APPEARANCE', appearance: { background: b.id } })}
-            className={`rounded-xl border-2 p-1.5 text-left transition ${on ? 'border-amber-400' : 'border-white/10 hover:border-white/25'}`}
-          >
-            <span className="block h-12 rounded-lg p-1.5 space-y-1" style={{ background: b.glow ? `${b.glow}, ${b.bg}` : b.bg }}>
-              <span className="block h-2.5 w-3/4 rounded" style={{ background: b.surface }} />
-              <span className="block h-2.5 w-1/2 rounded" style={{ background: b.surface }} />
-            </span>
-            <span className="block text-xs font-bold text-white mt-1.5 px-0.5">{b.label}</span>
-            <span className="block text-[10px] text-slate-500 px-0.5 leading-tight">{b.hint}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-

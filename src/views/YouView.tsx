@@ -67,7 +67,7 @@ export function YouView() {
 
           <div className="relative mt-3 flex items-center gap-4">
             <button onClick={() => wardrobe.open()} className="relative shrink-0 rounded-[28%] transition-transform active:scale-95" aria-label="Open wardrobe">
-              <Avatar look={state.character} size={112} className="drop-shadow-[0_22px_30px_rgba(40,25,10,0.35)]" />
+              <Avatar look={state.character} size={112} alive className="drop-shadow-[0_22px_30px_rgba(40,25,10,0.35)]" />
               <span className="pc-chip absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-[11px] font-black whitespace-nowrap tabular-nums">LV {stats.level}</span>
             </button>
             <div className="flex-1 min-w-0 grid grid-cols-2 gap-x-2.5 gap-y-3">

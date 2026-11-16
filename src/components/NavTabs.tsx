@@ -41,7 +41,7 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
               aria-current={isActive ? 'page' : undefined}
               style={{ flexGrow: isActive ? 2.15 : 1 }}
               className={`relative min-w-0 basis-0 flex items-center justify-center gap-1.5 rounded-full transition-[flex-grow,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(.34,1.4,.64,1)] ${
-                isActive ? 'dock-pill text-[#15110e]' : 'text-slate-400 hover:text-slate-200'
+                isActive ? 'dock-pill text-[#fff]' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <span key={isActive ? 'on' : 'off'} className={`shrink-0 leading-none ${isActive ? 'animate-nav-pop' : ''}`}>
