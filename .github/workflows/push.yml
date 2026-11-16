@@ -1,0 +1,40 @@
+name: Squzo push sender
+
+# Sends the motivational notifications (and publishes firestore.rules when they change).
+# Free on public repositories. GitHub may start a scheduled run a few minutes late; the sender
+# allows up to 45 minutes, so messages still arrive and never in the middle of the night.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  push:
+    branches:
+      - claude/daily-quest-achievement-app-tolstm
+    paths:
+      - firestore.rules
+      - functions/**
+      - scripts/push/**
+      - .github/workflows/push.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: push-sender
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install sender
+        run: npm install --prefix functions --omit=dev --no-audit --no-fund
+      - name: Send due notifications
+        run: node scripts/push/run.cjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

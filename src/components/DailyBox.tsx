@@ -13,7 +13,7 @@ import { Avatar } from './Avatar';
 import { Confetti } from './Confetti';
 import { Icon } from './Icon';
 import { PixelGift } from './PixelArt';
-import { Coin } from './Coin';
+import { OpenBurst, PrizeHalo, StageLight } from './fx/RewardFx';
 
 /** The daily box: a pixel-art violet gift with a gold ribbon and bow. */
 export function BoxArt(props: { size?: number; glow?: boolean; sparkle?: boolean; lid?: 'on' | 'off'; locked?: boolean }) {
@@ -120,6 +120,7 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
 
   return (
     <div data-overlay className="theme-dark box-stage fixed inset-0 z-[80] flex flex-col items-center justify-center px-6 backdrop-in">
+      <StageLight tint="#ffd9a0" lit={phase === 'burst' || phase === 'reveal'} />
       {!busy && (
         <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
           <Icon name="✕" size={20} />
@@ -128,35 +129,8 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
       {phase !== 'reveal' ? (
         <button onClick={open} className="relative flex flex-col items-center" aria-label="Open box">
           <div className="relative">
-            {phase === 'burst' && (
-              <>
-                <span className="box-beam" aria-hidden="true" />
-                <span className="open-flash" aria-hidden="true" />
-                <span className="box-shockwave" aria-hidden="true" />
-                {Array.from({ length: 10 }, (_, i) => (
-                  <span
-                    key={`c${i}`}
-                    className="coin-fly"
-                    aria-hidden="true"
-                    style={{ ['--dx' as string]: `${(i % 2 ? 1 : -1) * (25 + ((i * 41) % 100))}px`, ['--up' as string]: `${110 + ((i * 47) % 80)}px`, animationDelay: `${(i % 5) * 0.05}s` }}
-                  >
-                    <Coin size={20} />
-                  </span>
-                ))}
-                {Array.from({ length: 16 }, (_, i) => {
-                  const a = (i / 16) * Math.PI * 2;
-                  const d = 110 + (i % 3) * 28;
-                  return (
-                    <span
-                      key={i}
-                      className="box-particle"
-                      aria-hidden="true"
-                      style={{ ['--dx' as string]: `${Math.cos(a) * d}px`, ['--dy' as string]: `${Math.sin(a) * d - 40}px`, animationDelay: `${(i % 4) * 0.03}s` }}
-                    />
-                  );
-                })}
-              </>
-            )}
+            {phase === 'shake' && <span className="chest-leak" style={{ ['--ray' as string]: '#fcd34d' }} aria-hidden="true" />}
+            {phase === 'burst' && <OpenBurst color="#fcd34d" coins={10} />}
             <div className={phase === 'closed' ? 'animate-float-soft' : phase === 'shake' ? 'box-shake' : 'box-pop'}>
               <BoxArt size={220} glow sparkle={phase === 'closed'} lid={phase === 'burst' ? 'off' : 'on'} />
             </div>
@@ -170,15 +144,15 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
             {item && <Confetti count={60} />}
             {item ? (
               <div className="relative">
-                <div className="absolute inset-[-60px] rounded-full prize-rays" style={{ ['--ray' as string]: mythic.hex }} />
-                <div className="relative rounded-[28%] p-1.5 animate-prize-in" style={{ background: 'linear-gradient(135deg,#67e8f9,#a78bfa,#f0abfc)', boxShadow: `0 0 70px -6px ${mythic.hex}` }}>
+                <PrizeHalo color={mythic.hex} big />
+                <div className="prize-card relative rounded-[28%] p-1.5 animate-prize-in" style={{ background: 'linear-gradient(160deg,#a5b4fc,#6d5bd0)', boxShadow: '0 24px 50px -20px #000' }}>
                   <Avatar look={{ ...normalizeLook(state.character), [item.slot]: item.id }} size={180} />
                 </div>
               </div>
             ) : (
               <div className="relative">
-                <div className="absolute inset-[-50px] rounded-full prize-rays" style={{ ['--ray' as string]: '#a78bfa' }} />
-                <div className="relative w-36 h-36 rounded-[30%] bg-gradient-to-br from-white/[0.12] to-white/[0.03] border border-white/15 flex items-center justify-center animate-prize-in shadow-[0_0_60px_-10px_rgba(167,139,250,0.7)]">
+                <PrizeHalo color="#fcd34d" />
+                <div className="prize-card relative w-36 h-36 rounded-[30%] bg-gradient-to-b from-[#26324a] to-[#141a28] ring-1 ring-white/15 flex items-center justify-center animate-prize-in shadow-[0_24px_50px_-20px_#000]">
                   <Icon name={info.icon} size={64} strokeWidth={1.6} className={info.tone} />
                 </div>
               </div>

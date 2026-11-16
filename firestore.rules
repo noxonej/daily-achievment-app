@@ -54,9 +54,19 @@ service cloud.firestore {
       allow read, write: if signedIn() && me() == uid;
     }
 
-    // Public settings the server writes (e.g. the push public key).
+    // Public settings the server writes (e.g. the push public key, which is public by design).
     match /config/{doc} {
-      allow read: if signedIn();
+      allow read: if true;
+    }
+
+    // Motivational push plan per phone, keyed by a long random token made on that phone (no sign-in
+    // needed). Write-only for the app; only the push sender (admin) can read it.
+    match /pushQueue/{token} {
+      allow create, update: if token.size() >= 32 && token.size() <= 64
+        && request.resource.data.keys().hasOnly(['data', 'updatedAt'])
+        && request.resource.data.data is string
+        && request.resource.data.data.size() < 60000
+        && request.resource.data.updatedAt is int;
     }
 
     // Apple Health steps inbox: an iPhone Shortcut writes today's step total here, the app reads it.

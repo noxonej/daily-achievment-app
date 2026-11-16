@@ -32,12 +32,13 @@ const PlanView = lazy(() => import('./views/PlanView').then((m) => ({ default: m
 const MoneyView = lazy(() => import('./views/MoneyView').then((m) => ({ default: m.MoneyView })));
 const QuestsView = lazy(() => import('./views/QuestsView').then((m) => ({ default: m.QuestsView })));
 const WorldView = lazy(() => import('./world/WorldView').then((m) => ({ default: m.WorldView })));
+const CoachView = lazy(() => import('./views/CoachView').then((m) => ({ default: m.CoachView })));
 const YouView = lazy(() => import('./views/YouView').then((m) => ({ default: m.YouView })));
 const SettingsScreen = lazy(() => import('./components/SettingsScreen').then((m) => ({ default: m.SettingsScreen })));
 const Onboarding = lazy(() => import('./components/Onboarding').then((m) => ({ default: m.Onboarding })));
 const Wardrobe = lazy(() => import('./components/Wardrobe').then((m) => ({ default: m.Wardrobe })));
 
-const VIEW_ORDER: ViewId[] = ['today', 'plan', 'quests', 'world', 'money', 'you'];
+const VIEW_ORDER: ViewId[] = ['today', 'plan', 'quests', 'world', 'money', 'coach', 'you'];
 
 export default function App() {
   const { state, stats, dispatch, saveFailed } = useApp();
@@ -75,6 +76,7 @@ export default function App() {
       void import('./views/QuestsView');
       void import('./views/YouView');
       void import('./world/WorldView');
+      void import('./views/CoachView');
       void import('./components/SettingsScreen');
       void import('./components/Wardrobe');
       void import('./components/Onboarding');
@@ -150,6 +152,7 @@ export default function App() {
             {view === 'money' && <MoneyView />}
             {view === 'quests' && <QuestsView onNavigate={setView} />}
             {view === 'world' && <WorldView />}
+            {view === 'coach' && <CoachView onNavigate={setView} />}
             {view === 'you' && <YouView />}
           </div>
         </Suspense>

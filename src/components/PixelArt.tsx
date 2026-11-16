@@ -94,15 +94,7 @@ export function PixelChest({
 }) {
   return (
     <svg viewBox="0 0 32 30" width={size} height={size * (30 / 32)} shapeRendering="crispEdges" aria-hidden="true" className="overflow-visible">
-      {(open || shine) && (
-        <circle cx="16" cy="16" r="17" fill={glow} opacity={open ? 0.45 : 0.18} className={open ? '' : 'glow-pulse'} style={{ transformOrigin: '16px 16px', filter: 'blur(3px)' }} />
-      )}
-      {open && (
-        <g className="px-beams" style={{ transformOrigin: '16px 12px' }}>
-          <path d="M6 13 L-4 -14 H36 L26 13 Z" fill={glow} opacity=".35" shapeRendering="geometricPrecision" />
-          <path d="M11 13 L6 -14 H26 L21 13 Z" fill="#fff7d6" opacity=".5" shapeRendering="geometricPrecision" />
-        </g>
-      )}
+      {/* The glow circle and hard beams that used to sit here are gone: the stage (fx/RewardFx) lights the chest now. */}
       <rect x="5" y="26" width="22" height="2" fill="#000" opacity=".35" />
       <rect x="3" y="27" width="26" height="1" fill="#000" opacity=".2" />
       {open && (

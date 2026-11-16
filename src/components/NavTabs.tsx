@@ -4,13 +4,14 @@ import { Avatar } from './Avatar';
 import { useApp } from '../store/AppContext';
 
 /** 'plan' is still a screen (opened from Today) but no longer has its own tab. */
-export type ViewId = 'today' | 'plan' | 'quests' | 'world' | 'money' | 'you';
+export type ViewId = 'today' | 'plan' | 'quests' | 'world' | 'money' | 'coach' | 'you';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'today', label: 'Today', icon: 'df:today' },
   { id: 'quests', label: 'Quests', icon: 'df:quests' },
   { id: 'world', label: 'World', icon: '🏠' },
   { id: 'money', label: 'Money', icon: 'df:money' },
+  { id: 'coach', label: 'Coach', icon: '💬' },
   { id: 'you', label: 'You', icon: 'avatar' },
 ];
 
@@ -21,7 +22,7 @@ interface NavTabsProps {
 
 /**
  * Floating tab bar. The open tab grows into a pill in that tab's own colour (its "mood") and shows
- * its name; the others are icons only, so five tabs never feel crowded.
+ * its name; the others show a small icon with their name underneath.
  */
 export function NavTabs({ active, onChange }: NavTabsProps) {
   const { state, stats } = useApp();
@@ -40,23 +41,28 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
               style={{ flexGrow: isActive ? 2.15 : 1 }}
-              className={`relative min-w-0 basis-0 flex items-center justify-center gap-1.5 rounded-full transition-[flex-grow,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(.34,1.4,.64,1)] ${
+              className={`relative min-w-0 basis-0 flex ${isActive ? 'flex-row gap-1.5' : 'flex-col gap-0.5'} items-center justify-center rounded-full transition-[flex-grow,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(.34,1.4,.64,1)] ${
                 isActive ? 'dock-pill text-[#fff]' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <span key={isActive ? 'on' : 'off'} className={`shrink-0 leading-none ${isActive ? 'animate-nav-pop' : ''}`}>
                 {tab.icon === 'avatar' ? (
                   <span className={`relative block rounded-[9px] ring-2 ${isActive ? 'ring-[#15110e]/25' : 'ring-transparent'}`}>
-                    <Avatar look={state.character} size={24} />
+                    <Avatar look={state.character} size={isActive ? 24 : 20} />
                     {stats.chestsAvailable > 0 && (
                       <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[#181310]" />
                     )}
                   </span>
                 ) : (
-                  <Icon name={tab.icon} size={21} strokeWidth={isActive ? 2.3 : 1.9} />
+                  <Icon name={tab.icon} size={isActive ? 21 : 19} strokeWidth={isActive ? 2.3 : 1.9} />
                 )}
               </span>
-              {isActive && <span className="dock-label min-w-0 truncate text-[13px] font-bold tracking-tight">{label}</span>}
+              {isActive ? (
+                <span className="dock-label min-w-0 truncate text-[13px] font-bold tracking-tight">{label}</span>
+              ) : (
+                // Every tab says what it is, so nobody has to guess from an icon (tester feedback, 2026-11-14).
+                <span className="max-w-full truncate px-0.5 text-[10px] font-semibold leading-none tracking-tight">{label}</span>
+              )}
             </button>
           );
         })}

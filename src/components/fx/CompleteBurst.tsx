@@ -1,26 +1,29 @@
 /**
- * A little celebration on a quest's icon when it's ticked: a ring that expands, sparks that fly
- * out in a circle and a few twinkling stars. Pure CSS, so it's cheap. Place inside a `relative` box.
+ * The moment a quest is ticked (2026-11-14 redesign). Before: a rainbow of glowing dots and spinning
+ * stars, which looked random. Now one colour (Squzo's "done" green) and three beats with a job each:
+ * 1. a disc of colour fills the icon tile from the centre (the tap "lands"),
+ * 2. one thin ring eases outward (confirms it, then gets out of the way),
+ * 3. eight small chips fly out, slow down and drop a little, like real confetti with weight.
+ * The card then gets a soft green sweep. Pure CSS (transform + opacity), so it's cheap on phones.
  */
-const COLORS = ['#34d399', '#fbbf24', '#6ee7b7', '#f472b6', '#60a5fa', '#fde047'];
-const SPARKS = Array.from({ length: 12 }, (_, i) => ({ a: i * 30 + (i % 2) * 8, r: 30 + (i % 3) * 9, c: COLORS[i % COLORS.length] }));
-const STARS = [
-  { x: -22, y: -20, d: 0.05 },
-  { x: 24, y: -14, d: 0.15 },
-  { x: 16, y: 22, d: 0.25 },
-];
+const CHIPS = Array.from({ length: 8 }, (_, i) => ({
+  a: i * 45 + 18 + (i % 2) * 9,
+  r: 26 + (i % 3) * 7,
+  w: i % 3 === 0 ? 3 : 4,
+  h: i % 3 === 0 ? 7 : 4,
+  c: i % 2 ? 'var(--color-emerald-300)' : '#eafff5',
+  d: (i % 4) * 0.018,
+}));
 
 export function CompleteBurst() {
   return (
     <span className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      <span className="qb-ring" />
-      {SPARKS.map((s, i) => (
-        <span key={i} className="qb-spark" style={{ ['--a' as string]: `${s.a}deg`, ['--r' as string]: `${s.r}px`, background: s.c, color: s.c }} />
-      ))}
-      {STARS.map((s, i) => (
-        <svg key={i} className="qb-star" viewBox="0 0 10 10" width="10" height="10" style={{ ['--x' as string]: `${s.x}px`, ['--y' as string]: `${s.y}px`, animationDelay: `${s.d}s` }}>
-          <path d="M5 0l1.2 3.8L10 5 6.2 6.2 5 10 3.8 6.2 0 5l3.8-1.2Z" fill="#fde68a" />
-        </svg>
+      <span className="qc-fill" />
+      <span className="qc-ring" />
+      {CHIPS.map((c, i) => (
+        <span key={i} className="qc-chip-arm" style={{ transform: `rotate(${c.a}deg)` }}>
+          <span className="qc-chip" style={{ ['--r' as string]: `${c.r}px`, width: c.w, height: c.h, marginLeft: -c.w / 2, background: c.c, animationDelay: `${0.06 + c.d}s` }} />
+        </span>
       ))}
     </span>
   );

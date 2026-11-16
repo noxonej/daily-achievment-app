@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { AppState, DerivedStats } from './types';
 import { addDaysToKey, todayKey } from './date';
 import { hashString } from './hash';
 import { fullPrefs } from './prefs';
 import { showSystemNotification } from './notify';
-import { syncPush } from './push';
-import { loadQuotes, poolFor, quoteOfDay } from './quotes';
+import { pushToken, syncPush } from './push';
+import { dueNow, hhmmToMinutes, lineToShow, planMotivation, type MotivationPrefs, type Planned } from './motivation';
 
 /**
  * Motivational reminders. Tough love, never mean: they push you out of your comfort zone and
@@ -105,110 +105,58 @@ export function randomNudge(streak: number, name: string): Line {
 
 // ---- Scheduling ----
 
-const FIRED_KEY = 'dayforge-nudge-fired';
+const SENT_KEY = 'dayforge-motivation-sent';
 const STATUS_CACHE = 'dayforge-status';
 const STATUS_URL = './__dayforge-status.json';
+const SENT_URL = './__dayforge-sent.json';
 
-const FIRED_URL = './__dayforge-fired.json';
+/**
+ * What the service worker and the push sender need: the plan for the next 14 days, and the last day
+ * you finished a quest (so the day's last message can become a streak warning).
+ */
+export interface NudgeStatus {
+  enabled: boolean;
+  plan: Planned[];
+  lastDone?: string;
+  /** Your settings, so the push sender can still send one gentle message a day if you stop opening the app. */
+  prefs: MotivationPrefs & { tz: string };
+}
 
-/** Which reminders already went out today, shared with the service worker so you never get one twice. */
-async function readFired(): Promise<Record<string, string>> {
-  let out: Record<string, string> = {};
+/** Tags already shown, shared with the service worker so a message never shows twice. */
+async function readSent(): Promise<Record<string, true>> {
+  let out: Record<string, true> = {};
   try {
-    out = JSON.parse(localStorage.getItem(FIRED_KEY) || '{}');
+    out = JSON.parse(localStorage.getItem(SENT_KEY) || '{}');
   } catch {
     // ignore
   }
   try {
-    const res = await (await caches.open(STATUS_CACHE)).match(FIRED_URL);
-    if (res) {
-      const sw = (await res.json()) as Record<string, string>;
-      for (const k of Object.keys(sw)) if (!out[k] || sw[k] > out[k]) out[k] = sw[k];
-    }
+    const res = await (await caches.open(STATUS_CACHE)).match(SENT_URL);
+    if (res) Object.assign(out, (await res.json()) as Record<string, true>);
   } catch {
     // ignore
   }
   return out;
 }
-async function markFired(kind: string, date: string) {
-  const all = { ...(await readFired()), [kind]: date };
+
+async function markSent(tag: string) {
+  const all = { ...(await readSent()), [tag]: true as const };
+  // Keep only the last 60 tags.
+  const keys = Object.keys(all).sort().slice(-60);
+  const trimmed = Object.fromEntries(keys.map((k) => [k, true as const]));
   try {
-    localStorage.setItem(FIRED_KEY, JSON.stringify(all));
+    localStorage.setItem(SENT_KEY, JSON.stringify(trimmed));
   } catch {
     // ignore
   }
   try {
-    await (await caches.open(STATUS_CACHE)).put(FIRED_URL, new Response(JSON.stringify(all), { headers: { 'content-type': 'application/json' } }));
+    await (await caches.open(STATUS_CACHE)).put(SENT_URL, new Response(JSON.stringify(trimmed), { headers: { 'content-type': 'application/json' } }));
   } catch {
     // ignore
   }
 }
 
-function nowMinutes(d = new Date()) {
-  return d.getHours() * 60 + d.getMinutes();
-}
-function toMinutes(hhmm: string | undefined, fallback: number) {
-  if (!hhmm || !/^\d\d:\d\d$/.test(hhmm)) return fallback;
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
-
-export interface NudgeStatus {
-  enabled: boolean;
-  date: string;
-  doneToday: boolean;
-  eveningAt: number;
-  morningAt: number;
-  /** Ready-made messages for the next days, so the service worker can show them with the app closed. */
-  evening: Record<string, Line>;
-  morning: Record<string, Line>;
-  /** Extra reminders (midday and afternoon) for days no quest is done yet. */
-  comeback?: Record<string, Line>;
-  /** The last call before midnight when a streak is at risk. */
-  lastCall?: Record<string, Line>;
-  lastCallAt?: number;
-}
-
-/** Reminder moments through the day, in minutes after midnight. Each one fires at most once a day. */
-export const MIDDAY = 12 * 60 + 30;
-export const AFTERNOON = 16 * 60;
-const LAST_CALL = 21 * 60 + 30;
-
-type Moment = { kind: string; from: number; to: number; onlyIfNotDone: boolean };
-
-/** Morning boost, midday + afternoon pushes, the evening streak check and a last call. */
-export function reminderMoments(morningAt: number, eveningAt: number): Moment[] {
-  const lastCall = Math.max(LAST_CALL, eveningAt + 120);
-  const list: Moment[] = [
-    { kind: 'morning', from: morningAt, to: morningAt + 180, onlyIfNotDone: false },
-    { kind: 'midday', from: MIDDAY, to: MIDDAY + 120, onlyIfNotDone: true },
-    { kind: 'afternoon', from: AFTERNOON, to: AFTERNOON + 120, onlyIfNotDone: true },
-    { kind: 'evening', from: eveningAt, to: Math.min(eveningAt + 150, 23 * 60 + 50), onlyIfNotDone: true },
-  ];
-  if (lastCall < 23 * 60 + 30) list.push({ kind: 'lastcall', from: lastCall, to: 23 * 60 + 50, onlyIfNotDone: true });
-  // A moment that would overlap the evening check is dropped so you never get two at once.
-  return list.filter((m) => m.kind === 'evening' || m.kind === 'morning' || m.kind === 'lastcall' || Math.abs(m.from - eveningAt) >= 90);
-}
-
-const LAST: Line[] = [
-  { title: 'Last call 🔥', body: 'Your {n}-day streak ends at midnight. One tiny quest saves it.' },
-  { title: '{name}, it’s now or never', body: 'Two minutes before bed keeps {n} days alive.' },
-  { title: 'Don’t sleep on your streak', body: 'Literally. Tick one quest, then sleep proud.' },
-  { title: 'Midnight is coming', body: '{n} days of work. Protect them with one quest.' },
-];
-
-export function pickLastCall(streak: number, name: string, date: string): Line {
-  if (streak <= 0) return pickNudge(0, name, date, 'l');
-  const line = LAST[hashString(`last|${date}`) % LAST.length];
-  return fill(line, { n: streak, next: streak + 1, name: name.trim() || 'friend' });
-}
-
-/**
- * Writes what the service worker needs into the Cache API. On Android (installed app), the
- * worker wakes up a few times a day ("periodic background sync") and can then remind you even if
- * the app is closed. Elsewhere the reminders only fire while the app is open or in the background.
- */
-async function writeStatus(status: NudgeStatus) {
+async function writeStatus(status: NudgeStatus & { pushActive: boolean }) {
   try {
     if (!('caches' in window)) return;
     const c = await caches.open(STATUS_CACHE);
@@ -225,14 +173,14 @@ async function registerPeriodic() {
     if (!ps) return false;
     const perm = await navigator.permissions?.query({ name: 'periodic-background-sync' as PermissionName }).catch(() => null);
     if (perm && perm.state !== 'granted') return false;
-    await ps.register('dayforge-nudge', { minInterval: 60 * 60 * 1000 });
+    await ps.register('dayforge-nudge', { minInterval: 30 * 60 * 1000 });
     return true;
   } catch {
     return false;
   }
 }
 
-/** True when reminders can arrive even with the app closed (installed on Android Chrome). */
+/** True when reminders can arrive even with the app closed without the push server (installed on Android Chrome). */
 export async function backgroundRemindersSupported(): Promise<boolean> {
   try {
     const reg = await navigator.serviceWorker?.ready;
@@ -242,74 +190,73 @@ export async function backgroundRemindersSupported(): Promise<boolean> {
   }
 }
 
-/** Runs in the app: fires the evening "streak at risk" nudge and a morning boost at the right time. */
-export function useNudges(state: AppState, stats: DerivedStats) {
+/** Your notification settings, with sensible defaults (09:00–21:00, three a day). */
+export function motivationPrefs(state: AppState): MotivationPrefs {
   const prefs = fullPrefs(state.prefs);
-  const today = todayKey();
-  const doneToday = (state.dayLogs[today]?.completedQuestIds.length ?? 0) > 0 || (state.dayLogs[today]?.skipped?.length ?? 0) > 0;
-  const name = state.profile?.name ?? '';
-  const streak = stats.currentStreak;
-  const eveningAt = toMinutes(prefs.nudgeTime, 19 * 60);
-  const morningAt = toMinutes(state.profile?.wakeTime, 7 * 60) + 30;
-  const live = useRef({ doneToday, streak, name, daily: prefs.daily });
-  live.current = { doneToday, streak, name, daily: prefs.daily };
+  const wake = hhmmToMinutes(state.profile?.wakeTime, 7 * 60);
+  // Never before you're awake: at least 30 minutes after your wake-up time.
+  const from = Math.max(hhmmToMinutes(prefs.nudgeFrom, 9 * 60), wake + 30);
+  const to = Math.max(from + 60, hhmmToMinutes(prefs.nudgeTo, 21 * 60));
+  return { on: prefs.nudges, perDay: prefs.nudgesPerDay ?? 3, from, to };
+}
 
-  // Keep the service worker's copy up to date.
+/** The most recent day you finished (or skipped) a quest. */
+function lastDoneDay(state: AppState): string | undefined {
+  let best: string | undefined;
+  for (const [day, log] of Object.entries(state.dayLogs)) {
+    if ((log.completedQuestIds.length || log.skipped?.length) && (!best || day > best)) best = day;
+  }
+  return best;
+}
+
+let pushActive = false;
+/** True once Squzo's push server has this phone's plan (messages then arrive with the app closed). */
+export const pushIsActive = () => pushActive;
+
+/** Plans the day's three messages and keeps every sender (app, service worker, push server) in sync. */
+export function useNudges(state: AppState, stats: DerivedStats) {
+  const today = todayKey();
+  const mp = motivationPrefs(state);
+  const lastDone = lastDoneDay(state);
+  const streak = stats.currentStreak;
+  const salt = pushToken();
+  const plan = useMemo(
+    () => planMotivation(mp, today, { streak, salt }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mp.on, mp.perDay, mp.from, mp.to, today, streak, salt],
+  );
+  const live = useRef({ plan, lastDone });
+  live.current = { plan, lastDone };
+
   useEffect(() => {
+    const status: NudgeStatus = { enabled: mp.on, plan, lastDone, prefs: { ...mp, tz: Intl.DateTimeFormat().resolvedOptions().timeZone } };
     let alive = true;
-    (async () => {
-      const evening: Record<string, Line> = {};
-      const morning: Record<string, Line> = {};
-      const comeback: Record<string, Line> = {};
-      const lastCall: Record<string, Line> = {};
-      let quotes: Awaited<ReturnType<typeof loadQuotes>> | null = null;
-      if (prefs.nudges && prefs.daily !== 'off') quotes = await loadQuotes().catch(() => null);
-      for (let i = 0; i < 7; i++) {
-        const d = addDaysToKey(today, i);
-        // A day the app wasn't opened means no quest yet, so the streak is at risk.
-        evening[d] = pickNudge(i === 0 ? streak : i === 1 && doneToday ? streak : 0, name, d);
-        const q = quotes ? quoteOfDay(poolFor(quotes, prefs.daily), d) : null;
-        comeback[d] = pickNudge(0, name, d, 'c');
-        lastCall[d] = pickLastCall(i === 0 ? streak : i === 1 && doneToday ? streak : 0, name, d);
-        morning[d] = q ? { title: q.kind === 'verse' ? 'Verse of the day' : 'Your daily boost', body: `“${q.text}” — ${q.by}` } : pickNudge(0, name, d, 'm');
-      }
+    void (async () => {
+      const ok = await syncPush(status);
       if (!alive) return;
-      const status = { enabled: prefs.nudges, date: today, doneToday, eveningAt, morningAt, evening, morning, comeback, lastCall };
-      await writeStatus(status);
-      void syncPush(status);
-      if (prefs.nudges) void registerPeriodic();
+      pushActive = ok;
+      await writeStatus({ ...status, pushActive: ok });
+      if (mp.on && !ok) void registerPeriodic();
     })();
     return () => {
       alive = false;
     };
-  }, [prefs.nudges, prefs.daily, today, doneToday, streak, name, eveningAt, morningAt]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, lastDone, mp.on]);
 
-  // While the app is open (or in the background), check every minute.
+  // While the app is open or in the background: show the message that is due (unless the push server does it).
   useEffect(() => {
-    if (!prefs.nudges) return;
+    if (!mp.on) return;
     async function check() {
       if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-      const d = todayKey();
-      const m = nowMinutes();
-      const s = live.current;
-      const fired = await readFired();
-      if (document.visibilityState !== 'hidden') return;
-      const moment = reminderMoments(morningAt, eveningAt).find((x) => m >= x.from && m < x.to && fired[x.kind] !== d && !(x.onlyIfNotDone && s.doneToday));
-      if (!moment) return;
-      await markFired(moment.kind, d);
-      let line: Line;
-      if (moment.kind === 'morning') {
-        line = pickNudge(0, s.name, d, 'm');
-        if (s.daily !== 'off') {
-          const q = quoteOfDay(poolFor(await loadQuotes(), s.daily), d);
-          if (q) line = { title: q.kind === 'verse' ? 'Verse of the day' : 'Your daily boost', body: `“${q.text}” — ${q.by}` };
-        }
-      } else if (moment.kind === 'lastcall') line = pickLastCall(s.streak, s.name, d);
-      else if (moment.kind === 'evening') line = pickNudge(s.streak, s.name, d);
-      else line = pickNudge(s.streak, s.name, d, moment.kind);
-      showSystemNotification(line.title, line.body, `${moment.kind}-${d}`);
+      if (pushActive || document.visibilityState !== 'hidden') return;
+      const { plan: p, lastDone: ld } = live.current;
+      const due = dueNow(p, await readSent());
+      if (!due) return;
+      await markSent(due.tag);
+      const line = lineToShow(due, ld);
+      showSystemNotification(line.title, line.body, due.tag);
     }
-    void check();
     const t = setInterval(() => void check(), 60_000);
     const onVis = () => void check();
     document.addEventListener('visibilitychange', onVis);
@@ -317,5 +264,13 @@ export function useNudges(state: AppState, stats: DerivedStats) {
       clearInterval(t);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [prefs.nudges, eveningAt, morningAt]);
+  }, [mp.on]);
+}
+
+/** Today's planned times, for Settings ("Next: 13:42"). */
+export function todaysMoments(state: AppState): number[] {
+  const mp = motivationPrefs(state);
+  return planMotivation(mp, todayKey(), { days: 2, salt: pushToken(), now: 0 })
+    .filter((x) => x.date === todayKey())
+    .map((x) => x.at);
 }

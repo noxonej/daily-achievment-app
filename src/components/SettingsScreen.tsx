@@ -20,7 +20,8 @@ import { ProfileCard } from './ProfileSettings';
 import { AboutPage } from './AboutPage';
 import { InstallCard } from './InstallCard';
 import { ManageView } from '../views/ManageView';
-import { NUDGE_COUNT, backgroundRemindersSupported, randomNudge } from '../lib/nudges';
+import { backgroundRemindersSupported, pushIsActive, todaysMoments } from '../lib/nudges';
+import { MOTIVATION } from '../lib/motivation';
 import { showSystemNotification } from '../lib/notify';
 
 const TITLES: Record<SettingsPage, TKey> = {
@@ -384,7 +385,7 @@ function LanguagePage() {
 }
 
 function NotificationsPage() {
-  const { state, stats } = useApp();
+  const { state } = useApp();
   const [prefs, setPrefs] = usePrefs();
   const [live, setLive] = useState(loadLiveRemindersEnabled);
   const [permission, setPermission] = useState(() => (notificationsSupported() ? Notification.permission : 'unsupported'));
@@ -421,7 +422,7 @@ function NotificationsPage() {
   async function test() {
     const p = await ask();
     if (p !== 'granted') return;
-    const n = randomNudge(stats.currentStreak, state.profile?.name ?? '');
+    const n = MOTIVATION[Math.floor(Math.random() * MOTIVATION.length)];
     showSystemNotification(n.title, n.body, 'nudge-test');
     setSent(true);
     setTimeout(() => setSent(false), 2000);
@@ -431,23 +432,57 @@ function NotificationsPage() {
     <div className="space-y-4">
       <Group title="Motivation">
         <SwitchRow
-          label="Motivation reminders"
-          hint={`Up to 5 a day: a morning boost with your daily quote, a push at lunch and in the afternoon if nothing is done yet, the evening streak check and a last call before midnight. ${NUDGE_COUNT}+ different messages. Once you finish a quest, the pushes stop for the day.`}
+          label="Daily motivation"
+          hint={`Up to 3 short messages a day, spread naturally between the times below, so you remember your goals. ${MOTIVATION.length} different messages, so they don't repeat for about two weeks. If you have a streak and nothing is done yet, the last one reminds you to save it.`}
           on={prefs.nudges}
           onChange={toggleNudges}
         />
         {prefs.nudges && (
           <>
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <span className="flex-1 text-[15px] font-semibold text-white">How many a day</span>
+              <div className="flex rounded-full bg-white/[0.06] p-0.5" role="radiogroup" aria-label="Messages a day">
+                {[1, 2, 3].map((n) => {
+                  const on = (prefs.nudgesPerDay ?? 3) === n;
+                  return (
+                    <button
+                      key={n}
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => setPrefs({ nudgesPerDay: n })}
+                      className={`w-10 h-8 rounded-full text-sm font-bold tabular-nums transition-colors ${on ? 'bg-amber-500 text-[#fff]' : 'text-slate-300'}`}
+                    >
+                      {n}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <label className="flex items-center gap-3 px-4 py-3.5">
-              <span className="flex-1 text-[15px] font-semibold text-white">Evening check</span>
+              <span className="flex-1">
+                <span className="block text-[15px] font-semibold text-white">Not before</span>
+                <span className="block text-xs text-slate-500">and never earlier than 30 minutes after you wake up</span>
+              </span>
               <input
                 type="time"
-                value={prefs.nudgeTime}
-                onChange={(e) => e.target.value && setPrefs({ nudgeTime: e.target.value })}
+                value={prefs.nudgeFrom ?? '09:00'}
+                onChange={(e) => e.target.value && setPrefs({ nudgeFrom: e.target.value })}
                 className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 text-white text-base"
               />
             </label>
-            <div className="px-4 py-3">
+            <label className="flex items-center gap-3 px-4 py-3.5">
+              <span className="flex-1 text-[15px] font-semibold text-white">Not after</span>
+              <input
+                type="time"
+                value={prefs.nudgeTo ?? '21:00'}
+                onChange={(e) => e.target.value && setPrefs({ nudgeTo: e.target.value })}
+                className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 text-white text-base"
+              />
+            </label>
+            <div className="px-4 py-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-slate-400 mr-auto">
+                Today: {todaysMoments(state).map((at) => new Date(at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })).join(' · ')}
+              </span>
               <button onClick={test} className="rounded-full bg-white/[0.06] border border-white/10 hover:bg-white/10 px-3.5 py-2 text-sm font-semibold text-white">
                 <Icon name={sent ? '✓' : '🛎'} size={15} className="icon-inline" />
                 {sent ? 'Sent' : 'Send me one now'}
@@ -457,15 +492,22 @@ function NotificationsPage() {
         )}
       </Group>
       {prefs.nudges && permission === 'denied' && (
-        <p className="px-1 text-xs text-amber-300">Notifications are blocked for this app in your phone's settings. Allow them there to get reminders.</p>
+        <p className="px-1 text-xs text-amber-300">Notifications are blocked for Squzo in your phone's settings. Allow them there to get your messages.</p>
+      )}
+      {prefs.nudges && permission === 'default' && (
+        <button onClick={() => void ask()} className="w-full rounded-2xl bg-amber-500 text-[#fff] font-bold py-3">
+          Allow notifications
+        </button>
       )}
       {prefs.nudges && permission !== 'denied' && (
         <p className="px-1 text-xs text-slate-400">
-          {background && isStandalone()
-            ? 'Your phone supports reminders even when the app is closed. Android decides the exact moment, so one may come a bit late.'
-            : !isStandalone()
-              ? 'Install the app on your home screen (Settings → Install) so reminders can also come when the app is closed.'
-              : 'On this phone, reminders come while the app is open or in the background. For alarms with the app fully closed, add your plan to your calendar (below).'}
+          {pushIsActive()
+            ? 'Delivered by Squzo’s server, so they arrive even when the app is closed.'
+            : /iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone()
+              ? 'On iPhone, add Squzo to your home screen (Share → Add to Home Screen) and open it from there, so messages can arrive when it’s closed.'
+              : background && isStandalone()
+                ? 'Your phone can show them with the app closed. Android picks the exact moment, so one may come a little late.'
+                : 'Right now they arrive while Squzo is open or in the background. Once Squzo’s push server is switched on, they also arrive when it’s closed.'}
         </p>
       )}
 
