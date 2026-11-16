@@ -1,3 +1,4 @@
+import { usePixelated } from '../px/pixelate';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { DecorSlot, WorldState } from '../../lib/types';
 import { DECOR_SLOTS, PROPERTIES, decorFor, type DecorItem } from '../catalog';
@@ -15,6 +16,9 @@ import { mix, shade, tint } from './paint';
  */
 export const ROOM_W = 1200;
 export const ROOM_H = 560;
+/** The room is shown as pixel art at this size (4 scene units per pixel). */
+const PX_W = 300;
+const PX_H = Math.round((PX_W * ROOM_H) / ROOM_W);
 
 export type TimeOfDay = 'day' | 'dusk' | 'night';
 
@@ -294,6 +298,72 @@ function WindowView({ view, time, win }: { view: string; time: TimeOfDay; win: W
           ))}
         </g>
       )}
+      {(view === 'forest' || view === 'snow') && (
+        <g>
+          {view === 'snow' && (
+            <>
+              <path d={`M${x} ${base - h * 0.3} L${x + w * 0.25} ${y + h * 0.3} L${x + w * 0.45} ${base - h * 0.4} L${x + w * 0.7} ${y + h * 0.22} L${x + w} ${base - h * 0.35} V${base} H${x} Z`} fill={night ? '#3b4a6b' : '#c9d6e8'} />
+              <path d={`M${x + w * 0.19} ${y + h * 0.4} L${x + w * 0.25} ${y + h * 0.3} L${x + w * 0.31} ${y + h * 0.4} Z M${x + w * 0.63} ${y + h * 0.33} L${x + w * 0.7} ${y + h * 0.22} L${x + w * 0.77} ${y + h * 0.33} Z`} fill="#fff" />
+              <rect x={x} y={base - h * 0.14} width={w} height={h * 0.14} fill={night ? '#c7d2e6' : '#f4f7fb'} />
+            </>
+          )}
+          {view === 'forest' && <rect x={x} y={base - h * 0.16} width={w} height={h * 0.16} fill={night ? '#122018' : '#4f7d3f'} />}
+          {[0.08, 0.22, 0.38, 0.55, 0.7, 0.86].map((f, i) => {
+            const tx = x + w * f;
+            const th = h * (0.32 + (i % 3) * 0.08);
+            const leaf = night ? '#0f2a1d' : view === 'snow' ? '#2f5d46' : i % 2 ? '#2f6b3a' : '#3d7f45';
+            return (
+              <g key={f}>
+                <rect x={tx - 2} y={base - h * 0.1} width={4} height={h * 0.08} fill="#5a3e2b" />
+                <path d={`M${tx} ${base - h * 0.1 - th} L${tx + 16} ${base - h * 0.1} H${tx - 16} Z`} fill={leaf} />
+                {view === 'snow' && <path d={`M${tx} ${base - h * 0.1 - th} L${tx + 6} ${base - h * 0.1 - th * 0.62} H${tx - 6} Z`} fill="#fff" />}
+              </g>
+            );
+          })}
+        </g>
+      )}
+      {view === 'beach' && (
+        <g>
+          <rect x={x} y={y + h * 0.55} width={w} height={h * 0.25} fill={night ? '#0c1838' : dusk ? '#b2626a' : '#38a3d1'} />
+          <path d={`M${x} ${base - h * 0.2} Q${x + w * 0.5} ${base - h * 0.28} ${x + w} ${base - h * 0.2} V${base} H${x} Z`} fill={night ? '#8a7a5a' : '#f2d9a0'} />
+          <path d={`M${x + w * 0.78} ${base - h * 0.22} Q${x + w * 0.74} ${base - h * 0.45} ${x + w * 0.8} ${base - h * 0.62}`} stroke="#8b5a2b" strokeWidth={5} fill="none" />
+          {[-1, -0.4, 0.4, 1].map((d) => (
+            <path key={d} d={`M${x + w * 0.8} ${base - h * 0.62} q${d * 22} -6 ${d * 34} 10`} stroke={night ? '#173b26' : '#2f9a4a'} strokeWidth={6} fill="none" strokeLinecap="round" />
+          ))}
+          <line x1={x + 8} y1={y + h * 0.66} x2={x + w - 8} y2={y + h * 0.66} stroke="#fff" strokeOpacity={0.35} strokeDasharray="14 10" />
+        </g>
+      )}
+      {view === 'jungle' && (
+        <g>
+          {[0.1, 0.3, 0.5, 0.72, 0.9].map((f, i) => (
+            <g key={f}>
+              <circle cx={x + w * f} cy={base - h * (0.25 + (i % 2) * 0.12)} r={h * 0.2} fill={night ? '#0e2418' : i % 2 ? '#2e8b47' : '#3fa45a'} />
+              <circle cx={x + w * f + 14} cy={base - h * 0.12} r={h * 0.16} fill={night ? '#0b1d13' : '#24703a'} />
+            </g>
+          ))}
+          {!night && (
+            <g>
+              <circle cx={x + w * 0.62} cy={y + h * 0.42} r={6} fill="#e11d48" />
+              <path d={`M${x + w * 0.62} ${y + h * 0.46} l3 12`} stroke="#2563eb" strokeWidth={4} />
+              <circle cx={x + w * 0.62 - 3} cy={y + h * 0.415} r={1.4} fill="#111" />
+            </g>
+          )}
+        </g>
+      )}
+      {view === 'space' && (
+        <g>
+          <rect x={x} y={y} width={w} height={h} fill="#05060f" />
+          {Array.from({ length: 24 }, (_, i) => (
+            <circle key={i} cx={x + ((i * 41) % w)} cy={y + ((i * 29) % (h * 0.7))} r={1.1} fill="#fff" opacity={0.85} />
+          ))}
+          <circle cx={x + w * 0.3} cy={y + h * 0.32} r={h * 0.13} fill="#2f7de1" />
+          <path d={`M${x + w * 0.27} ${y + h * 0.24} q10 4 6 12 q-8 2 -10 -4 Z M${x + w * 0.31} ${y + h * 0.34} q8 2 10 8 q-8 4 -12 -2 Z`} fill="#3fae5a" />
+          <path d={`M${x} ${base - h * 0.2} Q${x + w * 0.4} ${base - h * 0.3} ${x + w} ${base - h * 0.22} V${base} H${x} Z`} fill="#9a9aa3" />
+          {[0.2, 0.55, 0.8].map((f) => (
+            <ellipse key={f} cx={x + w * f} cy={base - h * 0.1} rx={12} ry={4} fill="#6b6b74" />
+          ))}
+        </g>
+      )}
       {(view === 'city' || view === 'skyline') &&
         Array.from({ length: 10 }, (_, i) => {
           const bw = w / 10;
@@ -449,6 +519,8 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
   };
 
   const lights = night || time === 'dusk' ? lightsFor(get, win) : [];
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pixels = usePixelated(svgRef, JSON.stringify([world.property, world.decor, world.tints, world.sizes, time, focus, trophies, books]), PX_W, PX_H);
   const dimmed = (s: DecorSlot) => !!focus && focus !== s && focus !== 'wall' && focus !== 'floor';
 
   return (
@@ -470,7 +542,7 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
           transition: drag.current?.moved || inertia.current ? 'none' : 'transform 0.7s cubic-bezier(.22,.9,.24,1)',
         }}
       >
-        <svg viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} width="100%" height="100%" className="block" role="img" aria-label={`Your room in ${property.name}`}>
+        <svg ref={svgRef} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} width="100%" height="100%" className="block" style={{ opacity: pixels ? 0 : 1 }} role="img" aria-label={`Your room in ${property.name}`}>
           <RoomDefs />
           <Wall item={get('wall')} />
           <g clipPath="url(#winclip)">
@@ -484,15 +556,17 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
             <path d={`M${win.x} ${win.y + win.h} L${win.x + win.w} ${win.y + win.h} L${win.x + win.w + 140} ${ROOM_H} L${win.x - 60} ${ROOM_H} Z`} fill="#fff4d6" opacity={0.1} />
           )}
           <Floor item={get('floor')} />
-          <g className={dimmed('window') ? 'room-dim' : ''}>
+          <g opacity={dimmed('window') ? 0.35 : 1}>
             <Placed slot="window" item={get('window')} dropped={dropped}>
               <SlotArt item={get('window')} night={night} win={win} />
             </Placed>
           </g>
           {ORDER.map((s) => (
-            <g key={s} className={dimmed(s) ? 'room-dim' : ''}>
+            <g key={s} opacity={dimmed(s) ? 0.35 : 1}>
               <Placed slot={s} item={get(s)} dropped={dropped}>
-                <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
+                <g transform={sizeTransform(s, world.sizes)}>
+                  <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
+                </g>
               </Placed>
             </g>
           ))}
@@ -515,6 +589,8 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
           ))}
           <rect width={ROOM_W} height={ROOM_H} fill="url(#vignette)" pointerEvents="none" />
         </svg>
+        {/* the same scene as pixel art (see px/pixelate.ts) */}
+        {pixels && <img src={pixels} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full object-contain pointer-events-none" draggable={false} />}
 
         {/* your character, standing on the rug */}
         {children && (
@@ -554,6 +630,19 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
 }
 
 /** Wraps an item so a newly placed one drops in with a little bounce and dust. */
+const SIZE_SCALE = { s: 0.7, m: 1, l: 1.35 } as const;
+
+/** Wall art can hang small, medium or big; it grows from the middle of its spot. */
+function sizeTransform(slot: DecorSlot, sizes: WorldState['sizes']): string | undefined {
+  if (slot !== 'poster' && slot !== 'art') return undefined;
+  const k = SIZE_SCALE[sizes?.[slot] ?? 'm'];
+  const r = DECOR_SLOTS.find((x) => x.id === slot)?.rect;
+  if (k === 1 || !r) return undefined;
+  const cx = r[0] + r[2] / 2;
+  const cy = r[1] + r[3] / 2;
+  return `translate(${cx} ${cy}) scale(${k}) translate(${-cx} ${-cy})`;
+}
+
 function Placed({ slot, item, dropped, children }: { slot: DecorSlot; item: DecorItem; dropped: { slot: DecorSlot; key: number } | null; children: ReactNode }) {
   const fresh = dropped?.slot === slot;
   const r = DECOR_SLOTS.find((s) => s.id === slot)?.rect;
@@ -561,7 +650,7 @@ function Placed({ slot, item, dropped, children }: { slot: DecorSlot; item: Deco
     <g key={fresh ? `${item.id}-${dropped!.key}` : item.id} className={fresh ? 'room-drop' : ''} style={r ? { transformOrigin: `${r[0] + r[2] / 2}px ${r[1] + r[3]}px` } : undefined}>
       {children}
       {fresh && r && (
-        <g className="room-dust" aria-hidden="true">
+        <g className="room-dust" aria-hidden="true" data-px-skip="">
           {[-1, -0.5, 0, 0.5, 1].map((f, i) => (
             <circle key={i} cx={r[0] + r[2] / 2 + f * r[2] * 0.45} cy={r[1] + r[3] - 6} r={10 + (i % 2) * 5} fill="#fff" opacity={0.5} style={{ animationDelay: `${0.18 + i * 0.03}s`, ['--dx' as string]: `${f * 30}px` }} />
           ))}
