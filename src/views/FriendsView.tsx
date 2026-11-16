@@ -4,6 +4,8 @@ import { useAuth } from '../store/AuthContext';
 import { friendsConfigured } from '../lib/firebase';
 import { googleProfile } from '../lib/google';
 import {
+  activeDays,
+  duoStreak,
   DEFAULT_SHARING,
   acceptRequest,
   addFriendByCode,
@@ -151,6 +153,7 @@ function Connected() {
     }
   }
 
+  const mine = activeDays(state);
   const board = [
     { ...me, weekXp: weekXp(state), streak: stats.currentStreak, level: stats.level, isMe: true },
     ...f.friends.map((p) => ({ ...p, isMe: false })),
@@ -215,6 +218,44 @@ function Connected() {
         </section>
       )}
 
+      {/* Duo streaks */}
+      {f.friends.length > 0 && (
+        <section className="rounded-2xl border border-orange-400/25 bg-orange-500/[0.05] p-2">
+          <p className="px-2 pt-1.5 text-sm font-bold text-white">
+            <Icon name="🔥" size="1.1em" className="icon-inline text-orange-300" fill="currentColor" />
+            Duo streaks
+          </p>
+          <p className="px-2 pb-1 text-xs text-slate-400">Both finish one quest a day to keep your streak together.</p>
+          <ul className="rows-stagger">
+            {f.friends
+              .map((p) => ({ p, duo: duoStreak(mine, p.active) }))
+              .sort((x, y) => y.duo.days - x.duo.days)
+              .map(({ p, duo }) => (
+                <li key={p.uid} className="flex items-center gap-3 rounded-xl px-2 py-2">
+                  <span className="w-9 h-9 rounded-full overflow-hidden bg-raised shrink-0">
+                    <Avatar look={lookOf(p)} size={36} />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-bold text-white truncate">You + {p.name}</span>
+                    <span className="block text-xs text-slate-400">
+                      {p.active === undefined
+                        ? `${p.name} needs to open the new Squzo once`
+                        : duo.meToday && duo.themToday
+                          ? 'Both done today ✓'
+                          : duo.meToday
+                            ? `Waiting for ${p.name}. Send a cheer!`
+                            : duo.themToday
+                              ? `${p.name} did theirs. Your turn!`
+                              : 'Nobody yet today'}
+                    </span>
+                  </span>
+                  <span className={`font-display font-bold tabular-nums ${duo.days > 0 ? 'text-orange-300' : 'text-slate-500'}`}>{duo.days}d</span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
+
       {/* Leaderboard */}
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -268,6 +309,48 @@ function Connected() {
         )}
       </section>
 
+      {/* Everyone */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+        <div className="px-4 pt-4 pb-1">
+          <p className="text-sm font-bold text-white">
+            <Icon name="🌍" size="1.1em" className="icon-inline text-sky-300" />
+            Everyone this week
+          </p>
+          {f.rarity && f.rarity.players >= 2 && (
+            <p className="text-xs text-slate-400 mt-0.5">
+              {f.rarity.players} players on Squzo.{' '}
+              {f.rarity.players >= 20
+                ? `Your rank: top ${Math.max(1, Math.round((f.rarity.atOrAbove / f.rarity.players) * 100))}% (real numbers).`
+                : `${f.rarity.atOrAbove} of them are at your rank or higher.`}
+            </p>
+          )}
+        </div>
+        {!share.global && (
+          <div className="px-4 py-2 flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-400">Join to race everyone. Only your first name, level and weekly XP are shown.</p>
+            <button onClick={() => dispatch({ type: 'SET_SHARING', sharing: { global: true } })} className="shrink-0 rounded-lg bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold px-3 py-2">
+              Join
+            </button>
+          </div>
+        )}
+        <ol className="px-2 pb-2">
+          {(f.global ?? []).slice(0, 50).map((p, i) => (
+            <li key={p.uid} className={`flex items-center gap-3 rounded-xl px-2 py-1.5 ${p.uid === me.uid ? 'bg-sky-500/[0.10]' : ''}`}>
+              <span className={`w-6 text-center font-display font-extrabold tabular-nums ${i === 0 ? 'text-yellow-300' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-orange-300' : 'text-slate-500'}`}>{i + 1}</span>
+              <span className="w-8 h-8 rounded-full overflow-hidden bg-raised shrink-0">
+                <Avatar look={lookOf(p)} size={32} />
+              </span>
+              <span className="flex-1 min-w-0 text-sm font-semibold text-white truncate">
+                {p.uid === me.uid ? `${p.name} (you)` : p.name}
+                <span className="text-xs text-slate-500 font-normal"> · LV {p.level}</span>
+              </span>
+              <span className="font-display font-bold text-white tabular-nums text-sm">{p.weekXp} XP</span>
+            </li>
+          ))}
+        </ol>
+        {share.global && (f.global ?? []).length === 0 && <p className="px-4 pb-4 text-xs text-slate-400">You're on the board. It fills up as more people join.</p>}
+      </section>
+
       {/* Feed */}
       {f.feed.length > 0 && (
         <section className="rounded-2xl border border-white/10 bg-white/[0.03]">
@@ -314,11 +397,12 @@ function Connected() {
                   ['streak', 'Streak'],
                   ['level', 'Level'],
                   ['badges', 'New badges'],
+                  ['global', 'Public leaderboard (first name, level, weekly XP)'],
                 ] as Array<[keyof Sharing, string]>
               ).map(([k, label]) => (
                 <label key={k} className="flex items-center justify-between gap-3 py-2.5 text-sm text-slate-200">
                   {label}
-                  <input type="checkbox" checked={share[k]} onChange={(e) => dispatch({ type: 'SET_SHARING', sharing: { [k]: e.target.checked } })} className="w-5 h-5 accent-amber-500" />
+                  <input type="checkbox" checked={!!share[k]} onChange={(e) => dispatch({ type: 'SET_SHARING', sharing: { [k]: e.target.checked } })} className="w-5 h-5 accent-amber-500" />
                 </label>
               ))}
             </div>

@@ -4,6 +4,7 @@ import { db, friendsConfigured, friendsSignIn, clearSession, loadSession } from 
 import { addDaysToKey, todayKey, weekKey, parseKey } from './date';
 import { showSystemNotification } from './notify';
 import { ACHIEVEMENTS } from '../data/achievements';
+import { rankForLevel } from './ranks';
 
 /* ---------------------------------------------------------------- types */
 
@@ -17,6 +18,8 @@ export interface FriendProfile {
   weekXp?: number;
   week?: string;
   picture?: string;
+  /** Days with at least one finished quest in the last 30 days, comma separated (for duo streaks). */
+  active?: string;
   updatedAt?: number;
 }
 
@@ -56,9 +59,27 @@ export interface FriendsState {
   feed: ActivityItem[];
   cheers: Cheer[];
   toasts: Array<{ id: string; icon: string; text: string; look?: string }>;
+  global?: GlobalPlayer[];
+  rarity?: RealRarity;
 }
 
-export const DEFAULT_SHARING: Sharing = { quests: true, runs: true, streak: true, level: true, badges: true };
+export const DEFAULT_SHARING: Sharing = { quests: true, runs: true, streak: true, level: true, badges: true, global: false };
+
+export interface GlobalPlayer {
+  uid: string;
+  name: string;
+  level: number;
+  weekXp: number;
+  look?: string;
+}
+
+/** Real numbers from everyone who connected: how many players, and how many are at your rank or higher. */
+export interface RealRarity {
+  players: number;
+  atOrAbove: number;
+  startLevel: number;
+  day: string;
+}
 
 /* ---------------------------------------------------------------- store */
 
@@ -132,6 +153,34 @@ export function weekXp(state: AppState): number {
   return days + (state.weekLogs[weekKey()]?.xpEarned ?? 0);
 }
 
+/** The last 30 days you finished a quest on (or protected with a shield), as "2026-11-12,2026-11-11,…". */
+export function activeDays(state: AppState): string {
+  const shielded = new Set(state.shieldedDates ?? []);
+  const out: string[] = [];
+  for (let i = 0; i < 30; i++) {
+    const d = addDaysToKey(todayKey(), -i);
+    if (shielded.has(d) || (state.dayLogs[d]?.completedQuestIds.length ?? 0) > 0) out.push(d);
+  }
+  return out.join(',');
+}
+
+/**
+ * A duo streak: days in a row where you AND your friend both finished at least one quest.
+ * Today counts once you've both done one; until then it doesn't break the streak.
+ */
+export function duoStreak(mine: string, theirs: string | undefined): { days: number; meToday: boolean; themToday: boolean } {
+  const a = new Set(mine.split(',').filter(Boolean));
+  const b = new Set((theirs ?? '').split(',').filter(Boolean));
+  const today = todayKey();
+  let days = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = addDaysToKey(today, -i);
+    if (a.has(d) && b.has(d)) days += 1;
+    else if (i > 0) break;
+  }
+  return { days, meToday: a.has(today), themToday: b.has(today) };
+}
+
 /* ---------------------------------------------------------------- actions */
 
 interface Ctx {
@@ -144,6 +193,8 @@ interface Ctx {
 }
 
 let ctxRef: Ctx | null = null;
+/** The account connected to Squzo's cloud right now (null when signed out of friends). */
+export const connectedAccountId = (): string | null => (ctxRef && loadSession(ctxRef.accountId) ? ctxRef.accountId : null);
 let syncing = false;
 
 async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
@@ -165,16 +216,52 @@ async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
     streak: share.streak ? ctx.streak : 0,
     weekXp: share.quests ? weekXp(ctx.state) : 0,
     week: weekKey(),
+    active: share.streak ? activeDays(ctx.state) : '',
     ...(ctx.picture ? { picture: ctx.picture } : {}),
     updatedAt: Date.now(),
   };
   const changed =
     !existing ||
-    (['name', 'code', 'look', 'level', 'streak', 'weekXp', 'week', 'picture'] as const).some(
+    (['name', 'code', 'look', 'level', 'streak', 'weekXp', 'week', 'picture', 'active'] as const).some(
       (k) => (existing as Record<string, unknown>)[k] !== (profile as Record<string, unknown>)[k],
     );
   if (changed) await api.set(`profiles/${uid}`, profile as never);
   return { uid, ...profile };
+}
+
+/** Public weekly board (only people who turned it on) and real rank rarity, refreshed at most every 10 minutes. */
+let globalAt = 0;
+let onBoard: boolean | null = null;
+async function syncGlobal(ctx: Ctx, me: FriendProfile) {
+  const api = db(ctx.accountId);
+  const share = { ...DEFAULT_SHARING, ...(ctx.state.sharing ?? {}) };
+  const path = `boards/${weekKey()}/players/${me.uid}`;
+  if (share.global) {
+    const first = ctx.name.trim().split(/\s+/)[0]?.slice(0, 16) || 'Player';
+    await api.set(path, { name: first, level: ctx.level, weekXp: weekXp(ctx.state), look: JSON.stringify(ctx.state.character), at: Date.now() });
+    onBoard = true;
+  } else if (onBoard !== false) {
+    await api.remove(path).catch(() => undefined);
+    onBoard = false;
+  }
+  if (Date.now() - globalAt < 10 * 60_000 && current.global) return;
+  globalAt = Date.now();
+  const rows = await api.query<Omit<GlobalPlayer, 'uid'>>(`boards/${weekKey()}`, 'players', { orderBy: 'weekXp', limit: 50 }).catch(() => []);
+  const global = rows.map((r) => ({ uid: r.id, ...r.data }));
+  const startLevel = rankForLevel(ctx.level).startLevel;
+  const cacheKey = `dayforge-rarity-${ctx.accountId}`;
+  let rarity = readJson<RealRarity | null>(cacheKey, null);
+  if (!rarity || rarity.day !== todayKey() || rarity.startLevel !== startLevel) {
+    const [players, atOrAbove] = await Promise.all([
+      api.count('profiles', ['level', 'GREATER_THAN', 0]),
+      api.count('profiles', ['level', 'GREATER_THAN_OR_EQUAL', Math.max(1, startLevel)]),
+    ]).catch(() => [0, 0]);
+    if (players > 0) {
+      rarity = { players, atOrAbove, startLevel, day: todayKey() };
+      writeJson(cacheKey, rarity);
+    }
+  }
+  set({ global, rarity: rarity ?? undefined });
 }
 
 /** Pulls friends, requests, the feed and cheers; shows a toast for anything new. */
@@ -228,6 +315,7 @@ export async function refreshFriends(): Promise<void> {
     });
 
     set({ status: 'ready', error: undefined, me, friends: profiles, requests, feed, cheers });
+    await syncGlobal(ctx, me).catch(() => undefined);
 
     // A friend's invite link opened before connecting: send them a request now.
     const invite = readJson<string | null>(INVITE_KEY, null);

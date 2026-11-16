@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Icon } from './Icon';
+import { playTick } from '../lib/focusTimer';
 
 interface FloatingRewardProps {
   xp: number;
@@ -10,6 +11,7 @@ interface FloatingRewardProps {
 // vibrate call below fires exactly once per real completion.
 export function FloatingReward({ xp, crit }: FloatingRewardProps) {
   useEffect(() => {
+    playTick(crit);
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(crit ? [10, 40, 10, 40, 25] : [12]);
     }

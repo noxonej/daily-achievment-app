@@ -2,6 +2,7 @@ import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntr
 import { PROOF_BONUS } from '../lib/proof';
 import { DECOR, PAINTS, PROPERTIES, VEHICLES, worldChestPool, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
 import { claimCheckIn } from '../lib/checkIn';
+import { SEASON_TIERS, claimedTiers, seasonKey, seasonPoints } from '../lib/seasons';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
 import { addDaysToKey, todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
@@ -11,7 +12,7 @@ import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../l
 import { DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
 import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, boxPool, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
-import { computeDerivedStats, dayCountsForStreak, graceDays } from '../lib/stats';
+import { MAX_SHIELDS, SHIELD_PRICE, computeDerivedStats, dayCountsForStreak, graceDays } from '../lib/stats';
 import { checkNote } from '../lib/questRules';
 import type { BoxReward } from '../lib/dailyBox';
 import { DEFAULT_PREFS, guessLanguage } from '../lib/i18n';
@@ -228,6 +229,8 @@ export type Action =
   | { type: 'USE_QUEST_SWAP'; questId: string; replacement: { title: string; description?: string; icon: string } }
   /** Spends Streak Shields on missed days right before today, if that keeps an existing streak alive. */
   | { type: 'CHECK_STREAK_SHIELDS' }
+  | { type: 'BUY_STREAK_SHIELD' }
+  | { type: 'CLAIM_SEASON_TIER'; tier: number }
   | { type: 'DELETE_RUN'; runId: string }
   | { type: 'IMPORT_STATE'; state: AppState }
   | { type: 'RESET_ALL' };
@@ -1354,6 +1357,25 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'MONEY_DELETE_BILL':
       return withMoney(state, (m) => ({ ...m, bills: (m.bills ?? []).filter((x) => x.id !== action.billId) }));
+
+    case 'CLAIM_SEASON_TIER': {
+      const key = seasonKey();
+      const tier = SEASON_TIERS[action.tier];
+      const claimed = claimedTiers(state, key);
+      if (!tier || claimed.includes(action.tier) || seasonPoints(state, key) < tier.points) return state;
+      return {
+        ...state,
+        bonusShards: (state.bonusShards ?? 0) + tier.reward.coins,
+        bonusChests: (state.bonusChests ?? 0) + (tier.reward.chest ? 1 : 0),
+        seasonClaims: { ...(state.seasonClaims ?? {}), [key]: [...claimed, action.tier] },
+      };
+    }
+
+    case 'BUY_STREAK_SHIELD': {
+      if ((state.streakShields ?? 0) >= MAX_SHIELDS) return state;
+      if (computeDerivedStats(state).availableShards < SHIELD_PRICE) return state;
+      return { ...state, streakShields: (state.streakShields ?? 0) + 1, shieldCoinsSpent: (state.shieldCoinsSpent ?? 0) + SHIELD_PRICE };
+    }
 
     case 'CHECK_STREAK_SHIELDS': {
       let shields = state.streakShields ?? 0;

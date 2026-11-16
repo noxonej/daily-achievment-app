@@ -43,6 +43,22 @@ service cloud.firestore {
       allow create, delete: if signedIn() && me() == uid;
     }
 
+    // Public weekly leaderboard: only people who turned it on (first name, level, weekly XP).
+    match /boards/{week}/players/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && me() == uid;
+    }
+
+    // Push reminders: your reminder plan + push address, written by the app, read by the server.
+    match /push/{uid} {
+      allow read, write: if signedIn() && me() == uid;
+    }
+
+    // Public settings the server writes (e.g. the push public key).
+    match /config/{doc} {
+      allow read: if signedIn();
+    }
+
     // Cheers from friends.
     match /cheers/{uid}/items/{id} {
       allow read, delete: if signedIn() && me() == uid;

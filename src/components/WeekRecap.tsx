@@ -3,6 +3,9 @@ import { addDaysToKey, todayKey } from '../lib/date';
 import { formatMoney, spentOn } from '../lib/money';
 import { MOODS } from '../lib/mood';
 import { Icon } from './Icon';
+import { useState } from 'react';
+import { drawShareCard, shareImage } from '../lib/shareCard';
+import { rankForLevel } from '../lib/ranks';
 
 /** Monday-based week keys: `offset` 0 = this week so far, -1 = last week. */
 function weekDays(offset: number): string[] {
@@ -16,7 +19,8 @@ function weekDays(offset: number): string[] {
 
 /** A small "your week in numbers" summary across quests, focus, runs, money and mood. */
 export function WeekRecap({ offset = 0, dismissible, onDismiss }: { offset?: 0 | -1; dismissible?: boolean; onDismiss?: () => void }) {
-  const { state } = useApp();
+  const { state, stats } = useApp();
+  const [sharing, setSharing] = useState<string | null>(null);
   const days = weekDays(offset);
   const logs = days.map((k) => state.dayLogs[k]).filter(Boolean);
   const questsDone = logs.reduce((n, l) => n + (l?.completedQuestIds.length ?? 0), 0);
@@ -40,6 +44,29 @@ export function WeekRecap({ offset = 0, dismissible, onDismiss }: { offset?: 0 |
   const headline =
     perfect >= 5 ? 'Incredible week. Keep that energy.' : perfect >= 3 ? 'Solid week. You showed up.' : questsDone > 0 ? 'Every quest counts. Next week, aim for one more perfect day.' : 'A fresh week is a fresh start.';
 
+  async function share() {
+    setSharing('Making your image…');
+    try {
+      const blob = await drawShareCard({
+        title: offset === 0 ? 'My week so far' : 'My week',
+        headline,
+        stats: [
+          { label: 'quests done', value: String(questsDone) },
+          { label: 'perfect days', value: `${perfect}/${days.length}` },
+          { label: 'day streak', value: String(stats.currentStreak) },
+          { label: 'XP earned', value: String(xp) },
+          ...(focus > 0 ? [{ label: 'focus', value: focus >= 60 ? `${Math.round(focus / 6) / 10}h` : `${focus}m` }] : []),
+          ...(km > 0 ? [{ label: 'km run', value: String(Math.round(km * 10) / 10) }] : []),
+        ],
+        footer: `Rank: ${rankForLevel(stats.level).name} · Level ${stats.level}`,
+      });
+      const r = await shareImage(blob, 'squzo-week.png', 'My week on Squzo');
+      setSharing(r === 'downloaded' ? 'Saved the image. Post it to your story!' : null);
+    } catch (e) {
+      setSharing(e instanceof Error ? e.message : 'Could not share.');
+    }
+  }
+
   return (
     <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       {dismissible && (
@@ -58,7 +85,14 @@ export function WeekRecap({ offset = 0, dismissible, onDismiss }: { offset?: 0 |
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-slate-500 mt-2.5">+{xp} XP earned from daily quests</p>
+      <div className="flex items-center justify-between gap-2 mt-2.5">
+        <p className="text-[11px] text-slate-500">+{xp} XP earned from daily quests</p>
+        <button onClick={share} className="flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white">
+          <Icon name="📤" size={13} />
+          Share
+        </button>
+      </div>
+      {sharing && <p className="text-[11px] text-amber-200 mt-1.5">{sharing}</p>}
     </div>
   );
 }

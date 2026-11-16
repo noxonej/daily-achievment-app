@@ -25,6 +25,7 @@ import { APP_NAME } from '../lib/brand';
 import { hideBoot } from '../lib/boot';
 import { downloadBackup, findBackup, googleProfile, googleSignIn, isBackup } from '../lib/google';
 import { GoogleButton } from './GoogleConnect';
+import { cloudRestore, friendsConfigured, friendsSignIn } from '../lib/firebase';
 import { settings } from '../lib/settingsNav';
 import { wardrobe } from '../lib/wardrobe';
 
@@ -62,12 +63,23 @@ export function AuthGate({ children }: { children: ReactNode }) {
         open(known);
         return;
       }
-      const file = await findBackup();
-      const data = file ? await downloadBackup(file.id) : null;
-      const backup = isBackup(data) ? (data as Record<string, unknown> & { profile?: { name?: string }; onboarded?: boolean }) : null;
-      const acc = await createAccount({ name: backup?.profile?.name || profile.name || 'Me', pin: null, remember: true });
+      // A new phone: bring back the newest backup, from Squzo's cloud (Firestore) or from Drive.
+      const file = await findBackup().catch(() => null);
+      const driveData = file ? await downloadBackup(file.id).catch(() => null) : null;
+      const acc = await createAccount({ name: profile.name || 'Me', pin: null, remember: true });
+      let cloud: { data: unknown; savedAt: string } | null = null;
+      if (friendsConfigured()) {
+        await friendsSignIn(acc.id, profile.email).catch(() => undefined);
+        cloud = await cloudRestore(acc.id).catch(() => null);
+      }
+      type Backup = Record<string, unknown> & { profile?: { name?: string }; onboarded?: boolean };
+      const drive = isBackup(driveData) ? (driveData as Backup) : null;
+      const fromCloud = isBackup(cloud?.data) ? (cloud!.data as Backup) : null;
+      const cloudNewer = !!fromCloud && (!drive || (cloud!.savedAt || '') >= (file?.modifiedTime || ''));
+      const backup = cloudNewer ? fromCloud : drive;
       if (backup) {
         localStorage.setItem(acc.storageKey, JSON.stringify({ ...backup, onboarded: backup.onboarded ?? true }));
+        if (backup.profile?.name) updateAccount(acc.id, { name: backup.profile.name });
       } else {
         const fresh = createInitialState();
         localStorage.setItem(acc.storageKey, JSON.stringify({ ...fresh, profile: { ...fresh.profile, name: acc.name } }));

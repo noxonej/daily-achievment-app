@@ -35,6 +35,7 @@ import { ScrollLockCard } from '../components/today/ScrollLockCard';
 const RECAP_KEY = 'dayforge-recap-dismissed';
 import { setIntent } from '../lib/intents';
 import { YearGoalCard } from '../components/today/YearGoalCard';
+import { SeasonCard } from '../components/today/SeasonCard';
 import { ReminderPrompt } from '../components/today/ReminderPrompt';
 import { ProofSheet } from '../components/ProofSheet';
 import { WellnessRow } from '../components/today/WellnessRow';
@@ -220,6 +221,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <NowNextCard onOpenPlan={() => onNavigate('plan')} />
 
       <YearGoalCard onNavigate={onNavigate} />
+      <SeasonCard />
 
       <ProofSheet
         quest={proof?.quest ?? null}

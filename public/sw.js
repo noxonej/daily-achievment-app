@@ -109,3 +109,25 @@ async function maybeNudge() {
 self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'dayforge-nudge') event.waitUntil(maybeNudge().catch(() => undefined));
 });
+
+// Real push from Squzo's server (functions/index.js): shows the reminder unless the app is on screen.
+self.addEventListener('push', (event) => {
+  let note = {};
+  try {
+    note = event.data ? event.data.json() : {};
+  } catch {
+    note = { title: 'Squzo', body: event.data ? event.data.text() : '' };
+  }
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      if (windows.some((w) => w.visibilityState === 'visible')) return;
+      await self.registration.showNotification(note.title || 'Squzo', {
+        body: note.body || '',
+        tag: note.tag,
+        icon: './app-icon-192.png',
+        badge: './app-icon-192.png',
+      });
+    })(),
+  );
+});
