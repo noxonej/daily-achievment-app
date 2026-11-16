@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 /** One-shot hand-offs between screens, e.g. the Today "Log spending" button opening the expense form on Money. */
-export type Intent = 'add-expense' | 'quests-goals' | 'you-friends' | 'you-diary';
+export type Intent = 'add-expense' | 'quests-goals' | 'you-friends' | 'you-diary' | 'world-garage';
 let pending: Intent | null = null;
 
 export function setIntent(i: Intent) {

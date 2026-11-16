@@ -85,7 +85,7 @@ export function Header() {
           title={`${streak} day streak`}
         >
           <Fire size={19} lit={streak > 0} intensity={streak >= 30 ? 3 : streak >= 7 ? 2 : 1} />
-          <span key={streak} className="font-display font-bold text-[15px] leading-none tabular-nums text-white animate-num-pop">
+          <span key={streak} className="num-px text-[20px] text-white animate-num-pop">
             {streak}
           </span>
         </div>

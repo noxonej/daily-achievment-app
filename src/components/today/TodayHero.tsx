@@ -158,9 +158,9 @@ export function TodayHero({
               <span className="mt-2 font-display text-xl font-semibold text-white">Perfect day</span>
             </>
           ) : (
-            <span className="num-thin text-[68px] text-white">
+            <span className="num-px-xl text-[92px] text-white">
               {shownPct}
-              <span className="text-[28px] text-slate-400 align-top ml-0.5">%</span>
+              <span className="text-[36px] text-slate-400 align-top ml-0.5">%</span>
             </span>
           )}
           <span className="mt-2 text-[13px] text-slate-400 tabular-nums">
@@ -195,13 +195,13 @@ export function TodayHero({
         <div className="flex flex-col items-center gap-1.5 px-2">
           <span className="flex items-center gap-1">
             <Fire size={22} lit={streak > 0} intensity={streak >= 30 ? 3 : streak >= 7 ? 2 : 1} />
-            <span className="num-thin text-[34px] text-white">{streak}</span>
+            <span className="num-px text-[40px] text-white">{streak}</span>
           </span>
           <span className="text-[11px] text-slate-400">day streak</span>
         </div>
         <div className="flex flex-col items-center gap-1.5 px-3">
-          <span className="num-thin text-[34px] text-white">
-            <span className="text-[14px] text-slate-400 font-semibold tracking-normal mr-1">LV</span>
+          <span className="num-px text-[40px] text-white">
+            <span className="px-label text-[10px] text-slate-400 mr-1">LV</span>
             {level}
           </span>
           <span className="w-full h-1 rounded-full bg-white/[0.08] overflow-hidden">
@@ -212,7 +212,7 @@ export function TodayHero({
         <div className="flex flex-col items-center gap-1.5 px-2">
           <span className="flex items-center gap-1.5">
             <Coin size={20} />
-            <span className="num-thin text-[34px] text-white">{shownCoins}</span>
+            <span className="num-px text-[40px] text-white">{shownCoins}</span>
           </span>
           <span className="text-[11px] text-slate-400">coins</span>
         </div>

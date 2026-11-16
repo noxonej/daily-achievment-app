@@ -12,15 +12,18 @@ import { useDailyResetLabel } from '../lib/useResetCountdown';
 import { Avatar } from './Avatar';
 import { Confetti } from './Confetti';
 import { Icon } from './Icon';
-import { PixelGift } from './PixelArt';
+import { Gift } from './fx/Gift';
 import { OpenBurst, PrizeHalo, StageLight } from './fx/RewardFx';
 
-/** The daily box: a pixel-art violet gift with a gold ribbon and bow. */
+/** The daily box art (kept for other screens): the pixel gift on its plinth. */
 export function BoxArt(props: { size?: number; glow?: boolean; sparkle?: boolean; lid?: 'on' | 'off'; locked?: boolean }) {
-  return <PixelGift {...props} />;
+  return <Gift size={props.size} locked={props.locked} phase={props.lid === 'off' ? 'open' : props.glow ? 'ready' : 'idle'} />;
 }
 
-/** Today screen card: unlock by finishing one quest, open once per day. */
+/**
+ * Today screen card (redesigned 2026-11-16): the box is the hero, sitting on its own lit plinth.
+ * Unlock by finishing one quest, open once per day.
+ */
 export function DailyBoxCard() {
   const { state } = useApp();
   const [opening, setOpening] = useState(false);
@@ -34,43 +37,39 @@ export function DailyBoxCard() {
 
   return (
     <>
-      <div
-        className={`relative overflow-hidden rounded-2xl border p-4 flex items-center gap-4 ${
-          ready ? 'border-violet-400/50 bg-violet-500/[0.08] shadow-[0_0_30px_-12px_rgba(167,139,250,0.8)]' : 'border-white/10 bg-white/[0.03]'
-        }`}
-      >
+      <div className={`dbox-card relative overflow-hidden rounded-[24px] p-3 flex items-center gap-3.5 ${ready ? 'is-ready' : ''}`}>
         <button
           onClick={() => ready && setOpening(true)}
           disabled={!ready}
           aria-label={ready ? 'Open the daily box' : 'Daily box'}
-          className={`shrink-0 ${ready ? 'animate-float-soft' : opened ? 'opacity-70' : ''}`}
+          className="dbox-stage shrink-0 w-[92px] h-[92px] rounded-[18px] flex items-end justify-center pb-1"
         >
-          <BoxArt size={64} glow={ready} sparkle={ready} locked={!ready && !opened} />
+          <Gift size={80} phase={ready ? 'ready' : opened ? 'opened' : 'idle'} locked={!ready && !opened} />
         </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-violet-300">{t('box.title')}</p>
+        <div className="flex-1 min-w-0 py-1">
+          <p className="px-label text-[9px] text-amber-300">{t('box.title')}</p>
           {opened && info ? (
             <>
-              <p className="font-display font-bold text-white truncate">
+              <p className="mt-1.5 font-display text-[16px] font-semibold text-white leading-snug truncate">
                 <Icon name={info.icon} size="1.05em" className={`icon-inline ${info.tone}`} />
                 {last?.kind === 'cosmetic' ? findItem(last.itemId)?.name ?? info.title : info.title}
               </p>
-              <p className="text-xs text-slate-400">{t('box.next', { t: resetLabel })}</p>
+              <p className="mt-0.5 text-[12px] text-slate-400">{t('box.next', { t: resetLabel })}</p>
             </>
           ) : ready ? (
             <>
-              <p className="font-display font-bold text-white">{t('box.ready')}</p>
-              <p className="text-xs text-slate-400">{t('box.readySub')}</p>
+              <p className="mt-1.5 font-display text-[16px] font-semibold text-white leading-snug">{t('box.ready')}</p>
+              <p className="mt-0.5 text-[12px] text-slate-400 leading-snug">{t('box.readySub')}</p>
             </>
           ) : (
             <>
-              <p className="font-display font-bold text-white">{t('box.locked')}</p>
-              <p className="text-xs text-slate-400">{t('box.lockedSub')}</p>
+              <p className="mt-1.5 font-display text-[16px] font-semibold text-white leading-snug">{t('box.locked')}</p>
+              <p className="mt-0.5 text-[12px] text-slate-400 leading-snug">{t('box.lockedSub')}</p>
             </>
           )}
         </div>
         {ready && (
-          <button onClick={() => setOpening(true)} className="shrink-0 rounded-xl bg-violet-500 hover:bg-violet-400 text-white text-sm font-bold px-4 py-2.5">
+          <button onClick={() => setOpening(true)} className="shrink-0 self-center rounded-full bg-amber-500 hover:bg-amber-400 text-[#fff] text-[14px] font-bold px-4 py-2.5 active:scale-95 transition">
             {t('box.open')}
           </button>
         )}
@@ -83,7 +82,7 @@ export function DailyBoxCard() {
 
 function BoxOpening({ onClose }: { onClose: () => void }) {
   const { state, stats, dispatch } = useApp();
-  // closed → shake (anticipation) → burst (lid flies off, light, particles) → reveal
+  // closed → shake (anticipation) → burst (lid flies off, light pours out) → reveal
   const [phase, setPhase] = useState<'closed' | 'shake' | 'burst' | 'reveal'>('closed');
   const [reward, setReward] = useState<BoxReward | null>(null);
   const busy = phase === 'shake' || phase === 'burst';
@@ -93,6 +92,8 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
   function open() {
     if (phase !== 'closed') return;
     const r = rollBox(boxPool(ownership(state, stats)));
+    // Saved on tap, before the animation, so closing or reloading can't re-roll today's box.
+    dispatch({ type: 'OPEN_DAILY_BOX', reward: r });
     setReward(r);
     setPhase('shake');
     try {
@@ -108,10 +109,7 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
         // optional
       }
     }, 750);
-    setTimeout(() => {
-      dispatch({ type: 'OPEN_DAILY_BOX', reward: r });
-      setPhase('reveal');
-    }, 1350);
+    setTimeout(() => setPhase('reveal'), 1500);
   }
 
   const info = reward ? rewardInfo(reward) : null;
@@ -120,7 +118,8 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
 
   return (
     <div data-overlay className="theme-dark box-stage fixed inset-0 z-[80] flex flex-col items-center justify-center px-6 backdrop-in">
-      <StageLight tint="#ffd9a0" lit={phase === 'burst' || phase === 'reveal'} />
+      <StageLight tint="#ffe2a8" lit={phase === 'burst' || phase === 'reveal'} />
+      <span className="box-stage-floor" aria-hidden="true" />
       {!busy && (
         <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
           <Icon name="✕" size={20} />
@@ -129,14 +128,12 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
       {phase !== 'reveal' ? (
         <button onClick={open} className="relative flex flex-col items-center" aria-label="Open box">
           <div className="relative">
-            {phase === 'shake' && <span className="chest-leak" style={{ ['--ray' as string]: '#fcd34d' }} aria-hidden="true" />}
             {phase === 'burst' && <OpenBurst color="#fcd34d" coins={10} />}
-            <div className={phase === 'closed' ? 'animate-float-soft' : phase === 'shake' ? 'box-shake' : 'box-pop'}>
-              <BoxArt size={220} glow sparkle={phase === 'closed'} lid={phase === 'burst' ? 'off' : 'on'} />
-            </div>
+            <Gift size={240} phase={phase === 'closed' ? 'ready' : phase === 'shake' ? 'shake' : 'open'} />
           </div>
-          <p className={`mt-6 font-display text-2xl font-extrabold text-white transition-opacity duration-300 ${busy ? 'opacity-0' : ''}`}>Tap to open</p>
-          <p className={`text-sm text-slate-400 mt-1 transition-opacity duration-300 ${busy ? 'opacity-0' : ''}`}>1 in 50 boxes hides a mythic item</p>
+          <p className={`mt-5 px-label text-[11px] text-amber-200 transition-opacity duration-300 ${busy ? 'opacity-0' : ''}`}>Daily box</p>
+          <p className={`mt-2 font-display text-[26px] font-semibold text-white transition-opacity duration-300 ${busy ? 'opacity-0' : ''}`}>Tap to open</p>
+          <p className={`text-[13px] text-slate-400 mt-1 transition-opacity duration-300 ${busy ? 'opacity-0' : ''}`}>1 in 50 boxes hides a mythic item</p>
         </button>
       ) : (
         info && (
@@ -157,8 +154,11 @@ function BoxOpening({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
             )}
-            <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] fade-up ${item ? mythic.text : 'text-slate-400'}`}>{item ? 'Mythic · daily box exclusive' : "Today's prize"}</p>
-            <p className="font-display text-3xl font-extrabold text-white mt-1 fade-up [animation-delay:.1s]">{item ? item.name : info.title}</p>
+            <div className="-mt-4 relative z-[-1]">
+              <Gift size={132} phase="opened" />
+            </div>
+            <p className={`mt-3 px-label text-[10px] fade-up ${item ? mythic.text : 'text-amber-200'}`}>{item ? 'Mythic · daily box exclusive' : "Today's prize"}</p>
+            <p className="font-display text-3xl font-semibold text-white mt-2 fade-up [animation-delay:.1s]">{item ? item.name : info.title}</p>
             <p className="text-sm text-slate-400 mt-1.5 max-w-xs fade-up [animation-delay:.15s]">{info.text}</p>
             <div className="flex gap-2.5 mt-7 fade-up [animation-delay:.2s]">
               {item && (

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DECOR_SLOTS, VEHICLES, WORLD_DROP_CHANCE, rollWorldDrop, vehicleHex, worldOf, type WorldDrop } from '../world/catalog';
+import { DECOR_SLOTS, VEHICLES, WORLD_DROP_CHANCE, partsOf, rollLegendary, rollWorldDrop, vehicleHex, worldOf, type WorldDrop } from '../world/catalog';
 import { VehicleDraw } from '../world/VehicleDraw';
+import { STUDIO_FLOOR, STUDIO_H, STUDIO_W, studioUrl } from '../world/px/studio';
+import { characterUrl } from '../world/px/garage';
+import { avatarPixels } from './PixelAvatar';
 import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { ownership } from '../store/reducer';
@@ -134,10 +137,13 @@ export function Wardrobe() {
         <button onClick={() => wardrobe.close()} aria-label="Close" className="w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
           <Icon name="⬅" size={20} />
         </button>
-        <h2 className="font-display text-lg font-bold text-white flex-1">Wardrobe</h2>
-        <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-sm font-bold text-white tabular-nums" aria-label={`${stats.availableShards} coins`}>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-display text-[19px] font-semibold text-white leading-tight">Style</h2>
+          <p className="text-[11px] text-slate-400 leading-tight">Swap your look, collect rare gear</p>
+        </div>
+        <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-white" aria-label={`${stats.availableShards} coins`}>
           <Icon name="💎" size={15} />
-          {stats.availableShards}
+          <span className="num-px text-[18px]">{stats.availableShards.toLocaleString()}</span>
         </span>
         <button
           onClick={() => stats.chestsAvailable > 0 && setChestOpen(true)}
@@ -148,7 +154,7 @@ export function Wardrobe() {
           aria-label={`${stats.chestsAvailable} chests to open`}
         >
           <Icon name="df:chest" size={15} />
-          {stats.chestsAvailable > 0 ? `Open ${stats.chestsAvailable}` : 0}
+          {stats.chestsAvailable > 0 ? <span className="num-px text-[17px]">{stats.chestsAvailable}</span> : <span className="num-px text-[17px]">0</span>}
         </button>
       </div>
 
@@ -165,7 +171,11 @@ export function Wardrobe() {
             onContextMenu={(e) => e.preventDefault()}
             aria-label={trying.length ? 'Hold to compare with your current look' : 'Your character'}
           >
-            <Avatar key={JSON.stringify(shown)} look={shown} size={168} alive className="avatar-swap" />
+            {slot === 'backdrop' ? (
+              <Avatar key={JSON.stringify(shown)} look={shown} size={168} alive className="avatar-swap" />
+            ) : (
+              <StudioStage look={shown} />
+            )}
             {trying.length > 0 && (
               <span key={comparing ? 'now' : 'try'} className="tryon-tag absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-[10px] font-bold whitespace-nowrap">
                 {comparing ? 'Your look now' : 'Trying on'}
@@ -188,16 +198,14 @@ export function Wardrobe() {
                 role="tab"
                 aria-selected={on}
                 onClick={() => setSlot(s.id)}
-                className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
-                  on ? 'bg-amber-500 text-white' : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.08]'
-                }`}
+                className={`style-cat shrink-0 flex flex-col items-center justify-center gap-1 rounded-2xl w-[68px] h-[64px] transition-colors ${on ? 'is-on' : ''}`}
               >
-                <Icon name={s.icon} size={15} />
-                {s.label}
-                <span className={`text-[11px] tabular-nums ${on ? 'text-white/80' : 'text-slate-500'}`}>
+                <Icon name={s.icon} size={18} />
+                <span className="text-[11px] font-semibold leading-none truncate max-w-[60px]">{s.label}</span>
+                <span className={`num-px text-[12px] leading-none ${on ? 'opacity-80' : 'text-slate-500'}`}>
                   {c.have}/{c.total}
                 </span>
-                {tryOn[s.id] && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" aria-label="trying one on" />}
+                {tryOn[s.id] && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-[1px] bg-current" aria-label="trying one on" />}
               </button>
             );
           })}
@@ -211,9 +219,7 @@ export function Wardrobe() {
               · {here.have} / {here.total} collected
             </span>
           </p>
-          <span className="flex-1 h-1.5 rounded-full bg-white/[0.07] overflow-hidden">
-            <span className="block h-full rounded-full bg-amber-500 transition-[width] duration-700" style={{ width: `${(here.have / Math.max(1, here.total)) * 100}%` }} />
-          </span>
+          <span className="px-bar flex-1" style={{ ['--p' as string]: `${(here.have / Math.max(1, here.total)) * 100}%` }} />
           {here.have === here.total && <span className="text-[11px] font-bold text-emerald-300">Complete</span>}
         </div>
       </div>
@@ -232,30 +238,32 @@ export function Wardrobe() {
                   key={item.id}
                   onClick={() => tap(item)}
                   aria-pressed={equipped || isTrying}
-                  className={`wardrobe-tile relative flex flex-col items-center rounded-2xl border-[1.5px] p-1.5 pb-2 ${
-                    equipped ? 'border-amber-400 bg-amber-500/10' : isTrying ? 'is-trying border-white/60 bg-white/[0.06]' : `${r.border} bg-white/[0.03]`
-                  }`}
+                  className={`wardrobe-tile style-tile relative flex flex-col items-stretch rounded-[18px] p-1.5 pb-2 text-left ${equipped ? 'is-on' : isTrying ? 'is-trying' : ''}`}
+                  style={{ ['--rar' as string]: r.hex }}
                 >
-                  <div className="relative">
-                    <Avatar look={{ ...look, [item.slot]: item.id }} size={84} framing={HEAD_SLOTS.has(item.slot) ? 'head' : 'full'} className={isOwnedItem || isTrying ? '' : 'saturate-[.75]'} />
+                  <div className="style-plinth relative flex items-center justify-center rounded-[13px] overflow-hidden">
+                    <Avatar look={{ ...look, [item.slot]: item.id }} size={84} bare={item.slot !== 'backdrop'} framing={HEAD_SLOTS.has(item.slot) ? 'head' : 'full'} className={isOwnedItem || isTrying ? '' : 'saturate-[.6] opacity-80'} />
                     {!isOwnedItem && (
-                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-raised border border-white/10 flex items-center justify-center text-slate-300">
+                      <span className="absolute bottom-1 right-1 w-6 h-6 rounded-lg bg-black/45 flex items-center justify-center text-[#fff]">
                         <Icon name={item.unlock.kind === 'chest' ? 'df:chest' : item.unlock.kind === 'box' ? '📦' : '🔒'} size={12} />
                       </span>
                     )}
                     {equipped && (
-                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 border-2 border-canvas flex items-center justify-center text-[#fff]">
+                      <span className="absolute bottom-1 right-1 w-6 h-6 rounded-lg bg-amber-500 flex items-center justify-center text-[#fff]">
                         <Icon name="✓" size={12} strokeWidth={3} className="animate-check" />
                       </span>
                     )}
                   </div>
-                  <span className="mt-1.5 text-[11px] font-bold text-white leading-tight text-center line-clamp-1">{item.name}</span>
-                  <span className={`text-[10px] font-semibold ${equipped ? 'text-amber-300' : isTrying ? 'text-white' : isOwnedItem ? 'text-emerald-300' : 'text-slate-400'}`}>
-                    {equipped ? 'Wearing' : isTrying ? 'Trying on' : isOwnedItem ? 'Owned' : unlockLabel(item)}
+                  <span className="mt-1.5 px-0.5 text-[12px] font-semibold text-white leading-tight line-clamp-1">{item.name}</span>
+                  <span className={`px-0.5 mt-0.5 flex items-center gap-1 text-[10px] font-semibold ${equipped ? 'text-amber-300' : isTrying ? 'text-white' : isOwnedItem ? 'text-emerald-300' : 'text-slate-400'}`}>
+                    {equipped ? 'Wearing' : isTrying ? 'Trying on' : isOwnedItem ? 'Owned' : item.unlock.kind === 'shop' ? (
+                      <>
+                        <Icon name="💎" size={10} />
+                        <span className="num-px text-[14px] text-slate-200">{item.unlock.cost}</span>
+                      </>
+                    ) : unlockLabel(item)}
                   </span>
-                  {item.rarity !== 'common' && (
-                    <span className={`absolute top-1.5 left-1.5 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-canvas/80 ${r.text}`}>{r.label}</span>
-                  )}
+                  {item.rarity !== 'common' && <span className={`style-rar px-label absolute top-2.5 left-2.5 text-[7px] ${r.text}`}>{r.label}</span>}
                 </button>
               );
             })}
@@ -350,10 +358,15 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
     // A small chance (6%) of a Skip Pass instead of an item.
     // The very first chest is a lucky one (epic or legendary, never a Skip Pass).
     const first = (state.chestsOpened ?? 0) === 0;
-    const skip = !first && Math.random() < SKIP_PASS_CHANCE;
+    // 0.3%: a legendary vehicle, the rarest thing in Squzo. Rolled before anything else.
+    const legend = first ? null : rollLegendary(worldOf(state));
+    const skip = !legend && !first && Math.random() < SKIP_PASS_CHANCE;
     // Sometimes a chest holds something for your World (home decor, paint or even a vehicle).
-    const worldDrop = !first && !skip && Math.random() < WORLD_DROP_CHANCE ? rollWorldDrop(worldOf(state)) : null;
+    const worldDrop = legend ?? (!first && !skip && Math.random() < WORLD_DROP_CHANCE ? rollWorldDrop(worldOf(state)) : null);
     const won = skip || worldDrop ? null : rollChest(ctx, Math.random, first);
+    // The prize is saved the moment you tap, before the animation: closing or reloading the app
+    // mid-animation can't re-roll a chest, and a chest can never pay out twice.
+    dispatch({ type: 'OPEN_CHEST', itemId: won?.id ?? null, skip, worldId: worldDrop?.id });
     setPrize(skip ? 'skip' : worldDrop ? { world: worldDrop } : won);
     setPhase('shake');
     try {
@@ -369,16 +382,14 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
         // optional
       }
     }, 700);
-    setTimeout(() => {
-      dispatch({ type: 'OPEN_CHEST', itemId: won?.id ?? null, skip, worldId: worldDrop?.id });
-      setPhase('reveal');
-    }, 1400);
+    setTimeout(() => setPhase('reveal'), 1400);
   }
 
   const drop = prize && typeof prize === 'object' && 'world' in prize ? prize.world : null;
   const item = prize && prize !== 'skip' && !drop ? (prize as AvatarItem) : null;
   const r = drop ? RARITY[drop.rarity] : item ? RARITY[item.rarity] : prize === 'skip' ? { ...RARITY.epic, hex: '#14b8a6', text: 'text-teal-300', label: 'Rare drop' } : RARITY.legendary;
   const remaining = stats.chestsAvailable;
+  const legendDrop = drop?.rarity === 'legendary' ? VEHICLES.find((v) => v.id === drop.id) : undefined;
 
   return (
     <div className="theme-dark box-stage fixed inset-0 z-[80] flex flex-col items-center justify-center px-6 backdrop-in" style={{ ['--ray' as string]: r.hex }}>
@@ -398,7 +409,7 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
           </div>
           <p className="mt-6 font-display text-2xl font-extrabold text-white">{phase === 'closed' ? 'Tap to open' : 'Opening…'}</p>
           <p className="text-sm text-slate-400 mt-1">
-            {(state.chestsOpened ?? 0) === 0 ? 'Your first chest is a lucky one: epic or better!' : 'Common 62% · Rare 26% · Epic 9.5% · Legendary 2.5% · sometimes a World item'}
+            {(state.chestsOpened ?? 0) === 0 ? 'Your first chest is a lucky one: epic or better!' : 'Common 62% · Rare 26% · Epic 9.5% · Legendary 2.5% · World items · legendary vehicle 0.3%'}
           </p>
         </button>
       ) : (
@@ -408,7 +419,7 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
             {drop ? (
               <div className="prize-card relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-b from-[#26324a] to-[#141a28] ring-1 ring-white/15" style={{ boxShadow: `0 24px 50px -20px #000, inset 0 0 0 2px ${r.hex}66` }}>
                 {drop.kind === 'vehicle' && VEHICLES.find((v) => v.id === drop.id) ? (
-                  <VehicleDraw vehicle={VEHICLES.find((v) => v.id === drop.id)!} hex={vehicleHex(worldOf(state), VEHICLES.find((v) => v.id === drop.id)!)} spin className="w-[220px]" />
+                  <VehicleDraw vehicle={VEHICLES.find((v) => v.id === drop.id)!} hex={vehicleHex(worldOf(state), VEHICLES.find((v) => v.id === drop.id)!)} parts={partsOf(worldOf(state), VEHICLES.find((v) => v.id === drop.id)!)} spin className="w-[160px] h-auto" />
                 ) : (
                   <span className="flex flex-col items-center gap-2">
                     <Icon name={drop.kind === 'paint' ? '🎨' : DECOR_SLOTS.find((x) => x.id === drop.slot)?.icon ?? '🏠'} size={64} strokeWidth={1.6} className="text-white" />
@@ -426,14 +437,16 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
               </div>
             )}
           </div>
-          <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text} fade-up`}>{drop ? `${r.label} · World` : item ? r.label : prize === 'skip' ? 'Rare drop' : 'Bonus'}</p>
+          <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text} fade-up`}>{legendDrop ? 'Legendary vehicle · 0.3%' : drop ? `${r.label} · World` : item ? r.label : prize === 'skip' ? 'Rare drop' : 'Bonus'}</p>
           <p className="font-display text-3xl font-extrabold text-white mt-1 fade-up [animation-delay:.1s]">
             {drop ? drop.name : item ? item.name : prize === 'skip' ? 'Skip Pass' : `+${CHEST_DUPLICATE_SHARDS} coins`}
           </p>
           <p className="text-sm text-slate-400 mt-1 fade-up [animation-delay:.15s] max-w-xs">
             {drop
               ? drop.kind === 'vehicle'
-                ? 'A chest-only vehicle! Find it in your garage on the World tab.'
+                ? legendDrop
+                  ? `One of the five rarest things in Squzo. It adds +${legendDrop.xpBonus ?? 1}% XP to everything you do, for good.`
+                  : 'A chest-only vehicle! Find it in your garage on the World tab.'
                 : drop.kind === 'paint'
                   ? 'A chest-only paint for your vehicles. Use it in the garage.'
                   : 'A chest-only item for your home. Nobody can buy this one.'
@@ -485,5 +498,26 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** The character standing in the pixel dressing room, big enough to see every detail. */
+function StudioStage({ look }: { look: Character }) {
+  const key = JSON.stringify(look);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const hero = useMemo(() => characterUrl(avatarPixels(look)), [key]);
+  const pct = (n: number, of: number) => `${(n / of) * 100}%`;
+  return (
+    <span className="studio-stage relative block w-full h-full rounded-[22px] overflow-hidden" style={{ aspectRatio: `${STUDIO_W} / ${STUDIO_H}` }}>
+      <img src={studioUrl()} alt="" className="px-art absolute inset-0 w-full h-full" draggable={false} />
+      <img
+        key={key}
+        src={hero}
+        alt=""
+        draggable={false}
+        className="px-art absolute studio-hero avatar-swap"
+        style={{ left: pct(16, STUDIO_W), top: pct(STUDIO_FLOOR + 1 - 31, STUDIO_H), width: pct(32, STUDIO_W), height: pct(32, STUDIO_H) }}
+      />
+    </span>
   );
 }
