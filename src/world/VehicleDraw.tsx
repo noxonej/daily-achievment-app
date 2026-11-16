@@ -1,10 +1,28 @@
 import type { CarMods } from '../lib/types';
 import type { Vehicle } from './catalog';
-import { CarArt } from './cars/CarArt';
-import { VehicleArt } from './VehicleArt';
+import { vehicleSprite } from './px/sprite';
 
-/** Any vehicle: cars come from the car designer (with their parts), bikes from the bike drawings. */
-export function VehicleDraw({ vehicle, hex, parts, className = '', spin = false, shadow = true }: { vehicle: Vehicle; hex: string; parts?: CarMods; className?: string; spin?: boolean; shadow?: boolean }) {
-  if (vehicle.car) return <CarArt body={vehicle.car.body} paint={hex} parts={parts} className={className} spin={spin} shadow={shadow} />;
-  return <VehicleArt vehicle={vehicle} paint={hex} className={className} spin={spin} />;
+/**
+ * Any vehicle as pixel art (2026-11-16). `crop` trims empty space for cards; without it every
+ * vehicle sits on the same canvas so cars, motorcycles and scooters keep their true sizes.
+ */
+export function VehicleDraw({
+  vehicle,
+  hex,
+  parts,
+  className = '',
+  crop = true,
+  spin = false,
+}: {
+  vehicle: Vehicle;
+  hex: string;
+  parts?: CarMods;
+  className?: string;
+  crop?: boolean;
+  /** Little reveal bounce (chest prizes). */
+  spin?: boolean;
+  shadow?: boolean;
+}) {
+  const s = vehicleSprite(vehicle, hex, parts, { crop });
+  return <img src={s.url} width={s.w} height={s.h} alt={vehicle.name} draggable={false} className={`px-art ${spin ? 'veh-pop' : ''} ${className}`} />;
 }

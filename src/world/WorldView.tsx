@@ -7,39 +7,25 @@ import { Avatar } from '../components/Avatar';
 import { Coin } from '../components/Coin';
 import { Icon } from '../components/Icon';
 import { useCountUp } from '../lib/useCountUp';
-import type { CarMods, DecorSlot, DerivedStats, WorldState } from '../lib/types';
+import type { DecorSlot, DerivedStats, WorldState } from '../lib/types';
 import {
   DECOR,
   DECOR_SLOTS,
-  GARAGE_SPOTS,
-  PAINTS,
-  PARTS,
   PROPERTIES,
-  RARITY_COLOR,
-  VEHICLES,
-  canFit,
   canUnlock,
   decorFor,
-  garageSpots,
   owns,
   ownsDecor,
-  ownedVehicles,
-  partsOf,
-  vehicleHex,
   worldOf,
   type DecorItem,
-  type Part,
-  type Unlock,
-  type Vehicle,
 } from './catalog';
-import { CLASS_LABEL, type CarClass } from './cars/spec';
-import { RIMS } from './cars/CarArt';
+import { GarageSection } from './Garage';
+import { BuyButton, Requirements } from './ui';
 import { Room, RoomDefs, SlotArt, windowRect, type TimeOfDay } from './room/Room';
-import { VehicleDraw } from './VehicleDraw';
 
 type Section = 'room' | 'garage' | 'homes';
 
-interface Pending {
+export interface Pending {
   id: string;
   name: string;
   coins: number;
@@ -49,7 +35,8 @@ interface Pending {
 /**
  * World (rebuilt 2026-11-14): the life you build alongside your real one.
  * Room: a wide room you drag around and tap to change, lit by the real time of day.
- * Garage: a showroom for a 300-car collection plus bikes, with wheels, spoilers, kits and paint.
+ * Garage (2026-11-16): a pixel-art garage you upgrade, with your character next to a hand-made
+ * collection of cars, motorcycles, bikes, e-scooters and five legendaries.
  * Homes: move up as you grow.
  */
 export function WorldView() {
@@ -307,283 +294,6 @@ function Thumb({ item, tier, trophies, books, locked }: { item: DecorItem; tier:
   );
 }
 
-/* ---------------------------------------------------------------- garage */
-
-type Filter = 'all' | 'owned' | 'bikes' | CarClass;
-const PAGE = 24;
-const PART_TABS: Array<{ id: keyof CarMods | 'paint'; label: string }> = [
-  { id: 'paint', label: 'Paint' },
-  { id: 'rim', label: 'Wheels' },
-  { id: 'spoiler', label: 'Spoiler' },
-  { id: 'kit', label: 'Body kit' },
-  { id: 'stance', label: 'Height' },
-];
-const BIKE_KINDS = ['bike', 'scooter', 'racebike', 'moto'];
-
-function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p: Pending) => void; bought: { id: string; key: number } | null }) {
-  const { state, dispatch } = useApp();
-  const world = worldOf(state);
-  const owned = ownedVehicles(world);
-  const spots = garageSpots(world);
-  const full = owned.length >= spots;
-  const [inspectId, setInspectId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>('all');
-  const [shown, setShown] = useState(PAGE);
-  const [tab, setTab] = useState<(typeof PART_TABS)[number]['id']>('paint');
-  const [tryPart, setTryPart] = useState<Part | null>(null);
-  const [tryPaint, setTryPaint] = useState<string | null>(null);
-
-  const featured = VEHICLES.find((v) => v.id === world.vehicle && owns(world, v.id)) ?? owned[0] ?? VEHICLES[0];
-  const stage = (inspectId && VEHICLES.find((v) => v.id === inspectId)) || featured;
-  const have = owns(world, stage.id);
-  const isBike = !stage.car;
-  const parts: Required<CarMods> = { ...partsOf(world, stage), ...(tryPart ? { [tryPart.kind]: tryPart.value } : {}) };
-  const hex = tryPaint ?? vehicleHex(world, stage);
-  const gate = canUnlock(stage.unlock, stats);
-
-  const classes = useMemo(() => {
-    const seen = new Set<CarClass>();
-    for (const v of VEHICLES) if (v.car && v.car.maker !== 'Squzo') seen.add(v.car.cls);
-    return [...seen];
-  }, []);
-  const list = useMemo(() => {
-    const l = VEHICLES.filter((v) =>
-      filter === 'all' ? true : filter === 'owned' ? owns(world, v.id) : filter === 'bikes' ? BIKE_KINDS.includes(v.kind) : v.car?.cls === filter,
-    );
-    // Owned first, then what you can get soon.
-    const rank = (v: Vehicle) => (owns(world, v.id) ? 0 : v.unlock.chest ? 2 : 1);
-    return [...l].sort((a, b) => rank(a) - rank(b) || a.unlock.level - b.unlock.level || a.unlock.coins - b.unlock.coins);
-  }, [filter, world]);
-  const carsOwned = owned.filter((v) => v.car).length;
-  const carsTotal = VEHICLES.filter((v) => v.car).length;
-
-  function inspect(v: Vehicle) {
-    setInspectId(v.id === featured.id ? null : v.id);
-    setTryPart(null);
-    setTryPaint(null);
-    if (!v.car && tab !== 'paint') setTab('paint');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  const nextSpot = GARAGE_SPOTS.find((g) => !(g.id in world.paid));
-  const tabParts = tab === 'paint' ? [] : PARTS.filter((p) => p.kind === tab);
-
-  return (
-    <>
-      {/* showroom */}
-      <div className="show-stage theme-dark relative overflow-hidden rounded-[28px] aspect-[4/3] world-scene-in">
-        <div className="show-cone" aria-hidden="true" />
-        <div className="show-floor" aria-hidden="true" />
-        {/* Cars keep their real proportions: an SUV stands taller than a hypercar. */}
-        <div key={stage.id} className={`absolute inset-x-0 bottom-[18%] flex justify-center show-in ${isBike ? 'h-[40%]' : 'h-[50%]'}`}>
-          <div key={hex + JSON.stringify(parts) + (bought?.key ?? '')} className="show-swap h-full flex items-end justify-center">
-            <VehicleDraw vehicle={stage} hex={hex} parts={parts} spin className="h-full w-auto max-w-[94%]" />
-          </div>
-        </div>
-        <div className="absolute left-4 top-4 right-4 flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#15110e]" style={{ background: RARITY_COLOR[stage.rarity] }}>
-              {stage.rarity}
-              {stage.car && stage.car.maker !== 'Squzo' ? ` · ${CLASS_LABEL[stage.car.cls]}` : ''}
-            </span>
-            <p className="mt-1.5 font-display text-[22px] font-medium text-white leading-tight">{stage.car && stage.car.maker !== 'Squzo' ? stage.car.model : stage.name}</p>
-            <p className="text-[12px] text-white/60">{stage.car && stage.car.maker !== 'Squzo' ? stage.car.maker : stage.car ? 'Squzo original' : 'Two wheels'}</p>
-          </div>
-          <span className="shrink-0 rounded-full bg-black/45 backdrop-blur-md px-3 py-1.5 text-[12px] font-semibold text-white tabular-nums">
-            {owned.length}/{spots === Infinity ? '∞' : spots} spots
-          </span>
-        </div>
-        {stage.car && stage.car.hp > 0 && (
-          <div className="absolute left-4 right-4 bottom-3 grid grid-cols-3 gap-2 text-center">
-            {[
-              [`${stage.car.hp}`, 'hp'],
-              [`${stage.car.zeroTo100}s`, '0–100'],
-              [`${stage.car.top}`, 'km/h'],
-            ].map(([v, l]) => (
-              <div key={l} className="rounded-xl bg-black/35 backdrop-blur-sm py-1">
-                <p className="font-display text-[15px] text-white tabular-nums leading-tight">{v}</p>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-white/50">{l}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* what you can do with the car on stage */}
-      {!have ? (
-        <div className="rounded-[24px] bg-white/[0.035] p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-semibold text-white">{stage.name}</p>
-              <Requirements unlock={stage.unlock} stats={stats} />
-            </div>
-            <button onClick={() => setInspectId(null)} className="shrink-0 text-xs font-semibold text-slate-400 hover:text-white">
-              Back to yours
-            </button>
-          </div>
-          <div className="mt-3">
-            {full && gate.ok ? (
-              <p className="text-[12px] text-slate-400">Your garage is full. Build more space below.</p>
-            ) : (
-              <BuyButton gate={gate} coins={stage.unlock.coins} onClick={() => onBuy({ id: stage.id, name: stage.name, coins: stage.unlock.coins })} verb="Get this car" />
-            )}
-          </div>
-        </div>
-      ) : (
-        <div>
-          <div className="flex items-baseline justify-between">
-            <p className="eyebrow">Customise</p>
-            {stage.id !== featured.id ? (
-              <button onClick={() => { dispatch({ type: 'WORLD_FEATURE', vehicleId: stage.id }); setInspectId(null); }} className="text-xs font-semibold text-[var(--mood)]">
-                Put in the spotlight
-              </button>
-            ) : (
-              <span className="text-xs font-semibold text-slate-500">In the spotlight</span>
-            )}
-          </div>
-          {!isBike && (
-            <div className="mt-2 -mx-4 px-4 flex gap-1.5 overflow-x-auto no-scrollbar">
-              {PART_TABS.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => { setTab(t.id); setTryPart(null); setTryPaint(null); }}
-                  aria-pressed={tab === t.id}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold ${tab === t.id ? 'seg-pill seg-on' : 'bg-white/[0.05] text-slate-300'}`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          )}
-          {tab === 'paint' || isBike ? (
-            <div className="mt-2.5 -mx-4 px-4 flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
-              {PAINTS.map((p) => {
-                const mine = owns(world, p.id);
-                const on = p.hex === hex;
-                const g = canUnlock(p.unlock, stats);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => (mine ? (setTryPaint(null), dispatch({ type: 'WORLD_PAINT', vehicleId: stage.id, paint: p.id })) : setTryPaint(tryPaint === p.hex ? null : p.hex))}
-                    aria-label={`${p.name}${mine ? '' : g.ok ? `, ${p.unlock.coins} coins` : `, locked: ${g.text}`}`}
-                    aria-pressed={on}
-                    className="shrink-0 w-[62px] flex flex-col items-center gap-1"
-                  >
-                    <span className={`relative w-11 h-11 rounded-full transition-transform ${on ? 'ring-2 ring-white ring-offset-2 ring-offset-canvas scale-105' : ''} ${!mine && !g.ok ? 'opacity-35' : ''}`} style={{ background: `radial-gradient(circle at 35% 30%, #ffffff66, transparent 45%), ${p.hex}` }}>
-                      {!mine && (
-                        <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-canvas flex items-center justify-center text-slate-300">
-                          <Icon name={g.ok ? 'coin' : '🔒'} size={11} />
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-[10px] text-slate-400 leading-tight text-center truncate w-full">{mine ? p.name : g.ok ? p.unlock.coins : `LV ${p.unlock.level}`}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="mt-2.5 grid grid-cols-3 min-[480px]:grid-cols-4 gap-2">
-              {tabParts.map((p) => {
-                const fits = canFit(world, stage, p);
-                const on = parts[p.kind] === p.value;
-                const g = canUnlock(p.unlock, stats);
-                const label = p.kind === 'rim' ? RIMS.find((r) => r.id === p.value)?.name ?? p.name : p.name;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => (fits ? (setTryPart(null), dispatch({ type: 'WORLD_MOD', vehicleId: stage.id, partId: p.id })) : setTryPart(tryPart?.id === p.id ? null : p))}
-                    aria-pressed={on}
-                    className={`rounded-2xl p-2 text-left transition ${on ? 'world-home-here' : 'bg-white/[0.035] hover:bg-white/[0.06]'}`}
-                  >
-                    <p className={`text-[12px] font-semibold leading-tight ${fits || g.ok ? 'text-white' : 'text-slate-500'}`}>{label}</p>
-                    <p className="mt-0.5 text-[10px] text-slate-400 flex items-center gap-1">
-                      {fits ? (on ? 'Fitted' : 'Yours') : g.ok ? <><Coin size={10} /> {p.unlock.coins.toLocaleString()}</> : <><Icon name="🔒" size={9} /> {g.text}</>}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {(tryPart || tryPaint) && (() => {
-            const item = tryPart ?? PAINTS.find((p) => p.hex === tryPaint)!;
-            const g = canUnlock(item.unlock, stats);
-            const name = tryPart ? tryPart.name : `${(item as (typeof PAINTS)[number]).name} paint`;
-            return (
-              <div className="mt-3 rounded-[20px] bg-white/[0.05] p-3 flex items-center gap-3 toast-in-up">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-white">Trying {name}</p>
-                  <Requirements unlock={item.unlock} stats={stats} compact />
-                </div>
-                <BuyButton gate={g} coins={item.unlock.coins} small onClick={() => { onBuy({ id: item.id, name, coins: item.unlock.coins, vehicleId: stage.id }); setTryPart(null); setTryPaint(null); }} verb="Get" />
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* the collection */}
-      <div>
-        <div className="flex items-baseline justify-between">
-          <p className="eyebrow">Collection</p>
-          <p className="text-[12px] font-semibold text-slate-400 tabular-nums">
-            {carsOwned}/{carsTotal} cars
-          </p>
-        </div>
-        <div className="mt-2 -mx-4 px-4 flex gap-1.5 overflow-x-auto no-scrollbar">
-          {(['all', 'owned', 'bikes', ...classes] as Filter[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => { setFilter(f); setShown(PAGE); }}
-              aria-pressed={filter === f}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold ${filter === f ? 'seg-pill seg-on' : 'bg-white/[0.05] text-slate-300'}`}
-            >
-              {f === 'all' ? 'All' : f === 'owned' ? 'Yours' : f === 'bikes' ? 'Bikes' : CLASS_LABEL[f]}
-            </button>
-          ))}
-        </div>
-        <div className="mt-2.5 grid grid-cols-2 min-[520px]:grid-cols-3 gap-2.5">
-          {list.slice(0, shown).map((v) => {
-            const mine = owns(world, v.id);
-            const on = v.id === stage.id;
-            const g = canUnlock(v.unlock, stats);
-            return (
-              <button key={v.id} onClick={() => inspect(v)} className={`relative rounded-[20px] p-2.5 text-left ${on ? 'world-home-here' : 'bg-white/[0.035] hover:bg-white/[0.06]'}`} aria-label={`Look at ${v.name}`}>
-                <div className="car-tile rounded-2xl px-1 pt-2 pb-1">
-                  <VehicleDraw vehicle={v} hex={vehicleHex(world, v)} parts={partsOf(world, v)} className={`w-full h-auto ${mine ? '' : 'car-card-lock'} ${v.car ? '' : 'px-5'}`} />
-                </div>
-                <p className="mt-1.5 text-[12px] font-semibold text-white leading-tight truncate">{v.car && v.car.maker !== 'Squzo' ? v.car.model : v.name}</p>
-                <p className="text-[10px] text-slate-400 truncate">{v.car && v.car.maker !== 'Squzo' ? v.car.maker : BIKE_KINDS.includes(v.kind) ? 'Two wheels' : 'Squzo original'}</p>
-                <p className="mt-1 flex items-center gap-1 text-[10px] font-bold" style={{ color: RARITY_COLOR[v.rarity] }}>
-                  {mine ? 'Yours' : v.unlock.chest ? 'Chest only' : g.ok ? <><Coin size={10} /> <span className="text-slate-200 tabular-nums">{v.unlock.coins.toLocaleString()}</span></> : <span className="text-slate-500">Level {v.unlock.level}</span>}
-                </p>
-              </button>
-            );
-          })}
-        </div>
-        {list.length > shown && (
-          <button onClick={() => setShown(shown + PAGE)} className="mt-3 w-full rounded-full bg-white/[0.06] hover:bg-white/10 py-2.5 text-sm font-semibold text-white">
-            Show more ({list.length - shown} left)
-          </button>
-        )}
-      </div>
-
-      {nextSpot && (
-        <div className="rounded-[24px] bg-white/[0.035] p-4 flex items-center gap-3">
-          <span className="shrink-0 w-11 h-11 rounded-2xl bg-white/[0.06] text-slate-300 flex items-center justify-center">
-            <Icon name="＋" size={20} />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-white">{nextSpot.label ?? 'Bigger garage'}</p>
-            <p className="text-[13px] text-slate-400">{nextSpot.label ? 'More room for your collection.' : `Room for one more vehicle (${spots + 1} spots).`}</p>
-            <Requirements unlock={nextSpot.unlock} stats={stats} />
-          </div>
-          <BuyButton gate={canUnlock(nextSpot.unlock, stats)} coins={nextSpot.unlock.coins} small onClick={() => onBuy({ id: nextSpot.id, name: nextSpot.label?.toLowerCase() ?? 'a bigger garage', coins: nextSpot.unlock.coins })} verb="Build" />
-        </div>
-      )}
-    </>
-  );
-}
-
 /* ---------------------------------------------------------------- homes */
 
 function HomesSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pending) => void }) {
@@ -628,43 +338,3 @@ function HomesSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pendin
 
 /* ---------------------------------------------------------------- shared bits */
 
-function Requirements({ unlock, stats, compact = false }: { unlock: Unlock; stats: DerivedStats; compact?: boolean }) {
-  if (unlock.chest) {
-    return (
-      <ul className={`mt-2 flex flex-wrap gap-1.5 ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
-        <li className="flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold bg-violet-500/15 text-violet-200">
-          <Icon name="df:chest" size={10} />
-          Chest drop only
-        </li>
-      </ul>
-    );
-  }
-  const rows: Array<{ ok: boolean; text: string }> = [{ ok: stats.level >= unlock.level, text: `Level ${unlock.level}` }];
-  if (unlock.milestone) rows.push({ ok: stats[unlock.milestone.stat] >= unlock.milestone.target, text: unlock.milestone.label });
-  if (unlock.coins > 0) rows.push({ ok: stats.availableShards >= unlock.coins, text: `${unlock.coins.toLocaleString()} coins` });
-  return (
-    <ul className={`mt-2 flex flex-wrap gap-1.5 ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
-      {rows.map((r) => (
-        <li key={r.text} className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${r.ok ? 'bg-emerald-400/10 text-emerald-200' : 'bg-white/[0.06] text-slate-400'}`}>
-          <Icon name={r.ok ? '✓' : '🔒'} size={10} />
-          {r.text}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function BuyButton({ gate, coins, onClick, verb, small = false }: { gate: ReturnType<typeof canUnlock>; coins: number; onClick: () => void; verb: string; small?: boolean }) {
-  // Locked: the requirement list already says what's missing.
-  if (!gate.ok) return null;
-  return (
-    <button onClick={onClick} className={`pill-light ${small ? 'w-full px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'}`}>
-      {verb}
-      {coins > 0 && (
-        <span className="flex items-center gap-1 tabular-nums">
-          · <Coin size={12} /> {coins.toLocaleString()}
-        </span>
-      )}
-    </button>
-  );
-}

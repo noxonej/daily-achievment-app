@@ -845,3 +845,19 @@ export function PixelAvatar({
     </svg>
   );
 }
+
+/**
+ * The character as raw pixels (with its outline), for drawing straight into pixel scenes like the
+ * garage, at the same pixel size as the vehicles. Rows are y (0 = top), null = see-through.
+ */
+export function avatarPixels(look: Partial<Character> | undefined, mood?: number): (string | null)[][] {
+  const g = compose(normalizeLook(look), mood);
+  const out: (string | null)[][] = g.map((row) => row.slice());
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      if (g[y][x]) continue;
+      const near = (dx: number, dy: number) => !!g[y + dy]?.[x + dx];
+      if (near(1, 0) || near(-1, 0) || near(0, 1) || near(0, -1)) out[y][x] = OUTLINE;
+    }
+  return out;
+}

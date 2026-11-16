@@ -1602,3 +1602,58 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 @keyframes coach-dot { 0%, 100% { opacity: 0.3; transform: translateY(0); } 50% { opacity: 0.9; transform: translateY(-3px); } }
 :root[data-motion='reduce'] :is(.coach-in, .coach-dots i) { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { :is(.coach-in, .coach-dots i) { animation: none !important; } }
+
+/* ---------------------------------------------------------------- Pixel identity (2026-11-16) */
+/*
+ * One art direction for the game side of Squzo: every sprite (vehicles, garage, character) is drawn
+ * at one pixel size and shown with crisp pixels. Numbers that matter use Jersey 15 (clear, condensed
+ * pixel letterforms); tiny game labels use Silkscreen; body text stays Manrope for reading.
+ *   .num-px-xl  hero numbers (level, gauge %, coins in the hero)
+ *   .num-px     stat numbers, prices, counters
+ *   .px-label   small caps tags (rarity, "level up", section stamps)
+ */
+:root { --font-px: "Jersey 15", var(--font-display); --font-px-label: "Silkscreen", var(--font-sans); }
+.px-art { image-rendering: crisp-edges; image-rendering: pixelated; -webkit-user-drag: none; user-select: none; }
+.num-px { font-family: var(--font-px); font-weight: 400; font-variant-numeric: tabular-nums; letter-spacing: 0; line-height: 1; }
+.num-px-xl { font-family: var(--font-px); font-weight: 400; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; line-height: 0.9; }
+.px-label { font-family: var(--font-px-label); font-weight: 400; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1; }
+
+/* garage */
+.garage-card { background: #0b0d12; box-shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+:root[data-theme='light'] .garage-card { box-shadow: 0 18px 40px -24px rgba(16, 24, 40, 0.45); }
+.garage-hero { animation: px-idle 2.6s steps(1, end) infinite; transform-origin: bottom; }
+@keyframes px-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3.125%); } }
+.garage-veh { animation: veh-in 0.55s cubic-bezier(.2, .9, .3, 1.15) both; }
+@keyframes veh-in { from { opacity: 0; transform: translateX(-8%); } to { opacity: 1; transform: none; } }
+.garage-silhouette .garage-veh { filter: brightness(0) drop-shadow(0 0 1px rgba(243, 210, 122, 0.6)); }
+.garage-legend-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(45% 40% at 64% 78%, rgba(240, 190, 80, 0.32), transparent 70%); animation: legend-glow 3.2s ease-in-out infinite; }
+@keyframes legend-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.veh-pop { animation: veh-pop 0.7s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes veh-pop { from { transform: scale(0.6) translateY(10%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.veh-tile, .part-tile { background: rgba(255, 255, 255, 0.035); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.veh-tile:active, .part-tile:active { transform: scale(0.97); }
+.veh-tile.is-on, .part-tile.is-on { box-shadow: inset 0 0 0 2px var(--color-amber-400); }
+.veh-tile.is-legend { background: linear-gradient(180deg, rgba(212, 166, 58, 0.14), rgba(212, 166, 58, 0.03)); box-shadow: inset 0 0 0 1px rgba(212, 166, 58, 0.35); }
+.veh-tile.is-legend.is-on { box-shadow: inset 0 0 0 2px #d4a63a; }
+.veh-plinth { background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0 70%, rgba(255, 255, 255, 0.07) 70% 72%, rgba(0, 0, 0, 0.18) 72%), #15171d; }
+.part-thumb { background: linear-gradient(180deg, transparent 0 78%, rgba(255, 255, 255, 0.06) 78% 80%, rgba(0, 0, 0, 0.2) 80%), #15171d; }
+.veh-locked { opacity: 0.6; filter: saturate(0.5); }
+.veh-shadow { filter: brightness(0); opacity: 0.7; }
+.paint-chip { background: var(--chip); border-radius: 10px; box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.22), inset 0 3px 0 rgba(255, 255, 255, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.25); transition: transform 0.2s ease; }
+.paint-chip.is-on { outline: 2px solid var(--color-amber-400); outline-offset: 2px; transform: translateY(-2px); }
+.px-bar { position: relative; height: 4px; border-radius: 1px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+.px-bar::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--p); background: repeating-linear-gradient(90deg, var(--color-amber-400) 0 6px, transparent 6px 8px); }
+.legend-pick-cta { background: linear-gradient(135deg, #3a2a0a, #17120a); box-shadow: inset 0 0 0 1px rgba(240, 200, 100, 0.5), 0 14px 30px -18px rgba(212, 166, 58, 0.7); }
+.legend-info { background: linear-gradient(180deg, rgba(212, 166, 58, 0.1), rgba(212, 166, 58, 0.02)); box-shadow: inset 0 0 0 1px rgba(212, 166, 58, 0.22); }
+
+:root[data-theme='light'] :is(.veh-tile, .part-tile) { background: #ffffff; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 14px -8px rgba(16, 24, 40, 0.12); }
+:root[data-theme='light'] :is(.veh-tile, .part-tile).is-on { box-shadow: inset 0 0 0 2px var(--color-amber-500), 0 4px 14px -8px rgba(16, 24, 40, 0.12); }
+:root[data-theme='light'] .veh-tile.is-legend { background: linear-gradient(180deg, #fbf3df, #ffffff); box-shadow: inset 0 0 0 1px rgba(180, 136, 40, 0.4); }
+:root[data-theme='light'] :is(.veh-plinth, .part-thumb) { background: linear-gradient(180deg, transparent 0 72%, rgba(16, 24, 40, 0.08) 72%), #eef1f5; }
+:root[data-theme='light'] .legend-info { background: linear-gradient(180deg, #fbf3df, #fffaf0); box-shadow: inset 0 0 0 1px rgba(180, 136, 40, 0.3); }
+:root[data-theme='light'] :is(.text-\[\#f3d27a\], .legend-info .px-label) { color: #946b12; }
+:root[data-theme='light'] .px-bar { background: rgba(16, 24, 40, 0.08); }
+
+:root[data-motion='reduce'] :is(.garage-hero, .garage-veh, .garage-legend-glow, .veh-pop) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { :is(.garage-hero, .garage-veh, .garage-legend-glow, .veh-pop) { animation: none !important; } }

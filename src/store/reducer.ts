@@ -1,6 +1,6 @@
 import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState, DecorSlot } from '../lib/types';
 import { PROOF_BONUS } from '../lib/proof';
-import { DECOR, PAINTS, PARTS, PROPERTIES, VEHICLES, canFit, worldChestPool, canUnlock, garageSpots, owns, ownsDecor, ownedVehicles, unlockOf, worldOf } from '../world/catalog';
+import { DECOR, GARAGE_ENVS, LEGENDARY_PICKS, PAINTS, PARTS, PROPERTIES, VEHICLES, canFit, worldChestPool, canUnlock, garageSpots, garageUsed, isCar, legendaryBonus, legendaryPool, owns, ownsDecor, unlockOf, worldOf } from '../world/catalog';
 import { claimCheckIn } from '../lib/checkIn';
 import { SEASON_TIERS, claimedTiers, seasonKey, seasonPoints } from '../lib/seasons';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
@@ -149,6 +149,10 @@ export type Action =
   | { type: 'WORLD_FEATURE'; vehicleId: string }
   | { type: 'WORLD_PAINT'; vehicleId: string; paint: string }
   | { type: 'WORLD_MOD'; vehicleId: string; partId: string }
+  /** Pick where your vehicles live (an owned GARAGE_ENVS place). */
+  | { type: 'WORLD_GARAGE'; id: string }
+  /** Use a legendary milestone (level 100, 365-day streak...) to take one legendary vehicle. */
+  | { type: 'LEGENDARY_PICK'; pickId: string; vehicleId: string }
   /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
   | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean; worldId?: string }
   | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
@@ -276,6 +280,12 @@ export interface NewGoalInput {
 
 // Both recompute functions spread over `existing` first so fields they don't
 // touch (notes, freeNote, quickTasks, ...) survive every recompute untouched.
+/**
+ * Legendary collection XP bonus (percent) for the action being reduced. Set at the top of every
+ * reduce call so today's XP always uses the bonus you have right now; past days are never touched.
+ */
+let currentBonusPct = 0;
+
 function recomputeDailyLog(quests: Quest[], completedIds: string[], existing?: Partial<DayLog>): DayLog {
   // The wildcard quest is a bonus and doesn't count toward the "perfect day" requirement.
   const activeDaily = quests.filter((q) => q.frequency === 'daily' && !q.archived && !q.wildcardDate);
@@ -293,7 +303,8 @@ function recomputeDailyLog(quests: Quest[], completedIds: string[], existing?: P
     ...existing,
     date: dateKey,
     completedQuestIds,
-    xpEarned: Math.round(xpEarned * (existing?.xpBoost ?? 1)),
+    xpEarned: Math.round(xpEarned * (existing?.xpBoost ?? 1) * (1 + currentBonusPct / 100)),
+    ...(currentBonusPct > 0 ? { bonusPct: currentBonusPct } : {}),
     perfectDay,
     dailyQuestCount: activeDaily.length,
   };
@@ -410,6 +421,7 @@ export function migrateContent(state: AppState): AppState {
 }
 
 export function reducer(state: AppState, action: Action): AppState {
+  currentBonusPct = legendaryBonus(worldOf(state));
   switch (action.type) {
     case 'PROOF_QUEST': {
       const key = todayKey();
@@ -730,13 +742,14 @@ export function reducer(state: AppState, action: Action): AppState {
       const unlock = unlockOf(action.id);
       if (!unlock || owns(world, action.id)) return state;
       const vehicle = VEHICLES.find((v) => v.id === action.id);
-      if (vehicle && ownedVehicles(world).length >= garageSpots(world)) return state;
+      if (vehicle && garageUsed(world) >= garageSpots(world)) return state;
       if (!canUnlock(unlock, computeDerivedStats(state)).ok) return state;
       const next = { ...world, paid: { ...world.paid, [action.id]: unlock.coins } };
       if (PROPERTIES.some((p) => p.id === action.id)) next.property = action.id;
       const decor = DECOR.find((d) => d.id === action.id);
       if (decor) next.decor = { ...world.decor, [decor.slot]: decor.id };
       if (vehicle) next.vehicle = vehicle.id;
+      if (GARAGE_ENVS.some((g) => g.id === action.id)) next.garage = action.id;
       if (PAINTS.some((p) => p.id === action.id) && action.vehicleId && owns(world, action.vehicleId)) {
         next.paints = { ...(world.paints ?? {}), [action.vehicleId]: action.id };
       }
@@ -776,9 +789,25 @@ export function reducer(state: AppState, action: Action): AppState {
       const world = worldOf(state);
       const vehicle = VEHICLES.find((v) => v.id === action.vehicleId);
       const p = PARTS.find((x) => x.id === action.partId);
-      if (!vehicle?.car || !p || !owns(world, vehicle.id) || !canFit(world, vehicle, p)) return state;
+      if (!vehicle || !isCar(vehicle) || !p || !owns(world, vehicle.id) || !canFit(world, vehicle, p)) return state;
       const mods = { ...(world.mods ?? {}), [vehicle.id]: { ...(world.mods?.[vehicle.id] ?? {}), [p.kind]: p.value } };
       return { ...state, world: { ...world, mods } };
+    }
+
+    case 'WORLD_GARAGE': {
+      const world = worldOf(state);
+      if (!GARAGE_ENVS.some((g) => g.id === action.id) || !owns(world, action.id)) return state;
+      return { ...state, world: { ...world, garage: action.id } };
+    }
+
+    case 'LEGENDARY_PICK': {
+      const world = worldOf(state);
+      const pick = LEGENDARY_PICKS.find((p) => p.id === action.pickId);
+      const stats = computeDerivedStats(state);
+      if (!pick || (world.picks ?? []).includes(pick.id) || stats[pick.stat] < pick.target) return state;
+      if (!legendaryPool(world).some((v) => v.id === action.vehicleId)) return state;
+      // Legendaries never need a free garage spot: they get their own plinth.
+      return { ...state, world: { ...world, picks: [...(world.picks ?? []), pick.id], paid: { ...world.paid, [action.vehicleId]: 0 }, vehicle: action.vehicleId } };
     }
 
     case 'EQUIP_COSMETIC': {
@@ -795,7 +824,7 @@ export function reducer(state: AppState, action: Action): AppState {
       if (action.skip) return { ...state, chestsOpened, skipPasses: (state.skipPasses ?? 0) + 1 };
       if (action.worldId) {
         const world = worldOf(state);
-        if (!worldChestPool(world).some((d) => d.id === action.worldId)) return state;
+        if (!worldChestPool(world).some((d) => d.id === action.worldId) && !legendaryPool(world).some((v) => v.id === action.worldId)) return state;
         // Chest drops cost nothing: they're stored as paid with 0 coins.
         return { ...state, chestsOpened, world: { ...world, paid: { ...world.paid, [action.worldId]: 0 } } };
       }

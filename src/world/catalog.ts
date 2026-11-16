@@ -1,5 +1,5 @@
 import type { AppState, CarMods, DecorSlot, DerivedStats, NumericStat, WorldState } from '../lib/types';
-import { LEGACY_BODIES, carCollection, type CarModel } from './cars/spec';
+import { SHAPES } from './px/cars';
 
 export type { DecorSlot, WorldState };
 
@@ -21,6 +21,8 @@ export interface Unlock {
   milestone?: Milestone;
   /** Can't be bought: only drops from reward chests. */
   chest?: boolean;
+  /** Legendary: only from a 0.3% chest drop or a legendary milestone pick. */
+  legendary?: boolean;
 }
 
 export type View = 'city' | 'park' | 'skyline' | 'garden' | 'hills' | 'sea' | 'cliffs';
@@ -55,17 +57,27 @@ export interface DecorItem {
   blurb?: string;
 }
 
+export type VehicleClass = 'bicycle' | 'escooter' | 'motorcycle' | 'car' | 'special' | 'legendary';
+
+/** Which pixel drawing a vehicle uses (src/world/px). */
+export type VehicleArtRef = { type: 'car'; shape: string } | { type: 'two'; model: string };
+
 export interface Vehicle {
   id: string;
   name: string;
-  kind: 'bike' | 'scooter' | 'moto' | 'hatch' | 'coupe' | 'classic' | 'super' | 'racebike' | 'car';
+  /** Fictional maker or series line, shown small under the name. */
+  maker: string;
+  cls: VehicleClass;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   blurb: string;
   unlock: Unlock;
-  /** Paint it comes in: a paint id, or a factory colour (hex) for collection cars. */
+  /** Paint it comes in: a paint id or a factory colour (hex). */
   paint: string;
-  /** Cars: the body plan and numbers the car designer draws from (src/world/cars). */
-  car?: Pick<CarModel, 'maker' | 'model' | 'cls' | 'body' | 'hp' | 'zeroTo100' | 'top'>;
+  art: VehicleArtRef;
+  /** Showroom numbers (made up, for fun). */
+  stats?: { hp: number; zeroTo100: number; top: number };
+  /** Legendary only: permanent account-wide XP bonus in percent (see legendaryBonus). */
+  xpBonus?: number;
 }
 
 export interface Paint {
@@ -321,73 +333,94 @@ export const DEFAULT_DECOR: Record<DecorSlot, string> = {
   collectible: 'col-none',
 };
 
-const LEGACY: Vehicle[] = [
-  { id: 'v-bike', name: 'City bike', kind: 'bike', rarity: 'common', blurb: 'Free, healthy, and always parks right outside.', unlock: free, paint: 'p-mint' },
-  { id: 'v-scooter', name: 'E-scooter', kind: 'scooter', rarity: 'common', blurb: 'Zip through the city in silence.', unlock: at(4, 400), paint: 'p-white' },
-  { id: 'v-racebike', name: 'Carbon race bike', kind: 'racebike', rarity: 'rare', blurb: 'Earned with your own legs.', unlock: at(8, 1000, km(100)), paint: 'p-flame' },
-  { id: 'v-moto', name: 'Street motorbike', kind: 'moto', rarity: 'rare', blurb: 'Two wheels, a lot of fun.', unlock: at(12, 1800, streak(14)), paint: 'p-black' },
-  { id: 'v-hatch', name: 'City hatchback', kind: 'hatch', rarity: 'rare', blurb: 'Your first car. Paid with a savings goal you reached.', unlock: at(18, 3500, saved(1)), paint: 'p-sky' },
-  { id: 'v-coupe', name: 'Sports coupe', kind: 'coupe', rarity: 'epic', blurb: 'Low, fast and gleaming.', unlock: at(30, 7000, streak(30)), paint: 'p-red' },
-  { id: 'v-classic', name: 'Classic convertible', kind: 'classic', rarity: 'epic', blurb: 'Chrome, curves and summer drives.', unlock: at(45, 10000, goals(5)), paint: 'p-cream' },
-  { id: 'v-nightrider', name: 'Night rider', kind: 'moto', rarity: 'epic', blurb: 'A chest-only motorbike in deep galaxy purple.', unlock: chest, paint: 'p-galaxy' },
-  { id: 'v-retro', name: 'Retro roadster', kind: 'classic', rarity: 'legendary', blurb: 'A legendary chest drop. Turn heads everywhere.', unlock: chest, paint: 'p-chrome' },
-  { id: 'v-super', name: 'Apex supercar', kind: 'super', rarity: 'legendary', blurb: 'For people who never gave up.', unlock: at(60, 18000, streak(100)), paint: 'p-gold' },
+/* ---------------------------------------------------------------- vehicles */
+
+const legendary: Unlock = { level: 1, coins: 0, legendary: true };
+const car = (shape: string): VehicleArtRef => ({ type: 'car', shape });
+const two = (model: string): VehicleArtRef => ({ type: 'two', model });
+
+/**
+ * The collection (rebuilt 2026-11-16): fewer, better vehicles, every one pixel art at the same
+ * scale. Makers are fictional. Legendary designs are original, only *inspired* by film and
+ * motorsport icons. Ids of older vehicles are kept so saves keep working.
+ */
+export const VEHICLES: Vehicle[] = [
+  // bicycles
+  { id: 'v-bike', name: 'Dutchie', maker: 'City bike', cls: 'bicycle', rarity: 'common', blurb: 'Free, healthy, and always parks right outside.', unlock: free, paint: 'p-mint', art: two('citybike') },
+  { id: 'v-racebike', name: 'Carbon Arrow', maker: 'Road racer', cls: 'bicycle', rarity: 'rare', blurb: 'Earned with your own legs: 100 km of running.', unlock: at(8, 1000, km(100)), paint: 'p-flame', art: two('racebike') },
+  // e-scooters
+  { id: 'v-scooter', name: 'Glide One', maker: 'Commuter e-scooter', cls: 'escooter', rarity: 'common', blurb: 'Zip through the city in silence.', unlock: at(4, 400), paint: 'p-white', art: two('escooter') },
+  { id: 'sc-glide-pro', name: 'Glide Pro', maker: 'Dual-motor e-scooter', cls: 'escooter', rarity: 'rare', blurb: 'Suspension, two motors and a light bar.', unlock: at(14, 1600, streak(14)), paint: 'p-black', art: two('escooterpro') },
+  // motorcycles
+  { id: 'v-moto', name: 'Stryker 700', maker: 'Naked street bike', cls: 'motorcycle', rarity: 'rare', blurb: 'Two wheels, a lot of fun.', unlock: at(12, 1800, streak(14)), paint: 'p-black', art: two('naked') },
+  { id: 'mc-cafe', name: 'Brass Café 500', maker: 'Café racer', cls: 'motorcycle', rarity: 'rare', blurb: 'Hand-built look, wire wheels, megaphone pipe.', unlock: at(16, 2400, quests(150)), paint: 'p-forest', art: two('cafe') },
+  { id: 'mc-adv', name: 'Ridgeline 690', maker: 'Adventure bike', cls: 'motorcycle', rarity: 'epic', blurb: 'Goes where the road ends.', unlock: at(24, 4200, km(50)), paint: 'p-orange', art: two('adventure') },
+  { id: 'mc-sport', name: 'Veloce RR', maker: 'Superbike', cls: 'motorcycle', rarity: 'epic', blurb: 'Tucked in, chin on the tank.', unlock: at(32, 6500, streak(30)), paint: 'p-red', art: two('sport') },
+  { id: 'v-nightrider', name: 'Night Rider', maker: 'Cruiser', cls: 'motorcycle', rarity: 'epic', blurb: 'A chest-only chopper in deep galaxy purple.', unlock: chest, paint: 'p-galaxy', art: two('cruiser') },
+  // cars
+  { id: 'v-hatch', name: 'Pip', maker: 'City hatchback', cls: 'car', rarity: 'rare', blurb: 'Your first car. Paid with a savings goal you reached.', unlock: at(18, 3500, saved(1)), paint: 'p-sky', art: car('hatch'), stats: { hp: 110, zeroTo100: 9.8, top: 185 } },
+  { id: 'car-wagon', name: 'Fjord Estate', maker: 'Family wagon', cls: 'car', rarity: 'rare', blurb: 'Room for bikes, dogs and road trips.', unlock: at(20, 4000), paint: 'p-forest', art: car('wagon'), stats: { hp: 190, zeroTo100: 7.9, top: 220 } },
+  { id: 'car-pickup', name: 'Ridgeback', maker: 'Pickup truck', cls: 'car', rarity: 'rare', blurb: 'Hauls anything. Earned with 250 finished quests.', unlock: at(22, 4800, quests(250)), paint: 'p-white', art: car('pickup'), stats: { hp: 300, zeroTo100: 7.4, top: 190 } },
+  { id: 'car-offroad', name: 'Trailhound 4x4', maker: 'Off-roader', cls: 'car', rarity: 'epic', blurb: 'Snorkel, spare wheel, beadlocks. Run 100 km to earn it.', unlock: at(28, 6500, km(100)), paint: 'p-sand', art: car('offroad'), stats: { hp: 280, zeroTo100: 8.1, top: 175 } },
+  { id: 'v-coupe', name: 'Vela Coupe', maker: 'Sports coupe', cls: 'car', rarity: 'epic', blurb: 'Low, fast and gleaming.', unlock: at(30, 7000, streak(30)), paint: 'p-red', art: car('coupe'), stats: { hp: 340, zeroTo100: 5.1, top: 260 } },
+  { id: 'car-tuner', name: 'Kaze R', maker: 'Street tuner', cls: 'car', rarity: 'epic', blurb: 'Big wing, mesh wheels, built in a garage at night.', unlock: at(34, 8500, perfect(30)), paint: 'p-yellow', art: car('tuner'), stats: { hp: 320, zeroTo100: 4.9, top: 255 } },
+  { id: 'car-muscle', name: 'Thunder 68', maker: 'Muscle car', cls: 'car', rarity: 'epic', blurb: 'Long hood, loud heart. 500 quests to earn it.', unlock: at(38, 9500, quests(500)), paint: 'p-navy', art: car('muscle'), stats: { hp: 425, zeroTo100: 5.4, top: 240 } },
+  { id: 'v-classic', name: 'Riviera Spider', maker: 'Classic convertible', cls: 'car', rarity: 'epic', blurb: 'Chrome, whitewalls and summer drives.', unlock: at(45, 10000, goals(5)), paint: 'p-cream', art: car('classic'), stats: { hp: 180, zeroTo100: 8.9, top: 200 } },
+  { id: 'car-gt', name: 'Aurora GT', maker: 'Grand tourer', cls: 'car', rarity: 'epic', blurb: 'Crosses a continent in one go.', unlock: at(50, 14000, streak(60)), paint: 'p-steel', art: car('gt'), stats: { hp: 560, zeroTo100: 3.9, top: 305 } },
+  { id: 'v-super', name: 'Apex V12', maker: 'Supercar', cls: 'car', rarity: 'epic', blurb: 'For people who never gave up: a 100-day streak.', unlock: at(60, 18000, streak(100)), paint: 'p-gold', art: car('super'), stats: { hp: 780, zeroTo100: 2.9, top: 340 } },
+  // special: rally, racing, performance
+  { id: 'car-rally', name: 'Gravel Hawk', maker: 'Rally special', cls: 'special', rarity: 'epic', blurb: 'Mud flaps, light pod, sideways everywhere. Run 200 km.', unlock: at(42, 11000, km(200)), paint: 'p-white', art: car('rally'), stats: { hp: 300, zeroTo100: 3.8, top: 220 } },
+  { id: 'car-touring', name: 'Sprint Tourer', maker: 'Touring race car', cls: 'special', rarity: 'epic', blurb: 'A race saloon with a widebody and a GT wing.', unlock: at(55, 16000, perfect(100)), paint: 'p-teal', art: car('touring'), stats: { hp: 480, zeroTo100: 3.6, top: 285 } },
+  { id: 'car-proto', name: 'Volta LMP', maker: 'Endurance prototype', cls: 'special', rarity: 'epic', blurb: 'Built for 24 hours flat out. A 150-day streak.', unlock: at(70, 24000, streak(150)), paint: 'p-black', art: car('proto'), stats: { hp: 680, zeroTo100: 2.8, top: 345 } },
+  { id: 'v-retro', name: 'Retro Roadster', maker: 'Chest exclusive', cls: 'special', rarity: 'epic', blurb: 'A chest-only roadster. Turn heads everywhere.', unlock: chest, paint: 'p-chrome', art: car('roadster'), stats: { hp: 150, zeroTo100: 8.2, top: 195 } },
+  // legendary: original designs, the rarest things in Squzo
+  { id: 'lg-nocturne', name: 'Nocturne', maker: 'Legendary · night cruiser', cls: 'legendary', rarity: 'legendary', blurb: 'Armoured, silent, with a jet turbine and a tail fin. Rules the city after dark.', unlock: legendary, paint: '#1c1d23', art: car('nocturne'), stats: { hp: 900, zeroTo100: 2.6, top: 330 }, xpBonus: 1 },
+  { id: 'lg-quarter', name: 'Quarter King', maker: 'Legendary · drag muscle', cls: 'legendary', rarity: 'legendary', blurb: 'A supercharger through the hood and a wheelie bar. Ten seconds or less.', unlock: legendary, paint: '#121318', art: car('quarter'), stats: { hp: 900, zeroTo100: 2.4, top: 290 }, xpBonus: 1 },
+  { id: 'lg-kaze', name: 'Midnight Kaze', maker: 'Legendary · street racer', cls: 'legendary', rarity: 'legendary', blurb: 'Widebody, underglow and a wild vinyl. Born on the night highway.', unlock: legendary, paint: '#2c3e8f', art: car('kaze'), stats: { hp: 650, zeroTo100: 3.1, top: 315 }, xpBonus: 1 },
+  { id: 'lg-sidewinder', name: 'Sidewinder B', maker: 'Legendary · rally monster', cls: 'legendary', rarity: 'legendary', blurb: 'A wedge from rally’s wildest era: giant wing, light pod, no fear.', unlock: legendary, paint: '#f4f1ea', art: car('sidewinder'), stats: { hp: 560, zeroTo100: 2.9, top: 250 }, xpBonus: 1 },
+  { id: 'lg-phantom', name: 'Phantom LM', maker: 'Legendary · endurance hypercar', cls: 'legendary', rarity: 'legendary', blurb: 'Shark fin, light bars, built to win the long race.', unlock: legendary, paint: '#b3121f', art: car('phantom'), stats: { hp: 1000, zeroTo100: 2.3, top: 360 }, xpBonus: 1 },
 ];
 
-/** How far up the ladder each kind of car sits (0 = first car, 6 = hypercar). */
-const CLASS_TIER: Record<CarModel['cls'], number> = { hatch: 0, ev: 1, wagon: 1, sedan: 1, classic: 2, pickup: 2, suv: 2, offroad: 2, rally: 3, muscle: 3, sports: 3, luxury: 3, gt: 4, super: 5, hyper: 6 };
-const TIER_MILESTONE: Array<Milestone | undefined> = [undefined, undefined, streak(7), quests(150), streak(21), streak(45), streak(90)];
+export const isCar = (v: Vehicle) => v.art.type === 'car';
 
-function carVehicles(): Vehicle[] {
-  const cars = carCollection();
-  // Rank each car inside its class by power, so the strongest of a class costs the most.
-  const byClass = new Map<string, CarModel[]>();
-  for (const c of cars) byClass.set(c.cls, [...(byClass.get(c.cls) ?? []), c]);
-  for (const list of byClass.values()) list.sort((a, b) => a.hp - b.hp);
-  return cars.map((c, i) => {
-    const list = byClass.get(c.cls)!;
-    const f = list.length > 1 ? list.indexOf(c) / (list.length - 1) : 0;
-    const tier = CLASS_TIER[c.cls];
-    // Every 15th car is a chest-only exclusive: a reason to keep opening chests.
-    const isChest = i % 15 === 7;
-    const level = Math.min(80, 6 + tier * 9 + Math.round(f * 7));
-    const coins = Math.round((1400 * Math.pow(1.55, tier) * (1 + f * 0.9)) / 50) * 50;
-    const rarity: Vehicle['rarity'] = isChest ? (tier >= 4 ? 'legendary' : 'epic') : tier >= 5 || (tier === 4 && f > 0.6) ? 'legendary' : tier >= 3 ? 'epic' : tier >= 1 ? 'rare' : 'common';
-    const milestone = f > 0.7 || tier >= 5 ? TIER_MILESTONE[tier] : undefined;
-    return {
-      id: c.id,
-      name: `${c.maker} ${c.model}`,
-      kind: 'car',
-      rarity,
-      blurb: `${c.hp} hp · 0–100 in ${c.zeroTo100}s · ${c.top} km/h`,
-      unlock: isChest ? chest : at(level, coins, milestone),
-      paint: c.paint,
-      car: c,
-    };
-  });
+export const CLASS_LABEL: Record<VehicleClass, string> = {
+  bicycle: 'Bicycles',
+  escooter: 'E-scooters',
+  motorcycle: 'Motorcycles',
+  car: 'Cars',
+  special: 'Special',
+  legendary: 'Legendary',
+};
+
+/* ---------------------------------------------------------------- legendary */
+
+/** XP bonus per legendary owned, and the cap (5 legendaries = +5%, never more). */
+export const LEGENDARY_BONUS_CAP = 5;
+/** Chance one reward chest holds a legendary vehicle. */
+export const LEGENDARY_CHEST_CHANCE = 0.003;
+
+export function legendaryBonus(world: WorldState): number {
+  const sum = VEHICLES.filter((v) => v.cls === 'legendary' && owns(world, v.id)).reduce((n, v) => n + (v.xpBonus ?? 0), 0);
+  return Math.min(LEGENDARY_BONUS_CAP, sum);
 }
 
-let vehicleCache: Vehicle[] | null = null;
-function allVehicles(): Vehicle[] {
-  if (vehicleCache) return vehicleCache;
-  const legacy = LEGACY.map((v) => {
-    const l = LEGACY_BODIES[v.id];
-    return l ? { ...v, car: { maker: 'Squzo', model: v.name, cls: l.cls, body: l.body, hp: 0, zeroTo100: 0, top: 0 } } : v;
-  });
-  vehicleCache = [...legacy, ...carVehicles()];
-  return vehicleCache;
-}
+/** Huge milestones that let you pick one legendary of your choice (each once). */
+export const LEGENDARY_PICKS: Array<{ id: string; label: string; stat: NumericStat; target: number }> = [
+  { id: 'pick-level-100', label: 'Reach level 100', stat: 'level', target: 100 },
+  { id: 'pick-streak-365', label: 'Reach a 365-day streak', stat: 'longestStreak', target: 365 },
+  { id: 'pick-quests-2000', label: 'Finish 2,000 quests', stat: 'totalQuestsCompleted', target: 2000 },
+];
 
-/** Bikes, the five original cars and the 300-car collection. Ids never change, so saves keep working. */
-export const VEHICLES: Vehicle[] = allVehicles();
-export const isCar = (v: Vehicle) => !!v.car;
+export function legendaryPicksReady(world: WorldState, stats: DerivedStats): Array<(typeof LEGENDARY_PICKS)[number]> {
+  return LEGENDARY_PICKS.filter((p) => !(world.picks ?? []).includes(p.id) && stats[p.stat] >= p.target);
+}
 
 /* ---------------------------------------------------------------- car parts */
 
 export interface Part {
   id: string;
   kind: keyof CarMods;
-  /** Value passed to the car designer (rim style, spoiler, kit, stance). */
+  /** Value passed to the car drawer (rim style, rim colour, spoiler, kit, stance, livery). */
   value: string;
   name: string;
   unlock: Unlock;
@@ -398,16 +431,22 @@ const part = (kind: keyof CarMods, value: string, name: string, unlock: Unlock):
 /** Swap-on parts. A car's own factory parts are always free for that car. */
 export const PARTS: Part[] = [
   part('rim', 'five', 'Five spoke', free),
+  part('rim', 'hubcap', 'Steel + hubcap', free),
   part('rim', 'split', 'Split spoke', at(6, 250)),
   part('rim', 'multi', 'Multi spoke', at(9, 400)),
+  part('rim', 'offroad', 'Trail', at(10, 450)),
   part('rim', 'mesh', 'Mesh', at(12, 600)),
   part('rim', 'dish', 'Deep dish', at(14, 700)),
-  part('rim', 'hubcap', 'Steel + hubcap', free),
-  part('rim', 'offroad', 'Trail', at(10, 450)),
+  part('rim', 'rays', 'Six ray', at(16, 800)),
   part('rim', 'beadlock', 'Beadlock', at(20, 1100, km(50))),
   part('rim', 'wire', 'Wire', at(24, 1300)),
   part('rim', 'turbine', 'Turbine', at(30, 1800, streak(21))),
   part('rim', 'aero', 'Aero disc', at(36, 2400)),
+  part('rimColor', 'silver', 'Silver', free),
+  part('rimColor', 'black', 'Gloss black', at(10, 300)),
+  part('rimColor', 'white', 'Rally white', at(14, 500)),
+  part('rimColor', 'bronze', 'Bronze', at(18, 800)),
+  part('rimColor', 'gold', 'Gold', at(26, 1400, perfect(20))),
   part('spoiler', 'none', 'Clean', free),
   part('spoiler', 'lip', 'Lip spoiler', at(8, 300)),
   part('spoiler', 'duck', 'Ducktail', at(15, 800)),
@@ -415,21 +454,40 @@ export const PARTS: Part[] = [
   part('spoiler', 'gt', 'GT wing', at(40, 3000, streak(30))),
   part('kit', 'stock', 'Factory body', free),
   part('kit', 'sport', 'Sport kit', at(16, 1000)),
+  part('kit', 'rally', 'Rally kit', at(30, 2000, km(50))),
   part('kit', 'wide', 'Widebody', at(34, 2600, quests(300))),
   part('stance', 'stock', 'Factory height', free),
   part('stance', 'low', 'Lowered', at(12, 600)),
   part('stance', 'lifted', 'Lifted', at(12, 600)),
+  part('livery', 'none', 'Clean paint', free),
+  part('livery', 'pinline', 'Pinstripe', at(6, 200)),
+  part('livery', 'stripe', 'Twin stripes', at(8, 350)),
+  part('livery', 'twotone', 'Two-tone', at(12, 600)),
+  part('livery', 'racing', 'Race number', at(20, 1200)),
+  part('livery', 'check', 'Checker band', at(24, 1500, streak(21))),
+  part('livery', 'flames', 'Flames', at(28, 1800)),
+  part('livery', 'rally', 'Rally colours', at(36, 2600, km(100))),
+  part('livery', 'vinyl', 'Night vinyl', at(44, 3400, perfect(50))),
 ];
 
+export const RIM_COLORS: Record<string, string> = { silver: '#c3c8d0', black: '#2a2c33', white: '#eceae4', bronze: '#a8784a', gold: '#d4a63a' };
+
+/** Factory parts of a car (from its drawing). */
+export function factoryParts(v: Vehicle): Required<CarMods> {
+  const s = v.art.type === 'car' ? SHAPES[v.art.shape] : undefined;
+  const rc = s?.rimColor ? Object.entries(RIM_COLORS).find(([, hex]) => hex === s.rimColor)?.[0] ?? 'factory' : 'silver';
+  return { rim: s?.rim ?? 'five', spoiler: s?.spoiler ?? 'none', kit: s?.kit ?? 'stock', stance: 'stock', livery: s?.livery ?? 'none', rimColor: rc };
+}
+
 export function partsOf(world: WorldState, v: Vehicle): Required<CarMods> {
+  const f = factoryParts(v);
   const m = world.mods?.[v.id] ?? {};
-  return { rim: m.rim ?? v.car?.body.rim ?? 'five', spoiler: m.spoiler ?? v.car?.body.spoiler ?? 'none', kit: m.kit ?? 'stock', stance: m.stance ?? 'stock' };
+  return { rim: m.rim ?? f.rim, spoiler: m.spoiler ?? f.spoiler, kit: m.kit ?? f.kit, stance: m.stance ?? f.stance, livery: m.livery ?? f.livery, rimColor: m.rimColor ?? f.rimColor };
 }
 
 /** Can this car wear this part? Its factory parts always; others once bought. */
 export function canFit(world: WorldState, v: Vehicle, p: Part): boolean {
-  if (p.kind === 'rim' && v.car?.body.rim === p.value) return true;
-  if (p.kind === 'spoiler' && v.car?.body.spoiler === p.value) return true;
+  if (factoryParts(v)[p.kind] === p.value) return true;
   return owns(world, p.id);
 }
 
@@ -441,7 +499,7 @@ export const PAINTS: Paint[] = [
   { id: 'p-red', name: 'Racing red', hex: '#d7263d', unlock: at(6, 300) },
   { id: 'p-flame', name: 'Flame orange', hex: '#ff7a2e', unlock: at(10, 500) },
   { id: 'p-cream', name: 'Vintage cream', hex: '#efe3c8', unlock: at(14, 700) },
-  { id: 'p-teal', name: 'Squzo teal', hex: '#22d3ee', unlock: at(20, 1200, streak(21)) },
+  { id: 'p-teal', name: 'Squzo teal', hex: '#2aa7bd', unlock: at(20, 1200, streak(21)) },
   { id: 'p-violet', name: 'Midnight violet', hex: '#5b3fd6', unlock: at(25, 1500) },
   { id: 'p-forest', name: 'Forest green', hex: '#2f6b4f', unlock: at(8, 400) },
   { id: 'p-orange', name: 'Sunset orange', hex: '#f08a24', unlock: at(16, 900) },
@@ -449,6 +507,11 @@ export const PAINTS: Paint[] = [
   { id: 'p-rose', name: 'Rose pink', hex: '#f472b6', unlock: chest },
   { id: 'p-galaxy', name: 'Galaxy purple', hex: '#3b1d8f', unlock: chest },
   { id: 'p-gold', name: 'Liquid gold', hex: '#d4a63a', unlock: at(40, 4000, perfect(50)) },
+  { id: 'p-navy', name: 'Deep navy', hex: '#26386e', unlock: at(9, 450) },
+  { id: 'p-sand', name: 'Desert sand', hex: '#c9a46a', unlock: at(10, 450) },
+  { id: 'p-yellow', name: 'Sunburst yellow', hex: '#f0b429', unlock: at(12, 600) },
+  { id: 'p-steel', name: 'Gunmetal', hex: '#5b616e', unlock: at(18, 800) },
+  { id: 'p-matte', name: 'Matte black', hex: '#2a2b30', unlock: at(22, 1000, streak(14)) },
 ];
 
 /** Extra garage spots: you can own one vehicle per spot. */
@@ -484,7 +547,8 @@ export function unlockOf(id: string): Unlock | undefined {
     VEHICLES.find((v) => v.id === id)?.unlock ??
     PAINTS.find((p) => p.id === id)?.unlock ??
     GARAGE_SPOTS.find((g) => g.id === id)?.unlock ??
-    PARTS.find((p) => p.id === id)?.unlock
+    PARTS.find((p) => p.id === id)?.unlock ??
+    GARAGE_ENVS.find((g) => g.id === id)?.unlock
   );
 }
 
@@ -492,13 +556,14 @@ export function unlockOf(id: string): Unlock | undefined {
 export function owns(world: WorldState, id: string): boolean {
   const u = unlockOf(id);
   if (!u) return false;
-  return (u.coins === 0 && u.level <= 1 && !u.milestone && !u.chest) || id in world.paid;
+  return (u.coins === 0 && u.level <= 1 && !u.milestone && !u.chest && !u.legendary) || id in world.paid;
 }
 
 export type Gate = { ok: true } | { ok: false; reason: 'level' | 'milestone' | 'coins' | 'space' | 'chest'; text: string };
 
 /** Can this be bought right now? Level and milestone first, then coins. */
 export function canUnlock(unlock: Unlock, stats: DerivedStats): Gate {
+  if (unlock.legendary) return { ok: false, reason: 'chest', text: 'Legendary: 0.3% chest drop or a legendary pick' };
   if (unlock.chest) return { ok: false, reason: 'chest', text: 'Only from chests' };
   if (stats.level < unlock.level) return { ok: false, reason: 'level', text: `Reach level ${unlock.level}` };
   if (unlock.milestone && stats[unlock.milestone.stat] < unlock.milestone.target) {
@@ -508,8 +573,16 @@ export function canUnlock(unlock: Unlock, stats: DerivedStats): Gate {
   return { ok: true };
 }
 
+/** Coins spent in the World. Items that no longer exist (the retired 300-car collection) cost nothing, so they are refunded. */
 export function worldSpent(state: AppState): number {
-  return Object.values(state.world?.paid ?? {}).reduce((a, n) => a + (Number.isFinite(n) ? n : 0), 0);
+  return Object.entries(state.world?.paid ?? {}).reduce((a, [id, n]) => a + (Number.isFinite(n) && unlockOf(id) ? n : 0), 0);
+}
+
+/** Retired vehicles someone had bought, with the coins they got back. */
+export function refundedVehicles(world: WorldState): Array<{ id: string; coins: number }> {
+  return Object.entries(world.paid)
+    .filter(([id]) => /^(car-|v-)/.test(id) && !unlockOf(id))
+    .map(([id, coins]) => ({ id, coins: Number(coins) || 0 }));
 }
 
 export function garageSpots(world: WorldState): number {
@@ -520,6 +593,11 @@ export function garageSpots(world: WorldState): number {
 
 export function ownedVehicles(world: WorldState): Vehicle[] {
   return VEHICLES.filter((v) => owns(world, v.id));
+}
+
+/** Garage spots in use. Legendaries stand on their own plinth and never take a spot. */
+export function garageUsed(world: WorldState): number {
+  return ownedVehicles(world).filter((v) => v.cls !== 'legendary').length;
 }
 
 export function decorFor(world: WorldState, slot: DecorSlot): DecorItem {
@@ -552,12 +630,25 @@ export function worldChestPool(world: WorldState): WorldDrop[] {
   const out: WorldDrop[] = [];
   for (const d of DECOR) if (d.unlock.chest && !owns(world, d.id)) out.push({ id: d.id, name: d.name, kind: 'decor', slot: d.slot, color: d.color, rarity: 'rare' });
   for (const p of PAINTS) if (p.unlock.chest && !owns(world, p.id)) out.push({ id: p.id, name: `${p.name} paint`, kind: 'paint', color: p.hex, rarity: 'rare' });
-  for (const v of VEHICLES) if (v.unlock.chest && !owns(world, v.id)) out.push({ id: v.id, name: v.name, kind: 'vehicle', color: v.paint.startsWith('#') ? v.paint : undefined, rarity: v.rarity === 'legendary' ? 'legendary' : 'epic' });
+  for (const v of VEHICLES) if (v.unlock.chest && !owns(world, v.id)) out.push({ id: v.id, name: v.name, kind: 'vehicle', color: v.paint.startsWith('#') ? v.paint : undefined, rarity: 'epic' });
   return out;
 }
 
 /** Chance a chest gives a World item instead of clothes (while chest-only World items are left). */
 export const WORLD_DROP_CHANCE = 0.2;
+
+/** Legendary vehicles you don't own yet (for the 0.3% chest roll and milestone picks). */
+export function legendaryPool(world: WorldState): Vehicle[] {
+  return VEHICLES.filter((v) => v.cls === 'legendary' && !owns(world, v.id));
+}
+
+/** The 0.3% legendary roll a chest makes before anything else. */
+export function rollLegendary(world: WorldState, rand: () => number = Math.random): WorldDrop | null {
+  const pool = legendaryPool(world);
+  if (!pool.length || rand() >= LEGENDARY_CHEST_CHANCE) return null;
+  const v = pool[Math.floor(rand() * pool.length)];
+  return { id: v.id, name: v.name, kind: 'vehicle', rarity: 'legendary' };
+}
 
 export function rollWorldDrop(world: WorldState, rand: () => number = Math.random): WorldDrop | null {
   const pool = worldChestPool(world);
@@ -571,5 +662,53 @@ export function rollWorldDrop(world: WorldState, rand: () => number = Math.rando
 export function vehicleHex(world: WorldState, v: Vehicle): string {
   const chosen = world.paints?.[v.id];
   const p = PAINTS.find((x) => x.id === (chosen ?? v.paint));
-  return p?.hex ?? (v.paint.startsWith('#') ? v.paint : '#888');
+  return p?.hex ?? (v.paint.startsWith('#') ? v.paint : '#888888');
+}
+
+/* ---------------------------------------------------------------- garage places */
+
+/** Where your vehicles live. Better places unlock as you grow, then you pick one. */
+export interface GarageEnv {
+  id: string;
+  name: string;
+  blurb: string;
+  unlock: Unlock;
+}
+
+export const GARAGE_ENVS: GarageEnv[] = [
+  { id: 'gx-lockup', name: 'Lock-up garage', blurb: 'A roller door, a work light and big plans.', unlock: free },
+  { id: 'gx-workshop', name: 'Tuning workshop', blurb: 'Tool wall, lift and a parts shelf.', unlock: at(15, 1500, quests(100)) },
+  { id: 'gx-showroom', name: 'Glass showroom', blurb: 'Spotlights, a turntable and the city outside.', unlock: at(30, 5000, streak(30)) },
+  { id: 'gx-rooftop', name: 'Rooftop at night', blurb: 'Your own spot above the city lights.', unlock: at(50, 9000) },
+  { id: 'gx-pitlane', name: 'Pit lane', blurb: 'Pit board, tyre stacks and a grandstand. For 100-day legends.', unlock: at(40, 8000, streak(100)) },
+];
+
+export function garageEnvOf(world: WorldState): GarageEnv {
+  const id = world.garage && owns(world, world.garage) ? world.garage : 'gx-lockup';
+  return GARAGE_ENVS.find((g) => g.id === id) ?? GARAGE_ENVS[0];
+}
+
+/**
+ * Trophies you earn by living, not buying: each real milestone hangs something in your garage
+ * automatically (shown in the garage scene and the milestone road).
+ */
+export interface Trophy {
+  id: string;
+  name: string;
+  stat: NumericStat;
+  target: number;
+  label: string;
+}
+
+export const TROPHIES: Trophy[] = [
+  { id: 't-flag', name: 'Checkered flag', stat: 'totalQuestsCompleted', target: 100, label: 'Finish 100 quests' },
+  { id: 't-tyres', name: 'Tyre stack', stat: 'kmRun', target: 25, label: 'Run 25 km in total' },
+  { id: 't-banner', name: 'Champion banner', stat: 'totalPerfectDays', target: 30, label: 'Have 30 perfect days' },
+  { id: 't-sign', name: 'Squzo light sign', stat: 'longestStreak', target: 30, label: 'Reach a 30-day streak' },
+  { id: 't-cup', name: 'Gold cup', stat: 'level', target: 25, label: 'Reach level 25' },
+  { id: 't-plaque', name: 'Legend plaque', stat: 'level', target: 50, label: 'Reach level 50' },
+];
+
+export function trophiesEarned(stats: DerivedStats): Set<string> {
+  return new Set(TROPHIES.filter((t) => stats[t.stat] >= t.target).map((t) => t.id));
 }

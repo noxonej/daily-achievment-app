@@ -119,6 +119,8 @@ export interface DayLog {
   progress?: Record<string, number>;
   /** XP multiplier for today from a daily-box boost (e.g. 1.5 or 2). */
   xpBoost?: number;
+  /** Legendary collection XP bonus (percent) that applied to this day. */
+  bonusPct?: number;
   /** Daily quests swapped for something else today (Quest Swap), keyed by the original quest id. */
   swaps?: Record<string, { title: string; description?: string; icon: string }>;
   /** Daily quests skipped with a Skip Pass: they count as done for streaks and perfect days, but give no XP. */
@@ -403,6 +405,10 @@ export interface CarMods {
   spoiler?: string;
   kit?: string;
   stance?: string;
+  /** Decals / race livery (added 2026-11-16). */
+  livery?: string;
+  /** Rim finish: silver, black, white, bronze, gold. */
+  rimColor?: string;
 }
 
 /** Your World: home, decor, vehicles. Item lists live in src/world/catalog.ts; only ids are saved. */
@@ -419,6 +425,10 @@ export interface WorldState {
   paints?: Record<string, string>;
   /** Wheels, spoiler, body kit and stance per car id (added 2026-11-14). */
   mods?: Record<string, CarMods>;
+  /** Legendary milestone picks already used (ids from LEGENDARY_PICKS). */
+  picks?: string[];
+  /** The garage place you chose (GARAGE_ENVS id). */
+  garage?: string;
 }
 
 export interface AppState {
