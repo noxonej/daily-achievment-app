@@ -341,7 +341,7 @@ export interface Prefs {
   nudges: boolean;
   /** Evening check time for the "you haven't done a quest yet" reminder, HH:MM. */
   nudgeTime: string;
-  /** Motivational notifications a day (1–3, default 3). */
+  /** Motivational notifications a day (1–4, default 4). */
   nudgesPerDay?: number;
   /** Quiet hours: no notifications before nudgeFrom or after nudgeTo ("HH:MM"). */
   nudgeFrom?: string;
@@ -429,6 +429,10 @@ export interface WorldState {
   picks?: string[];
   /** The garage place you chose (GARAGE_ENVS id). */
   garage?: string;
+  /** Your own wall / floor colour, painted over whatever wall or floor you have (2026-11-16). */
+  tints?: { wall?: string; floor?: string };
+  /** Size of each wall art piece (2026-11-16). */
+  sizes?: Partial<Record<'poster' | 'art', 's' | 'm' | 'l'>>;
 }
 
 export interface AppState {

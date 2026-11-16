@@ -74,9 +74,23 @@ export const STREAK_RISK: Line[] = [
   { title: 'Still time.', body: 'Your {n}-day streak is safe if you finish one quest today.' },
 ];
 
+/**
+ * Tough love (2026-11-16, Jonas's idea): the 3rd message of the day turns cheeky when you haven't
+ * opened Squzo yet that day. Teasing, never cruel.
+ */
+export const TOUGH: Line[] = [
+  { title: 'Yeah, I knew you wouldn’t do it.', body: 'Squzo isn’t for the weak. Prove me wrong.' },
+  { title: 'Thought so.', body: 'Most people quit. Are you most people?' },
+  { title: 'Comfort zone: 1. You: 0.', body: 'Open Squzo and even the score.' },
+  { title: 'Your couch is winning today.', body: 'Two minutes. One quest. Or keep scrolling, your call.' },
+  { title: 'Still nothing?', body: 'Your excuses are getting stronger than you.' },
+  { title: 'Not for the weak.', body: 'Everyone wants results. Few open the app. Be one of the few.' },
+  { title: 'I’ll wait.', body: 'Your future self is watching this one. Don’t embarrass them.' },
+];
+
 export interface MotivationPrefs {
   on: boolean;
-  /** 1–3 a day. */
+  /** 1–4 a day. */
   perDay: number;
   /** Earliest and latest minute of the day a message may arrive (quiet hours are outside this). */
   from: number;
@@ -93,6 +107,8 @@ export interface Planned extends Line {
   slot: number;
   /** Shown instead when no quest is done that day and you have a streak (last message of the day only). */
   risk?: Line;
+  /** Shown instead when you haven't opened Squzo yet that day (3rd message of the day only). */
+  tough?: Line;
 }
 
 export const MIN_GAP_MINUTES = 90;
@@ -110,7 +126,7 @@ export function minutesToHhmm(m: number): string {
 
 /** The minutes of the day each message lands on for a given date. */
 export function slotMinutes(p: MotivationPrefs, date: string, salt = ''): number[] {
-  const n = Math.max(1, Math.min(3, Math.round(p.perDay)));
+  const n = Math.max(1, Math.min(4, Math.round(p.perDay)));
   const from = Math.max(0, Math.min(p.from, 23 * 60));
   const to = Math.max(from + 30, Math.min(p.to, 23 * 60 + 59));
   const part = (to - from) / n;
@@ -180,17 +196,20 @@ export function planMotivation(p: MotivationPrefs, today: string, opts: { days?:
       const last = slot === mins.length - 1;
       const streak = opts.streak ?? 0;
       const risk = last && streak > 0 ? fill(STREAK_RISK[hashString(`risk|${date}`) % STREAK_RISK.length], { n: streak + d }) : undefined;
-      out.push({ ...lines[slot], at, tag: `squzo-${date}-${slot}`, date, slot, risk });
+      const tough = slot === 2 ? TOUGH[hashString(`tough|${salt}|${date}`) % TOUGH.length] : undefined;
+      out.push({ ...lines[slot], at, tag: `squzo-${date}-${slot}`, date, slot, risk, tough });
     });
   }
   return out;
 }
 
 /** The line to show: the streak warning when the day has nothing done yet but the day before did. */
-export function lineToShow(x: Planned, lastDone: string | undefined): Line {
-  if (!x.risk) return { title: x.title, body: x.body };
+export function lineToShow(x: Planned, lastDone: string | undefined, lastOpen?: string): Line {
   // lastDone = the most recent day with a finished quest. The day before = streak still alive, not done yet.
-  return lastDone === addDaysToKey(x.date, -1) ? x.risk : { title: x.title, body: x.body };
+  if (x.risk && lastDone === addDaysToKey(x.date, -1)) return x.risk;
+  // Not opened yet today: tough love.
+  if (x.tough && lastOpen !== x.date) return x.tough;
+  return { title: x.title, body: x.body };
 }
 
 /** Which planned message (if any) is due right now: at or after its time, and not more than 45 minutes late. */

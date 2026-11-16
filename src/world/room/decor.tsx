@@ -816,3 +816,148 @@ export const COLLECTIBLES: Record<string, (p: DrawProps) => React.ReactNode> = {
     </g>
   ),
 };
+
+/* ------------------------------------------------ funny wall art (2026-11-16) */
+// Original, silly prints. Each is drawn once on a 100×130 canvas and hangs as a poster or as wall art.
+
+const FUNNY: Record<string, { bg: string; frame?: string; draw: () => React.ReactNode }> = {
+  /** A cat that is far too cool, in shades. */
+  cat: {
+    bg: '#f6b8c8',
+    draw: () => (
+      <g>
+        <path d="M22 70 L28 34 L44 56 Z M78 70 L72 34 L56 56 Z" fill="#f59e42" />
+        <circle cx={50} cy={78} r={32} fill="#f59e42" />
+        <path d="M30 70 h40" stroke="#c46f1f" strokeWidth={3} />
+        <rect x={24} y={66} width={22} height={12} rx={4} fill="#111" />
+        <rect x={54} y={66} width={22} height={12} rx={4} fill="#111" />
+        <rect x={46} y={69} width={8} height={3} fill="#111" />
+        <rect x={28} y={68} width={6} height={3} fill="#fff" opacity={0.7} />
+        <path d="M44 90 Q50 96 56 90" stroke="#5b2c0d" strokeWidth={3} fill="none" />
+        <path d="M18 86 h16 M18 92 h14 M66 86 h16 M68 92 h14" stroke="#5b2c0d" strokeWidth={1.6} />
+        <rect x={10} y={114} width={80} height={8} fill="#fff" opacity={0.9} />
+      </g>
+    ),
+  },
+  /** A rubber duck who knows they are royalty. */
+  duck: {
+    bg: '#a7d8f5',
+    frame: '#d4a63a',
+    draw: () => (
+      <g>
+        <path d="M0 108 Q25 100 50 108 T100 108 V130 H0 Z" fill="#5fa8d3" />
+        <ellipse cx={52} cy={92} rx={32} ry={20} fill="#ffd23f" />
+        <circle cx={40} cy={60} r={18} fill="#ffd23f" />
+        <path d="M22 62 L8 66 L22 70 Z" fill="#ff8a1f" />
+        <circle cx={36} cy={56} r={3} fill="#111" />
+        <path d="M28 44 L30 30 L36 40 L40 26 L44 40 L50 30 L52 44 Z" fill="#e8b33a" stroke="#a37414" strokeWidth={1.5} />
+        <circle cx={40} cy={34} r={2} fill="#e11d48" />
+        <path d="M60 86 Q72 80 80 90" stroke="#e8b52a" strokeWidth={4} fill="none" />
+      </g>
+    ),
+  },
+  /** The happiest slice of pizza in town. */
+  pizza: {
+    bg: '#fde68a',
+    draw: () => (
+      <g>
+        <path d="M14 30 Q50 14 86 30 L50 118 Z" fill="#f4c35a" />
+        <path d="M14 30 Q50 14 86 30 L82 40 Q50 26 18 40 Z" fill="#c9822f" />
+        {[[38, 52], [62, 56], [50, 84], [40, 70]].map(([x, y]) => (
+          <circle key={`${x}${y}`} cx={x} cy={y} r={5} fill="#d64532" />
+        ))}
+        <circle cx={44} cy={60} r={3.4} fill="#111" />
+        <circle cx={58} cy={60} r={3.4} fill="#111" />
+        <path d="M42 72 Q50 80 58 72" stroke="#111" strokeWidth={3} fill="none" />
+        <path d="M70 46 l4 10" stroke="#fff3c4" strokeWidth={3} />
+      </g>
+    ),
+  },
+  /** A UFO borrowing a cow. */
+  ufo: {
+    bg: '#1d2445',
+    frame: '#262a33',
+    draw: () => (
+      <g>
+        {[[10, 14], [84, 22], [24, 44], [90, 60], [6, 80], [70, 8]].map(([x, y]) => (
+          <circle key={`${x}${y}`} cx={x} cy={y} r={1.4} fill="#fff" />
+        ))}
+        <path d="M34 44 L66 44 L84 116 L16 116 Z" fill="#b7f7a6" opacity={0.35} />
+        <ellipse cx={50} cy={40} rx={34} ry={9} fill="#9aa4b8" />
+        <ellipse cx={50} cy={32} rx={16} ry={11} fill="#7dd3fc" />
+        {[24, 40, 60, 76].map((x) => (
+          <circle key={x} cx={x} cy={42} r={2.2} fill="#fde047" />
+        ))}
+        <rect x={34} y={78} width={30} height={18} rx={6} fill="#f8fafc" />
+        <circle cx={42} cy={84} r={4} fill="#111" />
+        <circle cx={56} cy={90} r={3} fill="#111" />
+        <rect x={28} y={80} width={10} height={10} rx={3} fill="#f9a8d4" />
+        <path d="M38 96 v6 M60 96 v6 M46 96 v5 M54 96 v5" stroke="#f8fafc" strokeWidth={3} />
+        <path d="M0 120 H100 V130 H0 Z" fill="#14532d" />
+      </g>
+    ),
+  },
+  /** A potato who skipped the couch and hit the gym. */
+  potato: {
+    bg: '#c7f0d8',
+    draw: () => (
+      <g>
+        <rect x={6} y={42} width={88} height={6} rx={3} fill="#475569" />
+        <rect x={2} y={30} width={10} height={30} rx={3} fill="#1f2937" />
+        <rect x={88} y={30} width={10} height={30} rx={3} fill="#1f2937" />
+        <path d="M24 46 L32 66 M76 46 L68 66" stroke="#b9895a" strokeWidth={6} strokeLinecap="round" />
+        <ellipse cx={50} cy={86} rx={26} ry={32} fill="#c9a06a" />
+        {[[38, 70], [62, 98], [44, 104]].map(([x, y]) => (
+          <circle key={`${x}${y}`} cx={x} cy={y} r={2} fill="#8f6a3e" />
+        ))}
+        <rect x={34} y={70} width={32} height={6} fill="#e11d48" />
+        <circle cx={42} cy={84} r={3} fill="#111" />
+        <circle cx={58} cy={84} r={3} fill="#111" />
+        <path d="M42 96 h16" stroke="#111" strokeWidth={3} />
+        <path d="M66 74 q6 -6 4 4" stroke="#7dd3fc" strokeWidth={2} fill="none" />
+      </g>
+    ),
+  },
+  /** Toast of the town. */
+  toast: {
+    bg: '#fecaca',
+    draw: () => (
+      <g>
+        <path d="M22 116 V58 Q14 30 50 26 Q86 30 78 58 V116 Z" fill="#c98b45" />
+        <path d="M28 110 V60 Q22 36 50 33 Q78 36 72 60 V110 Z" fill="#f3d39a" />
+        <rect x={40} y={46} width={22} height={14} rx={2} fill="#fef08a" />
+        <circle cx={40} cy={74} r={3.4} fill="#111" />
+        <circle cx={60} cy={74} r={3.4} fill="#111" />
+        <path d="M40 86 Q50 96 60 86" stroke="#111" strokeWidth={3} fill="none" />
+        <circle cx={34} cy={84} r={4} fill="#fb7185" opacity={0.6} />
+        <circle cx={66} cy={84} r={4} fill="#fb7185" opacity={0.6} />
+      </g>
+    ),
+  },
+};
+
+const funnyPoster = (k: string) => () => (
+  <Frame x={120} y={110} w={130} h={150} frame={FUNNY[k].frame ?? '#f4f1ec'}>
+    <rect width={100} height={130} fill={FUNNY[k].bg} />
+    {FUNNY[k].draw()}
+  </Frame>
+);
+const funnyArt = (k: string) => () => (
+  <Frame x={748} y={110} w={90} h={120} frame={FUNNY[k].frame ?? '#f4f1ec'}>
+    <rect width={100} height={130} fill={FUNNY[k].bg} />
+    {FUNNY[k].draw()}
+  </Frame>
+);
+for (const k of Object.keys(FUNNY)) {
+  POSTERS[`funny-${k}`] = funnyPoster(k);
+  ART[`funny-${k}`] = funnyArt(k);
+}
+
+/** A banana taped to the wall. Very serious art. */
+ART.banana = () => (
+  <g>
+    <path d="M760 186 Q790 214 828 176 Q824 196 796 204 Q772 206 760 186 Z" fill="#facc15" stroke="#a16207" strokeWidth={2} />
+    <path d="M826 176 l6 -6" stroke="#5b3a12" strokeWidth={4} />
+    <rect x={782} y={178} width={30} height={10} fill="#e5e7eb" opacity={0.85} transform="rotate(-18 797 183)" />
+  </g>
+);

@@ -41,7 +41,8 @@ function pick(s, sent, now) {
   const due = plan.find((x) => typeof x.at === 'number' && x.at <= now && now - x.at < LATE_MS && !sent[x.tag]);
   if (due) {
     const atRisk = due.risk && s.lastDone === dayBefore(due.date);
-    const line = atRisk ? due.risk : due;
+    // Tough love: the 3rd message turns cheeky when the app wasn't opened yet that day.
+    const line = atRisk ? due.risk : due.tough && s.lastOpen !== due.date ? due.tough : due;
     return { tag: due.tag, title: line.title, body: line.body };
   }
   // Plan used up (app not opened for two weeks): one message a day, respecting quiet hours.

@@ -25,7 +25,7 @@ export interface Unlock {
   legendary?: boolean;
 }
 
-export type View = 'city' | 'park' | 'skyline' | 'garden' | 'hills' | 'sea' | 'cliffs';
+export type View = 'city' | 'park' | 'skyline' | 'garden' | 'hills' | 'sea' | 'cliffs' | 'forest' | 'snow' | 'beach' | 'space' | 'jungle';
 
 export interface Property {
   id: string;
@@ -103,9 +103,14 @@ export const PROPERTIES: Property[] = [
   { id: 'room', name: 'The Launchpad', blurb: 'A small rented room in Old Town. Everyone starts somewhere.', unlock: free, view: 'city', wall: 'wall-cream', floor: 'floor-oak', tier: 1 },
   { id: 'studio', name: 'Parkside Studio', blurb: 'Your own front door, with the park right outside.', unlock: at(5, 600), view: 'park', wall: 'wall-sage', floor: 'floor-oak', tier: 2 },
   { id: 'city', name: 'Skyline Apartment', blurb: 'Twelve floors up. At night the city lights are yours.', unlock: at(10, 1500, streak(7)), view: 'skyline', wall: 'wall-stone', floor: 'floor-walnut', tier: 3 },
+  { id: 'cabin', name: 'Pine Cabin', blurb: 'Logs, a fire and a forest outside. No wifi, no excuses.', unlock: at(12, 2000, quests(150)), view: 'forest', wall: 'wall-panels', floor: 'floor-walnut', tier: 3 },
+  { id: 'beachhut', name: 'Beach Hut', blurb: 'Sand on the floor, waves at the door.', unlock: at(15, 2500, streak(14)), view: 'beach', wall: 'wall-ocean', floor: 'floor-oak', tier: 3 },
   { id: 'loft', name: 'Brickworks Loft', blurb: 'Old factory brick, tall windows and room to think.', unlock: at(18, 3000, quests(250)), view: 'skyline', wall: 'wall-brick', floor: 'floor-concrete', tier: 4 },
   { id: 'house', name: 'Willow Lane House', blurb: 'A garden of your own, and quiet mornings.', unlock: at(25, 5000, streak(30)), view: 'garden', wall: 'wall-cream', floor: 'floor-walnut', tier: 5 },
+  { id: 'chalet', name: 'Snowpeak Chalet', blurb: 'Snowy mountains and hot chocolate after training.', unlock: at(32, 6500, streak(45)), view: 'snow', wall: 'wall-panels', floor: 'floor-oak', tier: 5 },
+  { id: 'treehouse', name: 'Jungle Treehouse', blurb: 'High up in the trees. The parrots are your alarm clock.', unlock: at(36, 7500, quests(800)), view: 'jungle', wall: 'wall-forest', floor: 'floor-oak', tier: 5 },
   { id: 'villa', name: 'Hillcrest Villa', blurb: 'Glass walls, open hills, pure calm.', unlock: at(40, 9000, goals(3)), view: 'hills', wall: 'wall-white', floor: 'floor-marble', tier: 6 },
+  { id: 'moonbase', name: 'Moon Base', blurb: 'Earth in the window. You really went far.', unlock: at(75, 22000, streak(200)), view: 'space', wall: 'wall-concrete', floor: 'floor-concrete', tier: 6 },
   { id: 'mansion', name: 'Seacliff Estate', blurb: 'The ocean from every room. You built this.', unlock: at(60, 16000, streak(100)), view: 'sea', wall: 'wall-white', floor: 'floor-marble', tier: 7 },
 ];
 
@@ -168,6 +173,10 @@ export const DECOR: DecorItem[] = [
   d('poster-car', 'poster', 'Supercar poster', 'car', undefined, at(9, 500)),
   d('poster-vinyl', 'poster', 'Framed vinyl', 'vinyl', undefined, at(12, 800)),
   d('poster-trio', 'poster', 'Gallery trio', 'trio', '#c86b4e', at(16, 1200)),
+  d('poster-cat', 'poster', 'Cool cat in shades', 'funny-cat', undefined, at(2, 120), undefined, 'Too cool for Mondays.'),
+  d('poster-potato', 'poster', 'Gym potato', 'funny-potato', undefined, at(4, 200), undefined, 'Not a couch potato any more.'),
+  d('poster-ufo', 'poster', 'Cow abduction', 'funny-ufo', undefined, at(8, 450), undefined, 'They only wanted milk.'),
+  d('poster-toast', 'poster', 'Toast of the town', 'funny-toast', undefined, at(6, 300)),
   // wall art (between window and desk)
   d('art-none', 'art', 'Nothing', 'none', undefined, free),
   d('art-poster', 'art', 'Mountain poster', 'poster', '#f08a4b', free),
@@ -180,6 +189,11 @@ export const DECOR: DecorItem[] = [
   d('art-neon', 'art', 'Squzo neon sign', 'neon', '#7cc7ff', at(10, 900, streak(14))),
   d('art-neon-pink', 'art', 'Pink neon sign', 'neon', '#f9a8d4', chest),
   d('art-neon-lime', 'art', 'Lime neon sign', 'neon', '#bef264', chest),
+  d('art-duck', 'art', 'Duck royalty', 'funny-duck', undefined, at(3, 150), undefined, 'A rubber duck who rules the bath.'),
+  d('art-pizza', 'art', 'Happy slice', 'funny-pizza', undefined, at(5, 250)),
+  d('art-cat', 'art', 'Cool cat (small)', 'funny-cat', undefined, at(7, 300)),
+  d('art-banana', 'art', 'Taped banana', 'banana', undefined, at(9, 999), undefined, 'Very serious, very expensive art.'),
+  d('art-ufo', 'art', 'Cow abduction mini', 'funny-ufo', undefined, chest),
   d('art-gold', 'art', 'Gold-frame portrait', 'gold', '#d4a63a', at(30, 3500, goals(2))),
   // shelf above the desk
   d('shelf-none', 'shelf', 'No shelf', 'none', undefined, free),
@@ -359,6 +373,11 @@ export const VEHICLES: Vehicle[] = [
   { id: 'v-nightrider', name: 'Night Rider', maker: 'Cruiser', cls: 'motorcycle', rarity: 'epic', blurb: 'A chest-only chopper in deep galaxy purple.', unlock: chest, paint: 'p-galaxy', art: two('cruiser') },
   // cars
   { id: 'v-hatch', name: 'Pip', maker: 'City hatchback', cls: 'car', rarity: 'rare', blurb: 'Your first car. Paid with a savings goal you reached.', unlock: at(18, 3500, saved(1)), paint: 'p-sky', art: car('hatch'), stats: { hp: 110, zeroTo100: 9.8, top: 185 } },
+  { id: 'car-kei', name: 'Bento', maker: 'Kei city car', cls: 'car', rarity: 'rare', blurb: 'Tiny, cheerful, parks anywhere.', unlock: at(16, 3000), paint: 'p-mint', art: car('kei'), stats: { hp: 64, zeroTo100: 13.5, top: 140 } },
+  { id: 'car-van', name: 'Wanderer', maker: 'Camper van', cls: 'car', rarity: 'rare', blurb: 'Sleep anywhere. Earned with 30 perfect days.', unlock: at(21, 4400, perfect(30)), paint: 'p-sand', art: car('van'), stats: { hp: 150, zeroTo100: 12.4, top: 160 } },
+  { id: 'car-sedan', name: 'Hush E', maker: 'Electric saloon', cls: 'car', rarity: 'epic', blurb: 'Silent, smooth and very quick. Save for 2 money goals.', unlock: at(30, 7500, saved(2)), paint: 'p-white', art: car('sedan'), stats: { hp: 420, zeroTo100: 4.1, top: 230 } },
+  { id: 'car-drift', name: 'Sideways S', maker: 'Drift coupe', cls: 'special', rarity: 'epic', blurb: 'Wide arches, gold mesh wheels, smoke everywhere.', unlock: at(38, 10000, streak(60)), paint: 'p-sky', art: car('drift'), stats: { hp: 380, zeroTo100: 4.9, top: 250 } },
+  { id: 'car-lowrider', name: 'Bajito', maker: 'Lowrider', cls: 'special', rarity: 'epic', blurb: 'Slammed, pinstriped, wire wheels. Pure style.', unlock: at(34, 8500, quests(600)), paint: 'p-teal', art: car('lowrider'), stats: { hp: 230, zeroTo100: 8.8, top: 190 } },
   { id: 'car-wagon', name: 'Fjord Estate', maker: 'Family wagon', cls: 'car', rarity: 'rare', blurb: 'Room for bikes, dogs and road trips.', unlock: at(20, 4000), paint: 'p-forest', art: car('wagon'), stats: { hp: 190, zeroTo100: 7.9, top: 220 } },
   { id: 'car-pickup', name: 'Ridgeback', maker: 'Pickup truck', cls: 'car', rarity: 'rare', blurb: 'Hauls anything. Earned with 250 finished quests.', unlock: at(22, 4800, quests(250)), paint: 'p-white', art: car('pickup'), stats: { hp: 300, zeroTo100: 7.4, top: 190 } },
   { id: 'car-offroad', name: 'Trailhound 4x4', maker: 'Off-roader', cls: 'car', rarity: 'epic', blurb: 'Snorkel, spare wheel, beadlocks. Run 100 km to earn it.', unlock: at(28, 6500, km(100)), paint: 'p-sand', art: car('offroad'), stats: { hp: 280, zeroTo100: 8.1, top: 175 } },
@@ -604,7 +623,9 @@ export function decorFor(world: WorldState, slot: DecorSlot): DecorItem {
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const fallback = slot === 'wall' ? property.wall : slot === 'floor' ? property.floor : DEFAULT_DECOR[slot];
   const id = world.decor[slot] ?? fallback;
-  return DECOR.find((d) => d.id === id && d.slot === slot) ?? DECOR.find((d) => d.id === DEFAULT_DECOR[slot])!;
+  const item = DECOR.find((d) => d.id === id && d.slot === slot) ?? DECOR.find((d) => d.id === DEFAULT_DECOR[slot])!;
+  const tint = slot === 'wall' || slot === 'floor' ? world.tints?.[slot] : undefined;
+  return tint ? { ...item, color: tint } : item;
 }
 
 /** Owning a home means you can always use its own wall and floor. */

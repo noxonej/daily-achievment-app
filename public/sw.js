@@ -88,7 +88,7 @@ async function maybeNudge() {
   if (windows.some((w) => w.visibilityState === 'visible')) return;
   sent[due.tag] = true;
   await cache.put('./__dayforge-sent.json', new Response(JSON.stringify(sent), { headers: { 'content-type': 'application/json' } }));
-  const line = due.risk && status.lastDone === dayBefore(due.date) ? due.risk : due;
+  const line = due.risk && status.lastDone === dayBefore(due.date) ? due.risk : due.tough && status.lastOpen !== due.date ? due.tough : due;
   await self.registration.showNotification(line.title, { body: line.body, tag: due.tag, icon: './app-icon-192.png', badge: './app-icon-192.png' });
 }
 

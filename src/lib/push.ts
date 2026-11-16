@@ -94,7 +94,7 @@ export async function syncPush(status: NudgeStatus): Promise<boolean> {
     }
     const sub = await subscription(key);
     if (!sub) return false;
-    const data = { on: true, sub: sub.toJSON(), plan: status.plan, lastDone: status.lastDone, prefs: status.prefs };
+    const data = { on: true, sub: sub.toJSON(), plan: status.plan, lastDone: status.lastDone, lastOpen: status.lastOpen, prefs: status.prefs };
     const json = JSON.stringify(data);
     if (json === lastSent) return true;
     const ok = await save(token, data);

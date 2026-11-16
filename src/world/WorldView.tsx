@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { usePixelated } from './px/pixelate';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -155,7 +156,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
             </button>
           ) : (
             <span className="flex items-center gap-2 rounded-full bg-black/45 backdrop-blur-md pl-3 pr-3.5 py-1.5">
-              <span className="text-[11px] font-bold text-white/70 tabular-nums">{property.tier}/7</span>
+              <Icon name="🏠" size={13} className="text-white/70" />
               <span className="text-[13px] font-semibold text-white">{property.name}</span>
             </span>
           )}
@@ -181,7 +182,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
       {!slot && <p className="text-[13px] text-slate-400 -mt-1">Drag to look around. Tap anything in your room to change it. At night your room is lit only by the lamps, lights and screens you own.</p>}
 
       <div className="-mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar">
-        {DECOR_SLOTS.map((s) => (
+        {[...DECOR_SLOTS].sort((a, b) => +(b.id === 'wall' || b.id === 'floor') - +(a.id === 'wall' || a.id === 'floor')).map((s) => (
           <button
             key={s.id}
             onClick={() => pick(slot === s.id ? null : s.id)}
@@ -202,6 +203,22 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
               Done
             </button>
           </div>
+          {(slot === 'wall' || slot === 'floor') && <TintPicker part={slot} />}
+          {(slot === 'poster' || slot === 'art') && (
+            <div className="mt-2 flex items-center justify-between rounded-2xl bg-white/[0.035] px-3 py-2">
+              <span className="text-[13px] font-semibold text-white">Size on the wall</span>
+              <div className="flex gap-1">
+                {(['s', 'm', 'l'] as const).map((k) => {
+                  const on = (world.sizes?.[slot] ?? 'm') === k;
+                  return (
+                    <button key={k} onClick={() => dispatch({ type: 'WORLD_SIZE', slot, size: k })} aria-pressed={on} className={`w-10 h-9 rounded-xl text-[13px] font-bold ${on ? 'seg-pill seg-on' : 'bg-white/[0.06] text-slate-300'}`}>
+                      {k.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="mt-2 grid grid-cols-2 min-[520px]:grid-cols-3 gap-2 rows-stagger">
             {items.map((item) => {
               const have = ownsDecor(world, item);
@@ -255,7 +272,43 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
 }
 
 /** A close-up of one item, drawn with the same art as the room. */
+const TINTS: Record<'wall' | 'floor', string[]> = {
+  wall: ['#f4e9d8', '#f7d6d0', '#ffd98a', '#c9e8c2', '#a8dadc', '#9ec5ff', '#c3b5f5', '#f1a7c9', '#ff9e7a', '#8fd18a', '#3d4a6b', '#2b2b33'],
+  floor: ['#d9b48a', '#a8774f', '#6b4a33', '#c9c4bc', '#8d8a85', '#3b3f46', '#e8dfd0', '#b5651d', '#5b7a5a', '#6c5a8a', '#2f4f6f', '#f0e6d2'],
+};
+
+/** Paint the room any colour you like (free). It goes over the wall or floor you own. */
+function TintPicker({ part }: { part: 'wall' | 'floor' }) {
+  const { state, dispatch } = useApp();
+  const current = worldOf(state).tints?.[part];
+  const set = (color: string | null) => dispatch({ type: 'WORLD_TINT', part, color });
+  return (
+    <div className="mt-2 rounded-2xl bg-white/[0.035] p-3">
+      <div className="flex items-center justify-between">
+        <span className="text-[13px] font-semibold text-white">{part === 'wall' ? 'Paint the walls' : 'Floor colour'}</span>
+        {current && (
+          <button onClick={() => set(null)} className="text-[12px] font-semibold text-slate-400 hover:text-white">
+            Reset
+          </button>
+        )}
+      </div>
+      <div className="mt-2 grid grid-cols-7 gap-1.5">
+        {TINTS[part].map((c) => (
+          <button key={c} onClick={() => set(c)} aria-label={`Colour ${c}`} aria-pressed={current === c} className={`aspect-square rounded-lg ring-1 ring-black/20 ${current === c ? 'outline outline-2 outline-offset-2 outline-[var(--mood)]' : ''}`} style={{ background: c }} />
+        ))}
+        <label className="aspect-square rounded-lg flex items-center justify-center cursor-pointer" style={{ background: 'conic-gradient(#f87171,#fbbf24,#a3e635,#22d3ee,#818cf8,#e879f9,#f87171)' }} aria-label="Pick any colour">
+          <input type="color" value={current ?? '#ffffff'} onChange={(e) => set(e.target.value)} className="opacity-0 w-0 h-0" />
+          <span className="w-4 h-4 rounded-full bg-white/90 text-[11px] leading-4 text-center font-bold text-slate-700">+</span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function Thumb({ item, tier, trophies, books, locked }: { item: DecorItem; tier: number; trophies: number; books: number; locked: boolean }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  // Item icons are pixel sprites with a dark outline, like the vehicles.
+  const pixels = usePixelated(svgRef, `${item.id}|${tier}|${trophies}|${books}`, 96, 72, { outline: item.slot !== 'window' });
   const rect = DECOR_SLOTS.find((s) => s.id === item.slot)?.rect;
   if (item.slot === 'wall' || item.slot === 'floor' || !rect) {
     return (
@@ -281,11 +334,14 @@ function Thumb({ item, tier, trophies, books, locked }: { item: DecorItem; tier:
       {empty ? (
         <span className="absolute inset-0 flex items-center justify-center text-[12px] font-semibold text-white/50">Leave empty</span>
       ) : (
-        <svg viewBox={`${vx} ${vy} ${vw} ${vh}`} className={`w-full h-full ${locked ? 'car-card-lock' : ''}`} aria-hidden="true">
-          <RoomDefs />
-          {item.slot === 'window' && <rect x={win.x} y={win.y} width={win.w} height={win.h} fill="#9cc9ea" />}
-          <SlotArt item={item} night={false} trophies={trophies} books={books} win={win} />
-        </svg>
+        <>
+          <svg ref={svgRef} viewBox={`${vx} ${vy} ${vw} ${vh}`} className="absolute inset-0 w-full h-full" style={{ opacity: pixels ? 0 : 1 }} aria-hidden="true">
+            <RoomDefs />
+            {item.slot === 'window' && <rect x={win.x} y={win.y} width={win.w} height={win.h} fill="#9cc9ea" />}
+            <SlotArt item={item} night={false} trophies={trophies} books={books} win={win} />
+          </svg>
+          {pixels && <img src={pixels} alt="" aria-hidden="true" className={`px-art absolute inset-0 w-full h-full ${locked ? 'car-card-lock' : ''}`} draggable={false} />}
+        </>
       )}
       {locked && (
         <span className="absolute right-1.5 top-1.5 w-6 h-6 rounded-full bg-black/55 flex items-center justify-center text-white/80">

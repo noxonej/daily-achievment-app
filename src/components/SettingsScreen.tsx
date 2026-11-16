@@ -442,8 +442,8 @@ function NotificationsPage() {
             <div className="flex items-center gap-3 px-4 py-3.5">
               <span className="flex-1 text-[15px] font-semibold text-white">How many a day</span>
               <div className="flex rounded-full bg-white/[0.06] p-0.5" role="radiogroup" aria-label="Messages a day">
-                {[1, 2, 3].map((n) => {
-                  const on = (prefs.nudgesPerDay ?? 3) === n;
+                {[1, 2, 3, 4].map((n) => {
+                  const on = (prefs.nudgesPerDay ?? 4) === n;
                   return (
                     <button
                       key={n}

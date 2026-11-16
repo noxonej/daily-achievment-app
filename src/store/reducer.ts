@@ -151,6 +151,8 @@ export type Action =
   | { type: 'WORLD_MOD'; vehicleId: string; partId: string }
   /** Pick where your vehicles live (an owned GARAGE_ENVS place). */
   | { type: 'WORLD_GARAGE'; id: string }
+  | { type: 'WORLD_TINT'; part: 'wall' | 'floor'; color: string | null }
+  | { type: 'WORLD_SIZE'; slot: 'poster' | 'art'; size: 's' | 'm' | 'l' }
   /** Use a legendary milestone (level 100, 365-day streak...) to take one legendary vehicle. */
   | { type: 'LEGENDARY_PICK'; pickId: string; vehicleId: string }
   /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
@@ -795,6 +797,16 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, world: { ...world, mods } };
     }
 
+    case 'WORLD_TINT': {
+      const world = worldOf(state);
+      if (action.color !== null && !/^#[0-9a-f]{6}$/i.test(action.color)) return state;
+      const tints = { ...world.tints, [action.part]: action.color ?? undefined };
+      return { ...state, world: { ...world, tints } };
+    }
+    case 'WORLD_SIZE': {
+      const world = worldOf(state);
+      return { ...state, world: { ...world, sizes: { ...world.sizes, [action.slot]: action.size } } };
+    }
     case 'WORLD_GARAGE': {
       const world = worldOf(state);
       if (!GARAGE_ENVS.some((g) => g.id === action.id) || !owns(world, action.id)) return state;

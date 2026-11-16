@@ -118,6 +118,8 @@ export interface NudgeStatus {
   enabled: boolean;
   plan: Planned[];
   lastDone?: string;
+  /** The last day you opened Squzo (the 3rd message turns into tough love if it isn't today). */
+  lastOpen?: string;
   /** Your settings, so the push sender can still send one gentle message a day if you stop opening the app. */
   prefs: MotivationPrefs & { tz: string };
 }
@@ -190,14 +192,14 @@ export async function backgroundRemindersSupported(): Promise<boolean> {
   }
 }
 
-/** Your notification settings, with sensible defaults (09:00–21:00, three a day). */
+/** Your notification settings, with sensible defaults (09:00–21:00, four a day). */
 export function motivationPrefs(state: AppState): MotivationPrefs {
   const prefs = fullPrefs(state.prefs);
   const wake = hhmmToMinutes(state.profile?.wakeTime, 7 * 60);
   // Never before you're awake: at least 30 minutes after your wake-up time.
   const from = Math.max(hhmmToMinutes(prefs.nudgeFrom, 9 * 60), wake + 30);
   const to = Math.max(from + 60, hhmmToMinutes(prefs.nudgeTo, 21 * 60));
-  return { on: prefs.nudges, perDay: prefs.nudgesPerDay ?? 3, from, to };
+  return { on: prefs.nudges, perDay: prefs.nudgesPerDay ?? 4, from, to };
 }
 
 /** The most recent day you finished (or skipped) a quest. */
@@ -213,7 +215,7 @@ let pushActive = false;
 /** True once Squzo's push server has this phone's plan (messages then arrive with the app closed). */
 export const pushIsActive = () => pushActive;
 
-/** Plans the day's three messages and keeps every sender (app, service worker, push server) in sync. */
+/** Plans the day's messages and keeps every sender (app, service worker, push server) in sync. */
 export function useNudges(state: AppState, stats: DerivedStats) {
   const today = todayKey();
   const mp = motivationPrefs(state);
@@ -229,7 +231,7 @@ export function useNudges(state: AppState, stats: DerivedStats) {
   live.current = { plan, lastDone };
 
   useEffect(() => {
-    const status: NudgeStatus = { enabled: mp.on, plan, lastDone, prefs: { ...mp, tz: Intl.DateTimeFormat().resolvedOptions().timeZone } };
+    const status: NudgeStatus = { enabled: mp.on, plan, lastDone, lastOpen: today, prefs: { ...mp, tz: Intl.DateTimeFormat().resolvedOptions().timeZone } };
     let alive = true;
     void (async () => {
       const ok = await syncPush(status);
@@ -254,7 +256,7 @@ export function useNudges(state: AppState, stats: DerivedStats) {
       const due = dueNow(p, await readSent());
       if (!due) return;
       await markSent(due.tag);
-      const line = lineToShow(due, ld);
+      const line = lineToShow(due, ld, todayKey());
       showSystemNotification(line.title, line.body, due.tag);
     }
     const t = setInterval(() => void check(), 60_000);
