@@ -41,7 +41,8 @@ export interface FireOptions {
 
 /** The three flame layers, outside to inside: size, tip height, colours (bottom to top) and noise phase. */
 const LAYERS = [
-  { w: 1, h: 1, c: ['#ef4444', '#f97316', '#fb923c'], ph: 0, a: 0.95 },
+  // The outer layer starts deep orange, not red, so the round base no longer looks like a red outline.
+  { w: 1, h: 1, c: ['#f0502a', '#f97316', '#fb923c'], ph: 0, a: 0.95 },
   { w: 0.72, h: 0.74, c: ['#f97316', '#fbbf24', '#fcd34d'], ph: 3.3, a: 1 },
   { w: 0.42, h: 0.45, c: ['#fff7ed', '#fef08a', '#fde68a'], ph: 7.1, a: 1 },
 ];
@@ -169,27 +170,43 @@ function runFire(canvas: HTMLCanvasElement, size: number, opts: FireOptions, sti
     glow.addColorStop(1, 'rgba(249,115,22,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, W, H);
-    // Flame bits behind the main flame, shaped like little teardrops that shrink as they rise.
+    // Flame bits and sparks are light, so they are added on top of what is behind them ("lighter").
+    // Flame bits are soft glowing wisps (they used to be flat teardrops that looked like falling
+    // drops of water). Everything fades out before it reaches the edge of the canvas, so nothing
+    // gets cut off in mid-air.
+    ctx.globalCompositeOperation = 'lighter';
     for (const b of bits) {
       const k = b.age / b.life;
+      const edge = Math.min(1, b.y / (H * 0.18), b.x / (W * 0.12), (W - b.x) / (W * 0.12));
+      if (edge <= 0) continue;
       if (b.spark) {
-        ctx.globalAlpha = Math.max(0, (1 - k) * (0.75 + 0.25 * Math.sin(b.age * 45)));
-        ctx.fillStyle = k < 0.4 ? '#ffd27a' : '#ff8a3c';
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r * (1 - k * 0.5), 0, Math.PI * 2);
-        ctx.fill();
+        const a = (1 - k) * (0.7 + 0.3 * Math.sin(b.age * 45)) * edge;
+        const r = b.r * (1 - k * 0.5);
+        const halo = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, r * 3);
+        halo.addColorStop(0, `rgba(255,222,150,${a})`);
+        halo.addColorStop(0.35, `rgba(255,150,60,${a * 0.55})`);
+        halo.addColorStop(1, 'rgba(255,120,40,0)');
+        ctx.fillStyle = halo;
+        ctx.fillRect(b.x - r * 3, b.y - r * 3, r * 6, r * 6);
         continue;
       }
-      const r = b.r * (1 - k);
-      ctx.globalAlpha = (1 - k) * 0.9;
-      ctx.fillStyle = k < 0.3 ? '#fb923c' : k < 0.65 ? '#f97316' : '#ef4444';
+      const r = b.r * (1.1 - k * 0.7);
+      const a = Math.pow(1 - k, 1.4) * 0.85 * edge;
+      // Stretched upward a little, like a lick of flame breaking off the tip.
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.scale(0.75, 1.5);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      g.addColorStop(0, k < 0.4 ? `rgba(255,214,120,${a})` : `rgba(255,150,60,${a})`);
+      g.addColorStop(0.5, `rgba(249,115,22,${a * 0.5})`);
+      g.addColorStop(1, 'rgba(234,88,12,0)');
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.moveTo(b.x, b.y - r * 2.4);
-      ctx.quadraticCurveTo(b.x + r * 1.1, b.y - r * 0.6, b.x + r, b.y);
-      ctx.arc(b.x, b.y, r, 0, Math.PI, false);
-      ctx.quadraticCurveTo(b.x - r * 1.1, b.y - r * 0.6, b.x, b.y - r * 2.4);
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
     }
+    ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     const flick = noise(t * 9) - 0.5;
     // Bigger streaks: smaller side flames lean out from the main one, like a campfire.
