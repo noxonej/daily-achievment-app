@@ -5,6 +5,7 @@ import { normalizeLook } from '../data/avatar';
 import { computeDerivedStats } from '../lib/stats';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { todayKey } from '../lib/date';
+import { giftFor } from '../lib/gifts';
 import { rescueUnreadable, snapshotDaily, writeSave } from '../lib/safeStorage';
 import {
   loadSyncConfig,
@@ -152,6 +153,17 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
       setSyncMessage(result.message);
     }
   }, [syncConfig]);
+
+  // One-off coin gifts for a linked Google account (each pays out once).
+  useEffect(() => {
+    let live = true;
+    giftFor(storageKey).then((g) => {
+      if (live && g) dispatch({ type: 'GIFT_COINS', id: g.id, amount: g.amount });
+    });
+    return () => {
+      live = false;
+    };
+  }, [storageKey]);
 
   // Debounced auto-sync: push a fresh copy a few seconds after the last change.
   useEffect(() => {

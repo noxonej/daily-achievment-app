@@ -449,6 +449,8 @@ export interface AppState {
   chestsOpened: number;
   /** Shards granted by chests once every item is already owned. */
   bonusShards: number;
+  /** One-off coin gifts already paid out, by gift id, so a gift can never land twice. */
+  gifts?: string[];
   weekPlan: WeekPlan;
   money: MoneyState;
   /** False only for brand-new users who haven't been through first-run setup. */

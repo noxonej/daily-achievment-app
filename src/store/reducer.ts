@@ -208,6 +208,7 @@ export type Action =
   | { type: 'SET_STEPS_TOKEN'; token: string }
   | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
   | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
+  | { type: 'GIFT_COINS'; id: string; amount: number }
   | { type: 'USE_SKIP_PASS'; questId: string }
   | { type: 'PRUNE_PLAN_EVENTS'; today: string }
   | { type: 'GUIDE_MARK'; key: string }
@@ -1212,6 +1213,10 @@ export function reducer(state: AppState, action: Action): AppState {
       return next;
     }
 
+    case 'GIFT_COINS': {
+      if ((state.gifts ?? []).includes(action.id)) return state;
+      return { ...state, bonusShards: (state.bonusShards ?? 0) + action.amount, gifts: [...(state.gifts ?? []), action.id] };
+    }
     case 'OPEN_DAILY_BOX': {
       const today = todayKey();
       const log = state.dayLogs[today];
