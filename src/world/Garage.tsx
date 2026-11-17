@@ -206,7 +206,7 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
             <p className="text-[11px] text-white/60 leading-tight truncate">{stage.maker}</p>
           </div>
           <span className="shrink-0 rounded-full bg-black/55 backdrop-blur-sm px-2.5 py-1 num-px text-[17px] text-[#fff]">
-            {garageUsed(world)}/{spots === Infinity ? '∞' : spots}
+            {garageUsed(world)}/{spots === Infinity ? '∞' : Math.max(spots, garageUsed(world))}
             <span className="ml-1 font-sans text-[10px] font-semibold text-white/60">spots</span>
           </span>
         </div>
