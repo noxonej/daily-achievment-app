@@ -26,12 +26,16 @@ export function titleForLevel(level: number): string {
   return rankForLevel(level).name;
 }
 
+/** XP per quest. Raised by half on 2026-11-17 (Jonas: "more XP to get"); see migrateContent v7. */
 export const DIFFICULTY_XP: Record<string, number> = {
-  easy: 10,
-  medium: 20,
-  hard: 35,
-  epic: 60,
+  easy: 15,
+  medium: 30,
+  hard: 50,
+  epic: 90,
 };
+
+/** Share of a purchase's price you get back as XP (2026-11-17: buying things also moves you forward). */
+export const BUY_XP_SHARE = 0.1;
 
 export const DIFFICULTY_LABEL: Record<string, string> = {
   easy: 'Easy',

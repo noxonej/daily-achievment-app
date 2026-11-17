@@ -158,7 +158,7 @@ export function TodayHero({
               <span className="mt-2 font-display text-xl font-semibold text-white">Perfect day</span>
             </>
           ) : (
-            <span className="num-thin text-[68px] text-white">
+            <span className="num-hero text-[72px] text-white">
               {shownPct}
               <span className="text-[28px] text-slate-400 align-top ml-0.5">%</span>
             </span>

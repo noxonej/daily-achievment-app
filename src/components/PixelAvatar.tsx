@@ -608,8 +608,13 @@ function drawHands(g: Grid, item: AvatarItem) {
   const c2 = item.c2 ?? shade(c1, 0.4);
   switch (item.style) {
     case 'watch':
-      put(g, 11, 20, c1);
-      put(g, 12, 20, c2);
+      // A chunky watch you can actually see: strap round the wrist, a bright 2-pixel face sticking out.
+      put(g, 11, 19, c1);
+      put(g, 12, 19, c1);
+      put(g, 10, 20, c1);
+      put(g, 11, 20, c2);
+      put(g, 12, 20, shade(c2, 0.25));
+      put(g, 11, 21, c1);
       break;
     case 'bracelet':
       put(g, 11, 20, c1);

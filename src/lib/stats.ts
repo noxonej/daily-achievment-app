@@ -80,7 +80,7 @@ export function computeDerivedStats(state: AppState): DerivedStats {
   const weekLogsArr = Object.values(state.weekLogs);
 
   const totalXp =
-    dayLogsArr.reduce((s, l) => s + l.xpEarned, 0) + weekLogsArr.reduce((s, l) => s + l.xpEarned, 0);
+    dayLogsArr.reduce((s, l) => s + l.xpEarned, 0) + weekLogsArr.reduce((s, l) => s + l.xpEarned, 0) + (state.bonusXp ?? 0);
   const totalQuestsCompleted =
     dayLogsArr.reduce((s, l) => s + l.completedQuestIds.length - (l.skipped?.length ?? 0), 0) +
     weekLogsArr.reduce((s, l) => s + l.completedQuestIds.length, 0);
