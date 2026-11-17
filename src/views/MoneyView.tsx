@@ -350,7 +350,7 @@ function MoneyHero() {
   return (
     <section aria-label="Everything you have" className="relative text-center pt-2">
       <p className="eyebrow">Everything you have</p>
-      <p className={`mt-3 num-thin text-[56px] ${total < 0 ? 'text-red-300' : 'text-white'}`}>
+      <p className={`mt-3 num-px text-[60px] ${total < 0 ? 'text-red-300' : 'text-white'}`}>
         <CountUp value={total} format={(v) => fmt(v, true)} />
       </p>
       <div className="mt-5 flex h-3 gap-1 rounded-full overflow-hidden" aria-hidden="true">

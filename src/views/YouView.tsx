@@ -176,7 +176,7 @@ function BigStat({ value, label, icon, pulse }: { value: number; label: string; 
   return (
     <div className="relative min-w-0">
       {pulse && <span className="absolute top-0.5 right-0 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />}
-      <p className="pc-ink num-thin text-[32px] truncate" title={value.toLocaleString(locale())}>{compactNum(value)}</p>
+      <p className="pc-ink num-px text-[38px] truncate" title={value.toLocaleString(locale())}>{compactNum(value)}</p>
       <p className="pc-sub mt-1 flex items-center gap-1 text-[11px] font-semibold truncate">
         <span className="shrink-0 opacity-80 hidden min-[360px]:inline">{icon}</span>
         {label}

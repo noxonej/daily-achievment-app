@@ -93,7 +93,7 @@ export default function App() {
   // Home-screen shortcuts open straight into a tab (?view=plan) or the focus timer (?focus=1).
   const [view, setViewState] = useState<ViewId>(() => {
     const v = new URLSearchParams(window.location.search).get('view') as ViewId | null;
-    return v && VIEW_ORDER.includes(v) ? v : 'today';
+    return v && v !== 'coach' && VIEW_ORDER.includes(v) ? v : 'today';
   });
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -114,19 +114,6 @@ export default function App() {
     }
   }, []);
   const directionRef = useRef<'left' | 'right'>('right');
-  // The background glow drifts a little slower than the page as you scroll (a soft depth effect).
-  useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => document.documentElement.style.setProperty('--scroll-y', String(Math.min(window.scrollY, 1200))));
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, []);
   // Each tab has its own glow colour (its "mood"); CSS reads it from <html data-view>.
   useEffect(() => {
     document.documentElement.dataset.view = view;

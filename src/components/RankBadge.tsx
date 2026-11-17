@@ -1,4 +1,5 @@
-import { useId } from 'react';
+import { useId, useRef } from 'react';
+import { usePixelated } from '../world/px/pixelate';
 import type { Rank } from '../lib/ranks';
 
 /**
@@ -14,8 +15,12 @@ export function RankBadge({ rank, size = 40, className = '', shine = false }: { 
   const crown = t >= 4;
   // Chevrons stack upward: I = 1, II = 2, III = 3.
   const chevrons = Array.from({ length: rank.division }, (_, i) => 41 - i * 7);
+  // Shown as pixel art (2026-11-17): the badge is drawn, then snapped to a 24×24 pixel grid with a dark outline.
+  const ref = useRef<SVGSVGElement>(null);
+  const px = usePixelated(ref, `rank|${rank.name}|${c1}${c2}${c3}`, 24, 24, { outline: true });
   return (
-    <svg viewBox="0 0 64 64" width={size} height={size} className={`${shine ? 'rank-shine' : ''} ${className}`} role="img" aria-label={rank.name}>
+    <span className={`relative inline-block shrink-0 ${shine ? 'rank-shine' : ''} ${className}`} style={{ width: size, height: size }} role="img" aria-label={rank.name}>
+    <svg ref={ref} viewBox="0 0 64 64" width={size} height={size} className="block" style={{ opacity: px ? 0 : 1 }} aria-hidden="true">
       <defs>
         <linearGradient id={`rb${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={c2} />
@@ -58,5 +63,7 @@ export function RankBadge({ rank, size = 40, className = '', shine = false }: { 
         </g>
       )}
     </svg>
+    {px && <img src={px} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full" draggable={false} />}
+    </span>
   );
 }

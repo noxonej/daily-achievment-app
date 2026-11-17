@@ -117,6 +117,8 @@ html, body, #root {
 
 /* It's an app, not a web page: no double-tap zoom, no text resizing when the phone rotates. */
 html {
+  /* No rubber-band: on iPhone the bounce dragged the fixed bars and glow around (scroll glitch, 2026-11-17). */
+  overscroll-behavior-y: none;
   touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -125,6 +127,7 @@ html {
 
 body {
   margin: 0;
+  overscroll-behavior-y: none;
   background: var(--bg);
   color: var(--fg, #e7e9f4);
   font-family: var(--font-sans);
@@ -977,7 +980,6 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
   pointer-events: none;
   transform: translateZ(0);
   background: radial-gradient(90% 38% at 50% -8%, color-mix(in oklab, var(--color-amber-500) 20%, transparent), transparent 75%);
-  translate: 0 calc(var(--scroll-y, 0) * -0.18px);
 }
 :root[data-theme='light'] .bg-grid::before {
   background: radial-gradient(90% 34% at 50% -8%, color-mix(in oklab, var(--color-amber-400) 10%, transparent), transparent 75%);
@@ -1791,3 +1793,10 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 .pet-frame-b { animation: pet-frame-b .36s steps(1) infinite; }
 @keyframes pet-frame-a { 0% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes pet-frame-b { 0% { opacity: 0; } 50% { opacity: 1; } }
+
+/* Goals top (2026-11-17) */
+.goals-hero { background: radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--mood) 22%, transparent), transparent 60%), rgba(255,255,255,.035); box-shadow: inset 0 0 0 1px var(--line); }
+:root[data-theme='light'] .goals-hero { background: radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--mood) 14%, transparent), transparent 60%), #fff; }
+/* pixel glyphs (swap, shield): the soft fill is the two-tone part */
+.df-px-soft { opacity: 0.3; }
+.df-px.df-solid .df-px-soft { opacity: 0.55; }

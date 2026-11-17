@@ -146,7 +146,7 @@ function GoalCard({
   onDelete: () => void;
 }) {
   return (
-    <div className={`rounded-2xl border p-4 ${goal.timeframe === 'yearly' ? 'goal-yearly border-amber-400/30' : 'border-white/10 bg-white/[0.03]'}`}>
+    <div id={`goal-${goal.id}`} className={`scroll-mt-24 rounded-2xl border p-4 ${goal.timeframe === 'yearly' ? 'goal-yearly border-amber-400/30' : 'border-white/10 bg-white/[0.03]'}`}>
       <div className="flex items-start gap-3">
         <span className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${goal.timeframe === 'yearly' ? 'bg-amber-400/15 text-amber-200' : 'bg-white/5 text-amber-300'}`}><Icon name={goal.icon} size={20} /></span>
         <div className="min-w-0 flex-1">

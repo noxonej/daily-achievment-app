@@ -3,7 +3,7 @@ import { t } from '../lib/prefs';
 import { Avatar } from './Avatar';
 import { useApp } from '../store/AppContext';
 
-/** 'plan' is still a screen (opened from Today) but no longer has its own tab. */
+/** 'plan' is still a screen (opened from Today) but no longer has its own tab. 'coach' has no tab for now (2026-11-17): it comes back later as a premium feature. */
 export type ViewId = 'today' | 'plan' | 'quests' | 'world' | 'money' | 'coach' | 'you';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
@@ -11,7 +11,6 @@ const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'quests', label: 'Quests', icon: 'df:quests' },
   { id: 'world', label: 'World', icon: '🏠' },
   { id: 'money', label: 'Money', icon: 'df:money' },
-  { id: 'coach', label: 'Coach', icon: '💬' },
   { id: 'you', label: 'You', icon: 'avatar' },
 ];
 
