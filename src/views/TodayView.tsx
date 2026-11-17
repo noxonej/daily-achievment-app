@@ -65,6 +65,8 @@ function QuickAction({ icon, label, onClick }: { icon: string; label: string; on
   );
 }
 
+const MORE_KEY = 'squzo-today-more';
+
 export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const { state, dispatch, stats } = useApp();
   // Proof: quests like "Read 20 pages" ask what you read before they count (or, for number quests, right after).
@@ -112,6 +114,13 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const skipped = log?.skipped ?? [];
   const simple = state.prefs?.simple !== false;
   const listRef = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(() => {
+    try {
+      return localStorage.getItem(MORE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const sorted = [...activeDaily].sort((a, b) => {
     const ac = completed.includes(a.id) ? 1 : 0;
     const bc = completed.includes(b.id) ? 1 : 0;
@@ -192,11 +201,6 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <ScrollLockCard done={doneCount + (wildcard && completed.includes(wildcard.id) ? 1 : 0)} need={state.prefs!.scrollLock!} />
       )}
 
-      {/* How you feel and the wellness tools come first: they set up the rest of the day. */}
-      <MoodCheckIn />
-
-      <WellnessRow />
-
       {/* Daily rewards: up top until today's is claimed, then it moves down next to the box. */}
       {rewardsOnTop && <CheckInCard />}
 
@@ -219,10 +223,6 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         />
       )}
 
-      <NowNextCard onOpenPlan={() => onNavigate('plan')} />
-
-      <YearGoalCard onNavigate={onNavigate} />
-      <SeasonCard />
 
       <ProofSheet
         quest={proof?.quest ?? null}
@@ -316,6 +316,41 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         </div>
       )}
 
+      {!rewardsOnTop && <CheckInCard />}
+
+      <DailyBoxCard />
+
+      {/* How you feel and the wellness tools come first: they set up the rest of the day. */}
+      <MoodCheckIn />
+
+      <WellnessRow />
+
+      <YearGoalCard onNavigate={onNavigate} />
+      <SeasonCard />
+
+      <CoachCard onNavigate={onNavigate} max={simple ? 1 : 2} />
+
+      {/* Everything else stays one tap away, so Today isn't a wall of cards (2026-11-17). */}
+      <button
+        onClick={() => {
+          setMore(!more);
+          try {
+            localStorage.setItem(MORE_KEY, more ? '0' : '1');
+          } catch {
+            // optional
+          }
+        }}
+        aria-expanded={more}
+        className="w-full flex items-center justify-center gap-2 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] py-3 text-[14px] font-semibold text-slate-300"
+      >
+        {more ? 'Show less' : 'More for today'}
+        <Icon name="▾" size={14} className={`transition-transform ${more ? 'rotate-180' : ''}`} />
+      </button>
+
+      {more && (
+        <div className="space-y-5 sheet-up">
+      <NowNextCard onOpenPlan={() => onNavigate('plan')} />
+
       <QuickAdd />
 
       <DailyBoost />
@@ -332,22 +367,19 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <QuickAction icon="df:plan" label={t('nav.plan')} onClick={() => onNavigate('plan')} />
       </div>
 
-      {!rewardsOnTop && <CheckInCard />}
 
-      <DailyBoxCard />
+          <YourWorldCard onOpen={() => onNavigate('world')} />
 
-      <YourWorldCard onOpen={() => onNavigate('world')} />
+          <FriendsPeek
+            onOpen={() => {
+              setIntent('you-friends');
+              onNavigate('you');
+            }}
+          />
 
-      <FriendsPeek
-        onOpen={() => {
-          setIntent('you-friends');
-          onNavigate('you');
-        }}
-      />
-
-      <CoachCard onNavigate={onNavigate} max={simple ? 1 : 2} />
-
-      <InstallCard />
+          <InstallCard />
+        </div>
+      )}
 
       {(!simple || (log?.quickTasks?.length ?? 0) > 0) && <QuickTaskList />}
       {!simple && <DailyNoteBox />}
