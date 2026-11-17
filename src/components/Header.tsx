@@ -49,8 +49,9 @@ export function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-30 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] transition-[background-color,box-shadow] duration-300 ${
-        scrolled ? 'bg-canvas/75 backdrop-blur-xl shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)]' : 'bg-transparent'
+      // The blur stays on all the time: switching it on mid-scroll made the bar flash on iPhone.
+      className={`sticky top-0 z-30 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur-xl transition-[background-color,box-shadow] duration-300 ${
+        scrolled ? 'bg-canvas/75 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)]' : 'bg-canvas/0'
       }`}
     >
       <div className="max-w-2xl mx-auto px-4 flex items-center gap-2.5 h-[60px]">

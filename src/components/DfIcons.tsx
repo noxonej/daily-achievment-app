@@ -128,6 +128,41 @@ const ALIASES: Record<string, string> = {
   '🔥': 'streak', '💎': 'gem', '⚡': 'xp', '🛡': 'shield', '⏱': 'focus', '🌬': 'breathe', '🔁': 'swap', '⏭': 'skip', '🧠': 'coach',
 };
 
+
+/**
+ * Pixel-art glyphs (2026-11-17): drawn on a 16×16 grid so they match the pixel game look.
+ * X = solid, K = solid detail, F = soft two-tone fill. No background behind them.
+ */
+const PIXEL: Record<string, string[]> = {
+  shield: ["......XXXX......", "...XXXFFFFXXX...", ".XXFFFFFFFFFFXX.", ".XFFFFFFFFFFFFX.", ".XFFFFFFFFFFFFX.", ".XFFFFFFFFFKKFX.", ".XFFFFFFFFKKFFX.", ".XFFKKFFFKKFFFX.", ".XFFFKKFKKFFFFX.", ".XFFFFKKKFFFFFX.", "..XFFFFKFFFFFX..", "..XFFFFFFFFFFX..", "...XFFFFFFFFX...", "....XXFFFFXX....", "......XXXX......", "................"],
+  swap: [".........X......", ".........XX.....", ".........XXX....", "..XXXXXXXXXXX...", "..XXXXXXXXXXX...", ".........XXX....", ".........XX.....", ".........X......", "......X.........", ".....XX.........", "....XXX.........", "...XXXXXXXXXXX..", "...XXXXXXXXXXX..", "....XXX.........", ".....XX.........", "......X........."],
+};
+
+function PixelGlyph({ rows, size, className, rest }: { rows: string[]; size: number | string; className?: string; rest: Record<string, unknown> }) {
+  const solid: string[] = [];
+  const soft: string[] = [];
+  rows.forEach((row, y) => {
+    let x = 0;
+    while (x < row.length) {
+      const ch = row[x];
+      if (ch === '.') {
+        x++;
+        continue;
+      }
+      let w = 1;
+      while (x + w < row.length && row[x + w] === ch) w++;
+      (ch === 'F' ? soft : solid).push(`M${x} ${y}h${w}v1h-${w}z`);
+      x += w;
+    }
+  });
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} shapeRendering="crispEdges" className={`df-icon df-px ${className ?? ''}`} aria-hidden="true" {...rest}>
+      {soft.length > 0 && <path d={soft.join('')} fill="currentColor" className="df-px-soft" />}
+      <path d={solid.join('')} fill="currentColor" />
+    </svg>
+  );
+}
+
 export function dfGlyph(id: string): string | null {
   return ALIASES[id] ?? null;
 }
@@ -136,6 +171,7 @@ export function DfIcon({ glyph, size = 20, strokeWidth = 2, className, ...rest }
   // `fill` (used by callers to fill line icons) means "solid" here: raise the two-tone fill.
   const solid = rest.fill && rest.fill !== 'none';
   delete rest.fill;
+  if (PIXEL[glyph]) return <PixelGlyph rows={PIXEL[glyph]} size={size} className={`${solid ? 'df-solid' : ''} ${className ?? ''}`} rest={rest} />;
   return (
     <svg
       viewBox="0 0 24 24"

@@ -7,7 +7,7 @@ import { WeeklyView } from './WeeklyView';
 import { GoalsView } from './GoalsView';
 import { RewardsView } from './RewardsView';
 import { useIntent } from '../lib/intents';
-import { QuestPrograms } from '../components/QuestPrograms';
+import { GoalsHero } from '../components/GoalsHero';
 import type { ViewId } from '../components/NavTabs';
 
 type Section = 'weekly' | 'goals' | 'rewards';
@@ -22,19 +22,18 @@ export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
   return (
     <div>
       <div className="max-w-2xl mx-auto px-4 pt-4">
-        <p className="eyebrow">Goals, weekly quests and rewards</p>
-        <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1 mb-4 flex items-center gap-1">
+        <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mb-4 flex items-center gap-1">
           {t('nav.quests')}
           <InfoTip title="Bigger challenges" text="Daily quests are on Today. Here are the bigger ones: weekly quests take all week, long-term goals are for big things like saving for a car, and Rewards is your own shop of treats you buy with coins." />
         </h1>
-        <QuestPrograms onOpen={setSection} />
+        <GoalsHero onOpen={setSection} />
         <div className="h-4" />
         <Segmented
           value={section}
           onChange={setSection}
           options={[
-            { id: 'goals', label: t('quests.goals'), icon: '🏆' },
-            { id: 'weekly', label: t('quests.week'), icon: '🗡' },
+            { id: 'goals', label: 'Year goals', icon: '🏆' },
+            { id: 'weekly', label: 'This week', icon: '🗡' },
             { id: 'rewards', label: 'Rewards', icon: 'df:chest' },
           ]}
         />
