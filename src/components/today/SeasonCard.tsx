@@ -29,7 +29,7 @@ export function SeasonCard() {
             {next ? `${next.points - pts} points to ${next.label}. 1 per quest, +3 for a perfect day.` : 'Gold reached. You own this season.'}
           </p>
         </div>
-        <span className="font-display text-xl font-bold text-white tabular-nums">{pts}</span>
+        <span className="num-px text-[26px] text-white">{pts}</span>
       </div>
 
       <div className="relative mt-3 h-2 rounded-full bg-white/10 overflow-hidden">

@@ -50,7 +50,7 @@ export function StatsView({ embedded = false }: { embedded?: boolean } = {}) {
               <Icon name={t.icon} size={17} className="text-amber-300" />
               <span className="min-w-0 text-xs text-slate-400 font-medium truncate">{t.label}</span>
             </div>
-            <p className="font-display text-2xl font-bold text-white tabular-nums truncate">{typeof t.value === 'number' ? shortNum(t.value) : t.value}</p>
+            <p className="num-px text-[30px] text-white truncate">{typeof t.value === 'number' ? shortNum(t.value) : t.value}</p>
           </div>
         ))}
       </div>

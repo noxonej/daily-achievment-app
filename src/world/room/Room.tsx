@@ -1,5 +1,5 @@
 import { HomeShell } from './shells';
-import { PetSprite } from '../../components/PixelAvatar';
+import { PetSprite, WalkStepContext } from '../../components/PixelAvatar';
 import { usePixelated } from '../px/pixelate';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { DecorSlot, WorldState } from '../../lib/types';
@@ -513,6 +513,17 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const held = useRef<{ dx: number; dy: number } | null>(null);
   const walkRaf = useRef(0);
   const gimmick = useGimmick(!moving);
+  // Walking frames: legs swap every 140 ms while you move.
+  const [stepFrame, setStepFrame] = useState(0);
+  useEffect(() => {
+    if (!moving) {
+      setStepFrame(0);
+      return;
+    }
+    setStepFrame(1);
+    const id = setInterval(() => setStepFrame((f) => (f === 1 ? 2 : 1)), 140);
+    return () => clearInterval(id);
+  }, [moving]);
   const drag = useRef<{ x: number; start: number; moved: boolean; v: number; t: number } | null>(null);
   const inertia = useRef(0);
   useLayoutEffect(() => {
@@ -751,7 +762,9 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
               </span>
             )}
             <div style={{ transform: `scaleX(${facing})` }}>
-              <div className={moving ? 'room-walk' : gimmick ? `room-gim-${gimmick.kind}` : ''}>{children}</div>
+              <div className={moving ? 'room-walk' : gimmick ? `room-gim-${gimmick.kind}` : ''}>
+                <WalkStepContext.Provider value={stepFrame}>{children}</WalkStepContext.Provider>
+              </div>
             </div>
           </div>
         )}
@@ -771,7 +784,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
                 style={{ left: `${(x / ROOM_W) * 100}%`, bottom: `${((ROOM_H - y) / ROOM_H) * 100}%`, width: `${(64 / ROOM_W) * 100}%`, zIndex: y, animationDuration: `${9 + (i % 4) * 2.5}s`, animationDelay: `${-i * 1.7}s` }}
               >
                 <span className="room-pet-hop block" style={{ animationDelay: `${-i * 0.9}s` }}>
-                  <PetSprite itemId={p.id} className="block w-full h-auto" />
+                  <PetSprite itemId={p.id} walking className="block w-full h-auto" />
                 </span>
               </button>
             );
@@ -831,40 +844,20 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
           })}
       </div>
 
-      {walkable && !focus && (
-        <div className={`absolute bottom-2 z-[5] grid grid-cols-3 gap-1 room-pad ${pos.x * k + tx0 > size.w * 0.55 ? 'left-2' : 'right-2'}`} aria-label="Walk">
-          {(
-            [
-              ['', 0, 0],
-              ['▲', 0, -1],
-              ['', 0, 0],
-              ['◀', -1, 0],
-              ['▼', 0, 1],
-              ['▶', 1, 0],
-            ] as const
-          ).map(([label, dx, dy], i) =>
-            label ? (
-              <button
-                key={i}
-                type="button"
-                aria-label={dx < 0 ? 'Walk left' : dx > 0 ? 'Walk right' : dy < 0 ? 'Walk back' : 'Walk forward'}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  walk(dx, dy);
-                }}
-                onPointerUp={stopWalk}
-                onPointerLeave={stopWalk}
-                onPointerCancel={stopWalk}
-                onContextMenu={(e) => e.preventDefault()}
-                className="w-8 h-8 rounded-lg bg-black/35 backdrop-blur-md text-white/85 text-[13px] font-bold active:bg-black/70 select-none touch-none"
-              >
-                {label}
-              </button>
-            ) : (
-              <span key={i} />
-            ),
-          )}
-        </div>
+      {walkable && !focus && !placing && (
+        <Joystick
+          side={pos.x * k + tx0 > size.w * 0.55 ? 'left' : 'right'}
+          onMove={(dx, dy) => {
+            if (!dx && !dy) {
+              if (held.current) stopWalk();
+              return;
+            }
+            if (!held.current) walk(dx, dy);
+            else held.current = { dx, dy };
+            if (Math.abs(dx) > 0.25) setFacing(dx > 0 ? 1 : -1);
+          }}
+          onEnd={stopWalk}
+        />
       )}
 
       {/* light from the window sweeps a little over the day */}
@@ -901,5 +894,57 @@ function Placed({ slot, item, dropped, children }: { slot: DecorSlot; item: Deco
         </g>
       )}
     </g>
+  );
+}
+
+/** A touch pad: put your thumb down and slide it the way you want to walk (2026-11-17). */
+function Joystick({ side, onMove, onEnd }: { side: 'left' | 'right'; onMove: (dx: number, dy: number) => void; onEnd: () => void }) {
+  const [knob, setKnob] = useState<{ x: number; y: number } | null>(null);
+  const base = useRef<{ x: number; y: number } | null>(null);
+  const R = 30;
+  const move = (e: React.PointerEvent) => {
+    const b = base.current;
+    if (!b) return;
+    let x = e.clientX - b.x;
+    let y = e.clientY - b.y;
+    const d = Math.hypot(x, y);
+    if (d > R) {
+      x = (x / d) * R;
+      y = (y / d) * R;
+    }
+    setKnob({ x, y });
+    // A small dead zone in the middle so a resting thumb doesn't drift.
+    if (d < 6) onMove(0, 0);
+    else onMove(x / R, y / R);
+  };
+  const end = () => {
+    base.current = null;
+    setKnob(null);
+    onEnd();
+  };
+  return (
+    <div
+      role="slider"
+      aria-label="Walk: slide to move"
+      aria-valuenow={0}
+      className={`room-stick absolute bottom-3 z-[5] w-[92px] h-[92px] rounded-full select-none touch-none ${side === 'left' ? 'left-3' : 'right-3'} ${knob ? 'room-stick-on' : ''}`}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        const r = e.currentTarget.getBoundingClientRect();
+        base.current = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        move(e);
+      }}
+      onPointerMove={(e) => {
+        e.stopPropagation();
+        move(e);
+      }}
+      onPointerUp={end}
+      onPointerCancel={end}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <span className="room-stick-arrows" aria-hidden="true" />
+      <span className="room-stick-knob" style={{ transform: `translate(calc(-50% + ${knob?.x ?? 0}px), calc(-50% + ${knob?.y ?? 0}px))` }} aria-hidden="true" />
+    </div>
   );
 }

@@ -147,7 +147,7 @@ function StreakScreen({ streak, best, closing, onClose }: { streak: number; best
       </div>
 
       <div className="relative mt-3 text-center" aria-live="polite">
-        <p className={`font-display text-[88px] leading-none font-extrabold tabular-nums streak-num ${lit ? 'on' : ''}`}>{shown}</p>
+        <p className={`num-px text-[104px] leading-none streak-num ${lit ? 'on' : ''}`}>{shown}</p>
       </div>
       <p className="relative font-display text-2xl font-extrabold text-white mt-1" aria-label={title}>
         {title.split('').map((c, i) => (

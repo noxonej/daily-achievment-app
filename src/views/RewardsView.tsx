@@ -34,7 +34,7 @@ export function RewardsView() {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
       <div className="relative overflow-hidden rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-500/15 via-white/[0.03] to-transparent p-5">
         <p className="text-xs font-bold uppercase tracking-wider text-violet-200">Your coins</p>
-        <p className="font-display text-4xl font-black text-white tabular-nums mt-1 flex items-center gap-2">
+        <p className="num-px text-[44px] text-white mt-1 flex items-center gap-2">
           <Icon name="💎" size={30} className="text-cyan-300" fill="currentColor" />
           {shards}
         </p>
