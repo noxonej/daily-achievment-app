@@ -1,11 +1,11 @@
 name: Squzo push sender
 
 # Sends the motivational notifications (and publishes firestore.rules when they change).
-# Free on public repositories. GitHub may start a scheduled run a few minutes late; the sender
-# allows up to 45 minutes, so messages still arrive and never in the middle of the night.
+# Free on public repositories. GitHub starts scheduled runs very late (we saw 8 hours apart), so each
+# run stays on for ~5h50m and checks every 5 minutes; the hourly schedule makes sure a new one takes over.
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '7 * * * *'
   push:
     branches:
       - claude/daily-quest-achievement-app-tolstm
@@ -15,18 +15,23 @@ on:
       - scripts/push/**
       - .github/workflows/push.yml
   workflow_dispatch:
+    inputs:
+      test:
+        description: 'Send a test notification to every phone now'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: push-sender
+  group: push-sender-${{ inputs.test && 'test' || 'loop' }}
   cancel-in-progress: false
 
 jobs:
   send:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 358
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,3 +43,5 @@ jobs:
         run: node scripts/push/run.cjs
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TEST_PUSH: ${{ inputs.test && 'true' || 'false' }}
+          LOOP_MINUTES: ${{ inputs.test && '0' || '350' }}
