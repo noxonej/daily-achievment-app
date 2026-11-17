@@ -1,4 +1,5 @@
 import { HomeShell } from './shells';
+import { PetSprite } from '../../components/PixelAvatar';
 import { usePixelated } from '../px/pixelate';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { DecorSlot, WorldState } from '../../lib/types';
@@ -416,7 +417,18 @@ export interface RoomProps {
   children?: ReactNode;
   /** Forced time of day (screenshots, previews). */
   time?: TimeOfDay;
+  /** Placing an extra shelf/collectible: the next tap in the room says where it goes. */
+  placing?: 'shelf' | 'collectible' | null;
+  onPlaceAt?: (x: number, y: number) => void;
+  /** Tap an extra item you placed. */
+  onTapExtra?: (index: number) => void;
+  /** Pets that live in your home (the one you take along walks with your character). */
+  pets?: Array<{ id: string; name: string }>;
+  onTapPet?: (id: string) => void;
 }
+
+/** Where pets hang out on the floor (room x), and how far each one wanders. */
+const PET_SPOTS = [250, 820, 470, 1010, 140, 700, 380, 930, 560, 1090];
 
 const ORDER: DecorSlot[] = ['light', 'poster', 'art', 'shelf', 'rug', 'bed', 'lamp', 'seat', 'plant', 'table', 'desk', 'tech', 'chair', 'collectible'];
 
@@ -483,7 +495,7 @@ export function HomeThumb({ id, className = '' }: { id: string; className?: stri
   );
 }
 
-export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced }: RoomProps) {
+export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced, placing = null, onPlaceAt, onTapExtra, pets = [], onTapPet }: RoomProps) {
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const time = forced ?? timeOfDay();
   const night = time === 'night';
@@ -639,7 +651,12 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
 
   const lights = night || time === 'dusk' ? lightsFor(get, win) : [];
   const svgRef = useRef<SVGSVGElement>(null);
-  const pixels = usePixelated(svgRef, JSON.stringify([world.property, 'shell2', world.decor, world.tints, world.sizes, time, focus, trophies, books]), PX_W, PX_H);
+  const pixels = usePixelated(svgRef, JSON.stringify([world.property, 'shell2', world.decor, world.tints, world.sizes, world.extras, time, focus, trophies, books]), PX_W, PX_H);
+  const extras = (world.extras ?? []).flatMap((e, i) => {
+    const item = DECOR.find((d) => d.id === e.id);
+    const r = item && DECOR_SLOTS.find((s) => s.id === item.slot)?.rect;
+    return item && r ? [{ ...e, i, item, r }] : [];
+  });
   const dimmed = (s: DecorSlot) => !!focus && focus !== s && focus !== 'wall' && focus !== 'floor';
 
   return (
@@ -676,6 +693,11 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
           )}
           <Floor item={get('floor')} />
           <HomeShell id={property.id} />
+          {extras.filter((e) => e.item.slot === 'shelf').map((e) => (
+            <g key={`x${e.i}`} opacity={focus ? 0.35 : 1} transform={`translate(${e.x - e.r[0]} ${e.y - e.r[1]})`}>
+              <SlotArt item={e.item} night={night} trophies={trophies} books={books} win={win} />
+            </g>
+          ))}
           <g opacity={dimmed('window') ? 0.35 : 1}>
             <Placed slot="window" item={get('window')} dropped={dropped}>
               <SlotArt item={get('window')} night={night} win={win} />
@@ -688,6 +710,11 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
                   <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
                 </g>
               </Placed>
+            </g>
+          ))}
+          {extras.filter((e) => e.item.slot === 'collectible').sort((a, b) => a.y + a.r[3] - (b.y + b.r[3])).map((e) => (
+            <g key={`x${e.i}`} opacity={focus ? 0.35 : 1} transform={`translate(${e.x - e.r[0]} ${e.y - e.r[1]})`}>
+              <SlotArt item={e.item} night={night} trophies={trophies} books={books} win={win} />
             </g>
           ))}
 
@@ -727,6 +754,57 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
               <div className={moving ? 'room-walk' : gimmick ? `room-gim-${gimmick.kind}` : ''}>{children}</div>
             </div>
           </div>
+        )}
+
+        {/* pets that live here: they wander about, tap one to take it along */}
+        {!focus &&
+          pets.map((p, i) => {
+            const x = PET_SPOTS[i % PET_SPOTS.length];
+            const y = 520 + ((i * 13) % 30);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onTapPet?.(p.id)}
+                aria-label={`${p.name}: take along`}
+                className="room-pet absolute"
+                style={{ left: `${(x / ROOM_W) * 100}%`, bottom: `${((ROOM_H - y) / ROOM_H) * 100}%`, width: `${(64 / ROOM_W) * 100}%`, zIndex: y, animationDuration: `${9 + (i % 4) * 2.5}s`, animationDelay: `${-i * 1.7}s` }}
+              >
+                <span className="room-pet-hop block" style={{ animationDelay: `${-i * 0.9}s` }}>
+                  <PetSprite itemId={p.id} className="block w-full h-auto" />
+                </span>
+              </button>
+            );
+          })}
+
+        {/* extra items you placed: tap to move or take away */}
+        {onTapExtra &&
+          !focus &&
+          !placing &&
+          extras.map((e) => (
+            <button
+              key={`t${e.i}`}
+              type="button"
+              onClick={() => onTapExtra(e.i)}
+              aria-label={`Extra ${e.item.name}`}
+              className="absolute rounded-xl"
+              style={{ left: `${(e.x / ROOM_W) * 100}%`, top: `${(e.y / ROOM_H) * 100}%`, width: `${(e.r[2] / ROOM_W) * 100}%`, height: `${(e.r[3] / ROOM_H) * 100}%`, zIndex: 2 }}
+            />
+          ))}
+
+        {/* placing an extra: tap where it goes */}
+        {placing && onPlaceAt && (
+          <button
+            type="button"
+            aria-label={placing === 'shelf' ? 'Tap the wall to hang it' : 'Tap the floor to put it there'}
+            className="absolute inset-0 z-[900] room-place cursor-crosshair"
+            onClick={(e) => {
+              const b = e.currentTarget.getBoundingClientRect();
+              onPlaceAt(((e.clientX - b.left) / b.width) * ROOM_W, ((e.clientY - b.top) / b.height) * ROOM_H);
+            }}
+          >
+            <span className="room-place-zone absolute inset-x-0" style={placing === 'shelf' ? { top: '6%', height: '58%' } : { top: '74%', height: '24%' }} />
+          </button>
         )}
 
         {/* tap targets */}

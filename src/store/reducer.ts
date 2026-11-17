@@ -1,6 +1,6 @@
 import type { AppState, CosmeticSlot, DayLog, Difficulty, Frequency, GoalLogEntry, GoalTimeframe, LongTermGoal, PlanCategory, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, RunRecord, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, Redemption, SleepEntry, SleepState, DecorSlot } from '../lib/types';
 import { PROOF_BONUS } from '../lib/proof';
-import { DECOR, GARAGE_ENVS, LEGENDARY_PICKS, PAINTS, PARTS, PROPERTIES, VEHICLES, canFit, worldChestPool, canUnlock, garageSpots, garageUsed, isCar, legendaryBonus, legendaryPool, owns, ownsDecor, unlockOf, worldOf } from '../world/catalog';
+import { DECOR, GARAGE_ENVS, LEGENDARY_PICKS, PAINTS, PARTS, PROPERTIES, VEHICLES, canFit, worldChestPool, canUnlock, MAX_EXTRAS, garageSpots, garageUsed, isCar, legendaryBonus, legendaryPool, owns, ownsDecor, unlockOf, worldOf } from '../world/catalog';
 import { claimCheckIn } from '../lib/checkIn';
 import { SEASON_TIERS, claimedTiers, seasonKey, seasonPoints } from '../lib/seasons';
 import { fallAsleepMin, hoursBetween, sleepQuestsDone } from '../lib/sleep';
@@ -146,6 +146,9 @@ export type Action =
   | { type: 'WORLD_BUY'; id: string; vehicleId?: string }
   | { type: 'WORLD_MOVE'; property: string }
   | { type: 'WORLD_PLACE'; slot: DecorSlot; itemId: string }
+  /** Put one more shelf or collectible you own anywhere in the room. */
+  | { type: 'WORLD_EXTRA_ADD'; itemId: string; x: number; y: number }
+  | { type: 'WORLD_EXTRA_REMOVE'; index: number }
   | { type: 'WORLD_FEATURE'; vehicleId: string }
   | { type: 'WORLD_PAINT'; vehicleId: string; paint: string }
   | { type: 'WORLD_MOD'; vehicleId: string; partId: string }
@@ -782,6 +785,19 @@ export function reducer(state: AppState, action: Action): AppState {
       const item = DECOR.find((d) => d.id === action.itemId && d.slot === action.slot);
       if (!item || !ownsDecor(world, item)) return state;
       return { ...state, world: { ...world, decor: { ...world.decor, [action.slot]: item.id } } };
+    }
+
+    case 'WORLD_EXTRA_ADD': {
+      const world = worldOf(state);
+      const item = DECOR.find((d) => d.id === action.itemId);
+      if (!item || (item.slot !== 'shelf' && item.slot !== 'collectible') || item.model === 'none' || !ownsDecor(world, item)) return state;
+      const extras = (world.extras ?? []).filter((e) => e.id !== item.id);
+      if (extras.length >= MAX_EXTRAS) return state;
+      return { ...state, world: { ...world, extras: [...extras, { id: item.id, x: Math.round(action.x), y: Math.round(action.y) }] } };
+    }
+    case 'WORLD_EXTRA_REMOVE': {
+      const world = worldOf(state);
+      return { ...state, world: { ...world, extras: (world.extras ?? []).filter((_, i) => i !== action.index) } };
     }
 
     case 'WORLD_FEATURE': {

@@ -433,6 +433,8 @@ export interface WorldState {
   tints?: { wall?: string; floor?: string };
   /** Size of each wall art piece (2026-11-16). */
   sizes?: Partial<Record<'poster' | 'art', 's' | 'm' | 'l'>>;
+  /** Extra shelves and collectibles you placed anywhere in the room (2026-11-17). x/y = top-left in room units. */
+  extras?: Array<{ id: string; x: number; y: number }>;
 }
 
 export interface AppState {

@@ -13,7 +13,9 @@ import type { DecorSlot, DerivedStats, WorldState } from '../lib/types';
 import {
   DECOR,
   DECOR_SLOTS,
+  MAX_EXTRAS,
   PROPERTIES,
+  extraSpot,
   canUnlock,
   decorFor,
   owns,
@@ -25,6 +27,8 @@ import { GarageSection } from './Garage';
 import { BuyButton, Requirements } from './ui';
 import { HomeThumb, Room, RoomDefs, SlotArt, windowRect, type TimeOfDay } from './room/Room';
 import { createPortal } from 'react-dom';
+import { AVATAR_ITEMS, isOwned } from '../data/avatar';
+import { ownership } from '../store/reducer';
 import { useBackToClose } from '../lib/backstack';
 
 type Section = 'room' | 'garage' | 'homes';
@@ -136,7 +140,21 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [placed, setPlaced] = useState<{ slot: DecorSlot; key: number } | null>(null);
   const [timeIx, setTimeIx] = useState(0);
+  const [placing, setPlacing] = useState<DecorItem | null>(null);
+  const [note, setNote] = useState<{ text: string; key: number } | null>(null);
   const time = TIMES[timeIx];
+  const extras = world.extras ?? [];
+  // Every pet you own lives here; the one you take along walks with your character.
+  const ctx = useMemo(() => ownership(state, stats), [state, stats]);
+  const pets = useMemo(
+    () => AVATAR_ITEMS.filter((i) => i.slot === 'pet' && i.style !== 'none' && i.id !== state.character?.pet && isOwned(i, ctx)).map((i) => ({ id: i.id, name: i.name })),
+    [ctx, state.character?.pet],
+  );
+  function say(text: string) {
+    const key = Date.now();
+    setNote({ text, key });
+    setTimeout(() => setNote((n) => (n?.key === key ? null : n)), 2600);
+  }
   const preview = previewId ? DECOR.find((d) => d.id === previewId) ?? null : null;
   const sceneWorld: WorldState = preview ? { ...world, decor: { ...world.decor, [preview.slot]: preview.id } } : world;
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
@@ -157,10 +175,51 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
   return (
     <>
       <div className="relative world-scene-in h-[min(92vw,420px)]">
-        <Room walkable world={sceneWorld} trophies={trophies} books={books} focus={slot} onTapSlot={(s) => pick(slot === s ? null : s)} editing={!slot} dropped={dropped} time={time.id}>
+        <Room
+          walkable={!placing}
+          world={sceneWorld}
+          trophies={trophies}
+          books={books}
+          focus={slot}
+          onTapSlot={placing ? undefined : (s) => pick(slot === s ? null : s)}
+          editing={!slot && !placing}
+          dropped={dropped}
+          time={time.id}
+          placing={placing ? (placing.slot as 'shelf' | 'collectible') : null}
+          onPlaceAt={(x, y) => {
+            if (!placing) return;
+            const at = extraSpot(placing.slot as 'shelf' | 'collectible', x, y);
+            dispatch({ type: 'WORLD_EXTRA_ADD', itemId: placing.id, x: at.x, y: at.y });
+            say(`${placing.name} placed`);
+            setPlacing(null);
+          }}
+          onTapExtra={(i) => {
+            const it = DECOR.find((d) => d.id === extras[i]?.id);
+            if (it) pick(it.slot);
+          }}
+          pets={pets}
+          onTapPet={(id) => {
+            const name = pets.find((p) => p.id === id)?.name ?? 'Your pet';
+            dispatch({ type: 'EQUIP_COSMETIC', slot: 'pet', itemId: id });
+            say(`${name} is walking with you now`);
+          }}
+        >
           <Avatar look={state.character} size={200} bare alive className="w-full h-auto world-idle" />
         </Room>
-        <div className="theme-dark pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+        {placing && (
+          <div className="theme-dark absolute inset-x-3 top-3 z-[10] flex items-center justify-between gap-2 rounded-2xl bg-black/75 backdrop-blur-md px-3.5 py-2.5 toast-in-up">
+            <span className="text-[13px] font-semibold text-white">{placing.slot === 'shelf' ? `Tap the wall to hang your ${placing.name.toLowerCase()}` : `Tap the floor to put your ${placing.name.toLowerCase()}`}</span>
+            <button onClick={() => setPlacing(null)} className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[12px] font-semibold text-white">
+              Cancel
+            </button>
+          </div>
+        )}
+        {note && !placing && (
+          <div key={note.key} className="theme-dark pointer-events-none absolute left-1/2 bottom-3 z-[10] -translate-x-1/2 rounded-full bg-black/70 backdrop-blur-md px-3.5 py-1.5 text-[13px] font-semibold text-white whitespace-nowrap toast-in-up">
+            {note.text}
+          </div>
+        )}
+        <div className={`theme-dark pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2 ${placing ? 'invisible' : ''}`}>
           {slot ? (
             <button onClick={() => pick(null)} className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-md pl-2.5 pr-3.5 py-1.5 text-[13px] font-semibold text-white">
               <Icon name="↩" size={14} />
@@ -191,7 +250,11 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
         </div>
       </div>
 
-      {!slot && <p className="text-[13px] text-slate-400 -mt-1">Hold the arrows to walk around. Tap anything to change it.</p>}
+      {!slot && !placing && (
+        <p className="text-[13px] text-slate-400 -mt-1">
+          Hold the arrows to walk around. Tap anything to change it.{pets.length > 0 ? ' Tap a pet to take it along.' : ''}
+        </p>
+      )}
 
       <div className="-mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar">
         {[...DECOR_SLOTS].sort((a, b) => +(b.id === 'wall' || b.id === 'floor') - +(a.id === 'wall' || a.id === 'floor')).map((s) => (
@@ -231,6 +294,26 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
               </div>
             </div>
           )}
+          {(slot === 'shelf' || slot === 'collectible') && (
+            <div className="mt-2 rounded-2xl bg-white/[0.035] px-3 py-2.5">
+              <p className="text-[13px] font-semibold text-white">Put more around your room</p>
+              <p className="text-[12px] text-slate-400 leading-snug">Tap “+ More” on any {slot === 'shelf' ? 'shelf' : 'collectible'} you own, then tap where it goes. Up to {MAX_EXTRAS} extras.</p>
+              {extras.some((e) => DECOR.find((d) => d.id === e.id)?.slot === slot) && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {extras.map((e, i) => {
+                    const it = DECOR.find((d) => d.id === e.id);
+                    if (it?.slot !== slot) return null;
+                    return (
+                      <button key={i} onClick={() => dispatch({ type: 'WORLD_EXTRA_REMOVE', index: i })} className="flex items-center gap-1 rounded-full bg-white/10 pl-3 pr-2 py-1 text-[12px] font-semibold text-white" aria-label={`Take away extra ${it.name}`}>
+                        {it.name}
+                        <Icon name="✕" size={12} />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           <div className="mt-2 grid grid-cols-2 min-[520px]:grid-cols-3 gap-2 rows-stagger">
             {items.map((item) => {
               const have = ownsDecor(world, item);
@@ -251,12 +334,25 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
                   {!have && <Requirements unlock={item.unlock} stats={stats} compact />}
                   <div className="mt-2 flex gap-1.5">
                     {on ? (
-                      <span className="text-xs font-bold text-[var(--mood)]">In your room</span>
+                      <span className="flex-1 self-center text-xs font-bold text-[var(--mood)]">In your room</span>
                     ) : have ? (
-                      <button onClick={() => place(item)} className="w-full rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs font-semibold text-white">
+                      <button onClick={() => place(item)} className="flex-1 rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs font-semibold text-white">
                         Place
                       </button>
-                    ) : (
+                    ) : null}
+                    {have && (slot === 'shelf' || slot === 'collectible') && item.model !== 'none' && extras.length < MAX_EXTRAS && (
+                      <button
+                        onClick={() => {
+                          setPlacing(item);
+                          pick(null);
+                        }}
+                        className="shrink-0 rounded-full bg-[var(--mood)]/20 px-3 py-1.5 text-xs font-bold text-white"
+                        aria-label={`Put one more ${item.name} somewhere`}
+                      >
+                        + More
+                      </button>
+                    )}
+                    {have || on ? null : (
                       <>
                         {!trying && !item.unlock.chest && (
                           <button onClick={() => setPreviewId(item.id)} className="shrink-0 rounded-full bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-slate-200">

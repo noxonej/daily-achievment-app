@@ -866,3 +866,29 @@ export function avatarPixels(look: Partial<Character> | undefined, mood?: number
     }
   return out;
 }
+
+/** One pet on its own as outlined pixels (10×10), for pets roaming your home (2026-11-17). */
+export function petPixels(itemId: string): (string | null)[][] | null {
+  const pet = findItem(itemId);
+  if (!pet || !PETS[pet.style]) return null;
+  const c = pet.c1 ?? (pet.style === 'robot' ? '#cbd5e1' : '#f1f5f9');
+  const g: (string | null)[][] = Array.from({ length: 10 }, () => Array<string | null>(10).fill(null));
+  PETS[pet.style].forEach((row, j) => {
+    const pal: Record<string, string | undefined> = { C: c, c: shade(c, 0.3), d: shade(c, -0.25), K: '#1b1512', W: WHITE, P: '#f9a8d4', Y: '#facc15', R: '#ef4444', O: '#f97316', B: '#38bdf8', S: '#cbd5e1', G: '#bef264' };
+    for (let i = 0; i < row.length; i++) if (pal[row[i]]) g[j + 1][i + 1] = pal[row[i]]!;
+  });
+  const out = g.map((r) => r.slice());
+  for (let y = 0; y < 10; y++)
+    for (let x = 0; x < 10; x++) if (!g[y][x] && (g[y][x + 1] || g[y][x - 1] || g[y + 1]?.[x] || g[y - 1]?.[x])) out[y][x] = OUTLINE;
+  return out;
+}
+
+export function PetSprite({ itemId, className = '' }: { itemId: string; className?: string }) {
+  const px = useMemo(() => petPixels(itemId), [itemId]);
+  if (!px) return null;
+  return (
+    <svg viewBox="0 0 10 10" className={className} shapeRendering="crispEdges" aria-hidden="true">
+      {px.flatMap((row, y) => row.map((c, x) => (c ? <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={c} /> : null)))}
+    </svg>
+  );
+}

@@ -1757,3 +1757,19 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 .room-bubble-say:empty { display: none; }
 @keyframes room-say { 0% { opacity: 0; transform: translate(-50%, -80%) scale(0.6); } 12%, 85% { opacity: 1; transform: translate(-50%, -100%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -110%); } }
 :root[data-motion='reduce'] :is(.room-walk, .room-gim-hop, .room-gim-spin, .room-gim-wiggle, .room-gim-wave, .room-bubble-say) { animation: none !important; }
+
+/* pets wander around your home (2026-11-17) */
+.room-pet { transform: translateX(-50%); animation: room-pet-roam 11s steps(40) infinite; }
+.room-pet-hop { animation: room-pet-hop 0.9s steps(3) infinite; }
+@keyframes room-pet-roam {
+  0%, 12% { translate: 0 0; scale: 1 1; }
+  42%, 50% { translate: 160% 0; scale: 1 1; }
+  51%, 62% { translate: 160% 0; scale: -1 1; }
+  92%, 100% { translate: 0 0; scale: -1 1; }
+}
+@keyframes room-pet-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8%); } }
+/* where an extra shelf / collectible can go */
+.room-place { background: rgba(0, 0, 0, 0.18); }
+.room-place-zone { border: 3px dashed rgba(255, 255, 255, 0.75); border-radius: 18px; background: rgba(255, 255, 255, 0.08); animation: room-place-pulse 1.2s ease-in-out infinite; }
+@keyframes room-place-pulse { 50% { background: rgba(255, 255, 255, 0.18); } }
+@media (prefers-reduced-motion: reduce) { .room-pet, .room-pet-hop, .room-place-zone { animation: none; } }
