@@ -23,6 +23,8 @@ import { Avatar } from './Avatar';
 import { ChestArt } from './Chest';
 import { OpenBurst, PrizeHalo, StageLight } from './fx/RewardFx';
 import { Icon } from './Icon';
+import { Confetti } from './Confetti';
+import { BUY_XP_SHARE } from '../lib/xp';
 
 function unlockLabel(item: AvatarItem): string {
   switch (item.unlock.kind) {
@@ -52,6 +54,7 @@ export function Wardrobe() {
   const [slot, setSlot] = useState<AvatarSlot>('outfit');
   // Try-on: one item per category, so you can see a whole outfit together before buying any of it.
   const [tryOn, setTryOn] = useState<Partial<Record<AvatarSlot, AvatarItem>>>({});
+  const [newLook, setNewLook] = useState<{ items: AvatarItem[]; coins: number } | null>(null);
   const [comparing, setComparing] = useState(false);
   const [compact, setCompact] = useState(false);
   const [chestOpen, setChestOpen] = useState(false);
@@ -121,6 +124,7 @@ export function Wardrobe() {
       dispatch({ type: 'EQUIP_COSMETIC', slot: i.slot, itemId: i.id });
     }
     setTryOn((t) => Object.fromEntries(Object.entries(t).filter(([, i]) => i && i.unlock.kind !== 'shop')));
+    setNewLook({ items: buyable, coins: total });
     try {
       navigator.vibrate?.([10, 40, 18]);
     } catch {
@@ -337,6 +341,38 @@ export function Wardrobe() {
       )}
 
       {chestOpen && <ChestOpening onClose={() => setChestOpen(false)} />}
+      {newLook && <NewLook look={state.character} items={newLook.items} coins={newLook.coins} onDone={() => setNewLook(null)} />}
+    </div>
+  );
+}
+
+/** The fitting-room moment after buying style items: spin, spotlight, XP back (2026-11-17). */
+function NewLook({ look, items, coins, onDone }: { look: Character; items: AvatarItem[]; coins: number; onDone: () => void }) {
+  const xp = Math.round(coins * BUY_XP_SHARE);
+  useBackToClose(true, onDone);
+  useEffect(() => {
+    const t = setTimeout(onDone, 3800);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <div data-overlay className="theme-dark box-stage fixed inset-0 z-[86] flex flex-col items-center justify-center px-6 backdrop-in" onClick={onDone}>
+      <StageLight tint="#f9a8d4" lit />
+      <span className="box-stage-floor" aria-hidden="true" />
+      <Confetti count={36} />
+      <div className="relative look-spin">
+        <PrizeHalo color="#f9a8d4" big />
+        <div className="relative">
+          <Avatar look={look} size={200} bare alive />
+        </div>
+      </div>
+      <p className="mt-6 px-label text-[11px] text-pink-300">New look</p>
+      <p className="mt-2 font-display text-[26px] font-semibold text-[#fff] text-center">{items.length === 1 ? items[0].name : `${items.length} new items`}</p>
+      {xp > 0 && (
+        <span className="mt-4 rounded-full bg-emerald-400/15 px-3 py-1.5 text-emerald-200">
+          <span className="num-px text-[20px]">+{xp} XP</span>
+        </span>
+      )}
+      <p className="mt-8 text-[12px] text-slate-500">Tap to continue</p>
     </div>
   );
 }
