@@ -329,6 +329,20 @@ export const DECOR_SLOTS: Array<{ id: DecorSlot; label: string; icon: string; re
   { id: 'floor', label: 'Floor', icon: '🧱', rect: [0, 400, 1200, 160] },
 ];
 
+/** How many extra shelves/collectibles you can place around the room. */
+export const MAX_EXTRAS = 6;
+
+/** Where an extra item may go: shelves hang on the wall, collectibles stand on the floor. Returns the top-left. */
+export function extraSpot(slot: 'shelf' | 'collectible', x: number, y: number): { x: number; y: number } {
+  const r = DECOR_SLOTS.find((s) => s.id === slot)!.rect;
+  const [, , w, h] = r;
+  const cx = Math.min(1200 - 40 - w / 2, Math.max(40 + w / 2, x));
+  if (slot === 'shelf') return { x: cx - w / 2, y: Math.min(260, Math.max(36, y - h / 2)) };
+  // collectibles: their feet land on the floor (y 420–545)
+  const feet = Math.min(545, Math.max(420, y));
+  return { x: cx - w / 2, y: feet - h };
+}
+
 export const DEFAULT_DECOR: Record<DecorSlot, string> = {
   wall: 'wall-cream',
   floor: 'floor-oak',
