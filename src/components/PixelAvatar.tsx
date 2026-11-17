@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react';
+import { createContext, useContext, useId, useMemo } from 'react';
 import type { Character } from '../lib/types';
 import { findItem, normalizeLook, type AvatarItem } from '../data/avatar';
 import { useTodayMood } from '../store/AppContext';
@@ -186,6 +186,13 @@ const PETS: Record<string, string[]> = {
   pixelpet: ['..CCCC..', '.CCCCCC.', 'CGGGGGGC', 'CGKGGKGC', 'CGGKKGGC', 'CCCCCCCC', 'CYCYCYCC', '.CCCCCC.'],
   flipphone: ['......K.', '.CCCCCK.', '.CBBBBC.', '.CBBBBC.', '.CCCCCC.', '.CWCWCd.', '.CWCWCd.', '.CCCCCd.'],
 };
+
+/** A walking frame for a pet: its feet (bottom row) shuffle one pixel left or right. */
+function petStep(rows: string[], step: number): string[] {
+  const last = rows[rows.length - 1];
+  const feet = step === 1 ? last.slice(1) + '.' : '.' + last.slice(0, -1);
+  return [...rows.slice(0, -1), feet];
+}
 
 /* ------------------------------------------------------------------ faces */
 type Spec = { eyes: [string, string]; brows?: 'angry' | 'sad' | 'one' | 'raised'; mouth: string; extra?: string[] };
@@ -644,7 +651,7 @@ function drawHands(g: Grid, item: AvatarItem) {
   }
 }
 
-function compose(look: Character, mood: number | undefined): Grid {
+function compose(look: Character, mood: number | undefined, step = 0): Grid {
   const g = blank();
   const skin = findItem(look.skin)?.c1 ?? '#f6c9a0';
   const skinDark = shade(skin, -0.18);
@@ -660,10 +667,12 @@ function compose(look: Character, mood: number | undefined): Grid {
   if (hairItem && HAIR_BACK[hairItem.style]) drawHair(g, HAIR_BACK[hairItem.style], hairColor);
   if (ostyle.cape) rect(g, 12, 15, 8, 13, ostyle.cape);
   // 2. legs and boots
-  rect(g, 13, 23, 3, 5, ostyle.pants);
-  rect(g, 16, 23, 3, 5, shade(ostyle.pants, -0.15));
-  rect(g, 12, 28, 4, 2, ostyle.boots);
-  rect(g, 16, 28, 4, 2, shade(ostyle.boots, -0.15));
+  // Walking (step 1 / 2): one leg lifts a pixel while the other stays down.
+  const lift = (left: boolean) => (step === 1 ? (left ? 1 : 0) : step === 2 ? (left ? 0 : 1) : 0);
+  rect(g, 13, 23, 3, 5 - lift(true), ostyle.pants);
+  rect(g, 16, 23, 3, 5 - lift(false), shade(ostyle.pants, -0.15));
+  rect(g, 12, 28 - lift(true), 4, 2, ostyle.boots);
+  rect(g, 16, 28 - lift(false), 4, 2, shade(ostyle.boots, -0.15));
   // 3. body
   drawOutfit(g, outfit, skin);
   if (ostyle.coat) {
@@ -743,7 +752,7 @@ function compose(look: Character, mood: number | undefined): Grid {
   // 8. pet
   if (pet && PETS[pet.style]) {
     const c = pet.c1 ?? (pet.style === 'robot' ? '#cbd5e1' : '#f1f5f9');
-    sprite(g, 23, 22, PETS[pet.style], { C: c, c: shade(c, 0.3), d: shade(c, -0.25), K: '#1b1512', W: WHITE, P: '#f9a8d4', Y: '#facc15', R: '#ef4444', O: '#f97316', B: '#38bdf8', S: '#cbd5e1', G: '#bef264' });
+    sprite(g, 23, 22, step ? petStep(PETS[pet.style], step) : PETS[pet.style], { C: c, c: shade(c, 0.3), d: shade(c, -0.25), K: '#1b1512', W: WHITE, P: '#f9a8d4', Y: '#facc15', R: '#ef4444', O: '#f97316', B: '#38bdf8', S: '#cbd5e1', G: '#bef264' });
   }
   return g;
 }
@@ -775,6 +784,9 @@ function toRects(g: Grid): Array<[number, number, number, string]> {
   return rects;
 }
 
+/** Inside a scene where the character walks: 0 standing, 1/2 the two walking frames. */
+export const WalkStepContext = createContext(0);
+
 export function PixelAvatar({
   look,
   size = 96,
@@ -803,9 +815,10 @@ export function PixelAvatar({
   const todayMood = useTodayMood();
   const l = normalizeLook(look);
   const m = mood ?? todayMood;
-  const key = JSON.stringify(l) + m;
+  const step = useContext(WalkStepContext);
+  const key = JSON.stringify(l) + m + step;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const rects = useMemo(() => toRects(compose(l, m)), [key]);
+  const rects = useMemo(() => toRects(compose(l, m, step)), [key]);
   // Small pictures (header, lists) zoom in on the head so the face stays readable.
   // "head": a close-up for square wardrobe tiles. Small round pictures (header, lists) get a looser
   // head-and-shoulders view so the face sits inside the circle with room around it.
@@ -868,12 +881,12 @@ export function avatarPixels(look: Partial<Character> | undefined, mood?: number
 }
 
 /** One pet on its own as outlined pixels (10×10), for pets roaming your home (2026-11-17). */
-export function petPixels(itemId: string): (string | null)[][] | null {
+export function petPixels(itemId: string, step = 0): (string | null)[][] | null {
   const pet = findItem(itemId);
   if (!pet || !PETS[pet.style]) return null;
   const c = pet.c1 ?? (pet.style === 'robot' ? '#cbd5e1' : '#f1f5f9');
   const g: (string | null)[][] = Array.from({ length: 10 }, () => Array<string | null>(10).fill(null));
-  PETS[pet.style].forEach((row, j) => {
+  (step ? petStep(PETS[pet.style], step) : PETS[pet.style]).forEach((row, j) => {
     const pal: Record<string, string | undefined> = { C: c, c: shade(c, 0.3), d: shade(c, -0.25), K: '#1b1512', W: WHITE, P: '#f9a8d4', Y: '#facc15', R: '#ef4444', O: '#f97316', B: '#38bdf8', S: '#cbd5e1', G: '#bef264' };
     for (let i = 0; i < row.length; i++) if (pal[row[i]]) g[j + 1][i + 1] = pal[row[i]]!;
   });
@@ -883,12 +896,24 @@ export function petPixels(itemId: string): (string | null)[][] | null {
   return out;
 }
 
-export function PetSprite({ itemId, className = '' }: { itemId: string; className?: string }) {
-  const px = useMemo(() => petPixels(itemId), [itemId]);
-  if (!px) return null;
+function PetFrame({ px, className = '' }: { px: (string | null)[][]; className?: string }) {
   return (
     <svg viewBox="0 0 10 10" className={className} shapeRendering="crispEdges" aria-hidden="true">
       {px.flatMap((row, y) => row.map((c, x) => (c ? <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={c} /> : null)))}
     </svg>
+  );
+}
+
+/** A pet on its own. With `walking`, it flips between two walking frames. */
+export function PetSprite({ itemId, className = '', walking = false }: { itemId: string; className?: string; walking?: boolean }) {
+  const frames = useMemo(() => [petPixels(itemId, 1), petPixels(itemId, 2)], [itemId]);
+  const still = useMemo(() => petPixels(itemId), [itemId]);
+  if (!still) return null;
+  if (!walking || !frames[0] || !frames[1]) return <PetFrame px={still} className={className} />;
+  return (
+    <span className={`relative block ${className}`}>
+      <PetFrame px={frames[0]} className="block w-full h-auto pet-frame-a" />
+      <PetFrame px={frames[1]} className="absolute inset-0 block w-full h-auto pet-frame-b" />
+    </span>
   );
 }

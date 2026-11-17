@@ -252,7 +252,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
 
       {!slot && !placing && (
         <p className="text-[13px] text-slate-400 -mt-1">
-          Hold the arrows to walk around. Tap anything to change it.{pets.length > 0 ? ' Tap a pet to take it along.' : ''}
+          Slide the round pad to walk. Tap anything to change it.{pets.length > 0 ? ' Tap a pet to take it along.' : ''}
         </p>
       )}
 

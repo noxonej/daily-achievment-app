@@ -116,7 +116,7 @@ function Session() {
           ) : (
             <>
               <p className="font-display text-2xl font-bold text-white">{phase.label}</p>
-              <p className="font-display text-4xl font-extrabold text-white/90 tabular-nums mt-1">{left}</p>
+              <p className="num-px text-[44px] text-white/90 mt-1">{left}</p>
             </>
           )}
         </div>

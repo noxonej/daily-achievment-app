@@ -108,11 +108,11 @@ export function RunTracker() {
           <p className="text-lg font-bold text-emerald-300">km</p>
           <div className="grid grid-cols-2 gap-3 mt-10 w-full max-w-xs">
             <div className="rounded-2xl bg-white/[0.04] border border-white/10 py-3 text-center">
-              <p className="font-display text-2xl font-bold text-white tabular-nums">{formatDuration(elapsed)}</p>
+              <p className="num-px text-[30px] text-white">{formatDuration(elapsed)}</p>
               <p className="text-[11px] uppercase tracking-wider text-slate-500 mt-0.5">Time</p>
             </div>
             <div className="rounded-2xl bg-white/[0.04] border border-white/10 py-3 text-center">
-              <p className="font-display text-2xl font-bold text-white tabular-nums">{formatPace(elapsed, s.distanceM)}</p>
+              <p className="num-px text-[30px] text-white">{formatPace(elapsed, s.distanceM)}</p>
               <p className="text-[11px] uppercase tracking-wider text-slate-500 mt-0.5">Pace / km</p>
             </div>
           </div>
