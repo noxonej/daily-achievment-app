@@ -1,7 +1,8 @@
+import { HomeShell } from './shells';
 import { usePixelated } from '../px/pixelate';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { DecorSlot, WorldState } from '../../lib/types';
-import { DECOR_SLOTS, PROPERTIES, decorFor, type DecorItem } from '../catalog';
+import { DECOR, DECOR_SLOTS, PROPERTIES, decorFor, type DecorItem } from '../catalog';
 import { BEDS, CHAIRS, DESKS, SEATS, TABLES, TECH, type DrawProps } from './furniture';
 import { ART, COLLECTIBLES, LAMPS, LIGHTS, PLANTS, POSTERS, RUGS, SHELVES, WINDOWS, type Win } from './decor';
 import { mix, shade, tint } from './paint';
@@ -417,6 +418,34 @@ export interface RoomProps {
 
 const ORDER: DecorSlot[] = ['light', 'poster', 'art', 'shelf', 'rug', 'bed', 'lamp', 'seat', 'plant', 'table', 'desk', 'tech', 'chair', 'collectible'];
 
+/** A home with nothing in it yet: its walls, window, view, floor and architecture (Homes list + preview). */
+export function HomeThumb({ id, className = '' }: { id: string; className?: string }) {
+  const property = PROPERTIES.find((p) => p.id === id) ?? PROPERTIES[0];
+  const win = windowRect(property.tier);
+  const ref = useRef<SVGSVGElement>(null);
+  const pixels = usePixelated(ref, `thumb|${id}`, 150, 70);
+  const wall = DECOR.find((d) => d.id === property.wall)!;
+  const floor = DECOR.find((d) => d.id === property.floor)!;
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <svg ref={ref} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" style={{ opacity: pixels ? 0 : 1 }} aria-hidden="true">
+        <RoomDefs />
+        <Wall item={wall} />
+        <g clipPath={`url(#tclip-${id})`}>
+          <clipPath id={`tclip-${id}`}>
+            <rect x={win.x} y={win.y} width={win.w} height={win.h} rx={3} />
+          </clipPath>
+          <WindowView view={property.view} time="day" win={win} />
+        </g>
+        <WindowFrame win={win} tier={property.tier} />
+        <Floor item={floor} />
+        <HomeShell id={property.id} />
+      </svg>
+      {pixels && <img src={pixels} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full object-cover" draggable={false} />}
+    </div>
+  );
+}
+
 export function Room({ world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced }: RoomProps) {
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const time = forced ?? timeOfDay();
@@ -520,7 +549,7 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
 
   const lights = night || time === 'dusk' ? lightsFor(get, win) : [];
   const svgRef = useRef<SVGSVGElement>(null);
-  const pixels = usePixelated(svgRef, JSON.stringify([world.property, world.decor, world.tints, world.sizes, time, focus, trophies, books]), PX_W, PX_H);
+  const pixels = usePixelated(svgRef, JSON.stringify([world.property, 'shell2', world.decor, world.tints, world.sizes, time, focus, trophies, books]), PX_W, PX_H);
   const dimmed = (s: DecorSlot) => !!focus && focus !== s && focus !== 'wall' && focus !== 'floor';
 
   return (
@@ -556,6 +585,7 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
             <path d={`M${win.x} ${win.y + win.h} L${win.x + win.w} ${win.y + win.h} L${win.x + win.w + 140} ${ROOM_H} L${win.x - 60} ${ROOM_H} Z`} fill="#fff4d6" opacity={0.1} />
           )}
           <Floor item={get('floor')} />
+          <HomeShell id={property.id} />
           <g opacity={dimmed('window') ? 0.35 : 1}>
             <Placed slot="window" item={get('window')} dropped={dropped}>
               <SlotArt item={get('window')} night={night} win={win} />

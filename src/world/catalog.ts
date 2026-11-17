@@ -101,6 +101,7 @@ const focus = (min: number): Milestone => ({ stat: 'focusTotal', target: min, la
 
 export const PROPERTIES: Property[] = [
   { id: 'room', name: 'The Launchpad', blurb: 'A small rented room in Old Town. Everyone starts somewhere.', unlock: free, view: 'city', wall: 'wall-cream', floor: 'floor-oak', tier: 1 },
+  { id: 'attic', name: 'Cozy Attic', blurb: 'Slanted ceilings, creaky floor, all yours. Small but cozy.', unlock: at(3, 250), view: 'city', wall: 'wall-cream', floor: 'floor-oak', tier: 1 },
   { id: 'studio', name: 'Parkside Studio', blurb: 'Your own front door, with the park right outside.', unlock: at(5, 600), view: 'park', wall: 'wall-sage', floor: 'floor-oak', tier: 2 },
   { id: 'city', name: 'Skyline Apartment', blurb: 'Twelve floors up. At night the city lights are yours.', unlock: at(10, 1500, streak(7)), view: 'skyline', wall: 'wall-stone', floor: 'floor-walnut', tier: 3 },
   { id: 'cabin', name: 'Pine Cabin', blurb: 'Logs, a fire and a forest outside. No wifi, no excuses.', unlock: at(12, 2000, quests(150)), view: 'forest', wall: 'wall-panels', floor: 'floor-walnut', tier: 3 },
@@ -110,8 +111,9 @@ export const PROPERTIES: Property[] = [
   { id: 'chalet', name: 'Snowpeak Chalet', blurb: 'Snowy mountains and hot chocolate after training.', unlock: at(32, 6500, streak(45)), view: 'snow', wall: 'wall-panels', floor: 'floor-oak', tier: 5 },
   { id: 'treehouse', name: 'Jungle Treehouse', blurb: 'High up in the trees. The parrots are your alarm clock.', unlock: at(36, 7500, quests(800)), view: 'jungle', wall: 'wall-forest', floor: 'floor-oak', tier: 5 },
   { id: 'villa', name: 'Hillcrest Villa', blurb: 'Glass walls, open hills, pure calm.', unlock: at(40, 9000, goals(3)), view: 'hills', wall: 'wall-white', floor: 'floor-marble', tier: 6 },
-  { id: 'moonbase', name: 'Moon Base', blurb: 'Earth in the window. You really went far.', unlock: at(75, 22000, streak(200)), view: 'space', wall: 'wall-concrete', floor: 'floor-concrete', tier: 6 },
   { id: 'mansion', name: 'Seacliff Estate', blurb: 'The ocean from every room. You built this.', unlock: at(60, 16000, streak(100)), view: 'sea', wall: 'wall-white', floor: 'floor-marble', tier: 7 },
+  { id: 'moonbase', name: 'Moon Base', blurb: 'Earth in the window. You really went far.', unlock: at(75, 22000, streak(200)), view: 'space', wall: 'wall-concrete', floor: 'floor-concrete', tier: 6 },
+  { id: 'penthouse', name: 'Rooftop Penthouse', blurb: 'A glass wall over the whole city. Only the most consistent get here.', unlock: at(90, 30000, streak(250)), view: 'skyline', wall: 'wall-night', floor: 'floor-marble', tier: 7 },
 ];
 
 const d = (id: string, slot: DecorSlot, name: string, model: string, color: string | undefined, unlock: Unlock, accent?: string, blurb?: string): DecorItem => ({ id, slot, name, model, color, accent, unlock, blurb });
