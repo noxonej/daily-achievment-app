@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { PurchaseCelebration, PurchaseSheet } from './Purchase';
 import { usePixelated } from './px/pixelate';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { InfoTip } from '../components/Guide';
 import { Avatar } from '../components/Avatar';
 import { Coin } from '../components/Coin';
@@ -48,13 +48,23 @@ export function WorldView() {
   const toGarage = useIntent('world-garage');
   const [section, setSection] = useState<Section>(toGarage ? 'garage' : 'room');
   const [pending, setPending] = useState<Pending | null>(null);
+  const [party, setParty] = useState<Pending | null>(null);
   const [bought, setBought] = useState<{ id: string; key: number } | null>(null);
   const coins = useCountUp(stats.availableShards, 700);
 
   function confirm(p: Pending) {
     dispatch({ type: 'WORLD_BUY', id: p.id, vehicleId: p.vehicleId });
     setBought({ id: p.id, key: Date.now() });
+    if (p.coins > 0) setParty(p);
   }
+  const endParty = useCallback(() => setParty(null), []);
+  const decorThumb = useCallback(
+    (id: string) => {
+      const item = DECOR.find((d) => d.id === id);
+      return item ? <Thumb item={item} tier={6} trophies={0} books={0} locked={false} /> : null;
+    },
+    [],
+  );
   function buy(p: Pending) {
     if (p.coins === 0) confirm(p);
     else setPending(p);
@@ -95,17 +105,17 @@ export function WorldView() {
         {section === 'homes' && <HomesSection stats={stats} onBuy={buy} />}
       </div>
 
-      <ConfirmDialog
-        open={!!pending}
-        title={pending ? `Get ${pending.name}?` : ''}
-        message={pending ? `This costs ${pending.coins.toLocaleString()} coins. You'll have ${(stats.availableShards - pending.coins).toLocaleString()} left. You keep it for good.` : ''}
-        confirmLabel={pending ? `Get it · ${pending.coins.toLocaleString()} coins` : 'Get it'}
+      <PurchaseSheet
+        item={pending}
+        balance={stats.availableShards}
+        decorThumb={decorThumb}
         onCancel={() => setPending(null)}
-        onConfirm={() => {
+        onBuy={() => {
           if (pending) confirm(pending);
           setPending(null);
         }}
       />
+      <PurchaseCelebration item={party} decorThumb={decorThumb} onDone={endParty} />
     </div>
   );
 }
