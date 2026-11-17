@@ -23,7 +23,9 @@ import {
 } from './catalog';
 import { GarageSection } from './Garage';
 import { BuyButton, Requirements } from './ui';
-import { Room, RoomDefs, SlotArt, windowRect, type TimeOfDay } from './room/Room';
+import { HomeThumb, Room, RoomDefs, SlotArt, windowRect, type TimeOfDay } from './room/Room';
+import { createPortal } from 'react-dom';
+import { useBackToClose } from '../lib/backstack';
 
 type Section = 'room' | 'garage' | 'homes';
 
@@ -357,40 +359,101 @@ function Thumb({ item, tier, trophies, books, locked }: { item: DecorItem; tier:
 function HomesSection({ stats, onBuy }: { stats: DerivedStats; onBuy: (p: Pending) => void }) {
   const { state, dispatch } = useApp();
   const world = worldOf(state);
+  const [preview, setPreview] = useState<string | null>(null);
+  const shown = preview ? PROPERTIES.find((p) => p.id === preview) ?? null : null;
   return (
     <div>
-      <p className="text-[13px] text-slate-400">Each home has bigger windows, a better view and nicer light, and comes with its own walls and floor.</p>
-      <div className="mt-3 space-y-2.5 rows-stagger">
+      <p className="text-[13px] text-slate-400">Every home is a different place: its own walls, view and style. Tap one to look inside before you move.</p>
+      <div className="mt-3 grid grid-cols-2 gap-2.5 rows-stagger">
         {PROPERTIES.map((p) => {
           const owned = owns(world, p.id);
           const here = world.property === p.id;
           const gate = canUnlock(p.unlock, stats);
           return (
-            <div key={p.id} className={`relative overflow-hidden rounded-[24px] p-4 ${here ? 'world-home-here' : 'bg-white/[0.035]'}`}>
-              <div className="flex items-start gap-3">
-                <span className={`shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center font-display text-lg ${owned ? 'bg-amber-500 text-[#fff]' : 'bg-white/[0.06] text-slate-400'}`}>{p.tier}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white">{p.name}</p>
-                  <p className="text-[13px] text-slate-400 leading-snug">{p.blurb}</p>
-                  {!owned && <Requirements unlock={p.unlock} stats={stats} />}
+            <div key={p.id} className={`relative overflow-hidden rounded-[22px] ${here ? 'world-home-here' : 'bg-white/[0.035]'}`}>
+              <button onClick={() => setPreview(p.id)} className="block w-full text-left" aria-label={`Look inside ${p.name}`}>
+                <div className="relative">
+                  <HomeThumb id={p.id} className={`aspect-[16/10] w-full ${!owned && !gate.ok ? 'car-card-lock' : ''}`} />
+                  <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[10px] font-bold text-white">
+                    <Icon name={here ? '🏠' : owned ? '✓' : gate.ok ? '🔑' : '🔒'} size={11} />
+                    {here ? 'Home' : owned ? 'Yours' : gate.ok ? 'Ready' : `LV ${p.unlock.level}`}
+                  </span>
                 </div>
-              </div>
-              <div className="mt-3 flex justify-end">
+                <div className="px-3 pt-2">
+                  <p className="text-[14px] font-semibold text-white leading-tight">{p.name}</p>
+                  <p className="text-[11px] text-slate-400 leading-snug line-clamp-2 mt-0.5">{p.blurb}</p>
+                </div>
+              </button>
+              <div className="px-3 pb-3 pt-2">
                 {here ? (
                   <span className="text-xs font-bold text-[var(--mood)]">You live here</span>
                 ) : owned ? (
-                  <button onClick={() => dispatch({ type: 'WORLD_MOVE', property: p.id })} className="rounded-full bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-semibold text-white">
+                  <button onClick={() => dispatch({ type: 'WORLD_MOVE', property: p.id })} className="w-full rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs font-semibold text-white">
                     Live here
                   </button>
                 ) : (
-                  <BuyButton gate={gate} coins={p.unlock.coins} onClick={() => onBuy({ id: p.id, name: p.name, coins: p.unlock.coins })} verb="Move in" />
+                  <BuyButton gate={gate} coins={p.unlock.coins} small onClick={() => onBuy({ id: p.id, name: p.name, coins: p.unlock.coins })} verb="Move in" />
                 )}
               </div>
             </div>
           );
         })}
       </div>
+      {shown && (
+        <HomePreview
+          id={shown.id}
+          onClose={() => setPreview(null)}
+          action={
+            world.property === shown.id ? null : owns(world, shown.id) ? (
+              <button onClick={() => { dispatch({ type: 'WORLD_MOVE', property: shown.id }); setPreview(null); }} className="rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-[#fff]">
+                Live here
+              </button>
+            ) : (
+              <BuyButton gate={canUnlock(shown.unlock, stats)} coins={shown.unlock.coins} onClick={() => { setPreview(null); onBuy({ id: shown.id, name: shown.name, coins: shown.unlock.coins }); }} verb="Move in" />
+            )
+          }
+        />
+      )}
     </div>
+  );
+}
+
+/** Walk into a home before buying it: the real room, with your character and your furniture. */
+function HomePreview({ id, onClose, action }: { id: string; onClose: () => void; action: React.ReactNode }) {
+  const { state, stats } = useApp();
+  const world = worldOf(state);
+  const property = PROPERTIES.find((p) => p.id === id)!;
+  const look: WorldState = { ...world, property: id, decor: { ...world.decor, wall: undefined, floor: undefined }, tints: undefined };
+  const gate = canUnlock(property.unlock, stats);
+  useBackToClose(true, onClose);
+  return createPortal(
+    <div data-overlay className="theme-dark fixed inset-0 z-[80] bg-[#07080c] backdrop-in flex flex-col">
+      <div className="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+        <div>
+          <p className="px-label text-[9px] text-amber-200">{owns(world, id) ? 'Your home' : 'Preview'}</p>
+          <p className="font-display text-xl font-semibold text-white">{property.name}</p>
+        </div>
+        <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-full flex items-center justify-center text-slate-300 hover:bg-white/10">
+          <Icon name="✕" size={20} />
+        </button>
+      </div>
+      <div className="flex-1 min-h-0 px-3">
+        <div className="relative h-full max-h-[460px]">
+          <Room world={look} trophies={0} books={0} focus={null} time="day">
+            <Avatar look={state.character} size={200} bare alive className="w-full h-auto world-idle" />
+          </Room>
+        </div>
+      </div>
+      <div className="px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <p className="text-[13px] text-slate-400">{property.blurb}</p>
+        {!owns(world, id) && <Requirements unlock={property.unlock} stats={stats} />}
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="text-[12px] text-slate-500">{gate.ok || owns(world, id) ? 'Drag to look around.' : 'Keep going to unlock it.'}</span>
+          {action}
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

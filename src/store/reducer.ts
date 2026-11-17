@@ -751,7 +751,12 @@ export function reducer(state: AppState, action: Action): AppState {
       if (vehicle && garageUsed(world) >= garageSpots(world)) return state;
       if (!canUnlock(unlock, computeDerivedStats(state)).ok) return state;
       const next = { ...world, paid: { ...world.paid, [action.id]: unlock.coins } };
-      if (PROPERTIES.some((p) => p.id === action.id)) next.property = action.id;
+      if (PROPERTIES.some((p) => p.id === action.id)) {
+        // A new home shows its own walls and floor (you can still repaint them).
+        next.property = action.id;
+        next.decor = { ...next.decor, wall: undefined, floor: undefined };
+        next.tints = undefined;
+      }
       const decor = DECOR.find((d) => d.id === action.id);
       if (decor) next.decor = { ...world.decor, [decor.slot]: decor.id };
       if (vehicle) next.vehicle = vehicle.id;
@@ -769,7 +774,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'WORLD_MOVE': {
       const world = worldOf(state);
       if (!PROPERTIES.some((p) => p.id === action.property) || !owns(world, action.property)) return state;
-      return { ...state, world: { ...world, property: action.property } };
+      return { ...state, world: { ...world, property: action.property, decor: { ...world.decor, wall: undefined, floor: undefined }, tints: undefined } };
     }
 
     case 'WORLD_PLACE': {
