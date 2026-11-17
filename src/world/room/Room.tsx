@@ -400,6 +400,8 @@ function WindowFrame({ win, tier }: { win: Win; tier: number }) {
 /* ---------------------------------------------------------------- the scene */
 
 export interface RoomProps {
+  /** Show the walk buttons so you can move your character around the room. */
+  walkable?: boolean;
   world: WorldState;
   trophies: number;
   books: number;
@@ -417,6 +419,41 @@ export interface RoomProps {
 }
 
 const ORDER: DecorSlot[] = ['light', 'poster', 'art', 'shelf', 'rug', 'bed', 'lamp', 'seat', 'plant', 'table', 'desk', 'tech', 'chair', 'collectible'];
+
+const GIMMICKS = [
+  { kind: 'wave', say: '👋' },
+  { kind: 'hop', say: '' },
+  { kind: 'spin', say: '' },
+  { kind: 'wiggle', say: '🎵' },
+  { kind: 'hop', say: '💪' },
+  { kind: 'wave', say: 'Hey!' },
+  { kind: 'wiggle', say: '😴' },
+] as const;
+
+/** Now and then (not always) your character does something: waves, hops, spins, hums. */
+function useGimmick(on: boolean) {
+  const [g, setG] = useState<{ kind: string; say: string; key: number } | null>(null);
+  useEffect(() => {
+    if (!on) return;
+    let t: ReturnType<typeof setTimeout>;
+    const next = () => {
+      t = setTimeout(() => {
+        const pick = GIMMICKS[Math.floor(Math.random() * GIMMICKS.length)];
+        setG({ ...pick, key: Date.now() });
+        t = setTimeout(() => {
+          setG(null);
+          next();
+        }, 1600);
+      }, 7000 + Math.random() * 9000);
+    };
+    next();
+    return () => {
+      clearTimeout(t);
+      setG(null);
+    };
+  }, [on]);
+  return g;
+}
 
 /** A home with nothing in it yet: its walls, window, view, floor and architecture (Homes list + preview). */
 export function HomeThumb({ id, className = '' }: { id: string; className?: string }) {
@@ -446,7 +483,7 @@ export function HomeThumb({ id, className = '' }: { id: string; className?: stri
   );
 }
 
-export function Room({ world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced }: RoomProps) {
+export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced }: RoomProps) {
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const time = forced ?? timeOfDay();
   const night = time === 'night';
@@ -457,6 +494,13 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
   const viewport = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 360, h: 360 });
   const [pan, setPan] = useState<number | null>(null);
+  /* walking (2026-11-17): your character can walk left/right and a little forward/back */
+  const [pos, setPos] = useState({ x: 608, y: 532 });
+  const [facing, setFacing] = useState<1 | -1>(1);
+  const [moving, setMoving] = useState(false);
+  const held = useRef<{ dx: number; dy: number } | null>(null);
+  const walkRaf = useRef(0);
+  const gimmick = useGimmick(!moving);
   const drag = useRef<{ x: number; start: number; moved: boolean; v: number; t: number } | null>(null);
   const inertia = useRef(0);
   useLayoutEffect(() => {
@@ -474,6 +518,52 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
   const clampX = (x: number) => Math.min(0, Math.max(minX, x));
   const centreX = clampX(size.w / 2 - 600 * k);
   const tx0 = pan ?? centreX;
+
+  function walk(dx: number, dy: number) {
+    held.current = { dx, dy };
+    if (dx) setFacing(dx > 0 ? 1 : -1);
+    setMoving(true);
+    cancelAnimationFrame(walkRaf.current);
+    let last = performance.now();
+    const step = (t: number) => {
+      const h = held.current;
+      if (!h) return;
+      const dt = Math.min(0.05, (t - last) / 1000);
+      last = t;
+      setPos((p) => {
+        const x = Math.min(1110, Math.max(90, p.x + h.dx * 300 * dt));
+        const y = Math.min(552, Math.max(500, p.y + h.dy * 90 * dt));
+        setPan(clampX(size.w / 2 - x * k));
+        return { x, y };
+      });
+      walkRaf.current = requestAnimationFrame(step);
+    };
+    walkRaf.current = requestAnimationFrame(step);
+  }
+  function stopWalk() {
+    held.current = null;
+    cancelAnimationFrame(walkRaf.current);
+    setMoving(false);
+  }
+  useEffect(() => () => cancelAnimationFrame(walkRaf.current), []);
+  useEffect(() => {
+    if (!walkable) return;
+    const keys: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const down = (e: KeyboardEvent) => {
+      const d = keys[e.key];
+      if (!d || held.current || (e.target as HTMLElement)?.closest?.('input,textarea')) return;
+      e.preventDefault();
+      walk(d[0], d[1]);
+    };
+    const up = (e: KeyboardEvent) => keys[e.key] && stopWalk();
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walkable, size.w, k]);
 
   let cam = { x: tx0, y: 0, s: 1 };
   if (focus && focus !== 'wall' && focus !== 'floor') {
@@ -624,8 +714,18 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
 
         {/* your character, standing on the rug */}
         {children && (
-          <div className="absolute pointer-events-none" style={{ left: `${(608 / ROOM_W) * 100}%`, bottom: `${((ROOM_H - 532) / ROOM_H) * 100}%`, width: `${(172 / ROOM_W) * 100}%`, transform: 'translateX(-50%)' }}>
-            {children}
+          <div
+            className="absolute pointer-events-none"
+            style={{ left: `${(pos.x / ROOM_W) * 100}%`, bottom: `${((ROOM_H - pos.y) / ROOM_H) * 100}%`, width: `${((172 * (0.92 + ((pos.y - 500) / 52) * 0.16)) / ROOM_W) * 100}%`, transform: 'translateX(-50%)', zIndex: Math.round(pos.y) }}
+          >
+            {gimmick && !moving && (
+              <span key={gimmick.key} className="room-bubble-say absolute left-1/2 -top-2 -translate-x-1/2 -translate-y-full" aria-hidden="true">
+                {gimmick.say}
+              </span>
+            )}
+            <div style={{ transform: `scaleX(${facing})` }}>
+              <div className={moving ? 'room-walk' : gimmick ? `room-gim-${gimmick.kind}` : ''}>{children}</div>
+            </div>
           </div>
         )}
 
@@ -652,6 +752,42 @@ export function Room({ world, trophies, books, focus, onTapSlot, editing = false
             );
           })}
       </div>
+
+      {walkable && !focus && (
+        <div className={`absolute bottom-2 z-[5] grid grid-cols-3 gap-1 room-pad ${pos.x * k + tx0 > size.w * 0.55 ? 'left-2' : 'right-2'}`} aria-label="Walk">
+          {(
+            [
+              ['', 0, 0],
+              ['▲', 0, -1],
+              ['', 0, 0],
+              ['◀', -1, 0],
+              ['▼', 0, 1],
+              ['▶', 1, 0],
+            ] as const
+          ).map(([label, dx, dy], i) =>
+            label ? (
+              <button
+                key={i}
+                type="button"
+                aria-label={dx < 0 ? 'Walk left' : dx > 0 ? 'Walk right' : dy < 0 ? 'Walk back' : 'Walk forward'}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  walk(dx, dy);
+                }}
+                onPointerUp={stopWalk}
+                onPointerLeave={stopWalk}
+                onPointerCancel={stopWalk}
+                onContextMenu={(e) => e.preventDefault()}
+                className="w-8 h-8 rounded-lg bg-black/35 backdrop-blur-md text-white/85 text-[13px] font-bold active:bg-black/70 select-none touch-none"
+              >
+                {label}
+              </button>
+            ) : (
+              <span key={i} />
+            ),
+          )}
+        </div>
+      )}
 
       {/* light from the window sweeps a little over the day */}
       <div className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-inset ring-white/10" />

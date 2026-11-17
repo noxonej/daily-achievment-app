@@ -157,7 +157,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
   return (
     <>
       <div className="relative world-scene-in h-[min(92vw,420px)]">
-        <Room world={sceneWorld} trophies={trophies} books={books} focus={slot} onTapSlot={(s) => pick(slot === s ? null : s)} editing={!slot} dropped={dropped} time={time.id}>
+        <Room walkable world={sceneWorld} trophies={trophies} books={books} focus={slot} onTapSlot={(s) => pick(slot === s ? null : s)} editing={!slot} dropped={dropped} time={time.id}>
           <Avatar look={state.character} size={200} bare alive className="w-full h-auto world-idle" />
         </Room>
         <div className="theme-dark pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2">
@@ -191,7 +191,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
         </div>
       </div>
 
-      {!slot && <p className="text-[13px] text-slate-400 -mt-1">Drag to look around. Tap anything in your room to change it. At night your room is lit only by the lamps, lights and screens you own.</p>}
+      {!slot && <p className="text-[13px] text-slate-400 -mt-1">Hold the arrows to walk around. Tap anything to change it.</p>}
 
       <div className="-mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar">
         {[...DECOR_SLOTS].sort((a, b) => +(b.id === 'wall' || b.id === 'floor') - +(a.id === 'wall' || a.id === 'floor')).map((s) => (

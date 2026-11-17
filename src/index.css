@@ -1742,3 +1742,18 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 .look-spin { animation: look-spin 0.9s cubic-bezier(.2, .9, .3, 1) both; }
 @keyframes look-spin { 0% { transform: scale(0.6) rotateY(180deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; } }
 :root[data-motion='reduce'] .look-spin { animation: none !important; }
+
+/* Walking + idle gimmicks in the room (2026-11-17) */
+.room-walk { animation: room-walk 0.32s steps(2) infinite; }
+@keyframes room-walk { 0% { transform: translateY(0); } 50% { transform: translateY(-3%); } }
+.room-gim-hop { animation: room-hop 0.7s cubic-bezier(.3, 1.4, .5, 1) 2; }
+@keyframes room-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14%); } }
+.room-gim-spin { animation: room-spin 0.8s ease-in-out; }
+@keyframes room-spin { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } 100% { transform: scaleX(1); } }
+.room-gim-wiggle { animation: room-wiggle 0.5s ease-in-out 3; transform-origin: 50% 100%; }
+@keyframes room-wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+.room-gim-wave { animation: room-wiggle 0.35s ease-in-out 4; transform-origin: 50% 100%; }
+.room-bubble-say { background: #fff; color: #111; font-weight: 800; font-size: 14px; line-height: 1; padding: 6px 8px; border-radius: 6px; box-shadow: 0 2px 0 #0b0c10, 0 0 0 2px #0b0c10; white-space: nowrap; animation: room-say 1.6s ease both; }
+.room-bubble-say:empty { display: none; }
+@keyframes room-say { 0% { opacity: 0; transform: translate(-50%, -80%) scale(0.6); } 12%, 85% { opacity: 1; transform: translate(-50%, -100%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -110%); } }
+:root[data-motion='reduce'] :is(.room-walk, .room-gim-hop, .room-gim-spin, .room-gim-wiggle, .room-gim-wave, .room-bubble-say) { animation: none !important; }
