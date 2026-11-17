@@ -68,7 +68,7 @@ async function vapidKeys(db, webpush) {
 }
 
 /** One round: send everything that's due. Returns counts for the log. */
-async function runOnce(db, webpush, now = Date.now()) {
+async function runOnce(db, webpush, now = Date.now(), opts = {}) {
   const keys = await vapidKeys(db, webpush);
   // The public key must always be readable by the app (it may have been deleted by hand).
   const cfg = await db.doc('config/push').get();
@@ -89,7 +89,8 @@ async function runOnce(db, webpush, now = Date.now()) {
       const sentRef = db.doc(`pushSent/${doc.id}`);
       const sentDoc = await sentRef.get();
       const sent = (sentDoc.exists && sentDoc.data().tags) || {};
-      const msg = pick(s, sent, now);
+      // A test message (started by hand) goes to every phone right away.
+      const msg = opts.test ? { tag: `test-${now}`, title: 'Squzo is connected ✅', body: 'Notifications work. Your daily nudges will show up here.' } : pick(s, sent, now);
       if (!msg) return;
       // Mark first, so a slow or repeated run can never send the same message twice.
       const keep = Object.keys(sent).sort().slice(-40);

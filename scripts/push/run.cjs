@@ -43,9 +43,21 @@ async function main() {
     console.error('Could not publish firestore.rules:', e.message);
   }
 
-  // 2. Notifications.
-  const stats = await runOnce(db, webpush);
-  console.log('Push round:', JSON.stringify(stats));
+  // 2. Notifications. GitHub starts scheduled runs very unreliably (sometimes hours apart), so one
+  // run keeps going for LOOP_MINUTES and checks every 5 minutes; the next run takes over after it.
+  const test = process.env.TEST_PUSH === 'true';
+  const loopMs = Math.max(0, Number(process.env.LOOP_MINUTES || 0)) * 60000;
+  const start = Date.now();
+  for (;;) {
+    try {
+      const stats = await runOnce(db, webpush, Date.now(), { test });
+      console.log(new Date().toISOString(), 'Push round:', JSON.stringify(stats));
+    } catch (e) {
+      console.error('Push round failed:', e.message);
+    }
+    if (test || Date.now() - start + 5 * 60000 > loopMs) break;
+    await new Promise((r) => setTimeout(r, 5 * 60000));
+  }
 }
 
 main().catch((e) => {
