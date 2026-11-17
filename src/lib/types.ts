@@ -453,6 +453,8 @@ export interface AppState {
   chestsOpened: number;
   /** Shards granted by chests once every item is already owned. */
   bonusShards: number;
+  /** XP earned outside quests, e.g. 10% of what you spend in the shop (2026-11-17). */
+  bonusXp?: number;
   /** One-off coin gifts already paid out, by gift id, so a gift can never land twice. */
   gifts?: string[];
   weekPlan: WeekPlan;

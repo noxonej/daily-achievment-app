@@ -9,7 +9,7 @@ import { buildDefaultQuests } from '../data/defaultQuests';
 import { buildDefaultGoals } from '../data/defaultGoals';
 import { applyDailyTwists, untwisted } from '../lib/dailyTwist';
 import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../lib/wildcard';
-import { DIFFICULTY_XP } from '../lib/xp';
+import { BUY_XP_SHARE, DIFFICULTY_XP } from '../lib/xp';
 import { questReward } from '../lib/rewards';
 import { CHEST_DUPLICATE_SHARDS, DEFAULT_LOOK, boxPool, chestPool, findItem, isOwned, normalizeLook, type OwnershipContext } from '../data/avatar';
 import { MAX_SHIELDS, SHIELD_PRICE, computeDerivedStats, dayCountsForStreak, graceDays } from '../lib/stats';
@@ -359,7 +359,7 @@ export function doneByHand(log: DayLog | undefined): number {
   return log.completedQuestIds.filter((id) => !skipped.has(id)).length;
 }
 
-export const CONTENT_VERSION = 6;
+export const CONTENT_VERSION = 7;
 
 function mondayKey(): string {
   const d = new Date();
@@ -420,6 +420,8 @@ export function migrateContent(state: AppState): AppState {
   const prefs = version < 5 && state.prefs ? { ...state.prefs, nudges: true, daily: state.prefs.daily === 'off' ? ('quotes' as const) : state.prefs.daily } : state.prefs;
   // v6: the default colour became Squzo blue (the app icon's colour). Flame was the old default, so it moves too.
   if (version < 6 && appearance.accent === 'flame') appearance = { ...appearance, accent: 'squzo' };
+  // v7: every quest gives 50% more XP (past days keep what they earned).
+  if (version < 7) quests = quests.map((q) => ({ ...q, xp: Math.round((q.xp * 1.5) / 5) * 5 || q.xp }));
   return { ...state, quests, runs: state.runs ?? [], appearance, prefs, contentVersion: CONTENT_VERSION };
 }
 
@@ -737,6 +739,7 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         unlockedCosmeticIds: [...state.unlockedCosmeticIds, action.itemId],
         purchases: { ...(state.purchases ?? {}), [action.itemId]: item.unlock.cost },
+        bonusXp: (state.bonusXp ?? 0) + Math.round(item.unlock.cost * BUY_XP_SHARE),
       };
     }
 
@@ -760,7 +763,7 @@ export function reducer(state: AppState, action: Action): AppState {
       if (bought && action.vehicleId && owns(world, action.vehicleId)) {
         next.mods = { ...(world.mods ?? {}), [action.vehicleId]: { ...(world.mods?.[action.vehicleId] ?? {}), [bought.kind]: bought.value } };
       }
-      return { ...state, world: next };
+      return { ...state, world: next, bonusXp: (state.bonusXp ?? 0) + Math.round(unlock.coins * BUY_XP_SHARE) };
     }
 
     case 'WORLD_MOVE': {

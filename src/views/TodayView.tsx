@@ -153,7 +153,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       )}
 
       <TodayHero
-        quests={activeDaily}
+        quests={activeDaily.map((q) => (swaps[q.id] ? { ...q, ...swaps[q.id], promptForNote: false, measure: undefined } : q))}
         completed={[...completed, ...skipped]}
         boost={boost}
         onDoNext={(q) => {
@@ -391,6 +391,13 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         onSwap={(questId, replacement) => {
           dispatch({ type: 'USE_QUEST_SWAP', questId, replacement });
           setSwapOpen(false);
+          // Show the new quest right away, so the swap is obvious.
+          setTimeout(() => {
+            const el = document.querySelector<HTMLElement>(`[data-flip="${questId}"]`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el?.classList.add('attention');
+            setTimeout(() => el?.classList.remove('attention'), 1600);
+          }, 350);
         }}
       />
     </div>
