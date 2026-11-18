@@ -49,8 +49,9 @@ function process(img: ImageData, opts: { outline: boolean; edges: boolean }) {
         const diff = lum(src, ((y + dy) * w + x + dx) * 4) - l;
         if (diff > edge) edge = diff;
       }
-      if (edge > 0.2) {
-        const k = 0.55;
+      // Only real edges get the dark line, and a softer one, so objects stay easy to read (2026-11-18).
+      if (edge > 0.22) {
+        const k = 0.58;
         d[i] *= k;
         d[i + 1] *= k;
         d[i + 2] *= k;

@@ -1535,8 +1535,8 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 .room-camera { will-change: transform; }
 .room-dim { opacity: 0.35; filter: saturate(0.6); transition: opacity 0.5s var(--ease-out, ease), filter 0.5s; }
 .room-viewport g { transition: opacity 0.5s var(--ease-out, ease); }
-.room-pin { display: block; width: 12px; height: 12px; border-radius: 999px; font-size: 0;
-  background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.3);
+.room-pin { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; font-size: 0; color: #1b1d24;
+  background: rgba(255, 255, 255, 0.92); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.3);
   animation: rm-pin 2.6s ease-in-out infinite, rm-pin-out 0.8s ease 6s forwards; }
 @keyframes rm-pin { 0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.3); } 50% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.3); } }
 @keyframes rm-pin-out { to { opacity: 0; } }

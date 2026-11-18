@@ -1,5 +1,6 @@
 import { HomeShell } from './shells';
 import { PetSprite, WalkStepContext } from '../../components/PixelAvatar';
+import { Icon } from '../../components/Icon';
 import { usePixelated } from '../px/pixelate';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { DecorSlot, WorldState } from '../../lib/types';
@@ -19,7 +20,7 @@ import { mix, shade, tint } from './paint';
 export const ROOM_W = 1200;
 export const ROOM_H = 560;
 /** The room is shown as pixel art at this size (4 scene units per pixel). */
-const PX_W = 300;
+const PX_W = 400;
 const PX_H = Math.round((PX_W * ROOM_H) / ROOM_W);
 
 export type TimeOfDay = 'day' | 'dusk' | 'night';
@@ -513,17 +514,12 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const held = useRef<{ dx: number; dy: number } | null>(null);
   const walkRaf = useRef(0);
   const gimmick = useGimmick(!moving);
-  // Walking frames: legs swap every 140 ms while you move.
-  const [stepFrame, setStepFrame] = useState(0);
-  useEffect(() => {
-    if (!moving) {
-      setStepFrame(0);
-      return;
-    }
-    setStepFrame(1);
-    const id = setInterval(() => setStepFrame((f) => (f === 1 ? 2 : 1)), 140);
-    return () => clearInterval(id);
-  }, [moving]);
+  // While walking, position and camera are moved straight on the page every frame (no React render,
+  // no camera easing), so it stays smooth on a phone (2026-11-18 fix for "walking is very glitchy").
+  const posRef = useRef(pos);
+  const panRef = useRef<number | null>(null);
+  const charRef = useRef<HTMLDivElement>(null);
+  const cameraRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; start: number; moved: boolean; v: number; t: number } | null>(null);
   const inertia = useRef(0);
   useLayoutEffect(() => {
@@ -542,23 +538,40 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const centreX = clampX(size.w / 2 - 600 * k);
   const tx0 = pan ?? centreX;
 
+  function placeChar() {
+    const el = charRef.current;
+    if (!el) return;
+    const p = posRef.current;
+    Object.assign(el.style, charStyle(p));
+  }
+  function placeCamera(x: number) {
+    const el = cameraRef.current;
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.transform = `translate3d(${x}px, 0px, 0) scale(1)`;
+  }
   function walk(dx: number, dy: number) {
     held.current = { dx, dy };
     if (dx) setFacing(dx > 0 ? 1 : -1);
     setMoving(true);
     cancelAnimationFrame(walkRaf.current);
     let last = performance.now();
+    // The camera glides after the character instead of snapping to it.
+    let camX = tx0;
     const step = (t: number) => {
       const h = held.current;
       if (!h) return;
       const dt = Math.min(0.05, (t - last) / 1000);
       last = t;
-      setPos((p) => {
-        const x = Math.min(1110, Math.max(90, p.x + h.dx * 300 * dt));
-        const y = Math.min(552, Math.max(500, p.y + h.dy * 90 * dt));
-        setPan(clampX(size.w / 2 - x * k));
-        return { x, y };
-      });
+      const p = posRef.current;
+      const x = Math.min(1110, Math.max(90, p.x + h.dx * 260 * dt));
+      const y = Math.min(552, Math.max(500, p.y + h.dy * 80 * dt));
+      posRef.current = { x, y };
+      placeChar();
+      const target = clampX(size.w / 2 - x * k);
+      camX += (target - camX) * Math.min(1, dt * 6);
+      panRef.current = camX;
+      placeCamera(camX);
       walkRaf.current = requestAnimationFrame(step);
     };
     walkRaf.current = requestAnimationFrame(step);
@@ -566,6 +579,9 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   function stopWalk() {
     held.current = null;
     cancelAnimationFrame(walkRaf.current);
+    // Hand the final spot back to React once, so the next render agrees with the page.
+    setPos(posRef.current);
+    if (panRef.current != null) setPan(panRef.current);
     setMoving(false);
   }
   useEffect(() => () => cancelAnimationFrame(walkRaf.current), []);
@@ -588,7 +604,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walkable, size.w, k]);
 
-  let cam = { x: tx0, y: 0, s: 1 };
+  let cam = { x: moving && panRef.current != null ? panRef.current : tx0, y: 0, s: 1 };
   if (focus && focus !== 'wall' && focus !== 'floor') {
     const r = DECOR_SLOTS.find((s) => s.id === focus)?.rect;
     if (r) {
@@ -681,12 +697,13 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
       onPointerCancel={onUp}
     >
       <div
+        ref={cameraRef}
         className="room-camera absolute left-0 top-0 origin-top-left"
         style={{
           width: sceneW,
           height: size.h,
           transform: `translate3d(${cam.x}px, ${cam.y}px, 0) scale(${cam.s})`,
-          transition: drag.current?.moved || inertia.current ? 'none' : 'transform 0.7s cubic-bezier(.22,.9,.24,1)',
+          transition: moving || drag.current?.moved || inertia.current ? 'none' : 'transform 0.7s cubic-bezier(.22,.9,.24,1)',
         }}
       >
         <svg ref={svgRef} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} width="100%" height="100%" className="block" style={{ opacity: pixels ? 0 : 1 }} role="img" aria-label={`Your room in ${property.name}`}>
@@ -753,8 +770,9 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
         {/* your character, standing on the rug */}
         {children && (
           <div
+            ref={charRef}
             className="absolute pointer-events-none"
-            style={{ left: `${(pos.x / ROOM_W) * 100}%`, bottom: `${((ROOM_H - pos.y) / ROOM_H) * 100}%`, width: `${((172 * (0.92 + ((pos.y - 500) / 52) * 0.16)) / ROOM_W) * 100}%`, transform: 'translateX(-50%)', zIndex: Math.round(pos.y) }}
+            style={charStyle(posRef.current)}
           >
             {gimmick && !moving && (
               <span key={gimmick.key} className="room-bubble-say absolute left-1/2 -top-2 -translate-x-1/2 -translate-y-full" aria-hidden="true">
@@ -763,7 +781,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
             )}
             <div style={{ transform: `scaleX(${facing})` }}>
               <div className={moving ? 'room-walk' : gimmick ? `room-gim-${gimmick.kind}` : ''}>
-                <WalkStepContext.Provider value={stepFrame}>{children}</WalkStepContext.Provider>
+                <Stepper moving={moving}>{children}</Stepper>
               </div>
             </div>
           </div>
@@ -835,8 +853,9 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
                 style={{ left: `${(x / ROOM_W) * 100}%`, top: `${(y / ROOM_H) * 100}%`, width: `${(w / ROOM_W) * 100}%`, height: `${(h / ROOM_H) * 100}%`, zIndex: s.id === 'rug' || s.id === 'window' || s.id === 'light' ? 0 : 1 }}
               >
                 {editing && !focus && (
+                  // A small icon says what you can change there (was a blank dot, 2026-11-18).
                   <span className="room-pin absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" aria-hidden="true">
-                    +
+                    <Icon name={s.icon} size={12} />
                   </span>
                 )}
               </button>
@@ -947,4 +966,30 @@ function Joystick({ side, onMove, onEnd }: { side: 'left' | 'right'; onMove: (dx
       <span className="room-stick-knob" style={{ transform: `translate(calc(-50% + ${knob?.x ?? 0}px), calc(-50% + ${knob?.y ?? 0}px))` }} aria-hidden="true" />
     </div>
   );
+}
+
+/** Where the character stands: further back is a little smaller. */
+function charStyle(p: { x: number; y: number }) {
+  return {
+    left: `${(p.x / ROOM_W) * 100}%`,
+    bottom: `${((ROOM_H - p.y) / ROOM_H) * 100}%`,
+    width: `${((172 * (0.92 + ((p.y - 500) / 52) * 0.16)) / ROOM_W) * 100}%`,
+    transform: 'translateX(-50%)',
+    zIndex: String(Math.round(p.y)),
+  };
+}
+
+/** The walking legs: only this little part re-renders every step, not the whole room. */
+function Stepper({ moving, children }: { moving: boolean; children: ReactNode }) {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    if (!moving) {
+      setFrame(0);
+      return;
+    }
+    setFrame(1);
+    const id = setInterval(() => setFrame((f) => (f === 1 ? 2 : 1)), 160);
+    return () => clearInterval(id);
+  }, [moving]);
+  return <WalkStepContext.Provider value={frame}>{children}</WalkStepContext.Provider>;
 }
