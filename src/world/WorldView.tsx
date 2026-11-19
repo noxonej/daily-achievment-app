@@ -31,6 +31,7 @@ import { createPortal } from 'react-dom';
 import { AVATAR_ITEMS, isOwned } from '../data/avatar';
 import { ownership } from '../store/reducer';
 import { useBackToClose } from '../lib/backstack';
+import { t } from '../lib/prefs';
 
 type Section = 'room' | 'garage' | 'homes';
 
@@ -79,16 +80,13 @@ export function WorldView() {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 stagger">
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="eyebrow">Your world</p>
+          <p className="eyebrow">{t('world.eyebrow')}</p>
           <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1 flex items-center gap-1">
-            World
-            <InfoTip
-              title="Build your life here"
-              text="Every quest you finish in real life gives coins and XP. Spend them here on your room, your cars and bigger homes. The best things also need a real milestone, like a 30-day streak, so they can only be earned. Nothing you own is ever taken away."
-            />
+            {t('nav.world')}
+            <InfoTip title={t('world.infoTitle')} text={t('world.infoText')} />
           </h1>
         </div>
-        <span className="shrink-0 flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5" aria-label={`${stats.availableShards} coins`}>
+        <span className="shrink-0 flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5" aria-label={t('world.coins', { n: stats.availableShards })}>
           <Coin size={16} />
           <span className="num-px text-[22px] text-white">{coins.toLocaleString()}</span>
         </span>
@@ -98,9 +96,9 @@ export function WorldView() {
         value={section}
         onChange={setSection}
         options={[
-          { id: 'room', label: 'Room', icon: '🏠' },
-          { id: 'garage', label: 'Garage', icon: '🚗' },
-          { id: 'homes', label: 'Homes', icon: '🏢' },
+          { id: 'room', label: t('world.room'), icon: '🏠' },
+          { id: 'garage', label: t('world.garage'), icon: '🚗' },
+          { id: 'homes', label: t('world.homes'), icon: '🏢' },
         ]}
       />
 
@@ -128,10 +126,10 @@ export function WorldView() {
 /* ---------------------------------------------------------------- room */
 
 const TIMES: Array<{ id: TimeOfDay | undefined; label: string; icon: string }> = [
-  { id: undefined, label: 'Now', icon: '🌅' },
-  { id: 'day', label: 'Day', icon: '☀️' },
-  { id: 'dusk', label: 'Dusk', icon: '🌅' },
-  { id: 'night', label: 'Night', icon: '🌙' },
+  { id: undefined, get label() { return t('world.now'); }, icon: '🌅' },
+  { id: 'day', get label() { return t('world.day'); }, icon: '☀️' },
+  { id: 'dusk', get label() { return t('world.dusk'); }, icon: '🌅' },
+  { id: 'night', get label() { return t('world.night'); }, icon: '🌙' },
 ];
 
 function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p: Pending) => void; bought: { id: string; key: number } | null }) {
@@ -242,7 +240,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
             <button
               onClick={() => setTimeIx((timeIx + 1) % TIMES.length)}
               className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md px-3 py-1.5 text-[12px] font-semibold text-white"
-              aria-label={`Light: ${time.label}. Tap to change`}
+              aria-label={t('world.light', { x: time.label })}
             >
               <Icon name={time.icon} size={13} />
               {time.label}
@@ -253,7 +251,8 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
 
       {!slot && !placing && (
         <p className="text-[13px] text-slate-400 -mt-1">
-          Slide the round pad to walk. Tap anything to change it.{pets.length > 0 ? ' Tap a pet to take it along.' : ''}
+          {t('world.walkHint')}
+          {pets.length > 0 ? t('world.petHint') : ''}
         </p>
       )}
 

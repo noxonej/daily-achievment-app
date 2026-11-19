@@ -1,4 +1,5 @@
 import type { GoalLogEntry, LongTermGoal } from './types';
+import { tl } from './i18n';
 
 /**
  * Goal journal and tips for long-term goals.
@@ -250,12 +251,23 @@ export function goalTips(g: LongTermGoal, day = Math.floor(Date.now() / 86_400_0
   return out;
 }
 
+/** Read at render time, so it follows the chosen language. */
 export const STATUS_LABEL: Record<GoalPlan['status'], string> = {
-  ahead: 'Ahead of plan',
-  'on-track': 'On track',
-  behind: 'Behind, catch up',
-  'just-started': 'Just started',
-  done: 'Done',
+  get ahead() {
+    return tl('status.ahead');
+  },
+  get 'on-track'() {
+    return tl('status.onTrack');
+  },
+  get behind() {
+    return tl('status.behind');
+  },
+  get 'just-started'() {
+    return tl('status.started');
+  },
+  get done() {
+    return tl('status.done');
+  },
 };
 
 /** Yearly goals first, then monthly, weekly and custom, so the big dreams stay on top. */

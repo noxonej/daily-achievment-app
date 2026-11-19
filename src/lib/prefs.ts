@@ -1,7 +1,7 @@
 import { THEME_COLOR } from './theme';
 import { useEffect, useSyncExternalStore } from 'react';
 import type { Prefs } from './types';
-import { DEFAULT_PREFS, LANGUAGES, translate, type TKey } from './i18n';
+import { DEFAULT_PREFS, shownLanguage, tl, tn, type TKey } from './i18n';
 import { locale, setLocale, setTimeFormat } from './locale';
 import { setSoundsEnabled } from './focusTimer';
 import { useApp } from '../store/AppContext';
@@ -67,7 +67,8 @@ export function useApplyPrefs(raw: Partial<Prefs> | undefined) {
   const theme = resolvedTheme(prefs.theme, systemDark);
 
   // Language and clock are needed while rendering, so set them before children draw.
-  if (locale() !== prefs.language) setLocale(prefs.language);
+  const lang = shownLanguage(prefs.language);
+  if (locale() !== lang) setLocale(lang);
   setTimeFormat(prefs.timeFormat);
   setSoundsEnabled(prefs.sounds);
 
@@ -107,13 +108,12 @@ export function useApplyPrefs(raw: Partial<Prefs> | undefined) {
   useEffect(() => setHaptics(prefs.haptics), [prefs.haptics]);
 }
 
-const CODES = new Set(LANGUAGES.map((l) => l.code));
-
 /** Translator for the language the app is showing right now. */
 export function t(key: TKey, vars?: Record<string, string | number>): string {
-  const l = locale();
-  return translate(CODES.has(l) ? l : l.split('-')[0], key, vars);
+  return tl(key, vars);
 }
+
+export { tn };
 
 /** True in Simple mode (the default): screens show only their main cards. */
 export function useSimple(): boolean {

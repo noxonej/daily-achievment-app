@@ -5,6 +5,7 @@ import { CHECKIN_REWARDS, PERFECT_WEEK_BONUS, checkInRewardInfo, checkInView } f
 import { Icon } from '../Icon';
 import { Burst } from '../fx/Burst';
 import { useDailyResetLabel } from '../../lib/useResetCountdown';
+import { t } from '../../lib/prefs';
 
 /**
  * Daily rewards: a 7-day track on Today. Open the app, claim today's reward, see tomorrow's.
@@ -33,26 +34,26 @@ export function CheckInCard() {
 
   return (
     <section
-      aria-label="Daily rewards"
+      aria-label={t('checkin.title')}
       className={`relative overflow-hidden rounded-2xl border p-4 ${
         v.claimedToday ? 'border-white/10 bg-white/[0.03]' : 'checkin-ready border-amber-400/35'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">Daily rewards</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">{t('checkin.title')}</p>
           <p className="font-display font-bold text-white leading-snug">
-            {v.claimedToday ? (justClaimed ? `You got ${justClaimed.toLowerCase()}!` : 'See you tomorrow') : `Day ${v.nextDay}: ${todays.title}`}
+            {v.claimedToday ? (justClaimed ? t('checkin.got', { x: justClaimed.toLowerCase() }) : t('checkin.tomorrow')) : t('checkin.day', { n: v.nextDay, x: todays.title })}
           </p>
         </div>
         {!v.claimedToday && (
           <button onClick={claim} className="attention shrink-0 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-sm font-bold px-4 py-2.5">
-            Claim
+            {t('checkin.claim')}
           </button>
         )}
       </div>
 
-      <ol className="mt-3 grid grid-cols-7 gap-1.5" aria-label="This week's rewards">
+      <ol className="mt-3 grid grid-cols-7 gap-1.5" aria-label={t('checkin.week')}>
         {CHECKIN_REWARDS.map((r, i) => {
           const day = i + 1;
           const info = checkInRewardInfo(r);
@@ -62,7 +63,7 @@ export function CheckInCard() {
           return (
             <li
               key={day}
-              aria-label={`Day ${day}: ${info.title}${done ? ', claimed' : now ? ', ready' : ''}`}
+              aria-label={`${t('checkin.day', { n: day, x: info.title })}${done ? `, ${t('checkin.claimed')}` : now ? `, ${t('checkin.ready')}` : ''}`}
               className={`relative rounded-xl border flex flex-col items-center justify-center py-1.5 min-h-[58px] ${
                 done
                   ? 'border-emerald-400/40 bg-emerald-500/10'
@@ -89,14 +90,14 @@ export function CheckInCard() {
       <p className="text-xs text-slate-400 mt-2.5 leading-relaxed">
         {v.claimedToday ? (
           <>
-            Tomorrow (in {resetLabel}): <b className="text-slate-200">{v.nextDay === 1 ? 'a new week of rewards' : `Day ${v.nextDay}, ${nextInfo.title.toLowerCase()}`}</b>.
-            {v.perfectPossible && v.filled < 7 && <> Keep going every day for a +{PERFECT_WEEK_BONUS} coin bonus on day 7.</>}
-            {v.filled === 7 && v.inARow === 7 && <> Perfect week: +{PERFECT_WEEK_BONUS} bonus coins!</>}
+            {t('checkin.next', { t: resetLabel })} <b className="text-slate-200">{v.nextDay === 1 ? t('checkin.newWeek') : t('checkin.nextDay', { n: v.nextDay, x: nextInfo.title.toLowerCase() })}</b>.
+            {v.perfectPossible && v.filled < 7 && <> {t('checkin.keepGoing', { n: PERFECT_WEEK_BONUS })}</>}
+            {v.filled === 7 && v.inARow === 7 && <> {t('checkin.perfectWeek', { n: PERFECT_WEEK_BONUS })}</>}
           </>
         ) : v.perfectPossible ? (
-          <>Claim 7 days in a row for a +{PERFECT_WEEK_BONUS} coin bonus. Missed a day? No problem, you keep what you have.</>
+          <>{t('checkin.inARow', { n: PERFECT_WEEK_BONUS })}</>
         ) : (
-          <>Missed a day? No problem, your rewards are still here. Pick up where you left off.</>
+          <>{t('checkin.missed')}</>
         )}
       </p>
     </section>

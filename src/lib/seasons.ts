@@ -1,3 +1,4 @@
+import { locale } from './locale';
 import type { AppState } from './types';
 import { todayKey } from './date';
 
@@ -48,7 +49,7 @@ export function seasonTheme(key: string = seasonKey()): SeasonTheme {
 
 export function seasonLabel(key: string): string {
   const [y, m] = key.split('-').map(Number);
-  const month = new Date(y, m - 1, 1).toLocaleString(undefined, { month: 'long' });
+  const month = new Date(y, m - 1, 1).toLocaleString(locale(), { month: 'long' });
   return `${seasonTheme(key).name} · ${month} ${y}`;
 }
 

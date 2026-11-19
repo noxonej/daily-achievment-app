@@ -16,16 +16,16 @@ export function WellnessRow() {
   const night = hour >= 20 || hour < 5;
   const bed = state.profile?.bedTime;
   const tiles = [
-    { id: 'breathe', icon: '🌬', title: 'Breathe', sub: '1 min calm', from: '#22d3ee', to: '#0e7490', on: () => breathe.open() },
-    { id: 'sleep', icon: '🌙', title: 'Sleep', sub: night ? 'Wind down' : bed ? `Bed ${bed}` : 'Plan sleep', from: '#818cf8', to: '#3730a3', on: () => sleepTool.open() },
+    { id: 'breathe', icon: '🌬', title: t('recharge.breathe'), sub: t('recharge.breatheSub'), from: '#22d3ee', to: '#0e7490', on: () => breathe.open() },
+    { id: 'sleep', icon: '🌙', title: t('recharge.sleep'), sub: night ? t('recharge.windDown') : bed ? t('recharge.bed', { t: bed }) : t('recharge.plan'), from: '#818cf8', to: '#3730a3', on: () => sleepTool.open() },
     { id: 'focus', icon: '⏱', title: t('now.focus'), sub: '25 min', from: '#60a5fa', to: '#1d4ed8', on: () => focusTimer.open() },
     { id: 'run', icon: 'df:run', title: t('qa.run'), sub: 'GPS', from: '#2dd4bf', to: '#0f766e', on: () => runTracker.open() },
   ];
   // At night, Sleep goes first.
   if (night) tiles.unshift(tiles.splice(1, 1)[0]);
   return (
-    <section aria-label="Recharge">
-      <p className="eyebrow mb-2 px-1">Recharge</p>
+    <section aria-label={t('recharge.title')}>
+      <p className="eyebrow mb-2 px-1">{t('recharge.title')}</p>
       <div className="grid grid-cols-4 gap-2">
         {tiles.map((x, i) => (
           <button

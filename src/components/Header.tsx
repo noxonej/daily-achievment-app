@@ -10,7 +10,7 @@ import { Icon } from './Icon';
 import { RankBadge } from './RankBadge';
 import { RANK_COUNT, rankAt, rankForLevel, rarityLabel } from '../lib/ranks';
 import { settings } from '../lib/settingsNav';
-import { t } from '../lib/prefs';
+import { t, tn } from '../lib/prefs';
 
 /** Glassy top bar: logo and level on the left, streak, settings and your character (with an XP ring) on the right. */
 export function Header() {
@@ -59,7 +59,7 @@ export function Header() {
           <button
             onClick={() => setInfoOpen((o) => !o)}
             aria-expanded={infoOpen}
-            aria-label={`Level ${stats.level}, ${title}`}
+            aria-label={t('header.level', { level: stats.level, title })}
             className="flex items-center gap-2.5 min-w-0 rounded-2xl -ml-1 pl-1 pr-2 py-1 hover:bg-white/[0.04]"
           >
             <span className="relative shrink-0">
@@ -83,7 +83,7 @@ export function Header() {
           className={`flex items-center gap-1 rounded-full pl-2 pr-2.5 h-9 border transition-colors ${landed ? 'streak-land ' : ''}${
             hot ? 'bg-orange-500/15 border-orange-400/40 badge-shine' : 'bg-white/[0.06] border-transparent backdrop-blur-md'
           }`}
-          title={`${streak} day streak`}
+          title={tn('header.streak', streak)}
         >
           <Fire size={19} lit={streak > 0} intensity={streak >= 30 ? 3 : streak >= 7 ? 2 : 1} />
           <span key={streak} className="num-px text-[20px] text-white animate-num-pop">
@@ -146,7 +146,7 @@ function AvatarRing({
   const shown = useCountUp(Math.round(progress * 1000), 900, 0) / 1000;
 
   return (
-    <button onClick={onClick} className="relative shrink-0 rounded-full" aria-label={`Customize your character (level ${level})`} style={{ width: size, height: size }}>
+    <button onClick={onClick} className="relative shrink-0 rounded-full" aria-label={t('header.customize', { level })} style={{ width: size, height: size }}>
       <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className={`absolute inset-0 -rotate-90 overflow-visible ${flash ? 'ring-flash' : ''}`} aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-white/10" strokeWidth="3" />
         <circle
@@ -198,14 +198,14 @@ function LevelPopover({ onClose, into, need, level }: { onClose: () => void; int
     ladderRef.current?.querySelector('[data-current]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
   }, []);
   return (
-    <div ref={ref} role="dialog" aria-label="Your rank" className="absolute left-0 top-full mt-2 w-[19rem] bg-raised border border-white/10 shadow-2xl max-w-[calc(100vw-2rem)] rounded-3xl p-4 popover-in z-40">
+    <div ref={ref} role="dialog" aria-label={t('rank.yours')} className="absolute left-0 top-full mt-2 w-[19rem] bg-raised border border-white/10 shadow-2xl max-w-[calc(100vw-2rem)] rounded-3xl p-4 popover-in z-40">
       <div className="flex items-center gap-3">
         <RankBadge rank={rank} size={56} shine />
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Your rank</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{t('rank.yours')}</p>
           <p className="font-display text-xl font-semibold text-white truncate">{rank.name}</p>
           <p className="text-[11px] text-slate-400 tabular-nums">
-            {rank.nextLevel ? `Next rank at level ${rank.nextLevel}` : 'The highest rank there is'}
+            {rank.nextLevel ? t('rank.next', { level: rank.nextLevel }) : t('rank.top')}
           </p>
           <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-violet-500/15 border border-violet-400/30 px-2 py-px text-[10.5px] font-bold text-violet-200" title="Estimated share of players who reach this rank">
             {rarityLabel(rank.index)}{rank.index > 0 ? ' of players' : ''}
@@ -219,7 +219,7 @@ function LevelPopover({ onClose, into, need, level }: { onClose: () => void; int
       <div className="mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
         <div className="h-full rounded-full bg-[var(--mood)] transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
-      <div ref={ladderRef} className="mt-4 -mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar" aria-label="All ranks">
+      <div ref={ladderRef} className="mt-4 -mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar" aria-label={t('rank.all')}>
         {Array.from({ length: RANK_COUNT }, (_, i) => rankAt(i)).map((r) => {
           const reached = r.index <= rank.index;
           return (
@@ -232,7 +232,7 @@ function LevelPopover({ onClose, into, need, level }: { onClose: () => void; int
           );
         })}
       </div>
-      <p className="text-[11px] text-slate-400 mt-3 leading-relaxed">Finish quests to earn XP. Every level gives a reward chest, and new ranks come as you level up. A rank never goes down.</p>
+      <p className="text-[11px] text-slate-400 mt-3 leading-relaxed">{t('rank.help')}</p>
     </div>
   );
 }

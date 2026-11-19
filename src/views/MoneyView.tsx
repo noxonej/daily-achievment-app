@@ -39,6 +39,7 @@ import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon, IconGrid } from '../components/Icon';
 import { locale } from '../lib/locale';
+import { t } from '../lib/prefs';
 
 /** A money amount that counts up when it first appears and when it changes. */
 function CountUp({ value, format }: { value: number; format: (cents: number) => string }) {
@@ -71,17 +72,17 @@ export function MoneyView() {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 stagger">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="eyebrow">Your money</p>
+          <p className="eyebrow">{t('money.eyebrow')}</p>
           <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1 flex items-center gap-1">
-            Money
-            <InfoTip title="Know where your money goes" text="Tell the app how much you have. When you buy something, tap I spent money. Stay under your daily limit and watch your savings goals fill up. Your money data is saved on your phone and only leaves it inside your encrypted backup." />
+            {t('nav.money')}
+            <InfoTip title={t('money.infoTitle')} text={t('money.infoText')} />
           </h1>
         </div>
         {money.setupDone && (
           <select
             value={money.currency}
             onChange={(e) => dispatch({ type: 'MONEY_SET_CURRENCY', currency: e.target.value })}
-            aria-label="Currency"
+            aria-label={t('money.currency')}
             className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 text-sm font-semibold text-slate-200 focus:outline-none focus:border-amber-400/60"
           >
             {CURRENCIES.map((c) => (
@@ -244,13 +245,13 @@ function SetupCard() {
   return (
     <div className={`${card} p-5`}>
       <div className="flex mb-2 text-amber-300"><Icon name="💰" size={34} strokeWidth={1.8} /></div>
-      <h2 className="font-display text-xl font-bold text-white">Let's count your money</h2>
+      <h2 className="font-display text-xl font-bold text-white">{t('money.countTitle')}</h2>
       <p className="text-sm text-slate-400 mt-1">
-        Type how much you have right now. A rough number is fine, and you can change it any time.
+        {t('money.countText')}
       </p>
 
       <label className="block mt-5">
-        <span className="text-sm font-semibold text-slate-300">Currency</span>
+        <span className="text-sm font-semibold text-slate-300">{t('money.currency')}</span>
         <select value={currency} onChange={(e) => setCurrency(e.target.value)} className={`${inputClass} mt-1.5`}>
           {CURRENCIES.map((c) => (
             <option key={c} value={c}>
@@ -291,7 +292,7 @@ function SetupCard() {
         }}
         className={`${primaryBtn} w-full py-3 mt-5`}
       >
-        Show my money
+        {t('money.show')}
       </button>
     </div>
   );

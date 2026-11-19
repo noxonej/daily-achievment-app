@@ -1,5 +1,6 @@
 import type { AppState } from './types';
 import { addDaysToKey } from './date';
+import { tl } from './i18n';
 
 /**
  * Daily rewards: open the app and claim one reward a day, on a 7-day track that ends in a prize chest.
@@ -27,13 +28,13 @@ export const PERFECT_WEEK_BONUS = 50;
 export function checkInRewardInfo(r: CheckInReward): { icon: string; short: string; title: string } {
   switch (r.kind) {
     case 'shards':
-      return { icon: '💎', short: String(r.amount), title: `${r.amount} coins` };
+      return { icon: '💎', short: String(r.amount), title: tl('reward.coins', { n: r.amount }) };
     case 'swap':
-      return { icon: '🔁', short: 'Swap', title: 'A Quest Swap' };
+      return { icon: '🔁', short: tl('reward.swapShort'), title: tl('reward.swap') };
     case 'shield':
-      return { icon: '🛡', short: 'Shield', title: 'A Streak Shield' };
+      return { icon: '🛡', short: tl('reward.shieldShort'), title: tl('reward.shield') };
     case 'chest':
-      return { icon: 'df:chest', short: 'Chest', title: 'A prize chest' };
+      return { icon: 'df:chest', short: tl('reward.chestShort'), title: tl('reward.chest') };
   }
 }
 

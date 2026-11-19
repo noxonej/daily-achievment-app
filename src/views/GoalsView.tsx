@@ -7,12 +7,21 @@ import { Icon } from '../components/Icon';
 import { GoalJournal } from '../components/GoalJournal';
 import { GoalPlanBox } from '../components/GoalPlanBox';
 import { byPriority } from '../lib/goalCoach';
+import { t } from '../lib/prefs';
 
 const TIMEFRAME_LABEL: Record<string, string> = {
-  weekly: 'This Week',
-  monthly: 'This Month',
-  yearly: 'This Year',
-  custom: 'Custom',
+  get weekly() {
+    return t('tf.weekly');
+  },
+  get monthly() {
+    return t('tf.monthly');
+  },
+  get yearly() {
+    return t('tf.yearly');
+  },
+  get custom() {
+    return t('tf.custom');
+  },
 };
 
 export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
@@ -36,33 +45,33 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
       <div className="flex items-center justify-between gap-3">
         {embedded ? (
-          <p className="text-sm text-slate-400">Your big dreams for the year, with a plan to get there.</p>
+          <p className="text-sm text-slate-400">{t('goals.dreams')}</p>
         ) : (
           <div>
-            <p className="eyebrow">Dreams in progress</p>
-            <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1">Long-Term Goals</h1>
+            <p className="eyebrow">{t('goals.inProgress')}</p>
+            <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1">{t('goals.longTerm')}</h1>
           </div>
         )}
         <button
           onClick={openAdd}
           className="shrink-0 rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-3.5 py-2 transition"
         >
-          + Add
+          {t('goals.add')}
         </button>
       </div>
 
       {active.length === 0 && completed.length === 0 && (
         <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
           <div className="flex justify-center mb-2 text-amber-300"><Icon name="🏆" size={30} strokeWidth={1.8} /></div>
-          <p className="text-white font-semibold mb-1">No goals yet</p>
+          <p className="text-white font-semibold mb-1">{t('goals.none')}</p>
           <p className="text-slate-400 text-sm mb-4 px-6">
-            Set something big to work toward across weeks, months, or the year.
+            {t('goals.emptySub')}
           </p>
           <button
             onClick={openAdd}
             className="rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-sm px-4 py-2 transition"
           >
-            Set a goal
+            {t('goals.set')}
           </button>
         </div>
       )}
@@ -94,21 +103,21 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm font-semibold text-emerald-200 truncate">{g.title}</span>
                   <span className="block text-xs text-slate-400">
-                    {g.target} {g.unit} · completed
+                    {g.target} {g.unit} · {t('goals.completed')}
                   </span>
                 </span>
                 <Icon name="🏆" size={18} className="shrink-0 text-amber-300" />
                 <button
                   onClick={() => openEdit(g)}
                   className="shrink-0 text-slate-500 hover:text-white text-sm p-1"
-                  aria-label={`Edit ${g.title}`}
+                  aria-label={t('goals.editX', { x: g.title })}
                 >
                   <Icon name="✎" size={15} />
                 </button>
                 <button
                   onClick={() => undoable({ type: 'DELETE_GOAL', goalId: g.id }, `${g.title} deleted`)}
                   className="shrink-0 text-slate-500 hover:text-red-400 text-sm p-1"
-                  aria-label="Delete goal"
+                  aria-label={t('goals.delete')}
                 >
                   <Icon name="✕" size={15} />
                 </button>
@@ -159,10 +168,10 @@ function GoalCard({
           {goal.description && <p className="text-xs text-slate-400 mt-0.5">{goal.description}</p>}
         </div>
         <div className="shrink-0 flex items-center gap-1">
-          <button onClick={onEdit} className="text-slate-500 hover:text-white text-sm p-1" aria-label="Edit goal">
+          <button onClick={onEdit} className="text-slate-500 hover:text-white text-sm p-1" aria-label={t('goals.edit')}>
             <Icon name="✎" size={15} />
           </button>
-          <button onClick={onDelete} className="text-slate-500 hover:text-red-400 text-sm p-1" aria-label="Delete goal">
+          <button onClick={onDelete} className="text-slate-500 hover:text-red-400 text-sm p-1" aria-label={t('goals.delete')}>
             <Icon name="✕" size={15} />
           </button>
         </div>
@@ -188,14 +197,14 @@ function GoalCard({
         <button
           onClick={() => onAdjust(-1)}
           disabled={goal.progress <= 0}
-          aria-label={`Decrease progress on ${goal.title}`}
+          aria-label={t('goals.less', { x: goal.title })}
           className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 text-white font-bold transition"
         >
           −
         </button>
         <button
           onClick={() => onAdjust(1)}
-          aria-label={`Increase progress on ${goal.title}`}
+          aria-label={t('goals.more', { x: goal.title })}
           className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-200 font-bold transition"
         >
           +

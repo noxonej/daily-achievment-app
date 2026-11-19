@@ -1,11 +1,49 @@
 import type { Expense, MoneyAccount, MoneyKind, MoneyState, SpendCategory } from './types';
 import { addDaysToKey, todayKey } from './date';
 import { locale } from './locale';
+import { tl } from './i18n';
 
 export const MONEY_KINDS: Array<{ id: MoneyKind; label: string; short: string; color: string; hint: string }> = [
-  { id: 'spending', label: 'Spending money', short: 'Spending', color: '#0891b2', hint: 'Cash, card, wallet. What you can use day to day.' },
-  { id: 'savings', label: 'Savings', short: 'Savings', color: '#16a34a', hint: "Put aside for later. Don't spend it." },
-  { id: 'investing', label: 'Investments', short: 'Investments', color: '#9333ea', hint: 'Stocks, funds, crypto. Left alone to grow.' },
+  // Getters: the words follow the chosen language.
+  {
+    id: 'spending',
+    color: '#0891b2',
+    get label() {
+      return tl('kind.spending');
+    },
+    get short() {
+      return tl('kind.spendingShort');
+    },
+    get hint() {
+      return tl('kind.spendingHint');
+    },
+  },
+  {
+    id: 'savings',
+    color: '#16a34a',
+    get label() {
+      return tl('kind.savings');
+    },
+    get short() {
+      return tl('kind.savings');
+    },
+    get hint() {
+      return tl('kind.savingsHint');
+    },
+  },
+  {
+    id: 'investing',
+    color: '#9333ea',
+    get label() {
+      return tl('kind.investing');
+    },
+    get short() {
+      return tl('kind.investing');
+    },
+    get hint() {
+      return tl('kind.investingHint');
+    },
+  },
 ];
 
 export function kindMeta(kind: MoneyKind) {

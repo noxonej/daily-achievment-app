@@ -1,4 +1,6 @@
 import type { Prefs } from './types';
+import { MORE, MORE_EN, type MoreKey } from './i18n-more';
+import { locale } from './locale';
 
 /**
  * Translations for the app's main screens. Each language lists the same keys in the same order as
@@ -31,7 +33,7 @@ export const KEYS = [
   'prefs.reduceMotionSystem',
 ] as const;
 
-export type TKey = (typeof KEYS)[number];
+export type TKey = (typeof KEYS)[number] | MoreKey;
 
 export const LANGUAGES: Array<{ code: string; name: string; native: string }> = [
   { code: 'en', name: 'English', native: 'English' },
@@ -688,10 +690,52 @@ const S: Record<string, string[]> = {
 const INDEX = new Map<string, number>(KEYS.map((k, i) => [k, i]));
 
 export function translate(lang: string, key: TKey, vars?: Record<string, string | number>): string {
-  const i = INDEX.get(key)!;
-  let s = S[lang]?.[i] ?? S.en[i] ?? key;
+  const i = INDEX.get(key);
+  let s = i === undefined ? (MORE[lang]?.[key] ?? MORE.en[key] ?? key) : (S[lang]?.[i] ?? S.en[i] ?? key);
   if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, String(v));
   return s;
+}
+
+/** Share of all strings (0..1) a language has translated. */
+export function coverage(lang: string): number {
+  const total = KEYS.length + Object.keys(MORE_EN).length;
+  const pos = (S[lang] ?? []).filter(Boolean).length;
+  const more = Object.keys(MORE_EN).filter((k) => MORE[lang]?.[k]).length;
+  return (pos + more) / total;
+}
+
+/**
+ * Languages shown in Settings → Language: only those with at least 90% of the app translated,
+ * so nobody gets a half-English screen. The others stay in the code for later.
+ */
+export const SHOWN_LANGUAGES = LANGUAGES.filter((l) => l.code === 'en' || coverage(l.code) >= 0.9);
+const SHOWN = new Set(SHOWN_LANGUAGES.map((l) => l.code));
+
+/** The language to show for a saved choice: a hidden language falls back to English (the choice itself is kept). */
+export function shownLanguage(code: string | undefined): string {
+  const c = code ?? 'en';
+  if (SHOWN.has(c)) return c;
+  const base = c.toLowerCase().split('-')[0];
+  return SHOWN.has(base) ? base : 'en';
+}
+
+/** Translator for the language the app is showing right now (safe to use outside React). */
+export function tl(key: TKey, vars?: Record<string, string | number>): string {
+  return translate(shownLanguage(locale()), key, vars);
+}
+
+/** Plural-aware translator: picks `base.one` / `base.few` / `base.other` for n, and fills {n}. */
+export function tn(base: string, n: number, vars?: Record<string, string | number>): string {
+  const lang = shownLanguage(locale());
+  let rule = 'other';
+  try {
+    rule = new Intl.PluralRules(lang).select(n);
+  } catch {
+    // old browser: 'other'
+  }
+  const dict = MORE[lang] ?? {};
+  const key = dict[`${base}.${rule}`] !== undefined || MORE.en[`${base}.${rule}`] !== undefined ? `${base}.${rule}` : `${base}.other`;
+  return translate(lang, key as TKey, { n, ...vars });
 }
 
 /** Number of translated strings per language (used by tests; every language should match English). */
@@ -720,11 +764,11 @@ export const DEFAULT_PREFS: Prefs = {
 export function guessLanguage(): string {
   try {
     const cached = localStorage.getItem('dayforge-lang');
-    if (cached && S[cached]) return cached;
+    if (cached && SHOWN.has(cached)) return cached;
     for (const l of navigator.languages ?? [navigator.language]) {
       const base = l.toLowerCase().split('-')[0];
       const code = base === 'no' || base === 'nn' ? 'nb' : base === 'fil' ? 'tl' : base;
-      if (S[code]) return code;
+      if (SHOWN.has(code)) return code;
     }
   } catch {
     // ignore

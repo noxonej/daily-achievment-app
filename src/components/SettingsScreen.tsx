@@ -4,7 +4,7 @@ import { useApp } from '../store/AppContext';
 import { useAuth } from '../store/AuthContext';
 import { settings, useSettingsPage, type SettingsPage } from '../lib/settingsNav';
 import { fullPrefs, t, useSystemReduceMotion } from '../lib/prefs';
-import { LANGUAGES, type TKey } from '../lib/i18n';
+import { LANGUAGES, SHOWN_LANGUAGES, shownLanguage, type TKey } from '../lib/i18n';
 import { locale, hour12 } from '../lib/locale';
 import type { Prefs } from '../lib/types';
 import { titleForLevel } from '../lib/xp';
@@ -128,7 +128,7 @@ function Home() {
   const { state, stats } = useApp();
   const auth = useAuth();
   const [prefs, setPrefs] = usePrefs();
-  const lang = LANGUAGES.find((l) => l.code === prefs.language);
+  const lang = LANGUAGES.find((l) => l.code === shownLanguage(prefs.language));
   const themeLabel = t(prefs.theme === 'light' ? 'appearance.light' : prefs.theme === 'system' ? 'appearance.system' : 'appearance.dark');
 
   return (
@@ -316,7 +316,7 @@ function LanguagePage() {
   const [q, setQ] = useState('');
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return s ? LANGUAGES.filter((l) => l.name.toLowerCase().includes(s) || l.native.toLowerCase().includes(s) || l.code === s) : LANGUAGES;
+    return s ? SHOWN_LANGUAGES.filter((l) => l.name.toLowerCase().includes(s) || l.native.toLowerCase().includes(s) || l.code === s) : SHOWN_LANGUAGES;
   }, [q]);
   const now = new Date();
   const preview = `${now.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })} · ${now.toLocaleTimeString(locale(), {
@@ -351,21 +351,23 @@ function LanguagePage() {
 
       <section>
         <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-          {t('settings.language')} · {LANGUAGES.length}
+          {t('settings.language')} · {SHOWN_LANGUAGES.length}
         </p>
-        <label className="relative block mb-3">
-          <Icon name="🔍" size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t('lang.search')}
-            type="search"
-            className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-3 h-11 text-[15px] text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60"
-          />
-        </label>
+        {SHOWN_LANGUAGES.length > 6 && (
+          <label className="relative block mb-3">
+            <Icon name="🔍" size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t('lang.search')}
+              type="search"
+              className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-3 h-11 text-[15px] text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60"
+            />
+          </label>
+        )}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/[0.06] overflow-hidden" role="radiogroup" aria-label={t('settings.language')}>
           {list.map((l) => {
-            const on = prefs.language === l.code;
+            const on = shownLanguage(prefs.language) === l.code;
             return (
               <button
                 key={l.code}
