@@ -117,6 +117,7 @@ function toast(icon: string, text: string, look?: string) {
 /* ---------------------------------------------------------------- helpers */
 
 const str = (v: unknown, max = 500): string | undefined => (typeof v === 'string' ? v.slice(0, max) : undefined);
+const clamp = (n: number, max: number) => Math.max(0, Math.min(max, Math.round(n) || 0));
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
 /** A profile read from the cloud, checked field by field (anything odd is dropped), or null. */
@@ -261,15 +262,16 @@ async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
   const code = await ensureCode(ctx, existing?.code);
   if (!code) throw new Error("Couldn't make your friend code. Try again.");
   const profile: Omit<FriendProfile, 'uid'> = {
-    name: ctx.name,
+    name: ctx.name.trim().slice(0, 40) || 'Player',
     code,
     look: JSON.stringify(ctx.state.character),
-    level: share.level ? ctx.level : 0,
-    streak: share.streak ? ctx.streak : 0,
-    weekXp: share.quests ? weekXp(ctx.state) : 0,
+    // Kept inside the limits the database accepts (firestore.rules).
+    level: share.level ? clamp(ctx.level, 200) : 0,
+    streak: share.streak ? clamp(ctx.streak, 3650) : 0,
+    weekXp: share.quests ? clamp(weekXp(ctx.state), 50000) : 0,
     week: weekKey(),
     active: share.streak ? activeDays(ctx.state) : '',
-    ...(ctx.picture ? { picture: ctx.picture } : {}),
+    ...(ctx.picture && ctx.picture.length <= 500 ? { picture: ctx.picture } : {}),
     updatedAt: Date.now(),
   };
   const changed =
@@ -290,7 +292,7 @@ async function syncGlobal(ctx: Ctx, me: FriendProfile) {
   const path = `boards/${weekKey()}/players/${me.uid}`;
   if (share.global) {
     const first = ctx.name.trim().split(/\s+/)[0]?.slice(0, 16) || 'Player';
-    await api.set(path, { name: first, level: ctx.level, weekXp: weekXp(ctx.state), look: JSON.stringify(ctx.state.character), at: Date.now() });
+    await api.set(path, { name: first, level: clamp(ctx.level, 200), weekXp: clamp(weekXp(ctx.state), 50000), look: JSON.stringify(ctx.state.character), at: Date.now() });
     onBoard = true;
   } else if (onBoard !== false) {
     await api.remove(path).catch(() => undefined);
@@ -418,7 +420,7 @@ export async function addFriendByCode(raw: string): Promise<string> {
     await acceptRequest(them.id);
     return `You and ${them.data.name} are now friends!`;
   }
-  await api.set(`requests/${them.id}/from/${me.uid}`, { name: me.name, code: me.code, at: Date.now() });
+  await api.set(`requests/${them.id}/from/${me.uid}`, { name: me.name.slice(0, 40), code: me.code, at: Date.now() });
   return `Request sent to ${them.data.name}.`;
 }
 
@@ -466,7 +468,7 @@ export async function cheer(item: ActivityItem) {
   if (done.includes(item.id)) return;
   writeJson(cheeredKey(ctx.accountId), [...done, item.id].slice(-300));
   set({ feed: [...current.feed] });
-  await db(ctx.accountId).add(`cheers/${item.uid}/items`, { fromUid: me.uid, fromName: me.name, text: item.text, at: Date.now() });
+  await db(ctx.accountId).add(`cheers/${item.uid}/items`, { fromUid: me.uid, fromName: me.name.slice(0, 40), text: item.text.slice(0, 200), at: Date.now() });
 }
 
 /* ---------------------------------------------------------------- outbox */
@@ -501,7 +503,7 @@ async function flushOutbox(accountId: string, all = false) {
   const api = db(accountId);
   const uid = api.uid();
   for (const b of ready) {
-    await api.add(`activity/${uid}/items`, { kind: b.kind, text: b.text, icon: b.icon, ...(b.value !== undefined ? { value: b.value } : {}), at: b.at });
+    await api.add(`activity/${uid}/items`, { kind: b.kind, text: b.text.slice(0, 200), icon: b.icon.slice(0, 32), ...(b.value !== undefined ? { value: b.value } : {}), at: b.at });
     unqueue(accountId, [b.key]);
   }  // Keep the leaderboard card (XP, streak, level) in step with what was just shared.
   if (ctxRef?.accountId === accountId) await ensureProfile(ctxRef).catch(() => undefined);
