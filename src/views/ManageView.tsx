@@ -6,7 +6,6 @@ import { useApp } from '../store/AppContext';
 import { QuestFormModal } from '../components/QuestFormModal';
 import { QuestLibraryModal } from '../components/QuestLibraryModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { SyncSettings } from '../components/SyncSettings';
 import type { AppState, Frequency, Quest } from '../lib/types';
 import { listSnapshots, readSnapshot } from '../lib/safeStorage';
 import { formatDisplayDate } from '../lib/date';
@@ -147,12 +146,11 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
         </button>
       </div>
 
-      {/* Old way to sync, for people who code. Google sign-in does this for everyone else. */}
       <details className="group rounded-2xl border border-white/10 bg-white/[0.03] [&_summary::-webkit-details-marker]:hidden">
         <summary className="flex items-center justify-between gap-3 cursor-pointer px-4 py-3.5">
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-white">Advanced</span>
-            <span className="block text-xs text-slate-400 mt-0.5">Backup files and GitHub sync. Most people never need these.</span>
+            <span className="block text-xs text-slate-400 mt-0.5">Backup files. Most people never need these.</span>
           </span>
           <Icon name="›" size={18} className="shrink-0 text-slate-500 transition-transform group-open:rotate-90" />
         </summary>
@@ -187,7 +185,6 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
             </div>
             {importError && <p className="text-xs text-red-400">{importError}</p>}
           </div>
-          <SyncSettings />
         </div>
       </details>
       </>
