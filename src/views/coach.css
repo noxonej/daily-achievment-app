@@ -1,0 +1,12 @@
+/* Coach tab only (moved from index.css). */
+:root[data-view='coach'] { --mood: #a78bfa; --mood2: #6366f1; }
+.coach-me { background: color-mix(in srgb, var(--mood) 62%, #3b1d8f); color: #fff; }
+.coach-in { animation: coach-in 0.35s var(--ease-out, ease) both; }
+@keyframes coach-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.coach-dots { display: inline-flex; gap: 4px; padding: 4px 2px; }
+.coach-dots i { width: 6px; height: 6px; border-radius: 99px; background: currentColor; opacity: 0.4; animation: coach-dot 1s ease-in-out infinite; }
+.coach-dots i:nth-child(2) { animation-delay: 0.15s; }
+.coach-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes coach-dot { 0%, 100% { opacity: 0.3; transform: translateY(0); } 50% { opacity: 0.9; transform: translateY(-3px); } }
+:root[data-motion='reduce'] :is(.coach-in, .coach-dots i) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { :is(.coach-in, .coach-dots i) { animation: none !important; } }

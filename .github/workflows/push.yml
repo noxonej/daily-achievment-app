@@ -8,6 +8,8 @@ on:
     - cron: '7 * * * *'
   push:
     branches:
+      # main after the default branch is renamed; the old name keeps working until then.
+      - main
       - claude/daily-quest-achievement-app-tolstm
     paths:
       - firestore.rules

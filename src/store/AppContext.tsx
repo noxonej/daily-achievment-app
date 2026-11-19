@@ -11,7 +11,7 @@ import { rescueUnreadable, snapshotDaily, writeSave } from '../lib/safeStorage';
 /** Where an account's data lives; the original (pre-accounts) key is kept for the first account so nothing moves. */
 export const LEGACY_STORAGE_KEY = 'daily-quest-app-state-v1';
 
-function loadState(storageKey: string): AppState {
+export function loadState(storageKey: string): AppState {
   let raw: string | null = null;
   try {
     raw = localStorage.getItem(storageKey);

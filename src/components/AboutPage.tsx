@@ -4,7 +4,7 @@ import { Icon } from './Icon';
 import { settings } from '../lib/settingsNav';
 
 /**
- * Settings > About: what Dayforge is for, how it works, and the simple rules (privacy and terms) in
+ * Settings > About: what Squzo is for, how it works, and the simple rules (privacy and terms) in
  * plain words. Sections fold open so the page stays short and easy to read.
  */
 export function AboutPage() {
@@ -15,7 +15,7 @@ export function AboutPage() {
           <Logo size={48} />
           <div>
             <Wordmark className="text-lg" />
-            <p className="text-xs text-slate-400">Planner, habits & money · version 1.2</p>
+            <p className="text-xs text-slate-400">Planner, habits & money · version {__APP_VERSION__}</p>
           </div>
         </div>
         <p className="text-[15px] text-slate-200 leading-relaxed mt-4">

@@ -1,6 +1,9 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { readFileSync } from 'node:fs'
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
 /**
  * Writes asset-manifest.json: every built file in assets/. The service worker (public/sw.js) reads it
@@ -21,4 +24,6 @@ function assetManifest(): Plugin {
 export default defineConfig({
   base: '/daily-achievment-app/',
   plugins: [react(), tailwindcss(), assetManifest()],
+  // The app's version (package.json), shown in Settings → About.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
 })

@@ -1,6 +1,6 @@
 /**
  * "Continue with Google": signs in with Google Identity Services and keeps a backup of your
- * progress in your own Google Drive, in the hidden app-data folder (only Dayforge can see it,
+ * progress in your own Google Drive, in the hidden app-data folder (only Squzo can see it,
  * and it doesn't touch your files or your email).
  *
  * Needs an OAuth "Web application" client ID from Google Cloud Console with this site's address
@@ -14,6 +14,7 @@ export const GOOGLE_CLIENT_ID: string = (import.meta.env.VITE_GOOGLE_CLIENT_ID a
 export const googleConfigured = (): boolean => GOOGLE_CLIENT_ID.length > 0;
 
 const SCOPES = 'openid email profile https://www.googleapis.com/auth/drive.appdata';
+// Old name kept on purpose: existing backups in people's Drive use it.
 const BACKUP_NAME = 'dayforge-backup.json';
 
 export interface GoogleProfile {
@@ -141,7 +142,7 @@ export async function downloadBackup(fileId: string): Promise<unknown> {
 
 /** Saves a JSON file in the app's Drive folder (creating it the first time). Returns its id and time. */
 export async function uploadAppFile(name: string, data: unknown, existingId?: string): Promise<{ id: string; modifiedTime: string }> {
-  const boundary = `dayforge${Math.random().toString(36).slice(2)}`;
+  const boundary = `squzo${Math.random().toString(36).slice(2)}`;
   const meta = existingId ? {} : { name, parents: ['appDataFolder'], mimeType: 'application/json' };
   const body =
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n` +
@@ -171,7 +172,7 @@ export async function googleSignOut() {
   }
 }
 
-/** Looks like a Dayforge backup (same check as importing a file). */
+/** Looks like a Squzo backup (same check as importing a file). */
 export function isBackup(x: unknown): x is { quests: unknown[]; goals: unknown[]; profile?: { name?: string } } {
   return !!x && typeof x === 'object' && Array.isArray((x as { quests?: unknown }).quests) && Array.isArray((x as { goals?: unknown }).goals);
 }

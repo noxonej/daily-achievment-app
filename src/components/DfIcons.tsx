@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * Dayforge's own icon set: rounded line drawings with a soft two-tone fill, used for the app's
+ * Squzo's own icon set: rounded line drawings with a soft two-tone fill, used for the app's
  * signature things (tabs, streak, coins, XP, chests…). Everything else still uses the line icons.
  * Each glyph is drawn on a 24×24 grid; `D` marks the filled (duotone) parts.
  */
@@ -120,7 +120,7 @@ const GLYPHS: Record<string, ReactNode> = {
   ),
 };
 
-/** Ids that use a Dayforge glyph (UI ids plus the emoji the app uses for the same things). */
+/** Ids that use a Squzo glyph (UI ids plus the emoji the app uses for the same things). */
 const ALIASES: Record<string, string> = {
   'df:today': 'today', 'df:plan': 'plan', 'df:money': 'money', 'df:quests': 'quests', 'df:streak': 'streak',
   'df:gem': 'gem', 'df:xp': 'xp', 'df:chest': 'chest', 'df:shield': 'shield', 'df:focus': 'focus',

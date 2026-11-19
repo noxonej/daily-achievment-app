@@ -3,6 +3,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
+      # main after the default branch is renamed; the old name keeps working until then.
+      - main
       - claude/daily-quest-achievement-app-tolstm
   workflow_dispatch:
 

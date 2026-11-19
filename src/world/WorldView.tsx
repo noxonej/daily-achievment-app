@@ -1,3 +1,4 @@
+import './world.css';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { PurchaseCelebration, PurchaseSheet } from './Purchase';
 import { usePixelated } from './px/pixelate';
