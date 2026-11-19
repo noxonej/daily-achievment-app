@@ -1,3 +1,4 @@
+import './coach.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { CoachCard } from '../components/today/CoachCard';
