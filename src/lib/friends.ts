@@ -232,16 +232,20 @@ const codeDocKey = (acc: string) => `dayforge-code-doc-${acc}`;
  * can list everyone's profile. Claims a new code (creating codes/{code} only if it's free) or makes
  * sure the code you already have is registered there (one-time migration for older accounts).
  */
-async function ensureCode(ctx: Ctx, existing: string | undefined): Promise<string | undefined> {
+async function ensureCode(ctx: Ctx, existing: string | undefined): Promise<string> {
   const api = db(ctx.accountId);
   const uid = api.uid();
   if (existing) {
     if (readJson<string | null>(codeDocKey(ctx.accountId), null) === existing) return existing;
-    const doc = await api.get<{ uid?: unknown }>(`codes/${existing}`);
+    // If the database can't be asked right now (offline, or its rules not updated yet), keep the
+    // code as it is and try again on the next refresh.
+    const doc = await api.get<{ uid?: unknown }>(`codes/${existing}`).catch(() => 'later' as const);
+    if (doc === 'later') return existing;
     if (doc?.uid === uid || (!doc && (await api.create(`codes/${existing}`, { uid })))) {
       writeJson(codeDocKey(ctx.accountId), existing);
       return existing;
     }
+    if (!doc) return existing;
     // Someone else already owns this code (it could happen before codes were checked): get a new one.
   }
   for (let i = 0; i < 6; i++) {
@@ -251,7 +255,8 @@ async function ensureCode(ctx: Ctx, existing: string | undefined): Promise<strin
       return c;
     }
   }
-  return undefined;
+  // Couldn't register one right now: use a fresh code; the next refresh registers it.
+  return makeCode(ctx.name);
 }
 
 async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
@@ -260,7 +265,6 @@ async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
   const existing = asProfile(await api.get(`profiles/${uid}`));
   const share = { ...DEFAULT_SHARING, ...(ctx.state.sharing ?? {}) };
   const code = await ensureCode(ctx, existing?.code);
-  if (!code) throw new Error("Couldn't make your friend code. Try again.");
   const profile: Omit<FriendProfile, 'uid'> = {
     name: ctx.name.trim().slice(0, 40) || 'Player',
     code,
