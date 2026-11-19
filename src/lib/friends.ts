@@ -420,7 +420,7 @@ export async function addFriendByCode(raw: string): Promise<string> {
     await acceptRequest(them.id);
     return `You and ${them.data.name} are now friends!`;
   }
-  await api.set(`requests/${them.id}/from/${me.uid}`, { name: me.name.slice(0, 40), code: me.code, at: Date.now() });
+  await api.setStamped(`requests/${them.id}/from/${me.uid}`, { name: me.name.slice(0, 40), code: me.code, at: Date.now() }, 'createdAt');
   return `Request sent to ${them.data.name}.`;
 }
 

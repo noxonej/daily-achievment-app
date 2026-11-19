@@ -46,6 +46,12 @@ service cloud.firestore {
         && d().fromUid == me() && str(d().fromName, 40) && str(d().text, 200) && numIn(d().at, 0, 4102444800000);
     }
 
+    // Friend request. createdAt must be the server's own clock (the app sends "server time").
+    function validRequest() {
+      return d().keys().hasOnly(['name', 'code', 'at', 'createdAt'])
+        && str(d().name, 40) && friendCode(d().code) && optNum('at', 0, 4102444800000)
+        && d().createdAt == request.time;
+    }
 
     // Your automatic backup: only you can read or write it.
     match /backups/{uid} {
@@ -72,7 +78,10 @@ service cloud.firestore {
     // Friend requests: written by the sender, read / removed by either side.
     match /requests/{to}/from/{from} {
       allow read, delete: if signedIn() && (me() == to || me() == from);
-      allow create, update: if signedIn() && me() == from && to != from;
+      // One request per person; sending it again is allowed at most once an hour.
+      allow create: if signedIn() && me() == from && to != from && validRequest();
+      allow update: if signedIn() && me() == from && to != from && validRequest()
+        && resource.data.createdAt is timestamp && request.time > resource.data.createdAt + duration.value(1, 'h');
     }
 
     // Friend lists. Accepting a request writes both sides.
@@ -112,13 +121,17 @@ service cloud.firestore {
     // Motivational push plan per phone, keyed by a long random token made on that phone (no sign-in
     // needed). Write-only for the app; only the push sender (admin) can read it.
     match /pushQueue/{token} {
-      allow create, update: if token.size() >= 32 && token.size() <= 64
-        && request.resource.data.keys().hasOnly(['data', 'updatedAt'])
-        && request.resource.data.data is string
-        && request.resource.data.data.size() < 60000
-        && request.resource.data.updatedAt is int;
+      // No sign-in on purpose: notifications must work for people who never connect Google.
+      // A real plan (4 messages a day for 14 days + push address) measures ~12.6 KB, so 20 KB is plenty;
+      // updatedAt must be the phone's "now" (within a day of the server clock).
+      allow create, update: if token.matches('^[0-9a-f]{32,64}$')
+        && d().keys().hasOnly(['data', 'updatedAt'])
+        && str(d().data, 20000)
+        && d().updatedAt is int
+        && d().updatedAt > request.time.toMillis() - 86400000
+        && d().updatedAt < request.time.toMillis() + 86400000;
       // Whoever holds the token (only that phone) can remove it ("Delete my cloud data").
-      allow delete: if token.size() >= 32 && token.size() <= 64;
+      allow delete: if token.matches('^[0-9a-f]{32,64}$');
     }
 
     // Apple Health steps inbox: an iPhone Shortcut writes today's step total here, the app reads it.

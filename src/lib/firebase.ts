@@ -197,6 +197,13 @@ export function db(accountId: string) {
       await call(`/${path}`, { method: 'DELETE' });
     },
 
+    /** Like set, but also stamps `field` with the server's own clock (the rules can check it). */
+    async setStamped(path: string, data: { [k: string]: Json }, field: string) {
+      const name = `projects/${PROJECT_ID}/databases/(default)/documents/${path}`;
+      const writes = [{ update: { name, fields: encFields(data) }, updateTransforms: [{ fieldPath: field, setToServerValue: 'REQUEST_TIME' }] }];
+      await call(':commit', { method: 'POST', body: JSON.stringify({ writes }) });
+    },
+
     /** Deletes many documents in batches (each batch is all-or-nothing). */
     async removeMany(paths: string[]) {
       const root = `projects/${PROJECT_ID}/databases/(default)/documents`;
