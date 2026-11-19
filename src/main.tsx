@@ -9,6 +9,7 @@ import '@fontsource/silkscreen/latin-400.css'
 import './index.css'
 import './lib/startupCleanup'
 import './lib/install'
+import { requestPersistentStorage } from './lib/persist'
 import App from './App.tsx'
 import { AuthGate } from './components/AuthGate.tsx'
 
@@ -19,6 +20,9 @@ createRoot(document.getElementById('root')!).render(
     </AuthGate>
   </StrictMode>,
 )
+
+// Ask the browser not to clear Squzo's data when it's short on space (Safari can otherwise).
+void requestPersistentStorage()
 
 // No pinch-zoom (iPhone ignores user-scalable=no, so block the gesture itself) and no trackpad
 // pinch on computers. Scrolling and every tap work as normal.

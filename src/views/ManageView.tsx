@@ -1,4 +1,6 @@
 import { GoogleCard } from '../components/GoogleConnect';
+import { exportBackupFile } from '../lib/backupFile';
+import { BackupStatus } from '../components/BackupStatus';
 import { Switch } from '../components/Switch';
 import { ScrollLockGuide } from '../components/today/ScrollLockCard';
 import { useRef, useState } from 'react';
@@ -39,13 +41,7 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
   }
 
   function handleExport() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `daily-quests-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportBackupFile(state);
   }
 
   function handleImportFile(file: File) {
@@ -136,6 +132,7 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
         <p className="text-xs text-slate-400 -mt-2">
           Saved on this phone. Once you continue with Google, it's also backed up by itself: an encrypted copy in Squzo's cloud, plus a copy in your own Google Drive. Nothing to press.
         </p>
+        <BackupStatus />
         <AutoBackups />
 
         <button

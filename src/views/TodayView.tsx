@@ -38,6 +38,7 @@ import { setIntent } from '../lib/intents';
 import { YearGoalCard } from '../components/today/YearGoalCard';
 import { SeasonCard } from '../components/today/SeasonCard';
 import { ReminderPrompt } from '../components/today/ReminderPrompt';
+import { BackupNudge } from '../components/today/BackupNudge';
 import { ProofSheet } from '../components/ProofSheet';
 import { WellnessRow } from '../components/today/WellnessRow';
 import { proofFor } from '../lib/proof';
@@ -207,6 +208,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <GettingStarted onNavigate={onNavigate} />
 
       <ReminderPrompt />
+
+      <BackupNudge />
 
       {showRecap && (
         <WeekRecap
