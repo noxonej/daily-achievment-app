@@ -268,11 +268,11 @@ function CreateAccount({
             <div>
               <p className="text-sm font-bold text-white">
                 <Icon name="🔒" size="1.1em" className="icon-inline text-amber-300" />
-                Protect with a PIN
+                Lock with a PIN
               </p>
-              <p className="text-xs text-slate-400">Handy if someone else uses this phone.</p>
+              <p className="text-xs text-slate-400">Keeps others from opening your account on this phone.</p>
             </div>
-            <Toggle on={usePin} onChange={setUsePin} label="Protect with a PIN" />
+            <Toggle on={usePin} onChange={setUsePin} label="Lock with a PIN" />
           </div>
           {usePin && (
             <div className="mt-4 space-y-3">
@@ -404,7 +404,7 @@ function PinScreen({ account, onUnlock, onSwitch, onForgotRemove }: { account: A
       <Shell>
         <h1 className="font-display text-2xl font-bold text-white">Forgot your PIN?</h1>
         <p className="text-sm text-slate-400 mt-2">
-          For your privacy the PIN can't be recovered. You can remove this account from this phone and start again. If you exported a backup, you can
+          The PIN can't be recovered. You can remove this account from this phone and start again. If you exported a backup, you can
           import it into a new account afterwards.
         </p>
         <div className="flex-1" />

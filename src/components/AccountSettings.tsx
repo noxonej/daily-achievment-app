@@ -31,7 +31,7 @@ export function AccountSettings() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white truncate">{account.name}</p>
           <p className="text-xs text-slate-400">
-            Account on this device · {account.pinHash ? 'PIN on' : 'No PIN'} · since {new Date(account.createdAt).toLocaleDateString(locale(), { month: 'short', year: 'numeric' })}
+            Account on this device · {account.pinHash ? 'PIN lock on' : 'No PIN lock'} · since {new Date(account.createdAt).toLocaleDateString(locale(), { month: 'short', year: 'numeric' })}
           </p>
         </div>
       </div>
@@ -39,7 +39,7 @@ export function AccountSettings() {
       <div className="mt-4 divide-y divide-white/[0.06] rounded-xl border border-white/[0.06] overflow-hidden">
         <button onClick={() => setPinOpen(true)} className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-white/[0.03]">
           <Icon name="🔒" size={17} className="text-amber-300" />
-          <span className="flex-1 text-sm text-slate-200">{account.pinHash ? 'Change or remove PIN' : 'Add a PIN'}</span>
+          <span className="flex-1 text-sm text-slate-200">{account.pinHash ? 'Change or remove the PIN lock' : 'Lock with a PIN'}</span>
           <span className="text-slate-500">›</span>
         </button>
         {account.pinHash && (
@@ -121,7 +121,8 @@ function PinModal({ open, hasPin, onClose, onSave }: { open: boolean; hasPin: bo
   const ok = /^\d{4}$/.test(pin) && pin === pin2;
   const field = 'w-full rounded-xl bg-white/5 border border-white/10 px-3 h-12 text-center text-2xl tracking-[0.5em] text-white focus:outline-none focus:border-amber-400/60';
   return (
-    <Modal open={open} onClose={onClose} title={hasPin ? 'Change PIN' : 'Add a PIN'}>
+    <Modal open={open} onClose={onClose} title={hasPin ? 'Change PIN lock' : 'Lock with a PIN'}>
+      <p className="text-xs text-slate-400 -mt-1 mb-3">Lock (keeps others from opening your account on this phone). It doesn't encrypt your data.</p>
       <div className="space-y-3">
         <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="••••" aria-label="New PIN" className={field} />
         <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="••••" aria-label="Repeat new PIN" className={field} />
