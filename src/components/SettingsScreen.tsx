@@ -23,6 +23,7 @@ import { ManageView } from '../views/ManageView';
 import { backgroundRemindersSupported, pushIsActive, todaysMoments } from '../lib/nudges';
 import { MOTIVATION } from '../lib/motivation';
 import { showSystemNotification } from '../lib/notify';
+import { someTabsLocked } from '../lib/unlocks';
 
 const TITLES: Record<SettingsPage, TKey> = {
   home: 'settings.title',
@@ -125,7 +126,7 @@ function usePrefs(): [Prefs, (p: Partial<Prefs>) => void] {
 }
 
 function Home() {
-  const { state, stats } = useApp();
+  const { state, stats, dispatch } = useApp();
   const auth = useAuth();
   const [prefs, setPrefs] = usePrefs();
   const lang = LANGUAGES.find((l) => l.code === shownLanguage(prefs.language));
@@ -165,6 +166,15 @@ function Home() {
 
       <Group>
         <SwitchRow label={t('settings.simple')} hint={t('settings.simpleHint')} on={prefs.simple} onChange={(v) => setPrefs({ simple: v })} />
+        {someTabsLocked(state) && (
+          <button onClick={() => dispatch({ type: 'GUIDE_MARK', key: 'tabs:all' })} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/[0.04]">
+            <span className="flex-1 min-w-0">
+              <span className="block text-[15px] font-semibold text-white">{t('simple.showAll')}</span>
+              <span className="block text-xs text-slate-400 mt-0.5">{t('simple.showAllHint')}</span>
+            </span>
+            <Icon name="›" size={18} className="text-slate-500" />
+          </button>
+        )}
         <Row icon="💡" tint="bg-yellow-500" label={t('settings.help')} to="help" />
       </Group>
 

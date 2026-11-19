@@ -2,13 +2,14 @@ import { Icon } from './Icon';
 import { t } from '../lib/prefs';
 import { Avatar } from './Avatar';
 import { useApp } from '../store/AppContext';
+import { tabIsNew, tabUnlocked } from '../lib/unlocks';
 
 /** 'plan' is still a screen (opened from Today) but no longer has its own tab. 'coach' has no tab for now (2026-11-17): it comes back later as a premium feature. */
 export type ViewId = 'today' | 'plan' | 'quests' | 'world' | 'money' | 'coach' | 'you';
 
 const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'today', label: 'Today', icon: 'df:today' },
-  { id: 'quests', label: 'Quests', icon: 'df:quests' },
+  { id: 'quests', label: 'Goals', icon: 'df:quests' },
   { id: 'world', label: 'World', icon: '🏠' },
   { id: 'money', label: 'Money', icon: 'df:money' },
   { id: 'you', label: 'You', icon: 'avatar' },
@@ -29,15 +30,16 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 pointer-events-none px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="dock pointer-events-auto max-w-md mx-auto h-[62px] p-[7px] flex items-stretch gap-1">
-        {TABS.map((tab) => {
+        {TABS.filter((tab) => tabUnlocked(state, tab.id)).map((tab) => {
           // Plan lives inside Today now, so Today stays lit while you're in it.
           const isActive = tab.id === active || (active === 'plan' && tab.id === 'today');
           const label = t(`nav.${tab.id}` as 'nav.today');
+          const fresh = tabIsNew(state, tab.id);
           return (
             <button
               key={tab.id}
               onClick={() => onChange(tab.id)}
-              aria-label={label}
+              aria-label={fresh ? t('nav.newAria', { x: label }) : label}
               aria-current={isActive ? 'page' : undefined}
               style={{ flexGrow: isActive ? 2.15 : 1 }}
               className={`relative min-w-0 basis-0 flex ${isActive ? 'flex-row gap-1.5' : 'flex-col gap-0.5'} items-center justify-center rounded-full transition-[flex-grow,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(.34,1.4,.64,1)] ${
@@ -61,6 +63,11 @@ export function NavTabs({ active, onChange }: NavTabsProps) {
               ) : (
                 // Every tab says what it is, so nobody has to guess from an icon (tester feedback, 2026-11-14).
                 <span className="max-w-full truncate px-0.5 text-[10px] font-semibold leading-none tracking-tight">{label}</span>
+              )}
+              {fresh && !isActive && (
+                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-1.5 py-px text-[8.5px] font-bold uppercase leading-tight tracking-wide text-white animate-pop-in" aria-hidden="true">
+                  {t('nav.new')}
+                </span>
               )}
             </button>
           );

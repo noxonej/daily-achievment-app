@@ -118,6 +118,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.view = view;
   }, [view]);
+  // A tab opened from a link (or ?view=) counts as visited, so Simple mode unlocks it.
+  useEffect(() => {
+    if (!(state.guide ?? []).includes(`visit:${view}`)) dispatch({ type: 'GUIDE_MARK', key: `visit:${view}` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
 
   function setView(next: ViewId) {
     if (next === view) return;

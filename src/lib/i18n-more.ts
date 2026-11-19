@@ -238,6 +238,10 @@ export const MORE_EN = {
   'notes.recent': 'Recent Notes',
   'notes.recentEmpty': 'Notes from Journal, Gratitude, and your daily note will show up here.',
   'remind.blockedText': 'Open your phone\'s settings → Apps (or Notifications) → Squzo or your browser, and allow notifications. Then come back.',
+  'nav.new': 'New',
+  'nav.newAria': '{x}, new',
+  'simple.showAll': 'Show all tabs now',
+  'simple.showAllHint': 'World opens on day 2 and Money on day 4. Tap to open them now.',
 } as const;
 
 export type MoreKey = keyof typeof MORE_EN;
@@ -475,6 +479,10 @@ const MORE_LT: Record<MoreKey, string> & Record<string, string> = {
   'notes.recent': 'Naujausi užrašai',
   'notes.recentEmpty': 'Čia atsiras užrašai iš dienoraščio, dėkingumo ir tavo dienos pastabų.',
   'remind.blockedText': 'Atidaryk telefono nustatymus → Programos (arba Pranešimai) → Squzo arba savo naršyklė ir leisk pranešimus. Tada grįžk čia.',
+  'nav.new': 'Nauja',
+  'nav.newAria': '{x}, nauja',
+  'simple.showAll': 'Rodyti visas skiltis dabar',
+  'simple.showAllHint': 'Pasaulis atsiranda 2-ą dieną, Pinigai – 4-ą. Bakstelėk ir atidaryk juos dabar.',
 };
 
 export const MORE: Record<string, Partial<Record<string, string>>> = { en: MORE_EN, lt: MORE_LT };
