@@ -4,6 +4,7 @@ import { levelFromTotalXp } from './xp';
 import { formatMoney } from './money';
 import { bedtimesFor, fallAsleepMin, sleepNeed } from './sleep';
 import { hashString } from './hash';
+import { tl } from './i18n';
 
 /**
  * "Ask your coach" (2026-11-15): a built-in coach that answers questions from your own data:
@@ -22,6 +23,8 @@ export interface CoachReply {
   open?: { label: string; to: 'today' | 'quests' | 'money' | 'focus' | 'plan' };
   /** Follow-up questions to tap. */
   next?: string[];
+  /** A small line under the answer (money answers say they are not financial advice). */
+  note?: string;
 }
 
 /** Starter questions shown as chips. */
@@ -183,7 +186,7 @@ export function askCoach(question: string, state: AppState, stats: DerivedStats,
       }
       bullets.push('Pay yourself first: move money to savings the day you get it, not what is left at the end.');
       bullets.push('Wait 48 hours before buying anything that isn\'t food or a bill. Most wants disappear.');
-      return { topic, text: m.setupDone ? 'Here is your money picture:' : "You haven't set up Money yet. It takes a minute and then I can give you real numbers. Meanwhile, the two rules that matter most:", bullets, open: { label: 'Open Money', to: 'money' }, next: ['How do I build wealth young?'] };
+      return { topic, text: m.setupDone ? 'Here is your money picture:' : "You haven't set up Money yet. It takes a minute and then I can give you real numbers. Meanwhile, the two rules that matter most:", bullets, open: { label: 'Open Money', to: 'money' }, next: ['How do I build wealth young?'], note: tl('money.notAdvice') };
     }
 
     case 'wealth': {
@@ -204,6 +207,7 @@ export function askCoach(question: string, state: AppState, stats: DerivedStats,
           'Investing is long-term: broad index funds, never money you need soon. Ask a parent or adult you trust before you start.',
         ],
         open: { label: 'Open Money', to: 'money' },
+        note: tl('money.notAdvice'),
       };
     }
 

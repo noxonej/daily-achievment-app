@@ -23,7 +23,7 @@ import {
 } from '../lib/money';
 import { Segmented } from '../components/Segmented';
 import { CryptoPanel } from '../components/money/CryptoPanel';
-import { TipsPanel, TipCard } from '../components/money/TipsPanel';
+import { NotAdvice, TipsPanel, TipCard } from '../components/money/TipsPanel';
 import { BillsCard, MonthCard, SubscriptionCalculator } from '../components/money/BillsCard';
 import { WishlistCard } from '../components/money/WishlistCard';
 import { BudgetCard } from '../components/money/BudgetCard';
@@ -385,9 +385,12 @@ function TopTip({ onMore }: { onMore: () => void }) {
   const tip = smartTips(money)[0];
   const lesson = lessonOfTheDay();
   return (
-    <button onClick={onMore} className="block w-full text-left" aria-label="Open money tips">
-      <TipCard tip={tip ?? { id: 'lesson', icon: lesson.icon, title: lesson.title, text: lesson.text, tone: 'idea' }} />
-    </button>
+    <div>
+      <button onClick={onMore} className="block w-full text-left" aria-label="Open money tips">
+        <TipCard tip={tip ?? { id: 'lesson', icon: lesson.icon, title: lesson.title, text: lesson.text, tone: 'idea' }} />
+      </button>
+      <NotAdvice className="mt-1.5" />
+    </div>
   );
 }
 

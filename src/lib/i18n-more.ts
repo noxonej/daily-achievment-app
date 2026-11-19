@@ -242,6 +242,8 @@ export const MORE_EN = {
   'nav.newAria': '{x}, new',
   'simple.showAll': 'Show all tabs now',
   'simple.showAllHint': 'World opens on day 2 and Money on day 4. Tap to open them now.',
+  'money.notAdvice': 'General information, not financial advice.',
+  'money.pricesTyped': 'Values use the prices you type in.',
 } as const;
 
 export type MoreKey = keyof typeof MORE_EN;
@@ -483,6 +485,8 @@ const MORE_LT: Record<MoreKey, string> & Record<string, string> = {
   'nav.newAria': '{x}, nauja',
   'simple.showAll': 'Rodyti visas skiltis dabar',
   'simple.showAllHint': 'Pasaulis atsiranda 2-ą dieną, Pinigai – 4-ą. Bakstelėk ir atidaryk juos dabar.',
+  'money.notAdvice': 'Bendroji informacija, ne finansinė konsultacija.',
+  'money.pricesTyped': 'Vertės skaičiuojamos pagal tavo įvestas kainas.',
 };
 
 export const MORE: Record<string, Partial<Record<string, string>>> = { en: MORE_EN, lt: MORE_LT };
