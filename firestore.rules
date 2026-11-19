@@ -15,10 +15,20 @@ service cloud.firestore {
       allow read, write: if signedIn() && me() == uid;
     }
 
-    // Public card: needed to find someone by their friend code.
+    // Public card: readable one at a time by id (a friend's uid). Nobody can list all profiles.
     match /profiles/{uid} {
-      allow read: if signedIn();
+      allow get: if signedIn();
       allow write: if signedIn() && me() == uid;
+    }
+
+    // Friend codes: codes/{code} → { uid }. Look one up by its exact code; nobody can list them.
+    // A code can be claimed once (create only), only for yourself, and removed only by its owner.
+    match /codes/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn() && code.size() <= 12
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == me();
+      allow delete: if signedIn() && resource.data.uid == me();
     }
 
     // Friend requests: written by the sender, read / removed by either side.

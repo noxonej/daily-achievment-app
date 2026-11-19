@@ -168,6 +168,19 @@ export function db(accountId: string) {
       await call(`/${path}`, { method: 'PATCH', body: JSON.stringify({ fields: encFields(data) }) });
     },
 
+    /**
+     * Creates a document only if it doesn't exist yet. Returns false when it already exists (or the
+     * rules refuse it), so callers can try another id.
+     */
+    async create(path: string, data: { [k: string]: Json }): Promise<boolean> {
+      try {
+        const res = await call(`/${path}?currentDocument.exists=false`, { method: 'PATCH', body: JSON.stringify({ fields: encFields(data) }) });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    },
+
     async add(collection: string, data: { [k: string]: Json }) {
       await call(`/${collection}`, { method: 'POST', body: JSON.stringify({ fields: encFields(data) }) });
     },
@@ -176,11 +189,11 @@ export function db(accountId: string) {
       await call(`/${path}`, { method: 'DELETE' });
     },
 
-    /** How many documents in a top-level collection match a number filter (e.g. level >= 10). */
-    async count(collection: string, where?: [string, 'GREATER_THAN' | 'GREATER_THAN_OR_EQUAL', number]): Promise<number> {
+    /** How many documents in `parent/collection` match a number filter (e.g. level >= 10). */
+    async count(parent: string, collection: string, where?: [string, 'GREATER_THAN' | 'GREATER_THAN_OR_EQUAL', number]): Promise<number> {
       const structuredQuery: Record<string, unknown> = { from: [{ collectionId: collection }] };
       if (where) structuredQuery.where = { fieldFilter: { field: { fieldPath: where[0] }, op: where[1], value: enc(where[2]) } };
-      const res = await call(':runAggregationQuery', {
+      const res = await call(`${parent ? `/${parent}` : ''}:runAggregationQuery`, {
         method: 'POST',
         body: JSON.stringify({ structuredAggregationQuery: { structuredQuery, aggregations: [{ alias: 'n', count: {} }] } }),
       });
