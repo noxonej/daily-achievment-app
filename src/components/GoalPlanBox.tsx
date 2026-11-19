@@ -1,6 +1,7 @@
 import type { LongTermGoal } from '../lib/types';
 import { STATUS_LABEL, goalPlan, goalTip, goalTips } from '../lib/goalCoach';
 import { Icon } from './Icon';
+import { t, tn } from '../lib/prefs';
 
 const STATUS_TONE: Record<string, string> = {
   ahead: 'bg-emerald-400/15 text-emerald-200 border-emerald-400/30',
@@ -20,13 +21,13 @@ export function GoalPlanBox({ goal, showOwnTip = false }: { goal: LongTermGoal; 
     <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3 space-y-2.5">
       <div className="flex items-center gap-2 flex-wrap">
         <span className={`text-[10px] font-bold uppercase tracking-wider rounded-full border px-2 py-0.5 ${STATUS_TONE[plan.status]}`}>{STATUS_LABEL[plan.status]}</span>
-        {plan.daysLeft != null && <span className="text-[11px] text-slate-400">{plan.daysLeft} days left</span>}
+        {plan.daysLeft != null && <span className="text-[11px] text-slate-400">{tn('goals.daysLeft', plan.daysLeft)}</span>}
       </div>
       {plan.daysLeft != null && (
         <div className="relative h-1.5 rounded-full bg-white/10" aria-hidden="true">
           <span className="absolute inset-y-0 left-0 rounded-full bg-amber-400" style={{ width: `${plan.done * 100}%` }} />
           {/* where you should be by now */}
-          <span className="absolute -top-1 w-0.5 h-3.5 rounded bg-white/70" style={{ left: `calc(${plan.timeUsed * 100}% - 1px)` }} title="Where you should be today" />
+          <span className="absolute -top-1 w-0.5 h-3.5 rounded bg-white/70" style={{ left: `calc(${plan.timeUsed * 100}% - 1px)` }} title={t('goals.shouldBe')} />
         </div>
       )}
       <p className="text-sm text-white font-semibold flex items-start gap-1.5">

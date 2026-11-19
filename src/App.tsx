@@ -118,6 +118,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.view = view;
   }, [view]);
+  // A tab opened from a link (or ?view=) counts as visited, so Simple mode unlocks it.
+  useEffect(() => {
+    if (!(state.guide ?? []).includes(`visit:${view}`)) dispatch({ type: 'GUIDE_MARK', key: `visit:${view}` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
 
   function setView(next: ViewId) {
     if (next === view) return;
@@ -131,7 +136,8 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-grid overflow-x-clip">
       <Header />
       <NewDayBanner />
-      <main className="flex-1 pb-28">
+      {/* Room at the bottom for the floating tab bar (its height + the phone's safe area), so the last card is never hidden. */}
+      <main className="flex-1 pb-[calc(62px+max(0.75rem,env(safe-area-inset-bottom))+1.5rem)]">
         <Suspense fallback={<div className="min-h-[70vh]" />}>
           <div key={view} className={directionRef.current === 'right' ? 'animate-view-right' : 'animate-view-left'}>
             {view === 'today' && <TodayView onNavigate={setView} />}

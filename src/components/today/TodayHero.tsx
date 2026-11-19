@@ -7,8 +7,9 @@ import { useCountUp } from '../../lib/useCountUp';
 import type { Quest } from '../../lib/types';
 import { Icon } from '../Icon';
 import { Coin } from '../Coin';
+import { t, tn } from '../../lib/prefs';
+import { weekdayName } from '../../lib/locale';
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 /**
  * The top of Today, drawn straight onto the glow: this week as rings (how much of each day you did),
@@ -46,7 +47,7 @@ export function TodayHero({
     const log = state.dayLogs[date];
     const isToday = date === today;
     const frac = isToday ? pct : log ? Math.min(1, log.completedQuestIds.length / Math.max(1, log.dailyQuestCount || 1)) : 0;
-    return { date, day: Number(date.slice(8)), label: WEEKDAYS[i], frac, rest: rest.has(date) || shielded.has(date), future: date > today, isToday };
+    return { date, day: Number(date.slice(8)), label: weekdayName(i, 'short'), frac, rest: rest.has(date) || shielded.has(date), future: date > today, isToday };
   });
   const perfect = total > 0 && done === total;
 
@@ -60,9 +61,9 @@ export function TodayHero({
   const streak = stats.currentStreak;
 
   return (
-    <section aria-label="Today at a glance" className="relative">
+    <section aria-label={t('hero.glance')} className="relative">
       {/* this week, one ring per day */}
-      <div className="grid grid-cols-7 gap-1" role="list" aria-label="This week">
+      <div className="grid grid-cols-7 gap-1" role="list" aria-label={t('hero.thisWeek')}>
         {week.map((d, i) => {
           const size = d.isToday ? 46 : 38;
           const r = size / 2 - 3;
@@ -90,12 +91,12 @@ export function TodayHero({
                 </svg>
                 <span
                   className={`absolute font-display tabular-nums leading-none ${
-                    d.isToday ? 'text-[17px] font-semibold text-white' : d.future ? 'text-[14px] text-slate-600' : 'text-[14px] text-slate-300'
+                    d.isToday ? 'text-[17px] font-semibold text-white' : d.future ? 'text-[14px] text-slate-500' : 'text-[14px] text-slate-300'
                   }`}
                 >
                   {d.day}
                 </span>
-                {d.rest && !d.future && <span className="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full bg-sky-300" title="Rest day" />}
+                {d.rest && !d.future && <span className="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full bg-sky-300" title={t('hero.restDay')} />}
               </div>
               <span className={`text-[11px] leading-none ${d.isToday ? 'font-bold text-white' : 'text-slate-500'}`}>{d.label}</span>
             </div>
@@ -104,7 +105,7 @@ export function TodayHero({
       </div>
 
       {/* today's arc */}
-      <div className="relative mx-auto mt-3 w-full max-w-[340px]" role="img" aria-label={`${done} of ${total} quests done today`}>
+      <div className="relative mx-auto mt-3 w-full max-w-[340px]" role="img" aria-label={t('hero.doneOf', { done, total })}>
         <svg viewBox="0 0 300 168" className="w-full overflow-visible" aria-hidden="true">
           <defs>
             <linearGradient id="todayArc" x1="0" y1="0" x2="1" y2="0">
@@ -155,7 +156,7 @@ export function TodayHero({
           {perfect ? (
             <>
               <Icon name="✨" size={38} className="text-[var(--mood)] animate-pop-in" />
-              <span className="mt-2 font-display text-xl font-semibold text-white">Perfect day</span>
+              <span className="mt-2 font-display text-xl font-semibold text-white">{t('hero.perfect')}</span>
             </>
           ) : (
             <span className="num-hero text-[84px] text-white">
@@ -164,7 +165,7 @@ export function TodayHero({
             </span>
           )}
           <span className="mt-2 text-[13px] text-slate-400 tabular-nums">
-            {done} of {total} quests today
+            {t('hero.questsToday', { done, total })}
             {boost > 1 && <span className="ml-1.5 font-bold text-yellow-300">{boost >= 2 ? '· 2× XP' : '· 1.5× XP'}</span>}
           </span>
         </div>
@@ -178,14 +179,14 @@ export function TodayHero({
               <Icon name={next.icon} size={17} />
             </span>
             <span className="min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.14em] opacity-55 leading-tight">Up next · +{Math.round(next.xp * boost)} XP</span>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.14em] opacity-75 leading-tight">{t('hero.upNext', { xp: Math.round(next.xp * boost) })}</span>
               <span className="block text-[15px] font-bold truncate leading-tight">{next.title}</span>
             </span>
           </button>
         ) : total > 0 ? (
           <p className="rounded-full bg-emerald-400/10 px-4 py-2.5 text-sm font-semibold text-emerald-200">
             <Icon name="✨" size={15} className="icon-inline" />
-            Every quest done. Rest well, you earned it.
+            {t('hero.allDone')}
           </p>
         ) : null}
       </div>
@@ -197,7 +198,7 @@ export function TodayHero({
             <Fire size={22} lit={streak > 0} intensity={streak >= 30 ? 3 : streak >= 7 ? 2 : 1} />
             <span className="num-px text-[40px] text-white">{streak}</span>
           </span>
-          <span className="text-[11px] text-slate-400">day streak</span>
+          <span className="text-[11px] text-slate-400">{tn('hero.dayStreak', streak)}</span>
         </div>
         <div className="flex flex-col items-center gap-1.5 px-3">
           <span className="num-px text-[40px] text-white">
@@ -207,21 +208,21 @@ export function TodayHero({
           <span className="w-full h-1 rounded-full bg-white/[0.08] overflow-hidden">
             <span className="block h-full rounded-full bg-[var(--mood)] transition-[width] duration-700" style={{ width: `${Math.max(4, (xpIntoLevel / xpForNextLevel) * 100)}%` }} />
           </span>
-          <span className="text-[11px] text-slate-400 tabular-nums whitespace-nowrap">{toNext} XP to {level + 1}</span>
+          <span className="text-[11px] text-slate-400 tabular-nums whitespace-nowrap">{t('hero.xpTo', { xp: toNext, level: level + 1 })}</span>
         </div>
         <div className="flex flex-col items-center gap-1.5 px-2">
           <span className="flex items-center gap-1.5">
             <Coin size={20} />
             <span className="num-px text-[40px] text-white">{shownCoins}</span>
           </span>
-          <span className="text-[11px] text-slate-400">coins</span>
+          <span className="text-[11px] text-slate-400">{t('hero.coins')}</span>
         </div>
       </div>
 
       <div className="relative mt-3 flex flex-wrap items-center justify-center gap-2">
         <span className="text-[11px] text-slate-500">
           <Icon name="🔄" size="1.1em" className="icon-inline" />
-          New quests in {resetLabel}
+          {t('hero.newQuestsIn', { t: resetLabel })}
         </span>
         {extras}
       </div>

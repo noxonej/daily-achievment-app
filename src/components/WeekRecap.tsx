@@ -6,6 +6,7 @@ import { Icon } from './Icon';
 import { useState } from 'react';
 import { drawShareCard, shareImage } from '../lib/shareCard';
 import { rankForLevel } from '../lib/ranks';
+import { t } from '../lib/prefs';
 
 /** Monday-based week keys: `offset` 0 = this week so far, -1 = last week. */
 function weekDays(offset: number): string[] {
@@ -34,15 +35,15 @@ export function WeekRecap({ offset = 0, dismissible, onDismiss }: { offset?: 0 |
   const xp = logs.reduce((n, l) => n + (l?.xpEarned ?? 0), 0);
 
   const tiles = [
-    { icon: '✅', label: 'Quests done', value: String(questsDone), color: 'text-emerald-300' },
-    { icon: '✨', label: 'Perfect days', value: `${perfect}/${days.length}`, color: 'text-amber-300' },
-    { icon: '⏱', label: 'Focus', value: focus >= 60 ? `${Math.round(focus / 6) / 10}h` : `${focus}m`, color: 'text-sky-300' },
-    { icon: '🏃', label: 'Ran', value: `${Math.round(km * 10) / 10} km`, color: 'text-emerald-300' },
-    { icon: '💸', label: 'Spent', value: state.money?.setupDone ? formatMoney(spent, state.money.currency, { compact: true }) : '–', color: 'text-cyan-300' },
-    { icon: mood?.icon ?? '😐', label: 'Avg mood', value: mood?.label ?? '–', color: mood?.color ?? 'text-slate-400' },
+    { icon: '✅', label: t('recap.questsDone'), value: String(questsDone), color: 'text-emerald-300' },
+    { icon: '✨', label: t('recap.perfectDays'), value: `${perfect}/${days.length}`, color: 'text-amber-300' },
+    { icon: '⏱', label: t('recap.focus'), value: focus >= 60 ? `${Math.round(focus / 6) / 10}h` : `${focus}m`, color: 'text-sky-300' },
+    { icon: '🏃', label: t('recap.ran'), value: `${Math.round(km * 10) / 10} km`, color: 'text-emerald-300' },
+    { icon: '💸', label: t('recap.spent'), value: state.money?.setupDone ? formatMoney(spent, state.money.currency, { compact: true }) : '–', color: 'text-cyan-300' },
+    { icon: mood?.icon ?? '😐', label: t('recap.mood'), value: mood?.label ?? '–', color: mood?.color ?? 'text-slate-400' },
   ];
   const headline =
-    perfect >= 5 ? 'Incredible week. Keep that energy.' : perfect >= 3 ? 'Solid week. You showed up.' : questsDone > 0 ? 'Every quest counts. Next week, aim for one more perfect day.' : 'A fresh week is a fresh start.';
+    perfect >= 5 ? t('recap.great') : perfect >= 3 ? t('recap.solid') : questsDone > 0 ? t('recap.counts') : t('recap.fresh');
 
   async function share() {
     setSharing('Making your image…');
@@ -70,11 +71,11 @@ export function WeekRecap({ offset = 0, dismissible, onDismiss }: { offset?: 0 |
   return (
     <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       {dismissible && (
-        <button onClick={onDismiss} aria-label="Dismiss" className="absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-white/10">
+        <button onClick={onDismiss} aria-label={t('recap.dismiss')} className="absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-white/10">
           <Icon name="✕" size={16} />
         </button>
       )}
-      <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">{offset === 0 ? 'This week so far' : 'Last week recap'}</p>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">{offset === 0 ? t('recap.soFar') : t('recap.last')}</p>
       <p className="font-display text-lg font-bold text-white mt-0.5 pr-8">{headline}</p>
       <div className="grid grid-cols-3 gap-2 mt-3">
         {tiles.map((t) => (
@@ -86,10 +87,10 @@ export function WeekRecap({ offset = 0, dismissible, onDismiss }: { offset?: 0 |
         ))}
       </div>
       <div className="flex items-center justify-between gap-2 mt-2.5">
-        <p className="text-[11px] text-slate-500">+{xp} XP earned from daily quests</p>
+        <p className="text-[11px] text-slate-500">{t('recap.xpEarned', { n: xp })}</p>
         <button onClick={share} className="flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white">
           <Icon name="📤" size={13} />
-          Share
+          {t('recap.share')}
         </button>
       </div>
       {sharing && <p className="text-[11px] text-amber-200 mt-1.5">{sharing}</p>}

@@ -3,12 +3,18 @@ import { MONEY_LESSONS, futureValue, lessonOfTheDay, smartTips, type MoneyTip } 
 import { dailyLimit, parseMoney } from '../../lib/money';
 import { Icon } from '../Icon';
 import { AmountInput, Field, card, useMoney } from './ui';
+import { t as tr } from '../../lib/prefs';
 
 const TONE: Record<MoneyTip['tone'], { box: string; icon: string }> = {
   good: { box: 'border-emerald-400/30 bg-emerald-500/[0.06]', icon: 'bg-emerald-500/15 text-emerald-300' },
   warn: { box: 'border-amber-400/30 bg-amber-500/[0.06]', icon: 'bg-amber-500/15 text-amber-300' },
   idea: { box: 'border-white/10 bg-white/[0.03]', icon: 'bg-sky-500/15 text-sky-300' },
 };
+
+/** The same short line under every money tip, lesson and the coach's money answers. */
+export function NotAdvice({ className = '' }: { className?: string }) {
+  return <p className={`text-center text-[11px] text-slate-500 px-6 ${className}`}>{tr('money.notAdvice')}</p>;
+}
 
 export function TipCard({ tip }: { tip: MoneyTip }) {
   const t = TONE[tip.tone];
@@ -78,7 +84,7 @@ export function TipsPanel() {
           </ul>
         )}
       </section>
-      <p className="text-center text-[11px] text-slate-500 px-6">General money tips to help you learn, not financial advice.</p>
+      <NotAdvice />
     </div>
   );
 }

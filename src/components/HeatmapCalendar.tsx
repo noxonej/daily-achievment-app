@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { DayLog } from '../lib/types';
 import { todayKey } from '../lib/date';
+import { t } from '../lib/prefs';
+import { locale } from '../lib/locale';
 
 interface DayCell {
   key: string;
@@ -18,7 +20,6 @@ const LEVEL_CLASSES = [
   'bg-emerald-400',
 ];
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function buildWeeks(dayLogs: Record<string, DayLog>, weeksToShow: number): DayCell[][] {
   const today = new Date();
@@ -68,7 +69,7 @@ export function HeatmapCalendar({ dayLogs }: { dayLogs: Record<string, DayLog> }
       if (!firstDay) return;
       const month = Number(firstDay.key.slice(5, 7)) - 1;
       if (month !== lastMonth) {
-        labels.push({ index: i, label: MONTH_NAMES[month] });
+        labels.push({ index: i, label: new Date(2024, month, 1).toLocaleDateString(locale(), { month: 'short' }) });
         lastMonth = month;
       }
     });
@@ -110,11 +111,11 @@ export function HeatmapCalendar({ dayLogs }: { dayLogs: Record<string, DayLog> }
         </div>
       </div>
       <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-500">
-        <span>Less</span>
+        <span>{t('heat.less')}</span>
         {LEVEL_CLASSES.map((c, i) => (
           <div key={i} className={`w-[11px] h-[11px] rounded-[3px] ${c}`} />
         ))}
-        <span>More</span>
+        <span>{t('heat.more')}</span>
       </div>
     </div>
   );

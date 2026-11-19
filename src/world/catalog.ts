@@ -1,5 +1,6 @@
 import type { AppState, CarMods, DecorSlot, DerivedStats, NumericStat, WorldState } from '../lib/types';
 import { SHAPES } from './px/cars';
+import { tl } from '../lib/i18n';
 
 export type { DecorSlot, WorldState };
 
@@ -310,23 +311,23 @@ export const DECOR: DecorItem[] = [
 
 /** Spots in the room: label, icon and where it is (room coordinates, for tap targets and the camera). */
 export const DECOR_SLOTS: Array<{ id: DecorSlot; label: string; icon: string; rect: [number, number, number, number] }> = [
-  { id: 'bed', label: 'Bed', icon: '🛏', rect: [30, 250, 310, 215] },
-  { id: 'seat', label: 'Sofa', icon: '🛋', rect: [400, 320, 340, 150] },
-  { id: 'chair', label: 'Chair', icon: '🪑', rect: [915, 230, 170, 285] },
-  { id: 'desk', label: 'Desk', icon: '🗄', rect: [860, 330, 260, 130] },
-  { id: 'tech', label: 'Setup', icon: '💻', rect: [880, 240, 220, 110] },
-  { id: 'poster', label: 'Poster', icon: '🖼', rect: [100, 100, 180, 170] },
-  { id: 'art', label: 'Wall art', icon: '🎨', rect: [736, 92, 112, 160] },
-  { id: 'shelf', label: 'Shelf', icon: '🏆', rect: [880, 92, 220, 120] },
-  { id: 'collectible', label: 'Collectible', icon: '🎸', rect: [1105, 270, 95, 195] },
-  { id: 'lamp', label: 'Lamp', icon: '🕯', rect: [340, 240, 72, 210] },
-  { id: 'plant', label: 'Plant', icon: '🪴', rect: [722, 240, 86, 220] },
-  { id: 'table', label: 'Table', icon: '☕', rect: [490, 440, 160, 75] },
-  { id: 'rug', label: 'Rug', icon: '🟫', rect: [400, 460, 400, 85] },
-  { id: 'window', label: 'Window', icon: '🪟', rect: [400, 40, 340, 270] },
-  { id: 'light', label: 'Lights', icon: '💡', rect: [300, 20, 600, 120] },
-  { id: 'wall', label: 'Walls', icon: '🎨', rect: [0, 0, 1200, 400] },
-  { id: 'floor', label: 'Floor', icon: '🧱', rect: [0, 400, 1200, 160] },
+  { id: 'bed', get label() { return tl('slot.bed'); }, icon: '🛏', rect: [30, 250, 310, 215] },
+  { id: 'seat', get label() { return tl('slot.seat'); }, icon: '🛋', rect: [400, 320, 340, 150] },
+  { id: 'chair', get label() { return tl('slot.chair'); }, icon: '🪑', rect: [915, 230, 170, 285] },
+  { id: 'desk', get label() { return tl('slot.desk'); }, icon: '🗄', rect: [860, 330, 260, 130] },
+  { id: 'tech', get label() { return tl('slot.tech'); }, icon: '💻', rect: [880, 240, 220, 110] },
+  { id: 'poster', get label() { return tl('slot.poster'); }, icon: '🖼', rect: [100, 100, 180, 170] },
+  { id: 'art', get label() { return tl('slot.art'); }, icon: '🎨', rect: [736, 92, 112, 160] },
+  { id: 'shelf', get label() { return tl('slot.shelf'); }, icon: '🏆', rect: [880, 92, 220, 120] },
+  { id: 'collectible', get label() { return tl('slot.collectible'); }, icon: '🎸', rect: [1105, 270, 95, 195] },
+  { id: 'lamp', get label() { return tl('slot.lamp'); }, icon: '🕯', rect: [340, 240, 72, 210] },
+  { id: 'plant', get label() { return tl('slot.plant'); }, icon: '🪴', rect: [722, 240, 86, 220] },
+  { id: 'table', get label() { return tl('slot.table'); }, icon: '☕', rect: [490, 440, 160, 75] },
+  { id: 'rug', get label() { return tl('slot.rug'); }, icon: '🟫', rect: [400, 460, 400, 85] },
+  { id: 'window', get label() { return tl('slot.window'); }, icon: '🪟', rect: [400, 40, 340, 270] },
+  { id: 'light', get label() { return tl('slot.light'); }, icon: '💡', rect: [300, 20, 600, 120] },
+  { id: 'wall', get label() { return tl('slot.wall'); }, icon: '🎨', rect: [0, 0, 1200, 400] },
+  { id: 'floor', get label() { return tl('slot.floor'); }, icon: '🧱', rect: [0, 400, 1200, 160] },
 ];
 
 /** How many extra shelves/collectibles you can place around the room. */

@@ -3,6 +3,7 @@ import { weekKey } from '../lib/date';
 import { byPriority, goalPlan } from '../lib/goalCoach';
 import { shortNum } from '../lib/num';
 import { Icon } from './Icon';
+import { t, tn } from '../lib/prefs';
 
 /** One ring: how far along a goal is. */
 function Ring({ frac, size, stroke, color, children }: { frac: number; size: number; stroke: number; color: string; children?: React.ReactNode }) {
@@ -71,13 +72,13 @@ export function GoalsHero({ onOpen }: { onOpen: (section: 'weekly' | 'goals') =>
             </span>
           </Ring>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-slate-300">{plans.length ? `${plans.length} ${plans.length === 1 ? 'goal' : 'goals'} this year` : 'No goals yet'}</p>
+            <p className="text-[13px] font-semibold text-slate-300">{plans.length ? tn('goals.count', plans.length) : t('goals.none')}</p>
             <div className="mt-2 space-y-1.5 text-[13px]">
               {(
                 [
-                  ['On track', count(['on-track', 'ahead', 'just-started']), STATUS_COLOR['on-track']],
-                  ['Behind', count(['behind']), STATUS_COLOR.behind],
-                  ['Done', state.goals.filter((g) => g.completedAt).length, STATUS_COLOR.done],
+                  [t('goals.onTrack'), count(['on-track', 'ahead', 'just-started']), STATUS_COLOR['on-track']],
+                  [t('goals.behind'), count(['behind']), STATUS_COLOR.behind],
+                  [t('goals.done'), state.goals.filter((g) => g.completedAt).length, STATUS_COLOR.done],
                 ] as const
               ).map(([label, n, c]) => (
                 <p key={label} className="flex items-center gap-2 text-slate-400">
@@ -94,7 +95,16 @@ export function GoalsHero({ onOpen }: { onOpen: (section: 'weekly' | 'goals') =>
           <div className="flex justify-between text-[11px] font-semibold text-slate-400">
             <span>{now.getFullYear()}</span>
             <span>
-              <span className="num-px text-[13px] text-slate-200">{Math.round(yearUsed * 100)}%</span> of the year gone
+              {(() => {
+                const [before, after] = t('goals.yearGone', { p: '\u0000' }).split('\u0000');
+                return (
+                  <>
+                    {before}
+                    <span className="num-px text-[13px] text-slate-200">{Math.round(yearUsed * 100)}%</span>
+                    {after}
+                  </>
+                );
+              })()}
             </span>
           </div>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
@@ -104,7 +114,7 @@ export function GoalsHero({ onOpen }: { onOpen: (section: 'weekly' | 'goals') =>
       </div>
 
       {(plans.length > 0 || weekly.length > 0) && (
-        <div className="-mx-4 px-4 overflow-x-auto no-scrollbar" aria-label="Jump to a goal">
+        <div className="-mx-4 px-4 overflow-x-auto no-scrollbar" aria-label={t('goals.jump')}>
           <div className="flex gap-3 w-max pb-1">
             {plans.map(({ g, p }) => (
               <button key={g.id} onClick={() => jump(g.id)} className="w-[76px] flex flex-col items-center gap-1.5 active:scale-95 transition-transform" aria-label={`${g.title}: ${Math.round(p.done * 100)}%`}>
@@ -118,11 +128,11 @@ export function GoalsHero({ onOpen }: { onOpen: (section: 'weekly' | 'goals') =>
               </button>
             ))}
             {weekly.length > 0 && (
-              <button onClick={() => onOpen('weekly')} className="w-[76px] flex flex-col items-center gap-1.5 active:scale-95 transition-transform" aria-label={`This week: ${doneWeekly} of ${weekly.length}`}>
+              <button onClick={() => onOpen('weekly')} className="w-[76px] flex flex-col items-center gap-1.5 active:scale-95 transition-transform" aria-label={t('goals.weekAria', { done: doneWeekly, total: weekly.length })}>
                 <Ring frac={doneWeekly / weekly.length} size={60} stroke={6} color="#c4b5fd">
                   <Icon name="🗡" size={20} className="text-white" />
                 </Ring>
-                <span className="w-full text-center text-[11px] font-semibold text-slate-300 leading-tight">This week</span>
+                <span className="w-full text-center text-[11px] font-semibold text-slate-300 leading-tight">{t('goals.thisWeek')}</span>
                 <span className="num-px text-[13px] text-slate-400 -mt-1">
                   {doneWeekly}/{weekly.length}
                 </span>

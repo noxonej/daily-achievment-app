@@ -3,6 +3,7 @@ import { setIntent } from '../../lib/intents';
 import { STATUS_LABEL, byPriority, goalPlan, goalTips } from '../../lib/goalCoach';
 import { Icon } from '../Icon';
 import type { ViewId } from '../NavTabs';
+import { t, tn } from '../../lib/prefs';
 
 /**
  * "Your year" on Today: the biggest long-term goal, how you're doing against the calendar,
@@ -22,9 +23,9 @@ export function YearGoalCard({ onNavigate }: { onNavigate: (v: ViewId) => void }
           <Icon name="🏆" size={22} />
         </span>
         <span className="flex-1 min-w-0">
-          <span className="block text-[11px] font-bold uppercase tracking-wider text-amber-200/90">Your year</span>
-          <span className="block font-display font-semibold text-white">Set one big goal for this year</span>
-          <span className="block text-xs text-slate-400">Read 12 books, save 1,000, learn a skill. We'll plan it week by week.</span>
+          <span className="block text-[11px] font-bold uppercase tracking-wider text-amber-200/90">{t('year.title')}</span>
+          <span className="block font-display font-semibold text-white">{t('year.setTitle')}</span>
+          <span className="block text-xs text-slate-400">{t('year.setSub')}</span>
         </span>
         <Icon name="›" size={18} className="shrink-0 text-slate-400" />
       </button>
@@ -37,7 +38,7 @@ export function YearGoalCard({ onNavigate }: { onNavigate: (v: ViewId) => void }
   const r = 26;
   const c = 2 * Math.PI * r;
   return (
-    <button onClick={open} className="year-card w-full text-left rounded-2xl p-4" aria-label={`Your year: ${g.title}`}>
+    <button onClick={open} className="year-card w-full text-left rounded-2xl p-4" aria-label={t('year.aria', { x: g.title })}>
       <div className="flex items-center gap-3">
         <span className="relative shrink-0 w-16 h-16">
           <svg viewBox="0 0 64 64" className="w-16 h-16 -rotate-90" aria-hidden="true">
@@ -54,7 +55,7 @@ export function YearGoalCard({ onNavigate }: { onNavigate: (v: ViewId) => void }
         </span>
         <span className="flex-1 min-w-0">
           <span className="flex items-center gap-x-2 flex-wrap">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-200/90">Your year</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-200/90">{t('year.title')}</span>
             <span className={`text-[10px] font-semibold whitespace-nowrap ${plan.status === 'behind' ? 'text-rose-300' : plan.status === 'ahead' ? 'text-emerald-300' : 'text-slate-400'}`}>· {STATUS_LABEL[plan.status]}</span>
           </span>
           <span className="block font-display font-semibold text-white text-[17px] leading-snug truncate">{g.title}</span>
@@ -70,7 +71,7 @@ export function YearGoalCard({ onNavigate }: { onNavigate: (v: ViewId) => void }
           <b className="text-amber-100">💡 {tip.title}.</b> {tip.text}
         </p>
       )}
-      {goals.length > 1 && <p className="mt-2 text-[11px] text-slate-500">+ {goals.length - 1} more {goals.length === 2 ? 'goal' : 'goals'}</p>}
+      {goals.length > 1 && <p className="mt-2 text-[11px] text-slate-500">{tn('year.more', goals.length - 1)}</p>}
     </button>
   );
 }

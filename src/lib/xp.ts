@@ -1,4 +1,5 @@
 import { rankForLevel } from './ranks';
+import { tl } from './i18n';
 // XP required to go from level L to L+1 grows linearly, so leveling up
 // takes a little more each time without becoming punishing.
 export function xpForLevel(level: number): number {
@@ -37,11 +38,20 @@ export const DIFFICULTY_XP: Record<string, number> = {
 /** Share of a purchase's price you get back as XP (2026-11-17: buying things also moves you forward). */
 export const BUY_XP_SHARE = 0.1;
 
+/** Read at render time, so it follows the chosen language. */
 export const DIFFICULTY_LABEL: Record<string, string> = {
-  easy: 'Easy',
-  medium: 'Medium',
-  hard: 'Hard',
-  epic: 'Epic',
+  get easy() {
+    return tl('diff.easy');
+  },
+  get medium() {
+    return tl('diff.medium');
+  },
+  get hard() {
+    return tl('diff.hard');
+  },
+  get epic() {
+    return tl('diff.epic');
+  },
 };
 
 export const DIFFICULTY_COLOR: Record<string, string> = {

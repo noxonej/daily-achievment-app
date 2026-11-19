@@ -18,6 +18,7 @@ import { locale } from '../../lib/locale';
 import { Icon } from '../Icon';
 import { Modal } from '../Modal';
 import { AmountInput, Field, card, inputClass, primaryBtn, useMoney } from './ui';
+import { t as tr } from '../../lib/prefs';
 
 
 /** Dark text on bright coin colours (like Bitcoin orange), white on dark ones, so it's always readable. */
@@ -192,7 +193,9 @@ export function CryptoPanel() {
         </div>
         </div>
       </div>
-      <p className="text-center text-[11px] text-slate-500 px-6">Values use the prices you type in · not financial advice</p>
+      <p className="text-center text-[11px] text-slate-500 px-6">
+        {tr('money.pricesTyped')} {tr('money.notAdvice')}
+      </p>
 
       <CoinModal holding={editing} onClose={() => setEditing(null)} />
     </div>
@@ -315,7 +318,7 @@ function CoinModal({ holding, onClose }: { holding: CryptoHolding | 'new' | null
               <input
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
-                placeholder={type === 'stock' ? 'e.g. S&P 500 ETF' : type === 'metal' ? 'e.g. Gold coin' : type === 'crypto' ? 'e.g. Render' : 'e.g. Pokémon cards'}
+                placeholder={type === 'stock' ? 'e.g. the fund or company name' : type === 'metal' ? 'e.g. Gold coin' : type === 'crypto' ? 'e.g. the coin name' : 'e.g. Pokémon cards'}
                 maxLength={30}
                 className={inputClass}
               />

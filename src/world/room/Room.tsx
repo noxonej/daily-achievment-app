@@ -8,6 +8,7 @@ import { DECOR, DECOR_SLOTS, PROPERTIES, decorFor, type DecorItem } from '../cat
 import { BEDS, CHAIRS, DESKS, SEATS, TABLES, TECH, type DrawProps } from './furniture';
 import { ART, COLLECTIBLES, LAMPS, LIGHTS, PLANTS, POSTERS, RUGS, SHELVES, WINDOWS, type Win } from './decor';
 import { mix, shade, tint } from './paint';
+import { t } from '../../lib/prefs';
 
 /**
  * Your room (2026-11-14 World rebuild): a wide, lit room you look into like a stage set.
@@ -706,7 +707,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
           transition: moving || drag.current?.moved || inertia.current ? 'none' : 'transform 0.7s cubic-bezier(.22,.9,.24,1)',
         }}
       >
-        <svg ref={svgRef} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} width="100%" height="100%" className="block" style={{ opacity: pixels ? 0 : 1 }} role="img" aria-label={`Your room in ${property.name}`}>
+        <svg ref={svgRef} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} width="100%" height="100%" className="block" style={{ opacity: pixels ? 0 : 1 }} role="img" aria-label={t('world.roomIn', { x: property.name })}>
           <RoomDefs />
           <Wall item={get('wall')} />
           <g clipPath="url(#winclip)">
@@ -848,7 +849,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
                 key={s.id}
                 type="button"
                 onClick={() => onTapSlot(s.id)}
-                aria-label={`Change ${s.label.toLowerCase()}`}
+                aria-label={t('world.change', { x: s.label.toLowerCase() })}
                 className={`absolute rounded-xl ${on ? 'room-spot-on' : ''}`}
                 style={{ left: `${(x / ROOM_W) * 100}%`, top: `${(y / ROOM_H) * 100}%`, width: `${(w / ROOM_W) * 100}%`, height: `${(h / ROOM_H) * 100}%`, zIndex: s.id === 'rug' || s.id === 'window' || s.id === 'light' ? 0 : 1 }}
               >
@@ -944,7 +945,7 @@ function Joystick({ side, onMove, onEnd }: { side: 'left' | 'right'; onMove: (dx
   return (
     <div
       role="slider"
-      aria-label="Walk: slide to move"
+      aria-label={t('world.walk')}
       aria-valuenow={0}
       className={`room-stick absolute bottom-3 z-[5] w-[92px] h-[92px] rounded-full select-none touch-none ${side === 'left' ? 'left-3' : 'right-3'} ${knob ? 'room-stick-on' : ''}`}
       onPointerDown={(e) => {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../lib/prefs';
 
 interface InfoDisclosureProps {
   text: string;
@@ -19,8 +20,8 @@ export function InfoDisclosure({ text, className = '' }: InfoDisclosureProps) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-label={open ? 'Hide more info' : 'Show more info'}
-        title="More info"
+        aria-label={open ? t('common.hideInfo') : t('common.showInfo')}
+        title={t('common.moreInfo')}
         className={`inline-flex items-center justify-center w-4 h-4 rounded-full border text-[10px] font-bold leading-none transition ${
           open
             ? 'border-amber-400 text-amber-300 bg-amber-500/10'

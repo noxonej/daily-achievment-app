@@ -2,6 +2,7 @@ import { useApp } from '../../store/AppContext';
 import { SEASON_TIERS, claimedTiers, daysLeftInSeason, seasonKey, seasonLabel, seasonPoints, seasonTheme } from '../../lib/seasons';
 import { Icon } from '../Icon';
 import { Coin } from '../Coin';
+import { t as tr, tn } from '../../lib/prefs';
 
 /** This month's season: points from quests and perfect days, three prize tiers, days left. */
 export function SeasonCard() {
@@ -22,11 +23,11 @@ export function SeasonCard() {
         </span>
         <div className="flex-1 min-w-0">
           <p className="season-ink text-[11px] font-bold uppercase tracking-wider">
-            Season · {left} {left === 1 ? 'day' : 'days'} left
+            {tn('season.left', left)}
           </p>
           <p className="font-display font-semibold text-white truncate">{seasonLabel(key)}</p>
           <p className="text-xs text-slate-400">
-            {next ? `${next.points - pts} points to ${next.label}. 1 per quest, +3 for a perfect day.` : 'Gold reached. You own this season.'}
+            {next ? tr('season.toNext', { n: next.points - pts, x: next.label }) : tr('season.gold')}
           </p>
         </div>
         <span className="num-px text-[26px] text-white">{pts}</span>
@@ -54,9 +55,9 @@ export function SeasonCard() {
               <span className="flex items-center justify-center gap-1 mt-0.5">
                 <Coin size={11} />
                 {t.reward.coins}
-                {t.reward.chest && ' + chest'}
+                {t.reward.chest && ` ${tr('season.chest')}`}
               </span>
-              <span className="block mt-0.5">{got ? 'Claimed ✓' : ready ? 'Tap to claim' : `${t.points} pts`}</span>
+              <span className="block mt-0.5">{got ? tr('season.claimed') : ready ? tr('season.tap') : tr('season.pts', { n: t.points })}</span>
             </button>
           );
         })}

@@ -52,13 +52,13 @@ export function YouView() {
                 {titleForLevel(stats.level)}
                 {rankForLevel(stats.level).index > 0 && <span className="normal-case tracking-normal font-semibold opacity-75">· {rarityLabel(rankForLevel(stats.level).index)}</span>}
               </p>
-              <p className="pc-ink font-display text-[28px] font-medium tracking-tight leading-tight truncate">{name || 'Your profile'}</p>
+              <p className="pc-ink font-display text-[28px] font-medium tracking-tight leading-tight truncate">{name || t('you.profile')}</p>
             </div>
             <span className="pc-ink mt-1">
               <InfoTip
                 align="right"
-                title="You and your progress"
-                text="Every quest gives XP. Level up to win chests, then open them to dress up your character. Your stats, badges and private diary are here too."
+                title={t('you.infoTitle')}
+                text={t('you.infoText')}
               />
             </span>
             <button onClick={() => settings.open()} aria-label={t('settings.title')} className="pc-btn w-10 h-10 shrink-0 rounded-full flex items-center justify-center">
@@ -67,7 +67,7 @@ export function YouView() {
           </div>
 
           <div className="relative mt-3 flex items-center gap-4">
-            <button onClick={() => wardrobe.open()} className="relative shrink-0 rounded-[28%] transition-transform active:scale-95" aria-label="Open wardrobe">
+            <button onClick={() => wardrobe.open()} className="relative shrink-0 rounded-[28%] transition-transform active:scale-95" aria-label={t('you.wardrobe')}>
               <Avatar look={state.character} size={112} alive className="drop-shadow-[0_22px_30px_rgba(40,25,10,0.35)]" />
               <span className="pc-chip absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-[11px] font-black whitespace-nowrap tabular-nums">LV {stats.level}</span>
             </button>
@@ -75,7 +75,7 @@ export function YouView() {
               <BigStat value={stats.currentStreak} label={t('you.streak')} icon={<Fire size={16} lit={stats.currentStreak > 0} intensity={stats.currentStreak >= 30 ? 3 : stats.currentStreak >= 7 ? 2 : 1} />} />
               <BigStat value={stats.availableShards} label={t('you.shards')} icon={<Coin size={13} />} />
               <BigStat value={stats.chestsAvailable} label={t('you.chests')} icon={<Icon name="df:chest" size={14} />} pulse={stats.chestsAvailable > 0} />
-              <BigStat value={stats.totalQuestsCompleted} label="quests" icon={<Icon name="✓" size={14} />} />
+              <BigStat value={stats.totalQuestsCompleted} label={t('you.quests')} icon={<Icon name="✓" size={14} />} />
             </div>
           </div>
 
@@ -116,7 +116,7 @@ export function YouView() {
           {trophies.length > 0 && (
             <div className="relative flex flex-wrap gap-1.5 mt-3 text-[11px] font-semibold">
               {trophies.map((k) => (
-                <span key={k} className="pc-pill flex items-center gap-1 rounded-full px-2.5 py-1" title={`Gold in the ${seasonLabel(k)} season`} style={{ color: seasonTheme(k).color }}>
+                <span key={k} className="pc-pill flex items-center gap-1 rounded-full px-2.5 py-1" title={t('you.seasonGold', { x: seasonLabel(k) })} style={{ color: seasonTheme(k).color }}>
                   <Icon name="🏆" size={12} />
                   {seasonLabel(k).split(' · ')[1]}
                 </span>
@@ -154,7 +154,7 @@ export function YouView() {
           options={[
             { id: 'stats', label: t('you.stats'), icon: '📊' },
             { id: 'badges', label: t('you.badges'), icon: '🎖' },
-            { id: 'friends', label: 'Friends', icon: '🤝', badge: friendRequests },
+            { id: 'friends', label: t('you.friends'), icon: '🤝', badge: friendRequests },
             { id: 'diary', label: t('you.diary'), icon: '📕' },
           ]}
         />

@@ -1,4 +1,6 @@
 import type { Prefs } from './types';
+import { MORE, MORE_EN, type MoreKey } from './i18n-more';
+import { locale } from './locale';
 
 /**
  * Translations for the app's main screens. Each language lists the same keys in the same order as
@@ -28,9 +30,10 @@ export const KEYS = [
   'settings.help', 'settings.simple', 'settings.simpleHint',
   'nav.world',
   'nav.coach',
+  'prefs.reduceMotionSystem',
 ] as const;
 
-export type TKey = (typeof KEYS)[number];
+export type TKey = (typeof KEYS)[number] | MoreKey;
 
 export const LANGUAGES: Array<{ code: string; name: string; native: string }> = [
   { code: 'en', name: 'English', native: 'English' },
@@ -85,9 +88,10 @@ const S: Record<string, string[]> = {
     'New note', 'Search notes', 'No notes yet. Tap New note to start.', 'Title', 'Write anything…',
     'Save', 'Cancel', 'Delete', 'Done', 'Back', 'Pin', 'Unpin',
     'General',
-    'How it works', 'Simple mode', 'Shows only the main things. Turn off to see every card and extra.',
+    'How it works', 'Simple mode', 'Shows only the main things, and opens new tabs over your first days. Turn off to see every card, tab and extra.',
     'World',
     'Coach',
+    'On, because your phone is set to reduce motion.',
   ],
   lt: [
     'Šiandien', 'Planas', 'Pinigai', 'Tikslai', 'Tu',
@@ -96,8 +100,8 @@ const S: Record<string, string[]> = {
     'Dabar', 'Toliau', 'Pažymėti atliktu', 'Fokusas', 'Diena baigta',
     'Bėgimas', 'Išleista',
     'Kaip šiandien jautiesi?', 'Siaubingai', 'Blogai', 'Normaliai', 'Gerai', 'Puikiai',
-    'Dienos dėžutė', 'Atlik 1 užduotį, kad atrakintum', 'Nemokamas prizas kiekvieną dieną', 'Tavo dėžutė paruošta!', 'Pagreitinimai, skydai, skeveldros… ar mitinis daiktas', 'Atidaryti', 'Kita dėžutė po {t}',
-    'Statistika', 'Ženkleliai', 'Dienoraštis', 'Keisti personažą', 'Serija', 'Skeveldros', 'Skrynios',
+    'Dienos dėžutė', 'Atlik 1 užduotį, kad atrakintum', 'Nemokamas prizas kiekvieną dieną', 'Tavo dėžutė paruošta!', 'Pagreitinimai, skydai, monetos… ar mitinis daiktas', 'Atidaryti', 'Kita dėžutė po {t}',
+    'Statistika', 'Ženkleliai', 'Dienoraštis', 'Keisti personažą', 'Serija', 'Monetos', 'Skrynios',
     'Ši savaitė', 'Ilgalaikiai tikslai',
     'Savaitės planas', 'Diena', 'Savaitė',
     'Nustatymai', 'Paskyra', 'Profilis', 'Išvaizda', 'Kalba', 'Pranešimai', 'Garsai ir vibracija', 'Užduotys', 'Duomenys ir atsarginė kopija', 'Įdiegti programėlę', 'Apie',
@@ -109,9 +113,10 @@ const S: Record<string, string[]> = {
     'Naujas užrašas', 'Ieškoti užrašų', 'Užrašų dar nėra. Bakstelėk „Naujas užrašas“.', 'Pavadinimas', 'Rašyk ką nori…',
     'Išsaugoti', 'Atšaukti', 'Ištrinti', 'Atlikta', 'Atgal', 'Prisegti', 'Atsegti',
     'Bendra',
-    'Kaip tai veikia', 'Paprastas režimas', 'Rodo tik svarbiausius dalykus. Išjunk, jei nori matyti viską.',
+    'Kaip tai veikia', 'Paprastas režimas', 'Rodo tik svarbiausius dalykus, o naujas skiltis atidaro per pirmąsias dienas. Išjunk, jei nori matyti viską.',
     'Pasaulis',
     'Treneris',
+    'Įjungta, nes tavo telefone nustatyta mažinti judesį.',
   ],
   lv: [
     'Šodien', 'Plāns', 'Nauda', 'Mērķi', 'Tu',
@@ -582,8 +587,8 @@ const S: Record<string, string[]> = {
     'Ngayon mismo', 'Susunod', 'Markahang tapos', 'Focus', 'Tapos na ang araw',
     'Takbo', 'Nagastos',
     'Kumusta ang pakiramdam mo ngayon?', 'Napakasama', 'Masama', 'Okay lang', 'Mabuti', 'Napakaganda',
-    'Daily box', 'Tapusin ang 1 quest para mabuksan', 'Libreng premyo araw-araw', 'Handa na ang box mo!', 'Boost, shield, shard… o isang mythic item', 'Buksan', 'Susunod na box sa loob ng {t}',
-    'Stats', 'Mga badge', 'Talaarawan', 'I-customize ang karakter', 'Streak', 'Mga shard', 'Mga chest',
+    'Daily box', 'Tapusin ang 1 quest para mabuksan', 'Libreng premyo araw-araw', 'Handa na ang box mo!', 'Boost, shield, coins… o isang mythic item', 'Buksan', 'Susunod na box sa loob ng {t}',
+    'Stats', 'Mga badge', 'Talaarawan', 'I-customize ang karakter', 'Streak', 'Mga coin', 'Mga chest',
     'Ngayong linggo', 'Pangmatagalang layunin',
     'Plano ng linggo', 'Araw', 'Linggo',
     'Mga setting', 'Account', 'Profile', 'Hitsura', 'Wika', 'Mga abiso', 'Tunog at vibration', 'Mga quest', 'Data at backup', 'I-install ang app', 'Tungkol',
@@ -685,10 +690,52 @@ const S: Record<string, string[]> = {
 const INDEX = new Map<string, number>(KEYS.map((k, i) => [k, i]));
 
 export function translate(lang: string, key: TKey, vars?: Record<string, string | number>): string {
-  const i = INDEX.get(key)!;
-  let s = S[lang]?.[i] ?? S.en[i] ?? key;
+  const i = INDEX.get(key);
+  let s = i === undefined ? (MORE[lang]?.[key] ?? MORE.en[key] ?? key) : (S[lang]?.[i] ?? S.en[i] ?? key);
   if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, String(v));
   return s;
+}
+
+/** Share of all strings (0..1) a language has translated. */
+export function coverage(lang: string): number {
+  const total = KEYS.length + Object.keys(MORE_EN).length;
+  const pos = (S[lang] ?? []).filter(Boolean).length;
+  const more = Object.keys(MORE_EN).filter((k) => MORE[lang]?.[k]).length;
+  return (pos + more) / total;
+}
+
+/**
+ * Languages shown in Settings → Language: only those with at least 90% of the app translated,
+ * so nobody gets a half-English screen. The others stay in the code for later.
+ */
+export const SHOWN_LANGUAGES = LANGUAGES.filter((l) => l.code === 'en' || coverage(l.code) >= 0.9);
+const SHOWN = new Set(SHOWN_LANGUAGES.map((l) => l.code));
+
+/** The language to show for a saved choice: a hidden language falls back to English (the choice itself is kept). */
+export function shownLanguage(code: string | undefined): string {
+  const c = code ?? 'en';
+  if (SHOWN.has(c)) return c;
+  const base = c.toLowerCase().split('-')[0];
+  return SHOWN.has(base) ? base : 'en';
+}
+
+/** Translator for the language the app is showing right now (safe to use outside React). */
+export function tl(key: TKey, vars?: Record<string, string | number>): string {
+  return translate(shownLanguage(locale()), key, vars);
+}
+
+/** Plural-aware translator: picks `base.one` / `base.few` / `base.other` for n, and fills {n}. */
+export function tn(base: string, n: number, vars?: Record<string, string | number>): string {
+  const lang = shownLanguage(locale());
+  let rule = 'other';
+  try {
+    rule = new Intl.PluralRules(lang).select(n);
+  } catch {
+    // old browser: 'other'
+  }
+  const dict = MORE[lang] ?? {};
+  const key = dict[`${base}.${rule}`] !== undefined || MORE.en[`${base}.${rule}`] !== undefined ? `${base}.${rule}` : `${base}.other`;
+  return translate(lang, key as TKey, { n, ...vars });
 }
 
 /** Number of translated strings per language (used by tests; every language should match English). */
@@ -717,11 +764,11 @@ export const DEFAULT_PREFS: Prefs = {
 export function guessLanguage(): string {
   try {
     const cached = localStorage.getItem('dayforge-lang');
-    if (cached && S[cached]) return cached;
+    if (cached && SHOWN.has(cached)) return cached;
     for (const l of navigator.languages ?? [navigator.language]) {
       const base = l.toLowerCase().split('-')[0];
       const code = base === 'no' || base === 'nn' ? 'nb' : base === 'fil' ? 'tl' : base;
-      if (S[code]) return code;
+      if (SHOWN.has(code)) return code;
     }
   } catch {
     // ignore

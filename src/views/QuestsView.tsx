@@ -24,7 +24,7 @@ export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
       <div className="max-w-2xl mx-auto px-4 pt-4">
         <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mb-4 flex items-center gap-1">
           {t('nav.quests')}
-          <InfoTip title="Bigger challenges" text="Daily quests are on Today. Here are the bigger ones: weekly quests take all week, long-term goals are for big things like saving for a car, and Rewards is your own shop of treats you buy with coins." />
+          <InfoTip title={t('goals.infoTitle')} text={t('goals.infoText')} />
         </h1>
         <GoalsHero onOpen={setSection} />
         <div className="h-4" />
@@ -32,9 +32,9 @@ export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) 
           value={section}
           onChange={setSection}
           options={[
-            { id: 'goals', label: 'Year goals', icon: '🏆' },
-            { id: 'weekly', label: 'This week', icon: '🗡' },
-            { id: 'rewards', label: 'Rewards', icon: 'df:chest' },
+            { id: 'goals', label: t('goals.yearGoals'), icon: '🏆' },
+            { id: 'weekly', label: t('goals.thisWeek'), icon: '🗡' },
+            { id: 'rewards', label: t('goals.rewards'), icon: 'df:chest' },
           ]}
         />
       </div>

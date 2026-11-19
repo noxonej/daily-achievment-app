@@ -5,6 +5,7 @@ import { wardrobe } from '../lib/wardrobe';
 import { settings } from '../lib/settingsNav';
 import type { ViewId } from './NavTabs';
 import { Icon } from './Icon';
+import { t } from '../lib/prefs';
 
 /**
  * A small ⓘ button. The explanation only shows when it's tapped (a bubble under it); tap
@@ -41,7 +42,7 @@ export function InfoTip({ title, text, align = 'left' }: { title: string; text: 
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-label={`About: ${title}`}
+        aria-label={t('common.about', { x: title })}
         className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${open ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-200 hover:bg-white/10'}`}
       >
         <Icon name="ℹ" size={16} />
@@ -85,34 +86,34 @@ export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void
     {
       id: 'quest',
       icon: '✅',
-      title: 'Finish your first quest',
+      title: t('start.quest'),
       done: Object.values(state.dayLogs).some((l) => doneByHand(l) > 0),
     },
     {
       id: 'plan',
       icon: '📅',
-      title: 'Look at your week plan',
+      title: t('start.plan'),
       done: guide.includes('visit:plan'),
       go: () => onNavigate('plan'),
     },
     {
       id: 'money',
       icon: '💰',
-      title: 'Set up your money',
+      title: t('start.money'),
       done: !!state.money?.setupDone,
       go: () => onNavigate('money'),
     },
     {
       id: 'character',
       icon: '👕',
-      title: 'Dress up your character',
+      title: t('start.character'),
       done: guide.includes('wardrobe'),
       go: () => wardrobe.open(),
     },
     {
       id: 'box',
       icon: '🎁',
-      title: 'Open your daily box',
+      title: t('start.box'),
       done: !!state.dailyBox?.lastOpened,
     },
   ];
@@ -147,14 +148,14 @@ export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void
             </span>
           </span>
           <span className="flex-1 min-w-0">
-            <span className="block text-sm font-bold text-white">Getting started</span>
-            <span className="block text-xs text-slate-400 truncate">Next: {next.title}</span>
+            <span className="block text-sm font-bold text-white">{t('start.title')}</span>
+            <span className="block text-xs text-slate-400 truncate">{t('start.next', { x: next.title })}</span>
           </span>
           <Icon name="›" size={18} className={`shrink-0 text-slate-500 transition-transform duration-300 ${open ? 'rotate-90' : ''}`} />
         </button>
         <button
           onClick={() => dispatch({ type: 'GUIDE_MARK', key: 'start:hidden' })}
-          aria-label="Hide getting started"
+          aria-label={t('start.hide')}
           className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/10"
         >
           <Icon name="✕" size={15} />
@@ -187,7 +188,7 @@ export function GettingStarted({ onNavigate }: { onNavigate: (v: ViewId) => void
             })}
           </ul>
           <button onClick={() => settings.open('help')} className="w-full border-t border-white/[0.06] py-2.5 text-xs font-semibold text-amber-300 hover:bg-white/[0.03]">
-            How does the app work?
+            {t('start.how')}
           </button>
         </div>
       </div>

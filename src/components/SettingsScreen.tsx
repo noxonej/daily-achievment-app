@@ -3,8 +3,8 @@ import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { useAuth } from '../store/AuthContext';
 import { settings, useSettingsPage, type SettingsPage } from '../lib/settingsNav';
-import { fullPrefs, t } from '../lib/prefs';
-import { LANGUAGES, type TKey } from '../lib/i18n';
+import { fullPrefs, t, useSystemReduceMotion } from '../lib/prefs';
+import { LANGUAGES, SHOWN_LANGUAGES, shownLanguage, type TKey } from '../lib/i18n';
 import { locale, hour12 } from '../lib/locale';
 import type { Prefs } from '../lib/types';
 import { titleForLevel } from '../lib/xp';
@@ -23,6 +23,7 @@ import { ManageView } from '../views/ManageView';
 import { backgroundRemindersSupported, pushIsActive, todaysMoments } from '../lib/nudges';
 import { MOTIVATION } from '../lib/motivation';
 import { showSystemNotification } from '../lib/notify';
+import { someTabsLocked } from '../lib/unlocks';
 
 const TITLES: Record<SettingsPage, TKey> = {
   home: 'settings.title',
@@ -125,10 +126,10 @@ function usePrefs(): [Prefs, (p: Partial<Prefs>) => void] {
 }
 
 function Home() {
-  const { state, stats } = useApp();
+  const { state, stats, dispatch } = useApp();
   const auth = useAuth();
   const [prefs, setPrefs] = usePrefs();
-  const lang = LANGUAGES.find((l) => l.code === prefs.language);
+  const lang = LANGUAGES.find((l) => l.code === shownLanguage(prefs.language));
   const themeLabel = t(prefs.theme === 'light' ? 'appearance.light' : prefs.theme === 'system' ? 'appearance.system' : 'appearance.dark');
 
   return (
@@ -165,6 +166,15 @@ function Home() {
 
       <Group>
         <SwitchRow label={t('settings.simple')} hint={t('settings.simpleHint')} on={prefs.simple} onChange={(v) => setPrefs({ simple: v })} />
+        {someTabsLocked(state) && (
+          <button onClick={() => dispatch({ type: 'GUIDE_MARK', key: 'tabs:all' })} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/[0.04]">
+            <span className="flex-1 min-w-0">
+              <span className="block text-[15px] font-semibold text-white">{t('simple.showAll')}</span>
+              <span className="block text-xs text-slate-400 mt-0.5">{t('simple.showAllHint')}</span>
+            </span>
+            <Icon name="›" size={18} className="text-slate-500" />
+          </button>
+        )}
         <Row icon="💡" tint="bg-yellow-500" label={t('settings.help')} to="help" />
       </Group>
 
@@ -258,6 +268,7 @@ const THEME_CARDS: Array<{ id: Prefs['theme']; key: TKey; bg: string; card: stri
 
 function AppearancePage() {
   const [prefs, setPrefs] = usePrefs();
+  const systemReduce = useSystemReduceMotion();
   return (
     <div className="space-y-6">
       <section>
@@ -298,7 +309,12 @@ function AppearancePage() {
       </section>
 
       <Group>
-        <SwitchRow label={t('prefs.reduceMotion')} on={prefs.reduceMotion} onChange={(v) => setPrefs({ reduceMotion: v })} />
+        <SwitchRow
+          label={t('prefs.reduceMotion')}
+          hint={systemReduce ? t('prefs.reduceMotionSystem') : undefined}
+          on={prefs.reduceMotion || systemReduce}
+          onChange={(v) => setPrefs({ reduceMotion: v })}
+        />
         <SwitchRow label={t('prefs.splash')} on={prefs.splash} onChange={(v) => setPrefs({ splash: v })} />
       </Group>
     </div>
@@ -310,7 +326,7 @@ function LanguagePage() {
   const [q, setQ] = useState('');
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return s ? LANGUAGES.filter((l) => l.name.toLowerCase().includes(s) || l.native.toLowerCase().includes(s) || l.code === s) : LANGUAGES;
+    return s ? SHOWN_LANGUAGES.filter((l) => l.name.toLowerCase().includes(s) || l.native.toLowerCase().includes(s) || l.code === s) : SHOWN_LANGUAGES;
   }, [q]);
   const now = new Date();
   const preview = `${now.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })} · ${now.toLocaleTimeString(locale(), {
@@ -345,21 +361,23 @@ function LanguagePage() {
 
       <section>
         <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-          {t('settings.language')} · {LANGUAGES.length}
+          {t('settings.language')} · {SHOWN_LANGUAGES.length}
         </p>
-        <label className="relative block mb-3">
-          <Icon name="🔍" size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t('lang.search')}
-            type="search"
-            className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-3 h-11 text-[15px] text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60"
-          />
-        </label>
+        {SHOWN_LANGUAGES.length > 6 && (
+          <label className="relative block mb-3">
+            <Icon name="🔍" size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t('lang.search')}
+              type="search"
+              className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-3 h-11 text-[15px] text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60"
+            />
+          </label>
+        )}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/[0.06] overflow-hidden" role="radiogroup" aria-label={t('settings.language')}>
           {list.map((l) => {
-            const on = prefs.language === l.code;
+            const on = shownLanguage(prefs.language) === l.code;
             return (
               <button
                 key={l.code}
@@ -556,7 +574,7 @@ const HELP: Array<{ icon: string; title: string; text: string }> = [
   { icon: 'df:chest', title: 'Chests', text: 'You win a chest for every perfect day, every perfect week and every new level. Open them in the wardrobe (tap your character) to win clothes, faces and more.' },
   { icon: 'df:chest', title: 'Rewards', text: 'Quests → Rewards is your own shop. Add real treats (like 30 minutes of gaming) with a price in coins, then buy them when you have earned enough. Treats feel better when they are earned.' },
   { icon: '🧮', title: 'Monthly budget', text: 'In Money, give every euro a job: split what you get this month (after bills and saving) into envelopes like Food and Fun, and see what is left in each as you spend.' },
-  { icon: '💎', title: 'Shards', text: 'The app\'s coins. You get them from chests and the daily box, and spend them on items in the wardrobe.' },
+  { icon: 'coin', title: 'Coins', text: 'The app\'s money. You earn coins from quests, chests and the daily box, and spend them in the wardrobe, your World and your own rewards shop.' },
   { icon: '📦', title: 'Daily box', text: 'Finish one quest and the daily box on Today unlocks. Open it once a day for a prize. Very rarely it has a Mythic item you can\'t get anywhere else.' },
   { icon: '🌙', title: 'Sleep', text: 'Tap Sleep on Today. Plan: your ideal sleep for your age (change it with − and +) and a calculator that tells you when to go to bed for your wake-up time, in 90-minute sleep cycles. Sounds: rain, waves, fan or noise with a timer. Log: tap “Going to sleep”, then “I’m awake” in the morning to see your week. Tips: habits that really help.' },
   { icon: '🐷', title: 'Money modes & saving', text: 'Money → Save: pick what your money focuses on (Balanced, Save hard, Big goal, Safety net, Pay off debt, Grow it, Enjoy now). It sets how much you save first. Below are proven ways to save, with buttons that set them up, and scam warning signs.' },

@@ -140,6 +140,7 @@ export function CoachView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                       ))}
                     </ul>
                   )}
+                  {m.reply?.note && <p className="mt-2 text-[11px] text-slate-400">{m.reply.note}</p>}
                   {m.reply?.open && (
                     <button onClick={() => go(m.reply!.open!.to)} className="mt-3 pill-light px-3.5 py-1.5 text-xs">
                       {m.reply.open.label}

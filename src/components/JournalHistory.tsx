@@ -1,6 +1,7 @@
 import type { DayLog, Quest, WeekLog } from '../lib/types';
 import { formatShortDate } from '../lib/date';
 import { Icon } from './Icon';
+import { t } from '../lib/prefs';
 
 interface JournalEntry {
   sortKey: string;
@@ -55,9 +56,9 @@ export function JournalHistory({ dayLogs, weekLogs, quests }: JournalHistoryProp
   if (recent.length === 0) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <p className="text-sm font-semibold text-white mb-1">Recent Notes</p>
+        <p className="text-sm font-semibold text-white mb-1">{t('notes.recent')}</p>
         <p className="text-xs text-slate-500">
-          Notes from Journal, Gratitude, and your daily note will show up here.
+          {t('notes.recentEmpty')}
         </p>
       </div>
     );
@@ -65,7 +66,7 @@ export function JournalHistory({ dayLogs, weekLogs, quests }: JournalHistoryProp
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-sm font-semibold text-white mb-3">Recent Notes</p>
+      <p className="text-sm font-semibold text-white mb-3">{t('notes.recent')}</p>
       <div className="space-y-3 max-h-96 overflow-y-auto pr-0.5">
         {recent.map((e, i) => (
           <div key={i} className="rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2.5">

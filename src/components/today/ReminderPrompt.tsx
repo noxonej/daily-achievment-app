@@ -3,6 +3,7 @@ import { useApp } from '../../store/AppContext';
 import { fullPrefs } from '../../lib/prefs';
 import { Icon } from '../Icon';
 import { isStandalone } from '../../lib/install';
+import { t } from '../../lib/prefs';
 
 const HIDE_KEY = 'dayforge-reminder-prompt-hidden';
 
@@ -54,34 +55,34 @@ export function ReminderPrompt() {
   }
 
   return (
-    <div className="reminder-prompt relative rounded-2xl p-4 flex items-start gap-3" role="region" aria-label="Turn on reminders">
+    <div className="reminder-prompt relative rounded-2xl p-4 flex items-start gap-3" role="region" aria-label={t('remind.region')}>
       <span className="shrink-0 w-10 h-10 rounded-xl bg-cyan-400/15 text-cyan-200 flex items-center justify-center">
         <Icon name="🛎" size={20} />
       </span>
       <div className="flex-1 min-w-0">
         {iosNeedsInstall ? (
           <>
-            <p className="font-display font-semibold text-white">Get your reminders on iPhone</p>
+            <p className="font-display font-semibold text-white">{t('remind.iosTitle')}</p>
             <p className="text-xs text-slate-300 mt-0.5">
               Tap <b>Share</b> → <b>Add to Home Screen</b>, then open Squzo from there and tap Allow. iPhone only sends notifications to apps on the home screen.
             </p>
           </>
         ) : perm === 'denied' ? (
           <>
-            <p className="font-display font-semibold text-white">Notifications are blocked</p>
-            <p className="text-xs text-slate-300 mt-0.5">Open your phone's settings → Apps (or Notifications) → Squzo or your browser, and allow notifications. Then come back.</p>
+            <p className="font-display font-semibold text-white">{t('remind.blockedTitle')}</p>
+            <p className="text-xs text-slate-300 mt-0.5">{t('remind.blockedText')}</p>
           </>
         ) : (
           <>
-            <p className="font-display font-semibold text-white">Allow reminders</p>
-            <p className="text-xs text-slate-300 mt-0.5">Morning boost, a push at lunch and in the afternoon, and a streak save at night. One tap.</p>
+            <p className="font-display font-semibold text-white">{t('remind.allowTitle')}</p>
+            <p className="text-xs text-slate-300 mt-0.5">{t('remind.allowText')}</p>
             <button onClick={allow} className="mt-2.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-[#04232b] text-sm font-bold px-4 py-2">
               Allow notifications
             </button>
           </>
         )}
       </div>
-      <button onClick={hide} aria-label="Hide" className="shrink-0 -mr-1 -mt-1 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center">
+      <button onClick={hide} aria-label={t('common.hide')} className="shrink-0 -mr-1 -mt-1 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center">
         <Icon name="✕" size={14} />
       </button>
     </div>

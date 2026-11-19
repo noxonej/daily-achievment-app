@@ -4,6 +4,7 @@ import { useCompletionFx } from '../lib/useCompletionFx';
 import { questReward } from '../lib/rewards';
 import { Icon } from './Icon';
 import { CompleteBurst } from './fx/CompleteBurst';
+import { t } from '../lib/prefs';
 
 interface WildcardQuestCardProps {
   quest: Quest;
@@ -34,7 +35,7 @@ export function WildcardQuestCard({ quest, completed, onToggle, periodKey }: Wil
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-wide text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-full px-2 py-0.5">
-              <Icon name="🎲" size="1.15em" className="icon-inline" />Today's Wildcard
+              <Icon name="🎲" size="1.15em" className="icon-inline" />{t('quests.wildcard')}
             </span>
           </div>
           <p

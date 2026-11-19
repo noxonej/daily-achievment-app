@@ -140,7 +140,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           <Icon name="df:plan" size={14} />
           {t('nav.plan')}
         </button>
-        <p className="eyebrow">{formatDisplayDate(key)}</p>
+        <p className="eyebrow px-20">{formatDisplayDate(key)}</p>
         <h1 className="font-display text-[28px] leading-tight font-medium tracking-tight text-white mt-1.5">
           {greeting()}
           {state.profile?.name ? `, ${state.profile.name}` : ''}
@@ -156,8 +156,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
             <Icon name="🌅" size={20} />
           </span>
           <span className="flex-1 min-w-0">
-            <span className="block font-bold text-white">Good morning! Log your sleep</span>
-            <span className="block text-xs text-slate-400">Tap “I’m awake” to save last night.</span>
+            <span className="block font-bold text-white">{t('today.sleepMorning')}</span>
+            <span className="block text-xs text-slate-400">{t('today.sleepMorningSub')}</span>
           </span>
           <Icon name="›" size={18} className="text-slate-500" />
         </button>
@@ -262,7 +262,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         />
       )}
 
-      {activeDaily.length > 0 && <EditQuestsRow label="Daily quests" />}
+      {activeDaily.length > 0 && <EditQuestsRow label={t('quests.daily')} />}
 
       {activeDaily.length === 0 ? (
         <EmptyState />
@@ -347,7 +347,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         aria-expanded={more}
         className="w-full flex items-center justify-center gap-2 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] py-3 text-[14px] font-semibold text-slate-300"
       >
-        {more ? 'Show less' : 'More for today'}
+        {more ? t('today.less') : t('today.more')}
         <Icon name="▾" size={14} className={`transition-transform ${more ? 'rotate-180' : ''}`} />
       </button>
 
@@ -398,8 +398,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <span className="flex items-center gap-3">
           <span className="shrink-0 w-10 h-10 rounded-xl bg-white/5 text-sky-300 flex items-center justify-center"><Icon name="🗡" size={20} /></span>
           <span>
-            <span className="block text-sm font-semibold text-white">Weekly quests</span>
-            <span className="block text-xs text-slate-400">Bigger goals, a whole week to finish</span>
+            <span className="block text-sm font-semibold text-white">{t('quests.weekly')}</span>
+            <span className="block text-xs text-slate-400">{t('quests.weeklySub')}</span>
           </span>
         </span>
         <span className="text-slate-400">→</span>
@@ -446,8 +446,8 @@ function EmptyState() {
   return (
     <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
       <div className="flex justify-center mb-2 text-slate-400"><Icon name="🗺" size={30} strokeWidth={1.8} /></div>
-      <p className="text-white font-semibold mb-1">No daily quests yet</p>
-      <p className="text-slate-400 text-sm mb-4 px-6">Add one to start building your streak.</p>
+      <p className="text-white font-semibold mb-1">{t('quests.none')}</p>
+      <p className="text-slate-400 text-sm mb-4 px-6">{t('quests.noneSub')}</p>
       <button
         onClick={() => {
           settings.open('quests');

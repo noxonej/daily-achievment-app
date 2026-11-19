@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon';
 import { MoodInsights } from '../components/MoodInsights';
 import { WeekRecap } from '../components/WeekRecap';
 import { todayKey } from '../lib/date';
+import { t } from '../lib/prefs';
 
 export function StatsView({ embedded = false }: { embedded?: boolean } = {}) {
   const { state, stats } = useApp();
@@ -13,29 +14,29 @@ export function StatsView({ embedded = false }: { embedded?: boolean } = {}) {
   const focusTotal = Object.values(state.focusMinutes ?? {}).reduce((a, b) => a + b, 0);
 
   const tiles: Array<{ label: string; value: string | number; icon: string }> = [
-    { label: 'Total XP', value: stats.totalXp, icon: '⚡' },
-    { label: 'Level', value: stats.level, icon: '⭐' },
-    { label: 'Current Streak', value: `${stats.currentStreak}d`, icon: '🔥' },
-    { label: 'Longest Streak', value: `${stats.longestStreak}d`, icon: '🏅' },
-    { label: 'Perfect Days', value: stats.totalPerfectDays, icon: '✨' },
-    { label: 'Quests Done', value: stats.totalQuestsCompleted, icon: '⚔️' },
-    { label: 'Days Active', value: stats.daysActive, icon: '🗓️' },
-    { label: 'Goals Done', value: stats.goalsCompleted, icon: '🏆' },
-    { label: 'Focus Today', value: `${focusToday}m`, icon: '⏱' },
-    { label: 'Focus Total', value: focusTotal >= 120 ? `${Math.round(focusTotal / 6) / 10}h` : `${focusTotal}m`, icon: '⏳' },
+    { label: t('stats.totalXp'), value: stats.totalXp, icon: '⚡' },
+    { label: t('stats.level'), value: stats.level, icon: '⭐' },
+    { label: t('stats.streak'), value: `${stats.currentStreak}d`, icon: '🔥' },
+    { label: t('stats.longest'), value: `${stats.longestStreak}d`, icon: '🏅' },
+    { label: t('stats.perfect'), value: stats.totalPerfectDays, icon: '✨' },
+    { label: t('stats.quests'), value: stats.totalQuestsCompleted, icon: '⚔️' },
+    { label: t('stats.active'), value: stats.daysActive, icon: '🗓️' },
+    { label: t('stats.goals'), value: stats.goalsCompleted, icon: '🏆' },
+    { label: t('stats.focusToday'), value: `${focusToday}m`, icon: '⏱' },
+    { label: t('stats.focusTotal'), value: focusTotal >= 120 ? `${Math.round(focusTotal / 6) / 10}h` : `${focusTotal}m`, icon: '⏳' },
   ];
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
       {!embedded && (
         <div>
-          <p className="eyebrow">Your journey so far</p>
-          <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1">Stats</h1>
+          <p className="eyebrow">{t('stats.journey')}</p>
+          <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1">{t('stats.title')}</h1>
         </div>
       )}
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <p className="text-sm font-semibold text-white mb-3">Activity</p>
+        <p className="text-sm font-semibold text-white mb-3">{t('stats.activity')}</p>
         <HeatmapCalendar dayLogs={state.dayLogs} />
       </div>
 
