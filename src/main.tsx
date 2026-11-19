@@ -12,12 +12,20 @@ import './lib/install'
 import { requestPersistentStorage } from './lib/persist'
 import App from './App.tsx'
 import { AuthGate } from './components/AuthGate.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary.tsx'
+import { AppCrash } from './components/AppCrash.tsx'
+
+// Errors nobody caught: written to the console (nothing is sent anywhere).
+window.addEventListener('error', (e) => console.error('[Squzo] Uncaught error:', e.error ?? e.message))
+window.addEventListener('unhandledrejection', (e) => console.error('[Squzo] Unhandled promise rejection:', e.reason))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthGate>
-      <App />
-    </AuthGate>
+    <ErrorBoundary name="App" fallback={() => <AppCrash />}>
+      <AuthGate>
+        <App />
+      </AuthGate>
+    </ErrorBoundary>
   </StrictMode>,
 )
 
