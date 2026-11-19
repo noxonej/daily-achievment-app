@@ -19,7 +19,8 @@ to be in the app, and `firestore.rules` decides who can read what.
 2. **Build → Authentication → Get started → Sign-in method → Google → Enable.**
    Under **Settings → Authorised domains**, add `noxonej.github.io`.
 3. **Build → Firestore Database → Create database** (production mode, a region near you).
-4. In Firestore **Rules**, paste the contents of `firestore.rules` from this repo and **Publish**.
+4. In Firestore **Rules**, paste the contents of `firestore.rules` from this repo and **Publish**
+   (once the push job from SETUP-PUSH.md is set up, it publishes rule changes by itself).
 5. **Project settings → General → Your apps → Web (`</>`)**, register an app, and copy
    `apiKey` and `projectId` into `API_KEY_DEFAULT` and `PROJECT_ID_DEFAULT` in
    `src/lib/firebase.ts`.
@@ -27,8 +28,7 @@ to be in the app, and `firestore.rules` decides who can read what.
 Push, and the Google and Friends buttons switch from "coming soon" to working.
 
 ### What's stored online
-Only: name, friend code, character, level, streak, weekly XP, and finished quests / runs /
-badges (each can be switched off under *Friends → What friends can see*). Money, savings,
-crypto, the week plan, the diary and notes never leave the phone.
+See the privacy table in [README.md](README.md#privacy). In short: an encrypted backup, the friend
+card (name, photo, character, level, streak, weekly XP) and what you choose to share with friends.
 
 The free Firebase plan covers roughly 50,000 reads a day, plenty for hundreds of users.
