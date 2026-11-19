@@ -28,7 +28,8 @@ export async function readInbox(token: string): Promise<number | null> {
     const doc = (await res.json()) as { fields?: { steps?: { doubleValue?: number; integerValue?: string } }; updateTime?: string };
     const raw = doc.fields?.steps;
     const steps = Number(raw?.doubleValue ?? raw?.integerValue);
-    if (!doc.updateTime || !(steps > 0)) return null;
+    // Untrusted: only a sane, positive number with a real date counts.
+    if (typeof doc?.updateTime !== 'string' || Number.isNaN(Date.parse(doc.updateTime)) || !Number.isFinite(steps) || steps <= 0 || steps >= 200000) return null;
     // Only today's number counts: yesterday's total must never land on today.
     return todayKey(new Date(doc.updateTime)) === todayKey() ? Math.round(steps) : null;
   } catch {

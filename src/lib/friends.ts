@@ -120,6 +120,43 @@ const str = (v: unknown, max = 500): string | undefined => (typeof v === 'string
 const clamp = (n: number, max: number) => Math.max(0, Math.min(max, Math.round(n) || 0));
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
+const KINDS: ActivityKind[] = ['quest', 'run', 'streak', 'level', 'perfect', 'badge'];
+
+function asActivity(id: string, uid: string, raw: unknown): ActivityItem | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const kind = KINDS.find((k) => k === r.kind);
+  const text = str(r.text, 200);
+  const at = num(r.at);
+  if (!kind || text === undefined || at === undefined) return null;
+  return { id, uid, kind, text, icon: str(r.icon, 32) ?? '✅', value: num(r.value), at };
+}
+
+function asCheer(id: string, raw: unknown): Cheer | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const fromUid = str(r.fromUid, 128);
+  const text = str(r.text, 200);
+  if (!fromUid || text === undefined) return null;
+  return { id, fromUid, fromName: str(r.fromName, 40) ?? 'A friend', text, at: num(r.at) ?? 0 };
+}
+
+function asRequest(uid: string, raw: unknown): FriendRequest | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const name = str(r.name, 40);
+  if (name === undefined) return null;
+  return { uid, name, code: str(r.code, 12) ?? '', at: num(r.at) ?? 0 };
+}
+
+function asPlayer(uid: string, raw: unknown): GlobalPlayer | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const name = str(r.name, 40);
+  if (name === undefined) return null;
+  return { uid, name, level: num(r.level) ?? 0, weekXp: num(r.weekXp) ?? 0, look: str(r.look, 4000) };
+}
+
 /** A profile read from the cloud, checked field by field (anything odd is dropped), or null. */
 function asProfile(raw: unknown): Omit<FriendProfile, 'uid'> | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -304,8 +341,8 @@ async function syncGlobal(ctx: Ctx, me: FriendProfile) {
   }
   if (Date.now() - globalAt < 10 * 60_000 && current.global) return;
   globalAt = Date.now();
-  const rows = await api.query<Omit<GlobalPlayer, 'uid'>>(`boards/${weekKey()}`, 'players', { orderBy: 'weekXp', limit: 50 }).catch(() => []);
-  const global = rows.map((r) => ({ uid: r.id, ...r.data }));
+  const rows = await api.query<unknown>(`boards/${weekKey()}`, 'players', { orderBy: 'weekXp', limit: 50 }).catch(() => []);
+  const global = rows.flatMap((r) => asPlayer(r.id, r.data) ?? []);
   const startLevel = rankForLevel(ctx.level).startLevel;
   const cacheKey = `dayforge-rarity-${ctx.accountId}`;
   let rarity = readJson<RealRarity | null>(cacheKey, null);
@@ -337,25 +374,25 @@ export async function refreshFriends(): Promise<void> {
     const api = db(ctx.accountId);
     const me = await ensureProfile(ctx);
     const [reqDocs, friendDocs, cheerDocs] = await Promise.all([
-      api.query<Omit<FriendRequest, 'uid'>>(`requests/${me.uid}`, 'from'),
-      api.query<{ at: number }>(`friends/${me.uid}`, 'list'),
-      api.query<Omit<Cheer, 'id'>>(`cheers/${me.uid}`, 'items', { orderBy: 'at', limit: 20 }),
+      api.query<unknown>(`requests/${me.uid}`, 'from'),
+      api.query<unknown>(`friends/${me.uid}`, 'list'),
+      api.query<unknown>(`cheers/${me.uid}`, 'items', { orderBy: 'at', limit: 20 }),
     ]);
     const ids = friendDocs.map((d) => d.id);
     const profiles = (await Promise.all(ids.map((id) => api.get(`profiles/${id}`).then(asProfile)))).flatMap((p, i) =>
-      p ? [{ uid: ids[i], ...p, weekXp: p.week === weekKey() ? p.weekXp : 0 }] : [],
+      p ? [{ uid: ids[i], ...p, weekXp: p.week === weekKey() ? (p.weekXp ?? 0) : 0 }] : [],
     );
     const feedLists = await Promise.all(
       ids.map((id) =>
         api
-          .query<Omit<ActivityItem, 'id' | 'uid'>>(`activity/${id}`, 'items', { orderBy: 'at', limit: 8 })
-          .then((rows) => rows.map((r) => ({ id: r.id, uid: id, ...r.data })))
+          .query<unknown>(`activity/${id}`, 'items', { orderBy: 'at', limit: 8 })
+          .then((rows) => rows.flatMap((r) => asActivity(r.id, id, r.data) ?? []))
           .catch(() => [] as ActivityItem[]),
       ),
     );
     const feed = feedLists.flat().sort((a, b) => b.at - a.at).slice(0, 40);
-    const requests = reqDocs.map((d) => ({ uid: d.id, ...d.data }));
-    const cheers = cheerDocs.map((d) => ({ id: d.id, ...d.data }));
+    const requests = reqDocs.flatMap((d) => asRequest(d.id, d.data) ?? []);
+    const cheers = cheerDocs.flatMap((d) => asCheer(d.id, d.data) ?? []);
 
     // Toasts for news since last time (the very first sync just sets the starting point).
     const seen = readJson<{ feed: number; cheers: number; requests: string[] } | null>(seenKey(ctx.accountId), null);

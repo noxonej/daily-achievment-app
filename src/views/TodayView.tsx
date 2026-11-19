@@ -2,6 +2,7 @@ import { settings } from '../lib/settingsNav';
 import { EditQuestsRow } from '../components/EditQuestsRow';
 import { GettingStarted } from '../components/Guide';
 import { FriendsPeek } from '../components/FriendsPeek';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useFlip } from '../lib/useFlip';
 import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
@@ -373,12 +374,14 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
           <YourWorldCard onOpen={() => onNavigate('world')} />
 
-          <FriendsPeek
-            onOpen={() => {
-              setIntent('you-friends');
-              onNavigate('you');
-            }}
-          />
+          <ErrorBoundary name="Friends peek" fallback={() => null}>
+            <FriendsPeek
+              onOpen={() => {
+                setIntent('you-friends');
+                onNavigate('you');
+              }}
+            />
+          </ErrorBoundary>
 
           <InstallCard />
         </div>

@@ -14,6 +14,7 @@ import { StatsView } from './StatsView';
 import { AchievementsView } from './AchievementsView';
 import { DiaryView } from './DiaryView';
 import { FriendsView } from './FriendsView';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useIntent } from '../lib/intents';
 import { useFriends } from '../lib/friends';
 import { settings } from '../lib/settingsNav';
@@ -164,7 +165,9 @@ export function YouView() {
         {section === 'diary' && <DiaryView />}
         {section === 'friends' && (
           <div className="max-w-2xl mx-auto px-4 py-4">
-            <FriendsView />
+            <ErrorBoundary name="Friends">
+              <FriendsView />
+            </ErrorBoundary>
           </div>
         )}
       </div>
