@@ -135,7 +135,7 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
         <p className="text-sm font-semibold text-white">Your Data</p>
         <p className="text-xs text-slate-400 -mt-2">
-          Saved on this phone, and backed up by itself to your Google account once you continue with Google. Nothing to press.
+          Saved on this phone. Once you continue with Google, it's also backed up by itself: an encrypted copy in Squzo's cloud, plus a copy in your own Google Drive. Nothing to press.
         </p>
         <AutoBackups />
 

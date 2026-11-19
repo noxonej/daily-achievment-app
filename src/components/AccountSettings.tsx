@@ -7,6 +7,10 @@ import { Modal } from './Modal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Toggle } from './AuthGate';
 import { locale } from '../lib/locale';
+import { loadSession } from '../lib/firebase';
+import { deleteMyCloudData } from '../lib/cloudErase';
+import { disconnectFriends } from '../lib/friends';
+import { googleSignOut } from '../lib/google';
 
 /** Account card in Settings: PIN, remember-me, switch / sign out, delete. */
 export function AccountSettings() {
@@ -14,6 +18,9 @@ export function AccountSettings() {
   const { state } = useApp();
   const [pinOpen, setPinOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmCloud, setConfirmCloud] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [erasing, setErasing] = useState(false);
   if (!auth) return null;
   const { account } = auth;
 
@@ -57,9 +64,39 @@ export function AccountSettings() {
           ? 'Your progress is backed up to Google. On a new phone, tap Continue with Google to get it back.'
           : 'Accounts live on this phone. Connect Google above (or export a backup) to use yours on another phone.'}
       </p>
-      <button onClick={() => setConfirmDelete(true)} className="mt-2 text-xs font-semibold text-red-300/80 hover:text-red-300">
-        Delete this account
-      </button>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+        <button onClick={() => setConfirmDelete(true)} className="text-xs font-semibold text-red-300/80 hover:text-red-300">
+          Delete this account
+        </button>
+        {loadSession(account.id) && (
+          <button onClick={() => setConfirmCloud(true)} disabled={erasing} className="text-xs font-semibold text-red-300/80 hover:text-red-300 disabled:opacity-50">
+            {erasing ? 'Deleting…' : 'Delete my cloud data'}
+          </button>
+        )}
+      </div>
+      {cloudMsg && <p className={`text-xs mt-2 ${cloudMsg.ok ? 'text-emerald-300' : 'text-amber-300'}`}>{cloudMsg.text}</p>}
+      <ConfirmDialog
+        open={confirmCloud}
+        title="Delete your cloud data?"
+        message="This deletes everything Squzo saved in its cloud: your backup, friend profile and code, friends, requests, shared activity, cheers, leaderboard entries, notification plan and steps inbox, and your Squzo cloud sign-in. Friends will no longer see you. If daily motivation stays on, this phone saves a new notification plan (turn it off in Settings → Notifications). What's on this phone stays. Your Google Drive copy stays too (delete it in Google Drive → Settings → Manage apps). This can't be undone."
+        confirmLabel="Delete cloud data"
+        danger
+        onCancel={() => setConfirmCloud(false)}
+        onConfirm={() => {
+          setConfirmCloud(false);
+          setErasing(true);
+          setCloudMsg(null);
+          deleteMyCloudData(account.id, { stepsToken: state.stepsToken })
+            .then(() => {
+              disconnectFriends(account.id);
+              void googleSignOut();
+              auth.update({ google: undefined });
+              setCloudMsg({ ok: true, text: 'Done. Your cloud data is deleted and this phone is signed out of Google.' });
+            })
+            .catch((e: unknown) => setCloudMsg({ ok: false, text: e instanceof Error ? e.message : 'Something went wrong. Try again.' }))
+            .finally(() => setErasing(false));
+        }}
+      />
 
       <PinModal open={pinOpen} hasPin={!!account.pinHash} onClose={() => setPinOpen(false)} onSave={async (pin) => {
         await auth.setPin(pin);

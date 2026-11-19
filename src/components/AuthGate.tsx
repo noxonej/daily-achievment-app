@@ -25,7 +25,8 @@ import { APP_NAME } from '../lib/brand';
 import { hideBoot } from '../lib/boot';
 import { downloadBackup, findBackup, googleProfile, googleSignIn, isBackup } from '../lib/google';
 import { GoogleButton } from './GoogleConnect';
-import { cloudRestore, friendsConfigured, friendsSignIn } from '../lib/firebase';
+import { cloudRestore, friendsConfigured, friendsSignIn, mergePrivateText } from '../lib/firebase';
+import { ensureBackupKey } from '../lib/backupCrypto';
 import { settings } from '../lib/settingsNav';
 import { wardrobe } from '../lib/wardrobe';
 
@@ -59,6 +60,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       const profile = await googleProfile();
       const known = listAccounts().find((a) => a.google?.email === profile.email);
       if (known) {
+        await ensureBackupKey(known.id);
         setAdding(false);
         open(known);
         return;
@@ -67,14 +69,16 @@ export function AuthGate({ children }: { children: ReactNode }) {
       const file = await findBackup().catch(() => null);
       const driveData = file ? await downloadBackup(file.id).catch(() => null) : null;
       const acc = await createAccount({ name: profile.name || 'Me', pin: null, remember: true });
-      let cloud: { data: unknown; savedAt: string } | null = null;
+      let cloud: { data: unknown; savedAt: string; lite: boolean } | null = null;
       if (friendsConfigured()) {
         await friendsSignIn(acc.id, profile.email).catch(() => undefined);
+        // The key that unlocks the encrypted cloud backup comes from your own Google Drive.
+        await ensureBackupKey(acc.id);
         cloud = await cloudRestore(acc.id).catch(() => null);
       }
       type Backup = Record<string, unknown> & { profile?: { name?: string }; onboarded?: boolean };
       const drive = isBackup(driveData) ? (driveData as Backup) : null;
-      const fromCloud = isBackup(cloud?.data) ? (cloud!.data as Backup) : null;
+      const fromCloud = isBackup(cloud?.data) ? (cloud!.lite && drive ? mergePrivateText(cloud!.data as Backup, drive) : (cloud!.data as Backup)) : null;
       const cloudNewer = !!fromCloud && (!drive || (cloud!.savedAt || '') >= (file?.modifiedTime || ''));
       const backup = cloudNewer ? fromCloud : drive;
       if (backup) {

@@ -62,14 +62,48 @@ export function AboutPage() {
       </Section>
 
       <Section icon="🔐" title="Your privacy">
+        <p className="mb-2.5">No ads and no tracking. We don't sell your data. Here is every place your data can go, in plain words:</p>
         <ul className="space-y-2 list-disc pl-5 marker:text-slate-500">
-          <li>No ads and no tracking. We don't sell or share your data.</li>
-          <li>Everything you enter, including your diary, notes and money, is saved on this device only.</li>
           <li>
-            Only if <b>you</b> turn it on: Google Drive backup saves a copy in your own Google Drive, and Friends shares your
-            name, level and streak with the friends you add.
+            <b>This phone.</b> Everything you enter is saved here first. Without Google sign-in, nothing below happens
+            except crypto prices (if you use them).
           </li>
-          <li>You can export a backup or delete everything at any time in Settings → Data.</li>
+          <li>
+            <b>Squzo's cloud backup</b> (Google Firebase, Firestore: backups). After you continue with Google, a full copy
+            of your progress is saved there every few minutes. It is <b>locked (encrypted) on your phone</b> first, and
+            the key is only on your phone and in your own Google Drive, so nobody at Squzo can read it. Until the key is
+            set up, the backup leaves out your diary and notes.
+          </li>
+          <li>
+            <b>Your Google Drive</b> (a hidden Squzo folder only this app can open): a full backup copy and the backup
+            key. You can delete it in Drive → Settings → Manage apps.
+          </li>
+          <li>
+            <b>Friends</b> (Firestore: profiles, codes, friends, requests, activity, cheers), only once you connect
+            Friends: your name, Google photo, character, level, streak, weekly XP and active days, plus the quests, runs
+            and badges you choose to share in Settings → Friends. Only your friends can read your activity.
+          </li>
+          <li>
+            <b>Weekly leaderboard</b> (Firestore: boards), only if you turn it on: your first name, character, level and
+            weekly XP. Everyone signed in can see it.
+          </li>
+          <li>
+            <b>Notifications</b> (Firestore: pushQueue). With daily motivation on, the phone's push address and the plan
+            of upcoming messages (times and texts, your quiet hours and time zone) are saved under a random code, so the
+            server can send them. Your name isn't in it.
+          </li>
+          <li>
+            <b>Apple Health steps</b> (Firestore: stepsInbox), only if you set up the Shortcut: one number, today's
+            steps, under a random code.
+          </li>
+          <li>
+            <b>CoinGecko</b> (a crypto price website), only if you add crypto in Money: the app asks it for prices of the
+            coins you hold. It doesn't get your amounts.
+          </li>
+          <li>
+            <b>Delete it all:</b> Settings → Account → Delete my cloud data removes everything Squzo saved in the cloud.
+            Settings → Data deletes what's on this phone.
+          </li>
           <li>If you clear your browser data or lose the phone without a backup, your progress can't be recovered. Make backups.</li>
         </ul>
       </Section>

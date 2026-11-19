@@ -74,7 +74,7 @@ export function MoneyView() {
           <p className="eyebrow">Your money</p>
           <h1 className="font-display text-[30px] leading-tight font-medium tracking-tight text-white mt-1 flex items-center gap-1">
             Money
-            <InfoTip title="Know where your money goes" text="Tell the app how much you have. When you buy something, tap I spent money. Stay under your daily limit and watch your savings goals fill up. Everything stays on your phone." />
+            <InfoTip title="Know where your money goes" text="Tell the app how much you have. When you buy something, tap I spent money. Stay under your daily limit and watch your savings goals fill up. Your money data is saved on your phone and only leaves it inside your encrypted backup." />
           </h1>
         </div>
         {money.setupDone && (

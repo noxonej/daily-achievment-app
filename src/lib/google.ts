@@ -125,21 +125,24 @@ interface DriveFile {
   modifiedTime?: string;
 }
 
-/** The backup file in the app's Drive folder, if there is one. */
-export async function findBackup(): Promise<DriveFile | null> {
-  const q = encodeURIComponent(`name='${BACKUP_NAME}'`);
+/** A file in the app's hidden Drive folder, by name (newest first), if there is one. */
+export async function findAppFile(name: string): Promise<DriveFile | null> {
+  const q = encodeURIComponent(`name='${name}'`);
   const r = await api<{ files: DriveFile[] }>(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime)&orderBy=modifiedTime desc`);
   return r.files?.[0] ?? null;
 }
+
+/** The backup file in the app's Drive folder, if there is one. */
+export const findBackup = (): Promise<DriveFile | null> => findAppFile(BACKUP_NAME);
 
 export async function downloadBackup(fileId: string): Promise<unknown> {
   return api<unknown>(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
 }
 
-/** Saves the backup (creating the file the first time). Returns its id and time. */
-export async function uploadBackup(data: unknown, existingId?: string): Promise<{ id: string; modifiedTime: string }> {
+/** Saves a JSON file in the app's Drive folder (creating it the first time). Returns its id and time. */
+export async function uploadAppFile(name: string, data: unknown, existingId?: string): Promise<{ id: string; modifiedTime: string }> {
   const boundary = `dayforge${Math.random().toString(36).slice(2)}`;
-  const meta = existingId ? {} : { name: BACKUP_NAME, parents: ['appDataFolder'], mimeType: 'application/json' };
+  const meta = existingId ? {} : { name, parents: ['appDataFolder'], mimeType: 'application/json' };
   const body =
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n` +
     `--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(data)}\r\n--${boundary}--`;
@@ -153,6 +156,9 @@ export async function uploadBackup(data: unknown, existingId?: string): Promise<
   });
   return { id: r.id, modifiedTime: r.modifiedTime ?? new Date().toISOString() };
 }
+
+/** Saves the backup (creating the file the first time). Returns its id and time. */
+export const uploadBackup = (data: unknown, existingId?: string) => uploadAppFile(BACKUP_NAME, data, existingId);
 
 export async function googleSignOut() {
   const t = token?.value;
