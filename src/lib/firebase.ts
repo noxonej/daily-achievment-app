@@ -7,6 +7,7 @@
  * VITE_FIREBASE_API_KEY / VITE_FIREBASE_PROJECT_ID when building.
  */
 import { googleConfigured, googleSignIn } from './google';
+import { cryptoAvailable, decryptBytes, encryptBytes, localBackupKey } from './backupCrypto';
 
 const API_KEY_DEFAULT = 'AIzaSyDUDTAX2zxf_mVHVILcaiBe_nPiR9dLuG8';
 const PROJECT_ID_DEFAULT = 'squzo-861ad';
@@ -96,6 +97,13 @@ async function idToken(accountId: string): Promise<FbSession> {
   return next;
 }
 
+/** Deletes the signed-in Firebase user itself (name, email and photo kept by Firebase sign-in). */
+export async function deleteFirebaseUser(accountId: string) {
+  const s = await idToken(accountId);
+  await post(`https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${API_KEY}`, { idToken: s.idToken });
+  clearSession(accountId);
+}
+
 /* ---------------------------------------------------------------- Firestore values */
 
 type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
@@ -168,6 +176,19 @@ export function db(accountId: string) {
       await call(`/${path}`, { method: 'PATCH', body: JSON.stringify({ fields: encFields(data) }) });
     },
 
+    /**
+     * Creates a document only if it doesn't exist yet. Returns false when it already exists (or the
+     * rules refuse it), so callers can try another id.
+     */
+    async create(path: string, data: { [k: string]: Json }): Promise<boolean> {
+      try {
+        const res = await call(`/${path}?currentDocument.exists=false`, { method: 'PATCH', body: JSON.stringify({ fields: encFields(data) }) });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    },
+
     async add(collection: string, data: { [k: string]: Json }) {
       await call(`/${collection}`, { method: 'POST', body: JSON.stringify({ fields: encFields(data) }) });
     },
@@ -176,11 +197,27 @@ export function db(accountId: string) {
       await call(`/${path}`, { method: 'DELETE' });
     },
 
-    /** How many documents in a top-level collection match a number filter (e.g. level >= 10). */
-    async count(collection: string, where?: [string, 'GREATER_THAN' | 'GREATER_THAN_OR_EQUAL', number]): Promise<number> {
+    /** Like set, but also stamps `field` with the server's own clock (the rules can check it). */
+    async setStamped(path: string, data: { [k: string]: Json }, field: string) {
+      const name = `projects/${PROJECT_ID}/databases/(default)/documents/${path}`;
+      const writes = [{ update: { name, fields: encFields(data) }, updateTransforms: [{ fieldPath: field, setToServerValue: 'REQUEST_TIME' }] }];
+      await call(':commit', { method: 'POST', body: JSON.stringify({ writes }) });
+    },
+
+    /** Deletes many documents in batches (each batch is all-or-nothing). */
+    async removeMany(paths: string[]) {
+      const root = `projects/${PROJECT_ID}/databases/(default)/documents`;
+      for (let i = 0; i < paths.length; i += 400) {
+        const writes = paths.slice(i, i + 400).map((p) => ({ delete: `${root}/${p}` }));
+        await call(':commit', { method: 'POST', body: JSON.stringify({ writes }) });
+      }
+    },
+
+    /** How many documents in `parent/collection` match a number filter (e.g. level >= 10). */
+    async count(parent: string, collection: string, where?: [string, 'GREATER_THAN' | 'GREATER_THAN_OR_EQUAL', number]): Promise<number> {
       const structuredQuery: Record<string, unknown> = { from: [{ collectionId: collection }] };
       if (where) structuredQuery.where = { fieldFilter: { field: { fieldPath: where[0] }, op: where[1], value: enc(where[2]) } };
-      const res = await call(':runAggregationQuery', {
+      const res = await call(`${parent ? `/${parent}` : ''}:runAggregationQuery`, {
         method: 'POST',
         body: JSON.stringify({ structuredAggregationQuery: { structuredQuery, aggregations: [{ alias: 'n', count: {} }] } }),
       });
@@ -216,27 +253,96 @@ export function db(accountId: string) {
 const MAX_BACKUP = 900_000;
 
 /**
- * Saves the whole app state to `backups/{uid}`. Works for as long as the person stays signed in
- * (Firebase refreshes its own token), so it needs no pop-up and no "Back up" button.
- * Returns false when there's no session or the state is too big for one document.
+ * Removes the private writing (diary pages, quest notes, proof answers and free notes). Used for the
+ * cloud backup only while it can't be encrypted yet: that text then stays on the phone and in your
+ * Google Drive backup, never in Squzo's database in readable form.
  */
-export async function cloudBackup(accountId: string, state: unknown): Promise<string | false> {
-  if (!friendsConfigured() || !loadSession(accountId)) return false;
-  const data = JSON.stringify(state);
-  if (data.length > MAX_BACKUP) return false;
-  const api = db(accountId);
-  const savedAt = new Date().toISOString();
-  await api.set(`backups/${api.uid()}`, { data, savedAt, v: 1 });
-  return savedAt;
+export function stripPrivateText<T>(state: T): T {
+  if (!state || typeof state !== 'object') return state;
+  const s = state as Record<string, unknown>;
+  const clean = (logs: unknown, keys: string[]) =>
+    logs && typeof logs === 'object'
+      ? Object.fromEntries(
+          Object.entries(logs as Record<string, Record<string, unknown>>).map(([k, l]) => {
+            if (!l || typeof l !== 'object') return [k, l];
+            const copy = { ...l };
+            for (const key of keys) delete copy[key];
+            return [k, copy];
+          }),
+        )
+      : logs;
+  return { ...s, notes: [], dayLogs: clean(s.dayLogs, ['notes', 'freeNote', 'proofs']), weekLogs: clean(s.weekLogs, ['notes']) } as T;
 }
 
-export async function cloudRestore(accountId: string): Promise<{ data: unknown; savedAt: string } | null> {
+/** Puts the private writing from `full` (e.g. a Google Drive backup) back into a backup that left it out. */
+export function mergePrivateText<T>(lite: T, full: unknown): T {
+  if (!lite || typeof lite !== 'object' || !full || typeof full !== 'object') return lite;
+  const l = lite as Record<string, unknown>;
+  const f = full as Record<string, unknown>;
+  const pick = (logsL: unknown, logsF: unknown, keys: string[]) => {
+    if (!logsL || typeof logsL !== 'object' || !logsF || typeof logsF !== 'object') return logsL;
+    const out: Record<string, unknown> = { ...(logsL as Record<string, unknown>) };
+    for (const [k, fl] of Object.entries(logsF as Record<string, Record<string, unknown>>)) {
+      if (!fl || typeof fl !== 'object') continue;
+      const extra = Object.fromEntries(keys.filter((key) => fl[key] !== undefined).map((key) => [key, fl[key]]));
+      out[k] = out[k] && typeof out[k] === 'object' ? { ...(out[k] as object), ...extra } : out[k];
+    }
+    return out;
+  };
+  return {
+    ...l,
+    notes: Array.isArray(f.notes) ? f.notes : l.notes,
+    dayLogs: pick(l.dayLogs, f.dayLogs, ['notes', 'freeNote', 'proofs']),
+    weekLogs: pick(l.weekLogs, f.weekLogs, ['notes']),
+  } as T;
+}
+
+export type BackupResult = { ok: true; savedAt: string; encrypted: boolean } | { ok: false; reason: 'no-session' | 'too-big' | 'error' };
+
+/**
+ * Saves the app state to `backups/{uid}`. Works for as long as the person stays signed in
+ * (Firebase refreshes its own token), so it needs no pop-up and no "Back up" button.
+ *
+ * v2 (normal): the whole state, encrypted on the phone (see backupCrypto.ts).
+ * v1 + lite: only while this phone has no backup key yet; the diary and notes are left out.
+ */
+export async function cloudBackup(accountId: string, state: unknown): Promise<BackupResult> {
+  if (!friendsConfigured() || !loadSession(accountId)) return { ok: false, reason: 'no-session' };
+  const api = db(accountId);
+  const savedAt = new Date().toISOString();
+  const key = localBackupKey(accountId);
+  if (key && cryptoAvailable()) {
+    const plain = new TextEncoder().encode(JSON.stringify(state));
+    const { data, iv } = await encryptBytes(key, plain);
+    if (data.length > MAX_BACKUP) return { ok: false, reason: 'too-big' };
+    await api.set(`backups/${api.uid()}`, { data, iv, savedAt, v: 2 });
+    return { ok: true, savedAt, encrypted: true };
+  }
+  const data = JSON.stringify(stripPrivateText(state));
+  if (data.length > MAX_BACKUP) return { ok: false, reason: 'too-big' };
+  await api.set(`backups/${api.uid()}`, { data, savedAt, v: 1, lite: true });
+  return { ok: true, savedAt, encrypted: false };
+}
+
+/**
+ * Reads `backups/{uid}`: old plain backups (v1), lite ones (v1 without diary) and encrypted ones (v2).
+ * An encrypted backup needs the key on this phone (call ensureBackupKey after a Google sign-in first);
+ * without it this returns null.
+ */
+export async function cloudRestore(accountId: string): Promise<{ data: unknown; savedAt: string; lite: boolean } | null> {
   if (!friendsConfigured() || !loadSession(accountId)) return null;
   const api = db(accountId);
-  const doc = await api.get<{ data?: string; savedAt?: string }>(`backups/${api.uid()}`);
-  if (!doc?.data) return null;
+  const doc = await api.get<Record<string, unknown>>(`backups/${api.uid()}`);
+  if (!doc || typeof doc.data !== 'string') return null;
+  const savedAt = typeof doc.savedAt === 'string' ? doc.savedAt : '';
   try {
-    return { data: JSON.parse(doc.data), savedAt: doc.savedAt ?? '' };
+    if (doc.v === 2) {
+      const key = localBackupKey(accountId);
+      if (!key || !cryptoAvailable() || typeof doc.iv !== 'string') return null;
+      const plain = await decryptBytes(key, doc.data, doc.iv);
+      return { data: JSON.parse(new TextDecoder().decode(plain)), savedAt, lite: false };
+    }
+    return { data: JSON.parse(doc.data), savedAt, lite: doc.lite === true };
   } catch {
     return null;
   }

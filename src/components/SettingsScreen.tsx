@@ -568,7 +568,7 @@ const HELP: Array<{ icon: string; title: string; text: string }> = [
   { icon: '📅', title: 'Week Plan', text: 'Your routine from Monday to Sunday, like 7:00 Wake up. It repeats every week. Choose "Only once" for one-time things like a dentist visit; they disappear after the day.' },
   { icon: '💰', title: 'Money', text: 'Type in how much you have. Each time you buy something, tap "I spent money". The daily limit shows how much you can still spend today. Add goals (like a car) to save for.' },
   { icon: '📕', title: 'Diary', text: 'In the You tab. A private page for every day, plus notes. Nobody else can see it.' },
-  { icon: '🔐', title: 'Your data', text: 'Everything stays on your phone. Make a backup in Settings → Data & backup so you never lose it.' },
+  { icon: '🔐', title: 'Your data', text: 'Saved on your phone. Continue with Google for an encrypted backup. Settings → About → Your privacy lists everything that leaves your phone.' },
 ];
 
 function HelpPage() {

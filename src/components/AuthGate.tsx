@@ -25,7 +25,8 @@ import { APP_NAME } from '../lib/brand';
 import { hideBoot } from '../lib/boot';
 import { downloadBackup, findBackup, googleProfile, googleSignIn, isBackup } from '../lib/google';
 import { GoogleButton } from './GoogleConnect';
-import { cloudRestore, friendsConfigured, friendsSignIn } from '../lib/firebase';
+import { cloudRestore, friendsConfigured, friendsSignIn, mergePrivateText } from '../lib/firebase';
+import { ensureBackupKey } from '../lib/backupCrypto';
 import { settings } from '../lib/settingsNav';
 import { wardrobe } from '../lib/wardrobe';
 
@@ -59,6 +60,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       const profile = await googleProfile();
       const known = listAccounts().find((a) => a.google?.email === profile.email);
       if (known) {
+        await ensureBackupKey(known.id);
         setAdding(false);
         open(known);
         return;
@@ -67,14 +69,16 @@ export function AuthGate({ children }: { children: ReactNode }) {
       const file = await findBackup().catch(() => null);
       const driveData = file ? await downloadBackup(file.id).catch(() => null) : null;
       const acc = await createAccount({ name: profile.name || 'Me', pin: null, remember: true });
-      let cloud: { data: unknown; savedAt: string } | null = null;
+      let cloud: { data: unknown; savedAt: string; lite: boolean } | null = null;
       if (friendsConfigured()) {
         await friendsSignIn(acc.id, profile.email).catch(() => undefined);
+        // The key that unlocks the encrypted cloud backup comes from your own Google Drive.
+        await ensureBackupKey(acc.id);
         cloud = await cloudRestore(acc.id).catch(() => null);
       }
       type Backup = Record<string, unknown> & { profile?: { name?: string }; onboarded?: boolean };
       const drive = isBackup(driveData) ? (driveData as Backup) : null;
-      const fromCloud = isBackup(cloud?.data) ? (cloud!.data as Backup) : null;
+      const fromCloud = isBackup(cloud?.data) ? (cloud!.lite && drive ? mergePrivateText(cloud!.data as Backup, drive) : (cloud!.data as Backup)) : null;
       const cloudNewer = !!fromCloud && (!drive || (cloud!.savedAt || '') >= (file?.modifiedTime || ''));
       const backup = cloudNewer ? fromCloud : drive;
       if (backup) {
@@ -264,11 +268,11 @@ function CreateAccount({
             <div>
               <p className="text-sm font-bold text-white">
                 <Icon name="🔒" size="1.1em" className="icon-inline text-amber-300" />
-                Protect with a PIN
+                Lock with a PIN
               </p>
-              <p className="text-xs text-slate-400">Handy if someone else uses this phone.</p>
+              <p className="text-xs text-slate-400">Keeps others from opening your account on this phone.</p>
             </div>
-            <Toggle on={usePin} onChange={setUsePin} label="Protect with a PIN" />
+            <Toggle on={usePin} onChange={setUsePin} label="Lock with a PIN" />
           </div>
           {usePin && (
             <div className="mt-4 space-y-3">
@@ -400,7 +404,7 @@ function PinScreen({ account, onUnlock, onSwitch, onForgotRemove }: { account: A
       <Shell>
         <h1 className="font-display text-2xl font-bold text-white">Forgot your PIN?</h1>
         <p className="text-sm text-slate-400 mt-2">
-          For your privacy the PIN can't be recovered. You can remove this account from this phone and start again. If you exported a backup, you can
+          The PIN can't be recovered. You can remove this account from this phone and start again. If you exported a backup, you can
           import it into a new account afterwards.
         </p>
         <div className="flex-1" />

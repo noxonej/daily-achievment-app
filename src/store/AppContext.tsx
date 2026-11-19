@@ -7,14 +7,6 @@ import { ACHIEVEMENTS } from '../data/achievements';
 import { todayKey } from '../lib/date';
 import { giftFor } from '../lib/gifts';
 import { rescueUnreadable, snapshotDaily, writeSave } from '../lib/safeStorage';
-import {
-  loadSyncConfig,
-  saveSyncConfig,
-  clearSyncConfig,
-  pushStateToGithub,
-  pullStateFromGithub,
-  type SyncConfig,
-} from '../lib/githubSync';
 
 /** Where an account's data lives; the original (pre-accounts) key is kept for the first account so nothing moves. */
 export const LEGACY_STORAGE_KEY = 'daily-quest-app-state-v1';
@@ -49,8 +41,6 @@ export type Celebration =
   | { kind: 'levelup'; level: number; title: string }
   | { kind: 'goal'; id: string; title: string; icon: string };
 
-export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
-
 interface AppContextValue {
   state: AppState;
   dispatch: React.Dispatch<Action>;
@@ -59,13 +49,6 @@ interface AppContextValue {
   dismissCelebration: () => void;
   isNewDay: boolean;
   dismissNewDay: () => void;
-  syncConfig: SyncConfig | null;
-  syncStatus: SyncStatus;
-  syncMessage: string;
-  connectSync: (cfg: SyncConfig) => Promise<void>;
-  disconnectSync: () => void;
-  syncNow: () => Promise<void>;
-  restoreFromGithub: () => Promise<void>;
   /** Runs an action and offers a few seconds to undo it. */
   undoable: (action: Action, message: string) => void;
   undoToast: { id: number; message: string } | null;
@@ -92,68 +75,6 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
 
   const [isNewDay, setIsNewDay] = useState(() => state.lastOpenedDate !== todayKey());
 
-  const [syncConfig, setSyncConfigState] = useState<SyncConfig | null>(() => loadSyncConfig());
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [syncMessage, setSyncMessage] = useState('');
-  const autoSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const skipNextAutoSyncRef = useRef(false);
-
-  const recordSyncSuccess = useCallback((cfg: SyncConfig, message: string) => {
-    const updated = { ...cfg, lastSyncedAt: new Date().toISOString() };
-    saveSyncConfig(updated);
-    setSyncConfigState((prev) => (prev ? { ...prev, lastSyncedAt: updated.lastSyncedAt } : prev));
-    setSyncStatus('success');
-    setSyncMessage(message);
-  }, []);
-
-  const connectSync = useCallback(
-    async (cfg: SyncConfig) => {
-      saveSyncConfig(cfg);
-      setSyncConfigState(cfg);
-      setSyncStatus('syncing');
-      const result = await pushStateToGithub(cfg, state);
-      if (result.ok) recordSyncSuccess(cfg, 'Connected and synced.');
-      else {
-        setSyncStatus('error');
-        setSyncMessage(result.message);
-      }
-    },
-    [state, recordSyncSuccess],
-  );
-
-  const disconnectSync = useCallback(() => {
-    clearSyncConfig();
-    setSyncConfigState(null);
-    setSyncStatus('idle');
-    setSyncMessage('');
-  }, []);
-
-  const syncNow = useCallback(async () => {
-    if (!syncConfig) return;
-    setSyncStatus('syncing');
-    const result = await pushStateToGithub(syncConfig, state);
-    if (result.ok) recordSyncSuccess(syncConfig, 'Synced just now.');
-    else {
-      setSyncStatus('error');
-      setSyncMessage(result.message);
-    }
-  }, [syncConfig, state, recordSyncSuccess]);
-
-  const restoreFromGithub = useCallback(async () => {
-    if (!syncConfig) return;
-    setSyncStatus('syncing');
-    const result = await pullStateFromGithub(syncConfig);
-    if (result.ok) {
-      skipNextAutoSyncRef.current = true;
-      dispatch({ type: 'IMPORT_STATE', state: result.data as AppState });
-      setSyncStatus('success');
-      setSyncMessage('Restored from GitHub.');
-    } else {
-      setSyncStatus('error');
-      setSyncMessage(result.message);
-    }
-  }, [syncConfig]);
-
   // One-off coin gifts for a linked Google account (each pays out once).
   useEffect(() => {
     let live = true;
@@ -164,31 +85,6 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
       live = false;
     };
   }, [storageKey]);
-
-  // Debounced auto-sync: push a fresh copy a few seconds after the last change.
-  useEffect(() => {
-    if (!syncConfig?.autoSync) return;
-    if (skipNextAutoSyncRef.current) {
-      skipNextAutoSyncRef.current = false;
-      return;
-    }
-    if (autoSyncTimerRef.current) clearTimeout(autoSyncTimerRef.current);
-    autoSyncTimerRef.current = setTimeout(async () => {
-      setSyncStatus('syncing');
-      const result = await pushStateToGithub(syncConfig, state);
-      if (result.ok) recordSyncSuccess(syncConfig, 'Auto-synced.');
-      else {
-        setSyncStatus('error');
-        setSyncMessage(result.message);
-      }
-    }, 4000);
-    return () => {
-      if (autoSyncTimerRef.current) clearTimeout(autoSyncTimerRef.current);
-    };
-    // Only the identity of these primitives should restart the debounce timer —
-    // recordSyncSuccess updates syncConfig.lastSyncedAt, which must not retrigger this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, syncConfig?.autoSync, syncConfig?.token, syncConfig?.owner, syncConfig?.repo, syncConfig?.path]);
 
   const [saveFailed, setSaveFailed] = useState(false);
   useEffect(() => {
@@ -312,13 +208,6 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
     dismissCelebration,
     isNewDay,
     dismissNewDay,
-    syncConfig,
-    syncStatus,
-    syncMessage,
-    connectSync,
-    disconnectSync,
-    syncNow,
-    restoreFromGithub,
     undoable,
     undoToast: undoToast ? { id: undoToast.id, message: undoToast.message } : null,
     undo,

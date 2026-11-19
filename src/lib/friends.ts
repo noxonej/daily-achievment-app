@@ -116,6 +116,31 @@ function toast(icon: string, text: string, look?: string) {
 
 /* ---------------------------------------------------------------- helpers */
 
+const str = (v: unknown, max = 500): string | undefined => (typeof v === 'string' ? v.slice(0, max) : undefined);
+const clamp = (n: number, max: number) => Math.max(0, Math.min(max, Math.round(n) || 0));
+const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+
+/** A profile read from the cloud, checked field by field (anything odd is dropped), or null. */
+function asProfile(raw: unknown): Omit<FriendProfile, 'uid'> | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const name = str(r.name, 40);
+  const code = str(r.code, 12);
+  if (name === undefined || code === undefined) return null;
+  return {
+    name,
+    code,
+    look: str(r.look, 4000),
+    level: num(r.level),
+    streak: num(r.streak),
+    weekXp: num(r.weekXp),
+    week: str(r.week, 12),
+    picture: str(r.picture, 500),
+    active: str(r.active, 400),
+    updatedAt: num(r.updatedAt),
+  };
+}
+
 const seenKey = (acc: string) => `dayforge-friends-seen-${acc}`;
 const outboxKey = (acc: string) => `dayforge-outbox-${acc}`;
 const INVITE_KEY = 'dayforge-invite';
@@ -200,27 +225,57 @@ let ctxRef: Ctx | null = null;
 export const connectedAccountId = (): string | null => (ctxRef && loadSession(ctxRef.accountId) ? ctxRef.accountId : null);
 let syncing = false;
 
+const codeDocKey = (acc: string) => `dayforge-code-doc-${acc}`;
+
+/**
+ * Friend codes live in codes/{code} → { uid }, so finding a friend is a single read by id and nobody
+ * can list everyone's profile. Claims a new code (creating codes/{code} only if it's free) or makes
+ * sure the code you already have is registered there (one-time migration for older accounts).
+ */
+async function ensureCode(ctx: Ctx, existing: string | undefined): Promise<string> {
+  const api = db(ctx.accountId);
+  const uid = api.uid();
+  if (existing) {
+    if (readJson<string | null>(codeDocKey(ctx.accountId), null) === existing) return existing;
+    // If the database can't be asked right now (offline, or its rules not updated yet), keep the
+    // code as it is and try again on the next refresh.
+    const doc = await api.get<{ uid?: unknown }>(`codes/${existing}`).catch(() => 'later' as const);
+    if (doc === 'later') return existing;
+    if (doc?.uid === uid || (!doc && (await api.create(`codes/${existing}`, { uid })))) {
+      writeJson(codeDocKey(ctx.accountId), existing);
+      return existing;
+    }
+    if (!doc) return existing;
+    // Someone else already owns this code (it could happen before codes were checked): get a new one.
+  }
+  for (let i = 0; i < 6; i++) {
+    const c = makeCode(ctx.name);
+    if (await api.create(`codes/${c}`, { uid })) {
+      writeJson(codeDocKey(ctx.accountId), c);
+      return c;
+    }
+  }
+  // Couldn't register one right now: use a fresh code; the next refresh registers it.
+  return makeCode(ctx.name);
+}
+
 async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
   const api = db(ctx.accountId);
   const uid = api.uid();
-  const existing = await api.get<Omit<FriendProfile, 'uid'>>(`profiles/${uid}`);
+  const existing = asProfile(await api.get(`profiles/${uid}`));
   const share = { ...DEFAULT_SHARING, ...(ctx.state.sharing ?? {}) };
-  let code = existing?.code;
-  for (let i = 0; !code && i < 4; i++) {
-    const c = makeCode(ctx.name);
-    const taken = await api.query('', 'profiles', { where: ['code', c], limit: 1 });
-    if (taken.length === 0) code = c;
-  }
+  const code = await ensureCode(ctx, existing?.code);
   const profile: Omit<FriendProfile, 'uid'> = {
-    name: ctx.name,
-    code: code ?? makeCode(ctx.name),
+    name: ctx.name.trim().slice(0, 40) || 'Player',
+    code,
     look: JSON.stringify(ctx.state.character),
-    level: share.level ? ctx.level : 0,
-    streak: share.streak ? ctx.streak : 0,
-    weekXp: share.quests ? weekXp(ctx.state) : 0,
+    // Kept inside the limits the database accepts (firestore.rules).
+    level: share.level ? clamp(ctx.level, 200) : 0,
+    streak: share.streak ? clamp(ctx.streak, 3650) : 0,
+    weekXp: share.quests ? clamp(weekXp(ctx.state), 50000) : 0,
     week: weekKey(),
     active: share.streak ? activeDays(ctx.state) : '',
-    ...(ctx.picture ? { picture: ctx.picture } : {}),
+    ...(ctx.picture && ctx.picture.length <= 500 ? { picture: ctx.picture } : {}),
     updatedAt: Date.now(),
   };
   const changed =
@@ -241,7 +296,7 @@ async function syncGlobal(ctx: Ctx, me: FriendProfile) {
   const path = `boards/${weekKey()}/players/${me.uid}`;
   if (share.global) {
     const first = ctx.name.trim().split(/\s+/)[0]?.slice(0, 16) || 'Player';
-    await api.set(path, { name: first, level: ctx.level, weekXp: weekXp(ctx.state), look: JSON.stringify(ctx.state.character), at: Date.now() });
+    await api.set(path, { name: first, level: clamp(ctx.level, 200), weekXp: clamp(weekXp(ctx.state), 50000), look: JSON.stringify(ctx.state.character), at: Date.now() });
     onBoard = true;
   } else if (onBoard !== false) {
     await api.remove(path).catch(() => undefined);
@@ -255,9 +310,11 @@ async function syncGlobal(ctx: Ctx, me: FriendProfile) {
   const cacheKey = `dayforge-rarity-${ctx.accountId}`;
   let rarity = readJson<RealRarity | null>(cacheKey, null);
   if (!rarity || rarity.day !== todayKey() || rarity.startLevel !== startLevel) {
+    // Counted on this week's public board (people who chose to be on it): profiles can't be listed.
+    const board = `boards/${weekKey()}`;
     const [players, atOrAbove] = await Promise.all([
-      api.count('profiles', ['level', 'GREATER_THAN', 0]),
-      api.count('profiles', ['level', 'GREATER_THAN_OR_EQUAL', Math.max(1, startLevel)]),
+      api.count(board, 'players', ['level', 'GREATER_THAN', 0]),
+      api.count(board, 'players', ['level', 'GREATER_THAN_OR_EQUAL', Math.max(1, startLevel)]),
     ]).catch(() => [0, 0]);
     if (players > 0) {
       rarity = { players, atOrAbove, startLevel, day: todayKey() };
@@ -285,7 +342,7 @@ export async function refreshFriends(): Promise<void> {
       api.query<Omit<Cheer, 'id'>>(`cheers/${me.uid}`, 'items', { orderBy: 'at', limit: 20 }),
     ]);
     const ids = friendDocs.map((d) => d.id);
-    const profiles = (await Promise.all(ids.map((id) => api.get<Omit<FriendProfile, 'uid'>>(`profiles/${id}`)))).flatMap((p, i) =>
+    const profiles = (await Promise.all(ids.map((id) => api.get(`profiles/${id}`).then(asProfile)))).flatMap((p, i) =>
       p ? [{ uid: ids[i], ...p, weekXp: p.week === weekKey() ? p.weekXp : 0 }] : [],
     );
     const feedLists = await Promise.all(
@@ -356,16 +413,18 @@ export async function addFriendByCode(raw: string): Promise<string> {
   if (!/^[A-Z]{3,4}-\d{4}$/.test(code)) throw new Error('Codes look like TOM-4821.');
   if (code === me.code) throw new Error("That's your own code.");
   const api = db(ctx.accountId);
-  const found = await api.query<Omit<FriendProfile, 'uid'>>('', 'profiles', { where: ['code', code], limit: 1 });
-  if (!found.length) throw new Error('Nobody has that code. Check it and try again.');
-  const them = found[0];
+  const link = await api.get<{ uid?: unknown }>(`codes/${code}`);
+  const theirUid = typeof link?.uid === 'string' ? link.uid : '';
+  const profile = theirUid ? asProfile(await api.get(`profiles/${theirUid}`)) : null;
+  if (!profile) throw new Error('Nobody has that code. Check it and try again.');
+  const them = { id: theirUid, data: profile };
   if (current.friends.some((f) => f.uid === them.id)) throw new Error(`${them.data.name} is already your friend.`);
   // They already asked you? Then this is just accepting.
   if (current.requests.some((r) => r.uid === them.id)) {
     await acceptRequest(them.id);
     return `You and ${them.data.name} are now friends!`;
   }
-  await api.set(`requests/${them.id}/from/${me.uid}`, { name: me.name, code: me.code, at: Date.now() });
+  await api.setStamped(`requests/${them.id}/from/${me.uid}`, { name: me.name.slice(0, 40), code: me.code, at: Date.now() }, 'createdAt');
   return `Request sent to ${them.data.name}.`;
 }
 
@@ -413,7 +472,7 @@ export async function cheer(item: ActivityItem) {
   if (done.includes(item.id)) return;
   writeJson(cheeredKey(ctx.accountId), [...done, item.id].slice(-300));
   set({ feed: [...current.feed] });
-  await db(ctx.accountId).add(`cheers/${item.uid}/items`, { fromUid: me.uid, fromName: me.name, text: item.text, at: Date.now() });
+  await db(ctx.accountId).add(`cheers/${item.uid}/items`, { fromUid: me.uid, fromName: me.name.slice(0, 40), text: item.text.slice(0, 200), at: Date.now() });
 }
 
 /* ---------------------------------------------------------------- outbox */
@@ -448,7 +507,7 @@ async function flushOutbox(accountId: string, all = false) {
   const api = db(accountId);
   const uid = api.uid();
   for (const b of ready) {
-    await api.add(`activity/${uid}/items`, { kind: b.kind, text: b.text, icon: b.icon, ...(b.value !== undefined ? { value: b.value } : {}), at: b.at });
+    await api.add(`activity/${uid}/items`, { kind: b.kind, text: b.text.slice(0, 200), icon: b.icon.slice(0, 32), ...(b.value !== undefined ? { value: b.value } : {}), at: b.at });
     unqueue(accountId, [b.key]);
   }  // Keep the leaderboard card (XP, streak, level) in step with what was just shared.
   if (ctxRef?.accountId === accountId) await ensureProfile(ctxRef).catch(() => undefined);

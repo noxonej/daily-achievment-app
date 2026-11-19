@@ -2,8 +2,9 @@ import type { Character } from './types';
 
 /**
  * Accounts saved on this device. Each account has its own saved data, an optional 4-digit PIN,
- * and a "remember me" choice. The PIN keeps other people using this phone out of your account;
- * it is not encryption, and the data never leaves the device unless you export or sync it.
+ * and a "remember me" choice. The PIN is only a lock: it keeps other people using this phone from
+ * opening your account. It is not encryption (the saved data itself isn't locked), and 4 digits can
+ * be guessed quickly by someone who reads the phone's storage directly.
  */
 export interface Account {
   id: string;
@@ -128,22 +129,45 @@ export function deleteAccount(id: string) {
   if (getActiveId() === id) setActiveId(null);
 }
 
-/** Failed PIN attempts, to slow down guessing: after 5 wrong tries, wait 30 seconds. */
-const attempts = new Map<string, { count: number; until: number }>();
+/**
+ * Failed PIN attempts, to slow down guessing: after 3 wrong tries wait 10 seconds, after 6 wait 30,
+ * after 9 or more wait a minute each time. Kept in storage so reloading the page doesn't reset it.
+ * (A 4-digit PIN is only a lock against people using this phone, not real protection.)
+ */
+const ATTEMPTS = 'dayforge-pin-attempts';
+type Attempt = { count: number; until: number };
+function readAttempts(): Record<string, Attempt> {
+  try {
+    const v = JSON.parse(localStorage.getItem(ATTEMPTS) ?? '{}');
+    return v && typeof v === 'object' ? v : {};
+  } catch {
+    return {};
+  }
+}
+function writeAttempts(v: Record<string, Attempt>) {
+  try {
+    localStorage.setItem(ATTEMPTS, JSON.stringify(v));
+  } catch {
+    // storage full: the wait still works until the page reloads
+  }
+}
+const memory: Record<string, Attempt> = {};
 export function pinLockedFor(id: string): number {
-  const a = attempts.get(id);
+  const a = readAttempts()[id] ?? memory[id];
   return a && a.until > Date.now() ? Math.ceil((a.until - Date.now()) / 1000) : 0;
 }
 export function recordPinAttempt(id: string, ok: boolean) {
+  const all = readAttempts();
   if (ok) {
-    attempts.delete(id);
+    delete all[id];
+    delete memory[id];
+    writeAttempts(all);
     return;
   }
-  const a = attempts.get(id) ?? { count: 0, until: 0 };
+  const a = all[id] ?? memory[id] ?? { count: 0, until: 0 };
   a.count += 1;
-  if (a.count >= 5) {
-    a.until = Date.now() + 30000;
-    a.count = 0;
-  }
-  attempts.set(id, a);
+  if (a.count % 3 === 0) a.until = Date.now() + (a.count >= 9 ? 60_000 : a.count >= 6 ? 30_000 : 10_000);
+  all[id] = a;
+  memory[id] = a;
+  writeAttempts(all);
 }

@@ -7,6 +7,10 @@ import { Modal } from './Modal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Toggle } from './AuthGate';
 import { locale } from '../lib/locale';
+import { loadSession } from '../lib/firebase';
+import { deleteMyCloudData } from '../lib/cloudErase';
+import { disconnectFriends } from '../lib/friends';
+import { googleSignOut } from '../lib/google';
 
 /** Account card in Settings: PIN, remember-me, switch / sign out, delete. */
 export function AccountSettings() {
@@ -14,6 +18,9 @@ export function AccountSettings() {
   const { state } = useApp();
   const [pinOpen, setPinOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmCloud, setConfirmCloud] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [erasing, setErasing] = useState(false);
   if (!auth) return null;
   const { account } = auth;
 
@@ -24,7 +31,7 @@ export function AccountSettings() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white truncate">{account.name}</p>
           <p className="text-xs text-slate-400">
-            Account on this device · {account.pinHash ? 'PIN on' : 'No PIN'} · since {new Date(account.createdAt).toLocaleDateString(locale(), { month: 'short', year: 'numeric' })}
+            Account on this device · {account.pinHash ? 'PIN lock on' : 'No PIN lock'} · since {new Date(account.createdAt).toLocaleDateString(locale(), { month: 'short', year: 'numeric' })}
           </p>
         </div>
       </div>
@@ -32,7 +39,7 @@ export function AccountSettings() {
       <div className="mt-4 divide-y divide-white/[0.06] rounded-xl border border-white/[0.06] overflow-hidden">
         <button onClick={() => setPinOpen(true)} className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-white/[0.03]">
           <Icon name="🔒" size={17} className="text-amber-300" />
-          <span className="flex-1 text-sm text-slate-200">{account.pinHash ? 'Change or remove PIN' : 'Add a PIN'}</span>
+          <span className="flex-1 text-sm text-slate-200">{account.pinHash ? 'Change or remove the PIN lock' : 'Lock with a PIN'}</span>
           <span className="text-slate-500">›</span>
         </button>
         {account.pinHash && (
@@ -57,9 +64,39 @@ export function AccountSettings() {
           ? 'Your progress is backed up to Google. On a new phone, tap Continue with Google to get it back.'
           : 'Accounts live on this phone. Connect Google above (or export a backup) to use yours on another phone.'}
       </p>
-      <button onClick={() => setConfirmDelete(true)} className="mt-2 text-xs font-semibold text-red-300/80 hover:text-red-300">
-        Delete this account
-      </button>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+        <button onClick={() => setConfirmDelete(true)} className="text-xs font-semibold text-red-300/80 hover:text-red-300">
+          Delete this account
+        </button>
+        {loadSession(account.id) && (
+          <button onClick={() => setConfirmCloud(true)} disabled={erasing} className="text-xs font-semibold text-red-300/80 hover:text-red-300 disabled:opacity-50">
+            {erasing ? 'Deleting…' : 'Delete my cloud data'}
+          </button>
+        )}
+      </div>
+      {cloudMsg && <p className={`text-xs mt-2 ${cloudMsg.ok ? 'text-emerald-300' : 'text-amber-300'}`}>{cloudMsg.text}</p>}
+      <ConfirmDialog
+        open={confirmCloud}
+        title="Delete your cloud data?"
+        message="This deletes everything Squzo saved in its cloud: your backup, friend profile and code, friends, requests, shared activity, cheers, leaderboard entries, notification plan and steps inbox, and your Squzo cloud sign-in. Friends will no longer see you. If daily motivation stays on, this phone saves a new notification plan (turn it off in Settings → Notifications). What's on this phone stays. Your Google Drive copy stays too (delete it in Google Drive → Settings → Manage apps). This can't be undone."
+        confirmLabel="Delete cloud data"
+        danger
+        onCancel={() => setConfirmCloud(false)}
+        onConfirm={() => {
+          setConfirmCloud(false);
+          setErasing(true);
+          setCloudMsg(null);
+          deleteMyCloudData(account.id, { stepsToken: state.stepsToken })
+            .then(() => {
+              disconnectFriends(account.id);
+              void googleSignOut();
+              auth.update({ google: undefined });
+              setCloudMsg({ ok: true, text: 'Done. Your cloud data is deleted and this phone is signed out of Google.' });
+            })
+            .catch((e: unknown) => setCloudMsg({ ok: false, text: e instanceof Error ? e.message : 'Something went wrong. Try again.' }))
+            .finally(() => setErasing(false));
+        }}
+      />
 
       <PinModal open={pinOpen} hasPin={!!account.pinHash} onClose={() => setPinOpen(false)} onSave={async (pin) => {
         await auth.setPin(pin);
@@ -84,7 +121,8 @@ function PinModal({ open, hasPin, onClose, onSave }: { open: boolean; hasPin: bo
   const ok = /^\d{4}$/.test(pin) && pin === pin2;
   const field = 'w-full rounded-xl bg-white/5 border border-white/10 px-3 h-12 text-center text-2xl tracking-[0.5em] text-white focus:outline-none focus:border-amber-400/60';
   return (
-    <Modal open={open} onClose={onClose} title={hasPin ? 'Change PIN' : 'Add a PIN'}>
+    <Modal open={open} onClose={onClose} title={hasPin ? 'Change PIN lock' : 'Lock with a PIN'}>
+      <p className="text-xs text-slate-400 -mt-1 mb-3">Lock (keeps others from opening your account on this phone). It doesn't encrypt your data.</p>
       <div className="space-y-3">
         <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="••••" aria-label="New PIN" className={field} />
         <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="••••" aria-label="Repeat new PIN" className={field} />

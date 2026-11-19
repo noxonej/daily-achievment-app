@@ -14,7 +14,8 @@ import {
   uploadBackup,
 } from '../lib/google';
 import { locale } from '../lib/locale';
-import { cloudBackup, cloudRestore, friendsConfigured, friendsSignIn } from '../lib/firebase';
+import { cloudBackup, cloudRestore, friendsConfigured, friendsSignIn, mergePrivateText } from '../lib/firebase';
+import { ensureBackupKey, localBackupKey } from '../lib/backupCrypto';
 import { ConfirmDialog } from './ConfirmDialog';
 
 /** Google's "G" mark, for the sign-in buttons. */
@@ -57,12 +58,12 @@ export function GoogleCard() {
   const auth = useAuth();
   const { state, dispatch } = useApp();
   const linked = auth?.account.google;
-  const [busy, setBusy] = useState<null | 'connect' | 'backup' | 'restore'>(null);
+  const [busy, setBusy] = useState<null | 'connect' | 'backup' | 'restore' | 'lock'>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, setPending] = useState<{ data: AppState; when?: string } | null>(null);
   if (!auth) return null;
 
-  async function run(kind: 'connect' | 'backup' | 'restore', fn: () => Promise<void>) {
+  async function run(kind: 'connect' | 'backup' | 'restore' | 'lock', fn: () => Promise<void>) {
     setBusy(kind);
     setMsg(null);
     try {
@@ -80,12 +81,16 @@ export function GoogleCard() {
       const profile = await googleProfile();
       // Same Google token, no second window: this keeps the automatic backup working for good.
       if (friendsConfigured()) await friendsSignIn(auth.account.id).catch(() => undefined);
+      // The key that locks the cloud backup lives in your own Drive (made there the first time).
+      await ensureBackupKey(auth.account.id);
       const cloud = await cloudRestore(auth.account.id).catch(() => null);
       const file = await findBackup().catch(() => null);
       const driveWhen = file?.modifiedTime ?? '';
       if (cloud && isBackup(cloud.data) && cloud.savedAt >= driveWhen) {
         auth.update({ google: { ...profile, fileId: file?.id, lastBackup: cloud.savedAt, auto: true } });
-        setPending({ data: cloud.data as unknown as AppState, when: cloud.savedAt });
+        const full = cloud.lite && file ? await downloadBackup(file.id).catch(() => null) : null;
+        const data = full ? mergePrivateText(cloud.data, full) : cloud.data;
+        setPending({ data: data as unknown as AppState, when: cloud.savedAt });
         setMsg({ ok: true, text: `Connected to ${profile.email}.` });
         return;
       }
@@ -97,17 +102,39 @@ export function GoogleCard() {
         setMsg({ ok: true, text: `Connected to ${profile.email}.` });
         return;
       }
-      const when = (await cloudBackup(auth.account.id, state).catch((): false => false)) || (await uploadBackup(state)).modifiedTime;
+      const saved = await cloudBackup(auth.account.id, state).catch(() => null);
+      // Drive always gets a full copy on connect too (it's your own storage).
+      const drive = await uploadBackup(state).catch(() => null);
+      const when = (saved?.ok ? saved.savedAt : '') || drive?.modifiedTime || new Date().toISOString();
       auth.update({ google: { ...profile, lastBackup: when, auto: true } });
       setMsg({ ok: true, text: 'Connected. Your progress now backs up by itself.' });
     });
 
+  const lock = () =>
+    run('lock', async () => {
+      await googleSignIn(linked?.email);
+      const key = await ensureBackupKey(auth.account.id);
+      if (!key) throw new Error("Couldn't reach your Google Drive. Try again.");
+      const saved = await cloudBackup(auth.account.id, state).catch(() => null);
+      if (saved?.ok) auth.update({ google: { ...linked!, lastBackup: saved.savedAt } });
+      setMsg({ ok: true, text: 'Your cloud backup is now encrypted.' });
+    });
+
   const restore = () =>
     run('restore', async () => {
-      const cloud = await cloudRestore(auth.account.id).catch(() => null);
-      if (cloud && isBackup(cloud.data)) return setPending({ data: cloud.data as unknown as AppState, when: cloud.savedAt });
+      let cloud = await cloudRestore(auth.account.id).catch(() => null);
+      if (cloud && isBackup(cloud.data) && !cloud.lite) return setPending({ data: cloud.data as unknown as AppState, when: cloud.savedAt });
       await googleSignIn(linked?.email);
-      const file = await findBackup();
+      if (!cloud) {
+        await ensureBackupKey(auth.account.id);
+        cloud = await cloudRestore(auth.account.id).catch(() => null);
+      }
+      const file = await findBackup().catch(() => null);
+      if (cloud && isBackup(cloud.data) && (cloud.savedAt >= (file?.modifiedTime ?? '') || !file)) {
+        const full = cloud.lite && file ? await downloadBackup(file.id).catch(() => null) : null;
+        const data = full ? mergePrivateText(cloud.data, full) : cloud.data;
+        return setPending({ data: data as unknown as AppState, when: cloud.savedAt });
+      }
       if (!file) throw new Error('No backup on this Google account yet.');
       const data = await downloadBackup(file.id);
       if (!isBackup(data)) throw new Error("That backup couldn't be read.");
@@ -137,6 +164,13 @@ export function GoogleCard() {
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
             Backs up by itself{linked.lastBackup ? ` · last ${ago(linked.lastBackup)}` : ''}
           </p>
+          {localBackupKey(auth.account.id) ? (
+            <p className="text-xs text-slate-400 mt-1">🔒 Encrypted on this phone before upload. Only you can read it.</p>
+          ) : (
+            <button onClick={lock} disabled={!!busy} className="block text-left text-xs font-semibold text-amber-300 hover:text-amber-200 mt-1 disabled:opacity-50">
+              {busy === 'lock' ? 'Setting up…' : '🔓 Lock my cloud backup (one Google tap). Until then your diary and notes stay out of it.'}
+            </button>
+          )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             <button onClick={restore} disabled={!!busy} className="text-xs font-semibold text-slate-300 hover:text-white disabled:opacity-50">
               {busy === 'restore' ? 'Loading…' : 'Get my backup back'}
@@ -202,10 +236,12 @@ export function useGoogleAutoBackup() {
       busy = true;
       // Firebase keeps you signed in for good, so this works without any pop-up. Google Drive is
       // the fallback while its one-hour sign-in is still fresh.
-      cloudBackup(a.account.id, stateRef.current)
-        .catch((): false => false)
-        .then(async (when) => {
-          if (when) return { when, fileId: g.fileId };
+      // A fresh Google sign-in is the only time a backup key can be fetched or made.
+      (hasValidToken() && !localBackupKey(a.account.id) ? ensureBackupKey(a.account.id) : Promise.resolve(null))
+        .then(() => cloudBackup(a.account.id, stateRef.current))
+        .catch(() => null)
+        .then(async (res) => {
+          if (res?.ok) return { when: res.savedAt, fileId: g.fileId };
           if (!hasValidToken()) throw new Error('no session');
           const r = await uploadBackup(stateRef.current, g.fileId);
           return { when: r.modifiedTime, fileId: r.id };
