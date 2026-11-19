@@ -2,6 +2,7 @@ import { useAuth } from '../store/AuthContext';
 import { usePersistState } from '../lib/persist';
 import { lastExport } from '../lib/backupFile';
 import { locale } from '../lib/locale';
+import { backupProblem } from '../lib/firebase';
 
 function when(iso: string): string {
   const d = new Date(iso);
@@ -19,6 +20,7 @@ export function BackupStatus() {
   const persist = usePersistState();
   const cloud = auth?.account.google?.lastBackup;
   const file = lastExport();
+  const problem = auth ? backupProblem(auth.account.id) : null;
   const latest = [cloud, file].filter((x): x is string => !!x).sort().pop();
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-1.5 text-sm">
@@ -28,6 +30,12 @@ export function BackupStatus() {
       </p>
       {cloud && <p className="text-xs text-slate-400">Cloud (Google): {when(cloud)}</p>}
       {file && <p className="text-xs text-slate-400">Backup file: {when(file)}</p>}
+      {problem && (
+        <p role="alert" className="text-xs text-amber-300">
+          ⚠ The cloud backup stopped {when(problem.at)}: your data is too big for it ({problem.kb} KB, the limit is about 880 KB).
+          Save a backup file in Advanced below. Deleting old diary pages or notes makes it smaller.
+        </p>
+      )}
       <p className="text-xs text-slate-400">
         {persist === 'persisted'
           ? '✓ This phone keeps Squzo’s data even when space runs low.'
