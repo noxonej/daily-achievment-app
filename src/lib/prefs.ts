@@ -25,6 +25,19 @@ function useSystemDark(): boolean {
   );
 }
 
+const motionQuery = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+/** True when the phone itself asks for less motion (iOS/Android accessibility setting). */
+export function useSystemReduceMotion(): boolean {
+  return useSyncExternalStore(
+    (l) => {
+      motionQuery?.addEventListener?.('change', l);
+      return () => motionQuery?.removeEventListener?.('change', l);
+    },
+    () => motionQuery?.matches ?? false,
+  );
+}
+
 export function resolvedTheme(theme: Prefs['theme'], systemDark: boolean): 'dark' | 'light' {
   return theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
 }
@@ -71,11 +84,13 @@ export function useApplyPrefs(raw: Partial<Prefs> | undefined) {
     }
   }, [theme, prefs.theme]);
 
+  // Reduce motion follows the phone's own setting automatically; the switch in Settings adds it on top.
+  const systemReduce = useSystemReduceMotion();
   useEffect(() => {
     const root = document.documentElement;
-    if (prefs.reduceMotion) root.dataset.motion = 'reduce';
+    if (prefs.reduceMotion || systemReduce) root.dataset.motion = 'reduce';
     else delete root.dataset.motion;
-  }, [prefs.reduceMotion]);
+  }, [prefs.reduceMotion, systemReduce]);
 
   useEffect(() => {
     const root = document.documentElement;

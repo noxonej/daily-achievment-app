@@ -90,7 +90,7 @@ export function TodayHero({
                 </svg>
                 <span
                   className={`absolute font-display tabular-nums leading-none ${
-                    d.isToday ? 'text-[17px] font-semibold text-white' : d.future ? 'text-[14px] text-slate-600' : 'text-[14px] text-slate-300'
+                    d.isToday ? 'text-[17px] font-semibold text-white' : d.future ? 'text-[14px] text-slate-500' : 'text-[14px] text-slate-300'
                   }`}
                 >
                   {d.day}
@@ -178,7 +178,7 @@ export function TodayHero({
               <Icon name={next.icon} size={17} />
             </span>
             <span className="min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.14em] opacity-55 leading-tight">Up next · +{Math.round(next.xp * boost)} XP</span>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.14em] opacity-75 leading-tight">Up next · +{Math.round(next.xp * boost)} XP</span>
               <span className="block text-[15px] font-bold truncate leading-tight">{next.title}</span>
             </span>
           </button>

@@ -3,7 +3,7 @@ import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
 import { useAuth } from '../store/AuthContext';
 import { settings, useSettingsPage, type SettingsPage } from '../lib/settingsNav';
-import { fullPrefs, t } from '../lib/prefs';
+import { fullPrefs, t, useSystemReduceMotion } from '../lib/prefs';
 import { LANGUAGES, type TKey } from '../lib/i18n';
 import { locale, hour12 } from '../lib/locale';
 import type { Prefs } from '../lib/types';
@@ -258,6 +258,7 @@ const THEME_CARDS: Array<{ id: Prefs['theme']; key: TKey; bg: string; card: stri
 
 function AppearancePage() {
   const [prefs, setPrefs] = usePrefs();
+  const systemReduce = useSystemReduceMotion();
   return (
     <div className="space-y-6">
       <section>
@@ -298,7 +299,12 @@ function AppearancePage() {
       </section>
 
       <Group>
-        <SwitchRow label={t('prefs.reduceMotion')} on={prefs.reduceMotion} onChange={(v) => setPrefs({ reduceMotion: v })} />
+        <SwitchRow
+          label={t('prefs.reduceMotion')}
+          hint={systemReduce ? t('prefs.reduceMotionSystem') : undefined}
+          on={prefs.reduceMotion || systemReduce}
+          onChange={(v) => setPrefs({ reduceMotion: v })}
+        />
         <SwitchRow label={t('prefs.splash')} on={prefs.splash} onChange={(v) => setPrefs({ splash: v })} />
       </Group>
     </div>

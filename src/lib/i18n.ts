@@ -28,6 +28,7 @@ export const KEYS = [
   'settings.help', 'settings.simple', 'settings.simpleHint',
   'nav.world',
   'nav.coach',
+  'prefs.reduceMotionSystem',
 ] as const;
 
 export type TKey = (typeof KEYS)[number];
@@ -88,6 +89,7 @@ const S: Record<string, string[]> = {
     'How it works', 'Simple mode', 'Shows only the main things. Turn off to see every card and extra.',
     'World',
     'Coach',
+    'On, because your phone is set to reduce motion.',
   ],
   lt: [
     'Šiandien', 'Planas', 'Pinigai', 'Tikslai', 'Tu',
@@ -112,6 +114,7 @@ const S: Record<string, string[]> = {
     'Kaip tai veikia', 'Paprastas režimas', 'Rodo tik svarbiausius dalykus. Išjunk, jei nori matyti viską.',
     'Pasaulis',
     'Treneris',
+    'Įjungta, nes tavo telefone nustatyta mažinti judesį.',
   ],
   lv: [
     'Šodien', 'Plāns', 'Nauda', 'Mērķi', 'Tu',
