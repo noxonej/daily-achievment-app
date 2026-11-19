@@ -1,4 +1,4 @@
-/** Original Dayforge lines: short pushes written for this app. */
+/** Original Squzo lines (file name from when the app was called Dayforge): short pushes written for this app. */
 export const DAYFORGE = `Small steps every day beat big plans you never start.
 You don't need more time. You need to start the time you have.
 Discipline is choosing what you want most over what you want now.

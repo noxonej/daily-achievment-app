@@ -5,7 +5,7 @@ import { useTodayMood } from '../store/AppContext';
 import { Backdrop } from './AvatarBackdrop';
 
 /*
- * Dayforge's pixel-art character: a small full-body sprite on a 32×32 grid, drawn layer by layer
+ * Squzo's pixel-art character: a small full-body sprite on a 32×32 grid, drawn layer by layer
  * (back hair, cape, body, legs, head, face, hair, glasses, hat, pet), then outlined in one dark
  * pixel so it reads like a classic 2D game sprite. Every colour comes from the chosen items, so
  * skin, hair and clothes colours always show clearly.

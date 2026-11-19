@@ -685,7 +685,7 @@ button:hover > .gear-spin, button:active > .gear-spin { transform: rotate(90deg)
 .attention { animation: attention 1.3s ease-out; border-radius: 1rem; }
 @keyframes attention { 0% { box-shadow: 0 0 0 0 var(--color-amber-400); } 40% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-amber-400) 45%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
 
-/* Dayforge glyphs: the soft fill becomes solid when an icon is "filled" (e.g. a lit streak flame) */
+/* Squzo glyphs: the soft fill becomes solid when an icon is "filled" (e.g. a lit streak flame) */
 .df-solid [fill-opacity] { fill-opacity: .9; }
 
 /* Sleep screen: soft twinkling stars and the "now playing" bars. */
