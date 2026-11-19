@@ -50,7 +50,9 @@ async function publicKey(): Promise<string | null> {
     const res = await fetch(publicDocUrl('config/push'), { cache: 'no-store' });
     if (!res.ok) return (cachedKey = null);
     const doc = (await res.json()) as { fields?: { publicKey?: { stringValue?: string } } };
-    return (cachedKey = doc.fields?.publicKey?.stringValue ?? null);
+    const k = doc?.fields?.publicKey?.stringValue;
+    // A VAPID public key is ~87 base64url characters; anything else is treated as "not set up".
+    return (cachedKey = typeof k === 'string' && /^[A-Za-z0-9_-]{60,120}=*$/.test(k) ? k : null);
   } catch {
     return null;
   }

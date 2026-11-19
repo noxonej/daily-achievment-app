@@ -1,13 +1,15 @@
 import { GoogleCard } from '../components/GoogleConnect';
+import { exportBackupFile } from '../lib/backupFile';
+import { BackupStatus } from '../components/BackupStatus';
 import { Switch } from '../components/Switch';
 import { ScrollLockGuide } from '../components/today/ScrollLockCard';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { QuestFormModal } from '../components/QuestFormModal';
 import { QuestLibraryModal } from '../components/QuestLibraryModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { AppState, Frequency, Quest } from '../lib/types';
-import { listSnapshots, readSnapshot } from '../lib/safeStorage';
+import { listSnapshots, readSnapshot, type Snapshot } from '../lib/safeStorage';
 import { formatDisplayDate } from '../lib/date';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from '../lib/xp';
 import { Icon } from '../components/Icon';
@@ -39,13 +41,7 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
   }
 
   function handleExport() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `daily-quests-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportBackupFile(state);
   }
 
   function handleImportFile(file: File) {
@@ -136,6 +132,7 @@ export function ManageView({ part }: { part: 'quests' | 'data' }) {
         <p className="text-xs text-slate-400 -mt-2">
           Saved on this phone. Once you continue with Google, it's also backed up by itself: an encrypted copy in Squzo's cloud, plus a copy in your own Google Drive. Nothing to press.
         </p>
+        <BackupStatus />
         <AutoBackups />
 
         <button
@@ -339,7 +336,14 @@ function QuestRow({
 /** The automatic daily copies kept on this device: restore one if something went wrong today. */
 function AutoBackups() {
   const { storageKey, undoable } = useApp();
-  const [list] = useState(() => listSnapshots(storageKey));
+  const [list, setList] = useState<Snapshot[]>([]);
+  useEffect(() => {
+    let live = true;
+    void listSnapshots(storageKey).then((l) => live && setList(l));
+    return () => {
+      live = false;
+    };
+  }, [storageKey]);
   const [confirm, setConfirm] = useState<string | null>(null);
   if (!list.length) return null;
   return (
@@ -354,8 +358,8 @@ function AutoBackups() {
             </span>
             {confirm === s.key ? (
               <button
-                onClick={() => {
-                  const data = readSnapshot(s.key);
+                onClick={async () => {
+                  const data = await readSnapshot(s.key);
                   if (data && typeof data === 'object' && Array.isArray((data as { quests?: unknown }).quests)) {
                     undoable({ type: 'IMPORT_STATE', state: data as AppState }, `Restored ${formatDisplayDate(s.date)}`);
                   }

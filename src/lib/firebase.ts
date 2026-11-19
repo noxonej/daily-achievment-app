@@ -7,7 +7,7 @@
  * VITE_FIREBASE_API_KEY / VITE_FIREBASE_PROJECT_ID when building.
  */
 import { googleConfigured, googleSignIn } from './google';
-import { cryptoAvailable, decryptBytes, encryptBytes, localBackupKey } from './backupCrypto';
+import { b64ToBytes, bytesToB64, cryptoAvailable, decryptBytes, encryptBytes, localBackupKey } from './backupCrypto';
 
 const API_KEY_DEFAULT = 'AIzaSyDUDTAX2zxf_mVHVILcaiBe_nPiR9dLuG8';
 const PROJECT_ID_DEFAULT = 'squzo-861ad';
@@ -297,6 +297,42 @@ export function mergePrivateText<T>(lite: T, full: unknown): T {
   } as T;
 }
 
+/** gzip when the browser can (all current ones can); otherwise the bytes as they are. */
+async function gzip(bytes: Uint8Array<ArrayBuffer>): Promise<{ bytes: Uint8Array<ArrayBuffer>; z: boolean }> {
+  try {
+    if (typeof CompressionStream === 'undefined') return { bytes, z: false };
+    const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+    return { bytes: new Uint8Array(await new Response(stream).arrayBuffer()), z: true };
+  } catch {
+    return { bytes, z: false };
+  }
+}
+
+async function gunzip(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+  if (typeof DecompressionStream === 'undefined') throw new Error('This browser can’t unpack the backup.');
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/* What went wrong with the last cloud backup (shown in Settings → Data), cleared when one works. */
+const problemKey = (accountId: string) => `dayforge-backup-problem-${accountId}`;
+export function backupProblem(accountId: string): { reason: 'too-big'; at: string; kb: number } | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(problemKey(accountId)) ?? 'null');
+    return v && v.reason === 'too-big' ? v : null;
+  } catch {
+    return null;
+  }
+}
+function setProblem(accountId: string, kb: number | null) {
+  try {
+    if (kb === null) localStorage.removeItem(problemKey(accountId));
+    else localStorage.setItem(problemKey(accountId), JSON.stringify({ reason: 'too-big', at: new Date().toISOString(), kb }));
+  } catch {
+    // storage full
+  }
+}
+
 export type BackupResult = { ok: true; savedAt: string; encrypted: boolean } | { ok: false; reason: 'no-session' | 'too-big' | 'error' };
 
 /**
@@ -311,17 +347,27 @@ export async function cloudBackup(accountId: string, state: unknown): Promise<Ba
   const api = db(accountId);
   const savedAt = new Date().toISOString();
   const key = localBackupKey(accountId);
-  if (key && cryptoAvailable()) {
-    const plain = new TextEncoder().encode(JSON.stringify(state));
-    const { data, iv } = await encryptBytes(key, plain);
-    if (data.length > MAX_BACKUP) return { ok: false, reason: 'too-big' };
-    await api.set(`backups/${api.uid()}`, { data, iv, savedAt, v: 2 });
-    return { ok: true, savedAt, encrypted: true };
+  const encrypted = !!key && cryptoAvailable();
+  const plain = new TextEncoder().encode(JSON.stringify(encrypted ? state : stripPrivateText(state)));
+  // Packed (gzip) first: a save of a few MB usually shrinks to a tenth.
+  const packed = await gzip(plain);
+  let doc: { [k: string]: Json };
+  if (encrypted) {
+    const { data, iv } = await encryptBytes(key!, packed.bytes);
+    doc = { data, iv, savedAt, v: 2, ...(packed.z ? { z: 'gzip' } : {}) };
+  } else {
+    doc = packed.z
+      ? { data: bytesToB64(packed.bytes), savedAt, v: 1, lite: true, z: 'gzip' }
+      : { data: new TextDecoder().decode(plain), savedAt, v: 1, lite: true };
   }
-  const data = JSON.stringify(stripPrivateText(state));
-  if (data.length > MAX_BACKUP) return { ok: false, reason: 'too-big' };
-  await api.set(`backups/${api.uid()}`, { data, savedAt, v: 1, lite: true });
-  return { ok: true, savedAt, encrypted: false };
+  const size = (doc.data as string).length;
+  if (size > MAX_BACKUP) {
+    setProblem(accountId, Math.round(size / 1024));
+    return { ok: false, reason: 'too-big' };
+  }
+  await api.set(`backups/${api.uid()}`, doc);
+  setProblem(accountId, null);
+  return { ok: true, savedAt, encrypted };
 }
 
 /**
@@ -336,13 +382,16 @@ export async function cloudRestore(accountId: string): Promise<{ data: unknown; 
   if (!doc || typeof doc.data !== 'string') return null;
   const savedAt = typeof doc.savedAt === 'string' ? doc.savedAt : '';
   try {
+    const zipped = doc.z === 'gzip';
     if (doc.v === 2) {
       const key = localBackupKey(accountId);
       if (!key || !cryptoAvailable() || typeof doc.iv !== 'string') return null;
-      const plain = await decryptBytes(key, doc.data, doc.iv);
+      const opened = await decryptBytes(key, doc.data, doc.iv);
+      const plain = zipped ? await gunzip(opened) : opened;
       return { data: JSON.parse(new TextDecoder().decode(plain)), savedAt, lite: false };
     }
-    return { data: JSON.parse(doc.data), savedAt, lite: doc.lite === true };
+    const text = zipped ? new TextDecoder().decode(await gunzip(b64ToBytes(doc.data))) : doc.data;
+    return { data: JSON.parse(text), savedAt, lite: doc.lite === true };
   } catch {
     return null;
   }
