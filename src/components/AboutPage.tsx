@@ -65,8 +65,8 @@ export function AboutPage() {
         <p className="mb-2.5">No ads and no tracking. We don't sell your data. Here is every place your data can go, in plain words:</p>
         <ul className="space-y-2 list-disc pl-5 marker:text-slate-500">
           <li>
-            <b>This phone.</b> Everything you enter is saved here first. Without Google sign-in, nothing below happens
-            except crypto prices (if you use them).
+            <b>This phone.</b> Everything you enter is saved here first. Without Google sign-in, only the two optional
+            items without a name (notifications and Apple Health steps) ever leave it.
           </li>
           <li>
             <b>Squzo's cloud backup</b> (Google Firebase, Firestore: backups). After you continue with Google, a full copy
@@ -97,8 +97,8 @@ export function AboutPage() {
             steps, under a random code.
           </li>
           <li>
-            <b>CoinGecko</b> (a crypto price website), only if you add crypto in Money: the app asks it for prices of the
-            coins you hold. It doesn't get your amounts.
+            <b>Prices</b>: crypto, stock and other asset prices in Money are the ones you type in. The app doesn't ask
+            any price website.
           </li>
           <li>
             <b>Delete it all:</b> Settings → Account → Delete my cloud data removes everything Squzo saved in the cloud.
