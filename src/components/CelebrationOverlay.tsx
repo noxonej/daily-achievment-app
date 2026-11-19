@@ -14,7 +14,7 @@ export function CelebrationOverlay() {
 
   useEffect(() => {
     if (!current || current.kind === 'levelup' || leaving) return;
-    const t = setTimeout(() => dismissCelebration(), 3200);
+    const t = setTimeout(() => dismissCelebration(), 2500);
     return () => clearTimeout(t);
   }, [current, leaving, dismissCelebration]);
 
@@ -74,7 +74,7 @@ export function CelebrationOverlay() {
   }
 
   return (
-    <div className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none">
+    <div className="fixed top-[calc(env(safe-area-inset-top)+60px+0.5rem)] left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none">
       <button
         onClick={dismissCelebration}
         className={`toast-glass pointer-events-auto flex ${leaving ? 'toast-out' : 'animate-celebrate'} items-center gap-3 rounded-full pl-2 pr-5 py-2 max-w-sm`}

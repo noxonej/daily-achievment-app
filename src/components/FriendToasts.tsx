@@ -8,7 +8,7 @@ export function FriendToasts({ onOpen }: { onOpen: () => void }) {
   const { toasts } = useFriends();
   if (!toasts.length) return null;
   return (
-    <div className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-[65] flex flex-col items-center gap-2 px-4 pointer-events-none">
+    <div className="fixed top-[calc(env(safe-area-inset-top)+60px+0.5rem)] left-0 right-0 z-[65] flex flex-col items-center gap-2 px-4 pointer-events-none">
       {toasts.map((t) => {
         let look;
         try {

@@ -34,7 +34,7 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 stagger">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         {embedded ? (
           <p className="text-sm text-slate-400">Your big dreams for the year, with a plan to get there.</p>
         ) : (
