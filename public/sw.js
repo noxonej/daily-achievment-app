@@ -1,7 +1,9 @@
-/* Dayforge service worker: makes the app open offline and lets Android show notifications.
+/* Squzo service worker: makes the app open offline and lets Android show notifications.
  * Pages: network first (so updates arrive right away), falling back to the cached copy offline.
- * Built files (hashed names) and icons: cache first, since a given URL never changes. */
-const CACHE = 'dayforge-v6';
+ * Built files (hashed names) and icons: cache first, since a given URL never changes.
+ * After each update, built files the new version no longer uses are deleted (asset-manifest.json). */
+const CACHE = 'squzo-v7';
+// Keeps its old name on purpose: the app (src/lib/nudges.ts) saves the notification plan in it.
 const STATUS_CACHE = 'dayforge-status';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './favicon.svg', './app-icon-192.png', './app-icon-512.png'];
 
@@ -14,9 +16,34 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== STATUS_CACHE).map((k) => caches.delete(k))))
+      .then(() => pruneAssets())
       .then(() => self.clients.claim()),
   );
 });
+
+/** Deletes cached built files (assets/…) that the deployed version doesn't list any more. */
+let pruning = null;
+function pruneAssets() {
+  pruning ??= (async () => {
+    try {
+      const res = await fetch('./asset-manifest.json', { cache: 'no-store' });
+      if (!res.ok) return;
+      const { assets } = await res.json();
+      if (!Array.isArray(assets) || assets.length === 0) return;
+      const keep = new Set(assets.map((a) => new URL(a, self.registration.scope).pathname));
+      const cache = await caches.open(CACHE);
+      for (const req of await cache.keys()) {
+        const path = new URL(req.url).pathname;
+        if (path.includes('/assets/') && !keep.has(path)) await cache.delete(req);
+      }
+    } catch {
+      // offline: try again next time
+    } finally {
+      pruning = null;
+    }
+  })();
+  return pruning;
+}
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
@@ -30,6 +57,8 @@ self.addEventListener('fetch', (event) => {
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put('./index.html', copy));
+          // A new page may be a new version: clear out files it no longer uses.
+          event.waitUntil(pruneAssets());
           return res;
         })
         .catch(() => caches.match('./index.html')),
