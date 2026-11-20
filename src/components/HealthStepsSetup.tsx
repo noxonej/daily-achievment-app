@@ -61,7 +61,7 @@ export function HealthStepsSetup({ open, onClose }: { open: boolean; onClose: ()
               {copied ? 'Link copied' : 'Copy my link'}
             </button>
             <span className="mt-1.5 block text-[11px] text-slate-500 break-all select-all">{url}</span>
-            Then tap <i>Show More</i>: Method <b className="text-white">PATCH</b>, Request Body <b className="text-white">JSON</b>. Add a field <code className="text-white">fields</code> (Dictionary), inside it{' '}
+            Then tap <i>Show More</i>: Method <b className="text-white">PATCH</b> (not GET, or nothing is sent), Request Body <b className="text-white">JSON</b>. Add a field <code className="text-white">fields</code> (Dictionary), inside it{' '}
             <code className="text-white">steps</code> (Dictionary), inside that <code className="text-white">doubleValue</code> (Number) and pick <i>Statistics</i>.
           </Step>
           <Step n={5}>Tap ▶ once. Allow Health when iPhone asks, then come back and test it below.</Step>
@@ -79,7 +79,7 @@ export function HealthStepsSetup({ open, onClose }: { open: boolean; onClose: ()
             {typeof test === 'number'
               ? `It works: ${test.toLocaleString()} steps today.`
               : test === 'none'
-                ? 'Nothing from today yet. Run the shortcut once, then test again.'
+                ? 'Nothing from today yet. In the shortcut, open Get Contents of URL → Show More and check that Method is PATCH and Request Body is JSON. Run it once, then test again.'
                 : synced
                   ? `Last synced ${new Date(synced.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}: ${synced.steps.toLocaleString()} steps.`
                   : 'Not connected yet.'}
