@@ -1,11 +1,12 @@
 name: Squzo push sender
 
 # Sends the motivational notifications (and publishes firestore.rules when they change).
-# Free on public repositories. GitHub starts scheduled runs very late (we saw 8 hours apart), so each
-# run stays on for ~5h50m and checks every 5 minutes; the hourly schedule makes sure a new one takes over.
+# Free on public repositories. One short pass every 15 minutes (2026-11-20, Jonas's choice over a
+# Cloud Function). GitHub can start scheduled runs late when it is busy; a message more than 45
+# minutes late is skipped rather than sent at an odd time (see functions/sender.js).
 on:
   schedule:
-    - cron: '7 * * * *'
+    - cron: '*/15 * * * *'
   push:
     branches:
       # main after the default branch is renamed; the old name keeps working until then.
@@ -33,7 +34,7 @@ concurrency:
 jobs:
   send:
     runs-on: ubuntu-latest
-    timeout-minutes: 358
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,4 +47,4 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           TEST_PUSH: ${{ inputs.test && 'true' || 'false' }}
-          LOOP_MINUTES: ${{ inputs.test && '0' || '350' }}
+          LOOP_MINUTES: '0'
