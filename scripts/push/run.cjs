@@ -43,8 +43,8 @@ async function main() {
     console.error('Could not publish firestore.rules:', e.message);
   }
 
-  // 2. Notifications. GitHub starts scheduled runs very unreliably (sometimes hours apart), so one
-  // run keeps going for LOOP_MINUTES and checks every 5 minutes; the next run takes over after it.
+  // 2. Notifications. The workflow runs one pass every 15 minutes (LOOP_MINUTES=0). Setting
+  // LOOP_MINUTES keeps one run going and checks every 5 minutes instead.
   const test = process.env.TEST_PUSH === 'true';
   const loopMs = Math.max(0, Number(process.env.LOOP_MINUTES || 0)) * 60000;
   const start = Date.now();
