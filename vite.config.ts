@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { DEFAULT_APP_URL } from './src/site.ts'
+import { landingHtml, landingPath, robotsTxt, sitemapXml } from './landing/landing.ts'
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
@@ -73,13 +74,28 @@ function csp(): Plugin {
   }
 }
 
+/** C3: writes the EN/LT landing pages, robots.txt and sitemap.xml next to the app. */
+function landing(appUrl: string): Plugin {
+  return {
+    name: 'squzo-landing',
+    apply: 'build',
+    generateBundle() {
+      if (process.env.CAPACITOR === '1') return
+      for (const lang of ['en', 'lt'] as const) this.emitFile({ type: 'asset', fileName: `${landingPath(lang)}index.html`, source: landingHtml(lang, appUrl) })
+      this.emitFile({ type: 'asset', fileName: 'robots.txt', source: robotsTxt(appUrl) })
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemapXml(appUrl) })
+    },
+  }
+}
+
 // https://vite.dev/config/
 // The base path comes from the one app URL (src/site.ts or VITE_APP_URL). The phone apps
 // (Capacitor, CAPACITOR=1) are served from the root of the app instead.
-const APP_PATH = new URL(process.env.VITE_APP_URL || DEFAULT_APP_URL).pathname.replace(/\/*$/, '/')
+const APP_URL = new URL(process.env.VITE_APP_URL || DEFAULT_APP_URL)
+const APP_PATH = APP_URL.pathname.replace(/\/*$/, '/')
 export default defineConfig({
   base: process.env.CAPACITOR === '1' ? '/' : APP_PATH,
-  plugins: [react(), tailwindcss(), assetManifest(), csp()],
+  plugins: [react(), tailwindcss(), assetManifest(), csp(), landing(`${APP_URL.origin}${APP_PATH}`)],
   // The app's version (package.json), shown in Settings → About.
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
 })

@@ -30,3 +30,11 @@ challenge links, share cards and the Shortcut's Referer header all come from it.
   restores on any address). Keep the old GitHub Pages address working for a few months.
 - The landing page (`/` on your own domain) and the app (`/app/` or `/`) can share the domain:
   if you want the app at `https://squzo.app/app/`, set the URL to that.
+
+## Landing pages and Google (C3)
+
+The build also writes `welcome/` (English), `welcome/lt/` (Lithuanian), `sitemap.xml` and
+`robots.txt`, all using the app URL above. Search engines only read `robots.txt` at the very root of
+a domain, so it only starts working on your own domain. Until then, submit the sitemap by hand:
+Google Search Console → Add property → URL prefix → your app URL → verify (HTML tag) → Sitemaps →
+enter `sitemap.xml` → Submit.
