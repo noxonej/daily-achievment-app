@@ -72,6 +72,20 @@ await t('challenge score spam refused', () => assertFails(setDoc(doc(bob, `chall
 await t('challenge fake score refused', () => assertFails(setDoc(doc(carol, `challenges/${CH}/players/carol`), { name: 'C', score: 9999, fullDays: 1, finished: false, at: serverTimestamp() })));
 await t('challenge board public ok', () => assertSucceeds(getDoc(doc(anon, `challenges/${CH}/players/bob`))));
 
+// ---- photo proof (B8). bob is on the CH board (above), carol isn't.
+const img = 'data:image/jpeg;base64,' + 'A'.repeat(1000);
+const proof = (uid, day, extra = {}) => ({ uid, name: 'X', day, img, at: serverTimestamp(), ...extra });
+await t('proof by player ok', () => assertSucceeds(setDoc(doc(bob, `challenges/${CH}/proofs/bob_1`), proof('bob', 1))));
+await t('proof by non-player refused', () => assertFails(setDoc(doc(carol, `challenges/${CH}/proofs/carol_1`), proof('carol', 1))));
+await t('proof for someone else refused', () => assertFails(setDoc(doc(bob, `challenges/${CH}/proofs/me_1`), proof('me', 1))));
+await t('proof wrong id refused', () => assertFails(setDoc(doc(bob, `challenges/${CH}/proofs/bob_2`), proof('bob', 1))));
+await t('proof too big refused', () => assertFails(setDoc(doc(bob, `challenges/${CH}/proofs/bob_3`), proof('bob', 3, { img: 'data:image/jpeg;base64,' + 'A'.repeat(280000) }))));
+await t('proof not jpeg refused', () => assertFails(setDoc(doc(bob, `challenges/${CH}/proofs/bob_4`), proof('bob', 4, { img: 'data:text/html;base64,AAAA' }))));
+await t('proof read by player ok', () => assertSucceeds(getDoc(doc(bob, `challenges/${CH}/proofs/bob_1`))));
+await t('proof read by outsider refused', () => assertFails(getDoc(doc(carol, `challenges/${CH}/proofs/bob_1`))));
+await t('proof read anon refused', () => assertFails(getDoc(doc(anon, `challenges/${CH}/proofs/bob_1`))));
+await t('proof delete by owner ok', () => assertSucceeds(deleteDoc(doc(bob, `challenges/${CH}/proofs/bob_1`))));
+
 // ---- invites (B6). 'me' has a profile (above). Frank was invited by me.
 const frank = env.authenticatedContext('frank').firestore();
 const day = Math.floor(Date.now() / 86400000);

@@ -130,6 +130,8 @@ function dec(v: FsValue): Json {
   if ('integerValue' in v) return Number(v.integerValue);
   if ('doubleValue' in v) return Number(v.doubleValue);
   if ('booleanValue' in v) return !!v.booleanValue;
+  // Server timestamps (e.g. request.time stamps) come back as ISO strings.
+  if ('timestampValue' in v) return String(v.timestampValue);
   if ('arrayValue' in v) return (((v.arrayValue as { values?: FsValue[] }).values ?? []) as FsValue[]).map(dec);
   if ('mapValue' in v) return decFields(((v.mapValue as { fields?: Record<string, FsValue> }).fields ?? {}) as Record<string, FsValue>);
   return null;

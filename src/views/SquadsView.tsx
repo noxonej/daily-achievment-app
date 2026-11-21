@@ -21,6 +21,7 @@ import type { Challenge, JoinedChallenge } from '../lib/types';
 import { premiumLocked } from '../lib/premium';
 import { paywall } from '../lib/paywall';
 import { PremiumTag } from '../components/Paywall';
+import { ChallengePhotos } from '../components/challenge/ChallengePhotos';
 
 const card = 'rounded-[24px] border border-white/10 bg-white/[0.03] p-4';
 const input = 'w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-white placeholder:text-slate-500 focus:outline-none focus:border-[var(--mood2)]';
@@ -171,6 +172,7 @@ function JoinedChallengeCard({ c }: { c: JoinedChallenge }) {
   const [board, setBoard] = useState<BoardRow[] | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [photos, setPhotos] = useState(false);
   const today = todayKey();
   const day = challengeDay(c);
   const live = day >= 1 && day <= c.days && !c.finishedAt;
@@ -184,6 +186,7 @@ function JoinedChallengeCard({ c }: { c: JoinedChallenge }) {
   return (
     <div className={`${card} ${finished ? 'border-amber-300/40 bg-amber-400/[0.06]' : ''}`}>
       <ChallengeHead c={c} />
+      <ChallengePhotos challenge={c} open={photos} onClose={() => setPhotos(false)} />
       <div className="mt-3 flex gap-1" aria-label={L(`${fullDays(c)} of ${c.days} days done`, `Atlikta ${fullDays(c)} iš ${c.days} d.`)}>
         {Array.from({ length: c.days }, (_, i) => {
           const d = addDaysToKey(c.start, i);
@@ -233,6 +236,10 @@ function JoinedChallengeCard({ c }: { c: JoinedChallenge }) {
         >
           <Icon name="📤" size={12} className="icon-inline" />
           {copied ? L('Link ready', 'Nuoroda paruošta') : L('Invite', 'Pakviesti')}
+        </button>
+        <button className="rounded-full bg-white/[0.07] px-3 py-1.5 font-semibold text-white" onClick={() => setPhotos(true)}>
+          <Icon name="📷" size={12} className="icon-inline" />
+          {L('Photos', 'Nuotraukos')}
         </button>
         <span className="rounded-full bg-white/[0.04] px-3 py-1.5 font-mono tracking-widest text-slate-400 select-all">{c.code}</span>
         <button className="ml-auto rounded-full px-2 py-1.5 text-slate-500 hover:text-rose-300" onClick={() => setLeaving(true)}>

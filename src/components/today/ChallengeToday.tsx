@@ -3,10 +3,14 @@ import { challengeDay } from '../../lib/social';
 import { todayKey } from '../../lib/date';
 import { Icon } from '../Icon';
 import { L } from '../../lib/lang';
+import { useState } from 'react';
+import { ChallengePhotos } from '../challenge/ChallengePhotos';
+import type { JoinedChallenge } from '../../lib/types';
 
 /** Today: the quests of challenges you're in, ticked right here (B3). */
 export function ChallengeToday({ onOpen }: { onOpen: () => void }) {
   const { state, dispatch } = useApp();
+  const [photos, setPhotos] = useState<JoinedChallenge | null>(null);
   const today = todayKey();
   const live = (state.challenges ?? []).filter((c) => {
     const d = challengeDay(c, today);
@@ -27,6 +31,13 @@ export function ChallengeToday({ onOpen }: { onOpen: () => void }) {
               </span>
             </button>
             <div className="mt-2.5 flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setPhotos(c)}
+                aria-label={L('Photo proof', 'Nuotraukos įrodymas')}
+                className="flex items-center rounded-full border border-white/15 px-2.5 py-1.5 text-slate-300"
+              >
+                <Icon name="📷" size={13} />
+              </button>
               {c.quests.map((q, i) => {
                 const on = done.has(i);
                 return (
@@ -45,6 +56,7 @@ export function ChallengeToday({ onOpen }: { onOpen: () => void }) {
           </section>
         );
       })}
+      {photos && <ChallengePhotos challenge={photos} open onClose={() => setPhotos(null)} />}
     </>
   );
 }

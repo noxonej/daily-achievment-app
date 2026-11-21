@@ -1,7 +1,8 @@
 /**
  * Runs from GitHub Actions every 15 minutes (.github/workflows/push.yml):
  * 1. publishes firestore.rules to Firebase when they changed (so nobody has to paste them by hand),
- * 2. sends the motivational notifications that are due (functions/sender.js).
+ * 2. deletes challenge photo proofs older than 7 days (functions/cleanup.js),
+ * 3. sends the motivational notifications that are due (functions/sender.js).
  *
  * Needs one repository secret: FIREBASE_SERVICE_ACCOUNT (the JSON key from Firebase console →
  * Project settings → Service accounts → Generate new private key). See SETUP-PUSH.md.
@@ -23,6 +24,7 @@ async function main() {
   const { getSecurityRules } = req('firebase-admin/security-rules');
   const webpush = req('web-push');
   const { runOnce } = require(path.join(fnDir, 'sender.js'));
+  const { cleanProofs } = require(path.join(fnDir, 'cleanup.js'));
 
   const account = JSON.parse(raw);
   initializeApp({ credential: cert(account), projectId: account.project_id });
@@ -43,7 +45,14 @@ async function main() {
     console.error('Could not publish firestore.rules:', e.message);
   }
 
-  // 2. Notifications. The workflow runs one pass every 15 minutes (LOOP_MINUTES=0). Setting
+  // 2. Housekeeping: challenge photo proofs older than 7 days are deleted (B8).
+  try {
+    console.log('Cleanup:', JSON.stringify(await cleanProofs(db)));
+  } catch (e) {
+    console.error('Cleanup failed:', e.message);
+  }
+
+  // 3. Notifications. The workflow runs one pass every 15 minutes (LOOP_MINUTES=0). Setting
   // LOOP_MINUTES keeps one run going and checks every 5 minutes instead.
   const test = process.env.TEST_PUSH === 'true';
   const loopMs = Math.max(0, Number(process.env.LOOP_MINUTES || 0)) * 60000;

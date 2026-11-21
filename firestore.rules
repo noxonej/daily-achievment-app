@@ -264,6 +264,23 @@ service cloud.firestore {
           && request.time > resource.data.at + duration.value(30, 's');
         allow delete: if signedIn() && me() == uid;
       }
+
+      // Optional photo proof (B8): one compressed JPEG (≤ ~200 KB) per player per challenge day.
+      // Only players on this challenge's board can see them; the push sender deletes them after 7 days.
+      match /proofs/{id} {
+        function player() { return exists(/databases/$(db)/documents/challenges/$(code)/players/$(me())); }
+        function validProof() {
+          return d().keys().hasOnly(['uid', 'name', 'day', 'img', 'at'])
+            && d().uid == me() && id == me() + '_' + string(d().day)
+            && str(d().name, 20) && d().day is int && d().day >= 1 && d().day <= 30
+            && str(d().img, 275000) && d().img.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+            && d().at == request.time;
+        }
+        allow read: if signedIn() && player();
+        allow create: if signedIn() && player() && validProof();
+        allow update: if signedIn() && player() && validProof() && request.time > resource.data.at + duration.value(30, 's');
+        allow delete: if signedIn() && resource.data.uid == me();
+      }
     }
 
     // People you blocked: they can't send you requests or cheers. Only you see your list.
