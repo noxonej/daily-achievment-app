@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { Switch } from './Switch';
+import { analyticsOn, setAnalyticsOn } from '../lib/analytics';
 import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
 import { settings } from '../lib/settingsNav';
@@ -62,7 +64,7 @@ export function AboutPage() {
       </Section>
 
       <Section icon="🔐" title="Your privacy">
-        <p className="mb-2.5">No ads and no tracking. We don't sell your data. Here is every place your data can go, in plain words:</p>
+        <p className="mb-2.5">No ads and no tracking across other apps or websites. We don't sell your data. Here is every place your data can go, in plain words:</p>
         <ul className="space-y-2 list-disc pl-5 marker:text-slate-500">
           <li>
             <b>This phone.</b> Everything you enter is saved here first. Without Google sign-in, only the two optional
@@ -95,6 +97,21 @@ export function AboutPage() {
           <li>
             <b>Apple Health steps</b> (Firestore: stepsInbox), only if you set up the Shortcut: one number, today's
             steps, under a random code.
+          </li>
+          <li>
+            <b>Squads and challenges</b> (Firestore: squads, challenges), only if you create or join one while connected:
+            your first name and your squad streak or challenge score. Challenge boards can be seen by anyone with the
+            link. <b>Photo proof</b> is optional, only the challenge's players see it, and it's deleted after 7 days.
+          </li>
+          <li>
+            <b>Invites</b> (Firestore: invitedBy, invites): who invited you, your first name and up to 3 day numbers, so
+            you both get the invite reward.
+          </li>
+          <li>
+            <b>Anonymous usage counts</b> (Firestore: stats). A random install number (not your name or account) and
+            which of these happened: app opened, quest done, setup finished, invite sent, card shared. It tells us if
+            people come back after 1, 7 and 30 days. Nobody can read it from the app. You can turn it off below.
+            <AnalyticsSwitch />
           </li>
           <li>
             <b>Prices</b>: crypto, stock and other asset prices in Money are the ones you type in. The app doesn't ask
@@ -170,5 +187,23 @@ function Step({ n, children }: { n: number; children: ReactNode }) {
       <span className="shrink-0 w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">{n}</span>
       <span>{children}</span>
     </li>
+  );
+}
+
+/** C1: the off switch for anonymous usage counts. */
+function AnalyticsSwitch() {
+  const [on, setOn] = useState(analyticsOn);
+  return (
+    <span className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-white/[0.04] px-3 py-2">
+      <span className="text-sm font-semibold text-white">Send anonymous usage counts</span>
+      <Switch
+        on={on}
+        label="Send anonymous usage counts"
+        onChange={(v) => {
+          setAnalyticsOn(v);
+          setOn(v);
+        }}
+      />
+    </span>
   );
 }

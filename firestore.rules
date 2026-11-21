@@ -290,6 +290,15 @@ service cloud.firestore {
         && d().keys().hasOnly(['at']) && optNum('at', 0, 4102444800000);
     }
 
+    // Anonymous usage counts (C1): write-only. One batch per doc: a random install id and up to 50 event
+    // names. Nobody can read them from the app; only the admin retention script (service account) can.
+    match /stats/{day}/events/{id} {
+      allow create: if day.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
+        && d().keys().hasOnly(['id', 'ev', 'v']) && d().v == 1
+        && d().id is string && d().id.matches('^[a-z0-9]{20}$')
+        && d().ev is list && d().ev.size() >= 1 && d().ev.size() <= 50;
+    }
+
     // Invites (B6). invitedBy/{uid} names the one person who invited you: set once, never changed.
     // invites/{inviter}/from/{friend} counts the friend's active days, one real (server) day at a time,
     // so a reward needs 3 different days of actually using the app. The inviter may only mark it claimed.

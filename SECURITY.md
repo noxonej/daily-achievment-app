@@ -26,6 +26,7 @@ https://github.com/noxonej/daily-achievment-app/security/advisories/new
 | Challenges (title, quests) and their boards | `challenges/{code}`, `.../players/{uid}` | Anyone with the link (no sign-in) | No |
 | Challenge photo proof (optional, ≤200 KB JPEG, first name, day) | `challenges/{code}/proofs/{uid}_{day}` | Only players on that challenge's board. Deleted after 7 days by the push sender; you can delete yours any time | No |
 | Who invited you, and your invite day counter (first name + up to 3 day numbers) | `invitedBy/{uid}`, `invites/{inviter}/from/{uid}` | You and the person who invited you. These can't be deleted (so one friend can't be paid out twice); "Delete my cloud data" blanks your name in it | No |
+| Anonymous usage counts (random install id + event names: open, quest_done, onboarding_done, invite_sent, share) | `stats/{day}/events` | Nobody from the app (write-only). Admin reads with `scripts/analytics/retention.cjs`. Off switch: Settings → About → Your privacy | No |
 | Cheating reports | `reports/{player}/from/{reporter}` | Only the admin (push sender) | No |
 | Notification plan + push address | `pushQueue/{random token}` | Only the push sender | No (no name or account in it) |
 | Apple Health steps (if you set up the Shortcut) | `stepsInbox/{random token}` | Whoever has the 32-character token (your app and Shortcut) | No (one number) |
