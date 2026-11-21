@@ -124,9 +124,13 @@ service cloud.firestore {
       // No sign-in on purpose: notifications must work for people who never connect Google.
       // A real plan (4 messages a day for 14 days + push address) measures ~12.6 KB, so 20 KB is plenty;
       // updatedAt must be the phone's "now" (within a day of the server clock).
+      // host = the push service the address points at. Only real push services are allowed (the push
+      // sender checks the address itself too, see functions/pushSafety.js; keep the two lists in sync).
       allow create, update: if token.matches('^[0-9a-f]{32,64}$')
-        && d().keys().hasOnly(['data', 'updatedAt'])
+        && d().keys().hasOnly(['data', 'updatedAt', 'host'])
         && str(d().data, 20000)
+        && d().host is string
+        && d().host.matches('^(fcm[.]googleapis[.]com|android[.]googleapis[.]com|([a-z0-9-]+[.])*push[.]services[.]mozilla[.]com|web[.]push[.]apple[.]com|([a-z0-9-]+[.])*push[.]apple[.]com|([a-z0-9-]+[.])*notify[.]windows[.]com|none)$')
         && d().updatedAt is int
         && d().updatedAt > request.time.toMillis() - 86400000
         && d().updatedAt < request.time.toMillis() + 86400000;
