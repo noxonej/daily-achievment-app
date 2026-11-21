@@ -17,6 +17,7 @@ import {
   inviteLink,
   refreshFriends,
   removeFriend,
+  blockUser,
   reportPlayer,
   useFriends,
   weekXp,
@@ -28,6 +29,7 @@ import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { GoogleButton } from '../components/GoogleConnect';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Modal } from '../components/Modal';
 import type { Character, Sharing } from '../lib/types';
 
 function lookOf(p: { look?: string } | undefined): Character {
@@ -210,6 +212,9 @@ function Connected() {
               </button>
               <button onClick={() => void declineRequest(r.uid)} aria-label={`Decline ${r.name}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10">
                 <Icon name="✕" size={15} />
+              </button>
+              <button onClick={() => void blockUser(r.uid)} aria-label={`Block ${r.name}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-300 hover:bg-white/10">
+                <Icon name="🚫" size={14} />
               </button>
             </div>
           ))}
@@ -432,18 +437,36 @@ function Connected() {
         }}
       />
 
-      <ConfirmDialog
-        open={!!removing}
-        title={`Remove ${removing?.name}?`}
-        message="You'll stop seeing each other's activity. You can add each other again with your codes."
-        confirmLabel="Remove friend"
-        danger
-        onCancel={() => setRemoving(null)}
-        onConfirm={() => {
-          if (removing) void removeFriend(removing.uid);
-          setRemoving(null);
-        }}
-      />
+      <Modal open={!!removing} onClose={() => setRemoving(null)} title={removing?.name ?? ''}>
+        <p className="text-sm text-slate-300 mb-4">
+          <b className="text-white">Remove</b>: you stop seeing each other's activity, and can add each other again with your codes.
+          <br />
+          <b className="text-white">Block</b>: also stops them from sending you requests or cheers.
+        </p>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => {
+              if (removing) void removeFriend(removing.uid);
+              setRemoving(null);
+            }}
+            className="rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-2.5"
+          >
+            Remove friend
+          </button>
+          <button
+            onClick={() => {
+              if (removing) void blockUser(removing.uid);
+              setRemoving(null);
+            }}
+            className="rounded-xl bg-red-500/15 border border-red-400/40 hover:bg-red-500/25 text-red-200 font-semibold py-2.5"
+          >
+            Block {removing?.name}
+          </button>
+          <button onClick={() => setRemoving(null)} className="py-2 text-sm text-slate-400">
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

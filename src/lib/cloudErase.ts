@@ -24,11 +24,12 @@ export async function deleteMyCloudData(accountId: string, opts: { stepsToken?: 
   const uid = api.uid();
   const ids = async (parent: string, collection: string) => (await api.query(parent, collection).catch(() => [])).map((d) => d.id);
 
-  const [activity, friends, cheers, requests, profile] = await Promise.all([
+  const [activity, friends, cheers, requests, blocks, profile] = await Promise.all([
     ids(`activity/${uid}`, 'items'),
     ids(`friends/${uid}`, 'list'),
     ids(`cheers/${uid}`, 'items'),
     ids(`requests/${uid}`, 'from'),
+    ids(`blocks/${uid}`, 'list'),
     api.get<{ code?: unknown }>(`profiles/${uid}`).catch(() => null),
   ]);
   const code = typeof profile?.code === 'string' ? profile.code : '';
@@ -39,6 +40,7 @@ export async function deleteMyCloudData(accountId: string, opts: { stepsToken?: 
     ...cheers.map((id) => `cheers/${uid}/items/${id}`),
     ...requests.map((id) => `requests/${uid}/from/${id}`),
     ...friends.map((id) => `friends/${uid}/list/${id}`),
+    ...blocks.map((id) => `blocks/${uid}/list/${id}`),
     ...recentWeeks().map((w) => `boards/${w}/players/${uid}`),
     `push/${uid}`,
     `profiles/${uid}`,

@@ -429,7 +429,7 @@ export async function refreshFriends(): Promise<void> {
       ),
     );
     const feed = feedLists.flat().sort((a, b) => b.at - a.at).slice(0, 40);
-    const requests = reqDocs.flatMap((d) => asRequest(d.id, d.data) ?? []);
+    const requests = reqDocs.flatMap((d) => asRequest(d.id, d.data) ?? []).filter((r) => !isBlocked(r.uid));
     const cheers = cheerDocs.flatMap((d) => asCheer(d.id, d.data) ?? []);
 
     // Toasts for news since last time (the very first sync just sets the starting point).
@@ -523,6 +523,26 @@ export async function declineRequest(fromUid: string) {
   set({ requests: current.requests.filter((r) => r.uid !== fromUid) });
 }
 
+const blockedKey = (acc: string) => `dayforge-blocked-${acc}`;
+
+/** Blocks someone: removes the friendship and any request, and they can't send new requests or cheers. */
+export async function blockUser(uid: string) {
+  const ctx = ctxRef;
+  const me = current.me;
+  if (!ctx || !me || uid === me.uid) return;
+  const list = readJson<string[]>(blockedKey(ctx.accountId), []);
+  if (!list.includes(uid)) writeJson(blockedKey(ctx.accountId), [...list, uid].slice(-500));
+  const api = db(ctx.accountId);
+  await api.set(`blocks/${me.uid}/list/${uid}`, { at: Date.now() });
+  await api.remove(`requests/${me.uid}/from/${uid}`).catch(() => undefined);
+  if (current.friends.some((f) => f.uid === uid)) await removeFriend(uid);
+  set({ requests: current.requests.filter((r) => r.uid !== uid) });
+}
+
+export function isBlocked(uid: string): boolean {
+  return !!ctxRef && readJson<string[]>(blockedKey(ctxRef.accountId), []).includes(uid);
+}
+
 export async function removeFriend(uid: string) {
   const ctx = ctxRef;
   const me = current.me;
@@ -566,7 +586,8 @@ export async function cheer(item: ActivityItem) {
   if (done.includes(item.id)) return;
   writeJson(cheeredKey(ctx.accountId), [...done, item.id].slice(-300));
   set({ feed: [...current.feed] });
-  await db(ctx.accountId).add(`cheers/${item.uid}/items`, { fromUid: me.uid, fromName: me.name.slice(0, 40), text: item.text.slice(0, 200), at: Date.now() });
+  // One cheer per friend per item (A8): the id says who cheered what, and the rules allow it once.
+  await db(ctx.accountId).create(`cheers/${item.uid}/items/${me.uid}_${item.id}`, { fromUid: me.uid, fromName: me.name.slice(0, 40), text: item.text.slice(0, 200), at: Date.now() });
 }
 
 /* ---------------------------------------------------------------- outbox */
@@ -601,7 +622,12 @@ async function flushOutbox(accountId: string, all = false) {
   const api = db(accountId);
   const uid = api.uid();
   for (const b of ready) {
-    await api.add(`activity/${uid}/items`, { kind: b.kind, text: b.text.slice(0, 200), icon: b.icon.slice(0, 32), ...(b.value !== undefined ? { value: b.value } : {}), at: b.at });
+    try {
+      await api.add(`activity/${uid}/items`, { kind: b.kind, text: b.text.slice(0, 200), icon: b.icon.slice(0, 32), ...(b.value !== undefined ? { value: b.value } : {}), at: b.at });
+    } catch (e) {
+      // Refused by the rules (e.g. older than a week after being offline): drop it instead of retrying forever.
+      if (!(e instanceof Error && e.message === 'Not allowed.')) throw e;
+    }
     unqueue(accountId, [b.key]);
   }  // Keep the leaderboard card (XP, streak, level) in step with what was just shared.
   if (ctxRef?.accountId === accountId) await ensureProfile(ctxRef).catch(() => undefined);

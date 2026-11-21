@@ -41,16 +41,26 @@ service cloud.firestore {
         && optStr('look', 4000) && optNum('at', 0, 4102444800000);
     }
 
+    // `at` (the phone's clock, in ms) must be close to the server's clock, so nobody can back-date or
+    // pre-date a flood of items. Activity may be a few days old (sent after being offline).
+    function nearNow(v, pastMs, futureMs) {
+      return v is number && v > request.time.toMillis() - pastMs && v < request.time.toMillis() + futureMs;
+    }
+
     function validActivity() {
       return d().keys().hasOnly(['kind', 'text', 'icon', 'value', 'at'])
         && d().kind in ['quest', 'run', 'streak', 'level', 'perfect', 'badge']
-        && str(d().text, 200) && str(d().icon, 32) && optNum('value', 0, 100000) && numIn(d().at, 0, 4102444800000);
+        && str(d().text, 200) && str(d().icon, 32) && optNum('value', 0, 100000)
+        && nearNow(d().at, 7 * 86400000, 600000);
     }
 
     function validCheer() {
       return d().keys().hasOnly(['fromUid', 'fromName', 'text', 'at'])
-        && d().fromUid == me() && str(d().fromName, 40) && str(d().text, 200) && numIn(d().at, 0, 4102444800000);
+        && d().fromUid == me() && str(d().fromName, 40) && str(d().text, 200)
+        && nearNow(d().at, 3600000, 600000);
     }
+
+    function blocked(owner, other) { return exists(/databases/$(db)/documents/blocks/$(owner)/list/$(other)); }
 
     // Friend request. createdAt must be the server's own clock (the app sends "server time").
     function validRequest() {
@@ -88,9 +98,10 @@ service cloud.firestore {
     match /requests/{to}/from/{from} {
       allow read, delete: if signedIn() && (me() == to || me() == from);
       // One request per person; sending it again is allowed at most once an hour.
-      allow create: if signedIn() && me() == from && to != from && validRequest();
+      allow create: if signedIn() && me() == from && to != from && validRequest() && !blocked(to, from);
       allow update: if signedIn() && me() == from && to != from && validRequest()
-        && resource.data.createdAt is timestamp && request.time > resource.data.createdAt + duration.value(1, 'h');
+        && resource.data.createdAt is timestamp && request.time > resource.data.createdAt + duration.value(1, 'h')
+        && !blocked(to, from);
     }
 
     // Friend lists. Accepting a request writes both sides.
@@ -169,10 +180,19 @@ service cloud.firestore {
       allow delete: if token.matches('^[0-9a-f]{32,64}$');
     }
 
-    // Cheers from friends.
+    // Cheers from friends. The id is "<your uid>_<activity item id>" and can only be created once,
+    // so it's one cheer per friend per thing they did.
     match /cheers/{uid}/items/{id} {
       allow read, delete: if signedIn() && me() == uid;
-      allow create: if signedIn() && friendOf(uid) && validCheer();
+      allow create: if signedIn() && friendOf(uid) && validCheer() && !blocked(uid, me())
+        && id.matches('^' + me() + '_[A-Za-z0-9_-]{1,64}$');
+    }
+
+    // People you blocked: they can't send you requests or cheers. Only you see your list.
+    match /blocks/{uid}/list/{bid} {
+      allow read, delete: if signedIn() && me() == uid;
+      allow create, update: if signedIn() && me() == uid && bid != uid
+        && d().keys().hasOnly(['at']) && optNum('at', 0, 4102444800000);
     }
   }
 }
