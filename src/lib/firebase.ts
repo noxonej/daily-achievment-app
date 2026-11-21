@@ -7,6 +7,7 @@
  * VITE_FIREBASE_API_KEY / VITE_FIREBASE_PROJECT_ID when building.
  */
 import { googleConfigured, googleSignIn } from './google';
+import { appCheckHeaders } from './appCheck';
 import { b64ToBytes, bytesToB64, cryptoAvailable, decryptBytes, encryptBytes, localBackupKey } from './backupCrypto';
 
 const API_KEY_DEFAULT = 'AIzaSyDUDTAX2zxf_mVHVILcaiBe_nPiR9dLuG8';
@@ -151,9 +152,10 @@ export function db(accountId: string) {
     const s = await idToken(accountId);
     let res: Response;
     try {
+      const check = await appCheckHeaders();
       res = await fetch(`${BASE()}${path}`, {
         ...init,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.idToken}`, ...(init.headers ?? {}) },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.idToken}`, ...check, ...(init.headers ?? {}) },
       });
     } catch {
       throw new Error("Couldn't reach the server. Are you online?");

@@ -1,4 +1,5 @@
 import { publicDocUrl } from './firebase';
+import { fsFetch } from './appCheck';
 import type { NudgeStatus } from './nudges';
 
 /**
@@ -47,7 +48,7 @@ function b64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
 async function publicKey(): Promise<string | null> {
   if (cachedKey !== undefined) return cachedKey;
   try {
-    const res = await fetch(publicDocUrl('config/push'), { cache: 'no-store' });
+    const res = await fsFetch(publicDocUrl('config/push'), { cache: 'no-store' });
     if (!res.ok) return (cachedKey = null);
     const doc = (await res.json()) as { fields?: { publicKey?: { stringValue?: string } } };
     const k = doc?.fields?.publicKey?.stringValue;
@@ -94,7 +95,7 @@ async function save(token: string, data: { on: boolean; sub?: { endpoint?: unkno
       host: { stringValue: pushHost(data.sub?.endpoint) },
     },
   };
-  const res = await fetch(publicDocUrl(`pushQueue/${token}`), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const res = await fsFetch(publicDocUrl(`pushQueue/${token}`), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   return res.ok;
 }
 

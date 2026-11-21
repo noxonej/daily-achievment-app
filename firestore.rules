@@ -142,12 +142,13 @@ service cloud.firestore {
     // The document name is a long random secret only your app and your Shortcut know; it holds a single
     // number and nothing about who you are, so no sign-in is needed.
     match /stepsInbox/{token} {
-      allow get: if token.size() >= 24;
-      allow create, update: if token.size() >= 24
+      // The token is 32 hex characters made by the app (src/lib/healthSteps.ts newStepsToken).
+      allow get: if token.matches('^[0-9a-f]{32,64}$');
+      allow create, update: if token.matches('^[0-9a-f]{32,64}$')
         && request.resource.data.keys().hasOnly(['steps'])
         && request.resource.data.steps is number
         && request.resource.data.steps >= 0 && request.resource.data.steps < 200000;
-      allow delete: if token.size() >= 24;
+      allow delete: if token.matches('^[0-9a-f]{32,64}$');
     }
 
     // Cheers from friends.

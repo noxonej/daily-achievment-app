@@ -2,6 +2,7 @@
  * "Delete my cloud data" (Settings → Account): removes everything Squzo saved about you in Firebase,
  * then the Firebase sign-in itself (EU right to erasure). What's on this phone stays.
  */
+import { fsFetch } from './appCheck';
 import { db, deleteFirebaseUser, loadSession, publicDocUrl } from './firebase';
 import { addDaysToKey, parseKey, todayKey, weekKey } from './date';
 import { pushToken } from './push';
@@ -50,7 +51,7 @@ export async function deleteMyCloudData(accountId: string, opts: { stepsToken?: 
 
   // Phone-keyed documents (no sign-in): the notification plan and the Apple Health steps inbox.
   const tokenDocs = [`pushQueue/${pushToken()}`, ...(opts.stepsToken ? [`stepsInbox/${opts.stepsToken}`] : [])];
-  await Promise.all(tokenDocs.map((p) => fetch(publicDocUrl(p), { method: 'DELETE' }).catch(() => undefined)));
+  await Promise.all(tokenDocs.map((p) => fsFetch(publicDocUrl(p), { method: 'DELETE' }).catch(() => undefined)));
 
   await deleteFirebaseUser(accountId);
 }
