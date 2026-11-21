@@ -513,6 +513,38 @@ export interface AppState {
   createdAt: string;
   /** Home, garage and vehicles (added in content v4; missing on older saves). */
   world?: WorldState;
+  /** Squads you're in, by their join code (round 2, optional). */
+  squads?: string[];
+  /** Challenges you joined (round 2, optional). */
+  challenges?: JoinedChallenge[];
+  /** Invite rewards: who invited you, and rewards already paid (round 2, optional). */
+  invite?: { by?: string; claimed?: string[] };
+}
+
+/** A challenge quest: what to do each day. */
+export interface ChallengeQuest {
+  title: string;
+  icon: string;
+}
+
+/** A challenge someone hosts (e.g. an athlete): fixed quests for 7, 14 or 30 days. */
+export interface Challenge {
+  code: string;
+  title: string;
+  hostName: string;
+  days: 7 | 14 | 30;
+  /** First day, YYYY-MM-DD. */
+  start: string;
+  quests: ChallengeQuest[];
+  /** Finish badge icon. */
+  badge: string;
+}
+
+/** A challenge you joined, with what you ticked each day (quest indexes). */
+export interface JoinedChallenge extends Challenge {
+  joinedAt: string;
+  done: Record<string, number[]>;
+  finishedAt?: string;
 }
 
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'legend';

@@ -1,9 +1,15 @@
+import type { Challenge } from '../lib/types';
 import type { AppState, CosmeticSlot, GoalLogEntry, PlanCategory, PlanItem, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, SleepState, DecorSlot } from '../lib/types';
 import type { BoxReward } from '../lib/dailyBox';
 import type { NewGoalInput, NewQuestInput } from './state';
 
 export type Action =
   | { type: 'TOGGLE_QUEST'; questId: string }
+  | { type: 'SQUAD_ADD'; code: string }
+  | { type: 'SQUAD_REMOVE'; code: string }
+  | { type: 'CHALLENGE_JOIN'; challenge: Challenge }
+  | { type: 'CHALLENGE_TICK'; code: string; index: number }
+  | { type: 'CHALLENGE_LEAVE'; code: string }
   | { type: 'ADD_QUEST'; quest: NewQuestInput }
   | { type: 'UPDATE_QUEST'; questId: string; updates: Partial<NewQuestInput> }
   | { type: 'DELETE_QUEST'; questId: string }

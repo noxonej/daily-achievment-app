@@ -15,6 +15,8 @@ import { StatsView } from './StatsView';
 import { AchievementsView } from './AchievementsView';
 import { DiaryView } from './DiaryView';
 import { FriendsView } from './FriendsView';
+import { SquadsView } from './SquadsView';
+import { L } from '../lib/lang';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useIntent } from '../lib/intents';
 import { useFriends } from '../lib/friends';
@@ -25,7 +27,7 @@ import { levelFromTotalXp, titleForLevel } from '../lib/xp';
 import { MAX_SHIELDS, SHIELD_PRICE } from '../lib/stats';
 import { seasonLabel, seasonTheme } from '../lib/seasons';
 
-type Section = 'stats' | 'badges' | 'friends' | 'diary';
+type Section = 'stats' | 'badges' | 'friends' | 'squads' | 'diary';
 
 /** Profile hub: your character and level up top, then stats, badges and your diary. Settings open from the gear. */
 export function YouView() {
@@ -35,7 +37,8 @@ export function YouView() {
   const trophies = Object.entries(state.seasonClaims ?? {}).filter(([, t]) => t.includes(2)).map(([k]) => k).sort();
   const wantFriends = useIntent('you-friends');
   const wantDiary = useIntent('you-diary');
-  const [section, setSection] = useState<Section>(wantFriends ? 'friends' : wantDiary ? 'diary' : 'stats');
+  const wantSquads = useIntent('you-squads');
+  const [section, setSection] = useState<Section>(wantFriends ? 'friends' : wantSquads ? 'squads' : wantDiary ? 'diary' : 'stats');
   const { xpIntoLevel, xpForNextLevel } = levelFromTotalXp(stats.totalXp);
   const friendRequests = useFriends().requests.length;
   const name = state.profile?.name;
@@ -158,6 +161,7 @@ export function YouView() {
             { id: 'stats', label: t('you.stats'), icon: '📊' },
             { id: 'badges', label: t('you.badges'), icon: '🎖' },
             { id: 'friends', label: t('you.friends'), icon: '🤝', badge: friendRequests },
+            { id: 'squads', label: L('Squads', 'Komandos'), icon: '⚔' },
             { id: 'diary', label: t('you.diary'), icon: '📕' },
           ]}
         />
@@ -166,6 +170,11 @@ export function YouView() {
         {section === 'stats' && <StatsView embedded />}
         {section === 'badges' && <AchievementsView embedded />}
         {section === 'diary' && <DiaryView />}
+        {section === 'squads' && (
+          <ErrorBoundary name="Squads">
+            <SquadsView />
+          </ErrorBoundary>
+        )}
         {section === 'friends' && (
           <div className="max-w-2xl mx-auto px-4 py-4">
             <ErrorBoundary name="Friends">

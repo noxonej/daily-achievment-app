@@ -335,6 +335,17 @@ async function ensureCodeAndProfile(ctx: Ctx, existing: Omit<FriendProfile, 'uid
 
 const FRIEND_CODE = /^[A-Z]{3,4}-[0-9]{4}$/;
 
+/** The signed-in friends session (account + your card), or null when not connected. */
+export function friendsSession(): { accountId: string; me: FriendProfile; name: string; squads: string[] } | null {
+  return ctxRef && current.me ? { accountId: ctxRef.accountId, me: current.me, name: ctxRef.name, squads: ctxRef.state.squads ?? [] } : null;
+}
+
+/** Someone's public card (squad mates who aren't friends), checked field by field. */
+export async function getProfile(accountId: string, uid: string): Promise<FriendProfile | null> {
+  const p = asProfile(await db(accountId).get(`profiles/${uid}`).catch(() => null));
+  return p ? { uid, ...p } : null;
+}
+
 /** Exported for tests. */
 export async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
   const api = db(ctx.accountId);
@@ -578,7 +589,7 @@ export function hasCheered(itemId: string): boolean {
   return !!ctxRef && readJson<string[]>(cheeredKey(ctxRef.accountId), []).includes(itemId);
 }
 
-export async function cheer(item: ActivityItem) {
+export async function cheer(item: ActivityItem, squad?: string) {
   const ctx = ctxRef;
   const me = current.me;
   if (!ctx || !me) return;
@@ -587,7 +598,7 @@ export async function cheer(item: ActivityItem) {
   writeJson(cheeredKey(ctx.accountId), [...done, item.id].slice(-300));
   set({ feed: [...current.feed] });
   // One cheer per friend per item (A8): the id says who cheered what, and the rules allow it once.
-  await db(ctx.accountId).create(`cheers/${item.uid}/items/${me.uid}_${item.id}`, { fromUid: me.uid, fromName: me.name.slice(0, 40), text: item.text.slice(0, 200), at: Date.now() });
+  await db(ctx.accountId).create(`cheers/${item.uid}/items/${me.uid}_${item.id}`, { fromUid: me.uid, fromName: me.name.slice(0, 40), text: item.text.slice(0, 200), at: Date.now(), ...(squad ? { squad } : {}) });
 }
 
 /* ---------------------------------------------------------------- outbox */
@@ -627,6 +638,14 @@ async function flushOutbox(accountId: string, all = false) {
     } catch (e) {
       // Refused by the rules (e.g. older than a week after being offline): drop it instead of retrying forever.
       if (!(e instanceof Error && e.message === 'Not allowed.')) throw e;
+    }
+    // Your squads see it in their feed too (one item per thing done: the id says who and what).
+    const squads = ctxRef?.accountId === accountId ? (ctxRef.state.squads ?? []) : [];
+    const name = current.me?.name ?? 'Player';
+    for (const code of squads.slice(0, 5)) {
+      await api
+        .create(`squads/${code}/feed/${uid}_${b.key.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 30)}`, { uid, name: name.slice(0, 40), kind: b.kind, text: b.text.slice(0, 200), icon: b.icon.slice(0, 32), at: b.at })
+        .catch(() => undefined);
     }
     unqueue(accountId, [b.key]);
   }  // Keep the leaderboard card (XP, streak, level) in step with what was just shared.

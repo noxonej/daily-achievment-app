@@ -155,6 +155,13 @@ export function statPoints(state: AppState, extras: StatExtras = {}, since?: str
     counted(log.completedQuestIds ?? []);
     if (log.perfectWeek) pts.discipline += 40;
   }
+  // Challenge quests count by their title (Run → Body, Read → Mind…).
+  for (const ch of state.challenges ?? []) {
+    for (const [d, ids] of Object.entries(ch.done ?? {})) {
+      if (since && d < since) continue;
+      for (const i of new Set(ids)) if (ch.quests[i]) add(questStats({ title: ch.quests[i].title, category: '' }), 10);
+    }
+  }
   for (const r of state.runs ?? []) if (!since || r.date >= since) pts.body += Math.min(200, (r.km || 0) * 20);
   for (const [d, m] of Object.entries(state.focusMinutes ?? {})) if (!since || d >= since) pts.discipline += Math.min(240, m || 0) / 2;
   for (const n of state.sleep?.log ?? []) if ((!since || n.date >= since) && n.hours >= 7) pts.body += 10;

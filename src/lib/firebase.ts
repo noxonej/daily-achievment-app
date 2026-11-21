@@ -7,7 +7,7 @@
  * VITE_FIREBASE_API_KEY / VITE_FIREBASE_PROJECT_ID when building.
  */
 import { googleConfigured, googleSignIn } from './google';
-import { appCheckHeaders } from './appCheck';
+import { appCheckHeaders, fsFetch } from './appCheck';
 import { b64ToBytes, bytesToB64, cryptoAvailable, decryptBytes, encryptBytes, localBackupKey } from './backupCrypto';
 
 const API_KEY_DEFAULT = 'AIzaSyDUDTAX2zxf_mVHVILcaiBe_nPiR9dLuG8';
@@ -191,6 +191,12 @@ export function db(accountId: string) {
       }
     },
 
+    /** Changes only these fields of an existing document (the others stay as they are). */
+    async patch(path: string, data: { [k: string]: Json }) {
+      const mask = Object.keys(data).map((k) => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+      await call(`/${path}?${mask}&currentDocument.exists=true`, { method: 'PATCH', body: JSON.stringify({ fields: encFields(data) }) });
+    },
+
     async add(collection: string, data: { [k: string]: Json }) {
       await call(`/${collection}`, { method: 'POST', body: JSON.stringify({ fields: encFields(data) }) });
     },
@@ -200,9 +206,15 @@ export function db(accountId: string) {
     },
 
     /** Like set, but also stamps `field` with the server's own clock (the rules can check it). */
-    async setStamped(path: string, data: { [k: string]: Json }, field: string) {
+    async setStamped(path: string, data: { [k: string]: Json }, field: string, opts: { create?: boolean } = {}) {
       const name = `projects/${PROJECT_ID}/databases/(default)/documents/${path}`;
-      const writes = [{ update: { name, fields: encFields(data) }, updateTransforms: [{ fieldPath: field, setToServerValue: 'REQUEST_TIME' }] }];
+      const writes = [
+        {
+          update: { name, fields: encFields(data) },
+          updateTransforms: [{ fieldPath: field, setToServerValue: 'REQUEST_TIME' }],
+          ...(opts.create ? { currentDocument: { exists: false } } : {}),
+        },
+      ];
       await call(':commit', { method: 'POST', body: JSON.stringify({ writes }) });
     },
 
@@ -247,6 +259,26 @@ export function db(accountId: string) {
         .map((r) => ({ id: r.document!.name.split('/').pop()!, data: decFields(r.document!.fields ?? {}) as T }));
     },
   };
+}
+
+/* ---------------------------------------------------------------- public reads (no sign-in) */
+
+/** Reads one document without signing in (only works where the rules allow it). null when missing. */
+export async function publicGet<T>(path: string): Promise<T | null> {
+  const res = await fsFetch(publicDocUrl(path), { cache: 'no-store' });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(res.status === 403 ? 'Not allowed.' : `Server error (${res.status}).`);
+  const d = (await res.json()) as { fields?: Record<string, FsValue> };
+  return decFields(d.fields ?? {}) as T;
+}
+
+/** The top `limit` documents of a collection by a number field, without signing in. */
+export async function publicTop<T>(parent: string, collection: string, orderBy: string, limit: number): Promise<Array<Doc<T>>> {
+  const structuredQuery = { from: [{ collectionId: collection }], orderBy: [{ field: { fieldPath: orderBy }, direction: 'DESCENDING' }], limit };
+  const res = await fsFetch(`${BASE()}/${parent}:runQuery?key=${API_KEY}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ structuredQuery }) });
+  if (!res.ok) return [];
+  const rows = (await res.json()) as Array<{ document?: { name: string; fields?: Record<string, FsValue> } }>;
+  return rows.filter((r) => r.document).map((r) => ({ id: r.document!.name.split('/').pop()!, data: decFields(r.document!.fields ?? {}) as T }));
 }
 
 /* ---------------------------------------------------------------- automatic cloud backup */

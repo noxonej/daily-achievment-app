@@ -22,6 +22,7 @@ import { useNudges } from './lib/nudges';
 import { useGoogleAutoBackup } from './components/GoogleConnect';
 import { AutoSteps } from './components/AutoSteps';
 import { rememberInvite, useFriendsEngine } from './lib/friends';
+import { readJoinLink } from './lib/links';
 import { FriendToasts } from './components/FriendToasts';
 import { setIntent } from './lib/intents';
 import { useSettingsPage } from './lib/settingsNav';
@@ -109,7 +110,13 @@ export default function App() {
       setIntent('you-friends');
       setViewState('you');
     }
-    if (params.has('view') || params.has('focus') || params.has('breathe') || params.has('add') || params.has('source') || invite) {
+    // A challenge or squad link: show it on You → Squads.
+    const join = readJoinLink(params);
+    if (join) {
+      setIntent('you-squads');
+      setViewState('you');
+    }
+    if (params.has('view') || params.has('focus') || params.has('breathe') || params.has('add') || params.has('source') || invite || join) {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);

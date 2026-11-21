@@ -3,13 +3,13 @@
  * premium-only later. When payments exist, change `hasPremium` (and nothing else): every premium
  * screen checks `premiumLocked(feature)` and already shows a "Premium" state when it returns true.
  */
-export type PremiumFeature = 'coach-chat';
+export type PremiumFeature = 'coach-chat' | 'create-squad' | 'create-challenge';
 
 /** Features that will need premium once it launches. */
-const PREMIUM_ONLY: PremiumFeature[] = ['coach-chat'];
+const PREMIUM_ONLY: PremiumFeature[] = ['coach-chat', 'create-squad', 'create-challenge'];
 
 /** Flip to true per feature when premium launches. */
-const LOCKED_NOW: Record<PremiumFeature, boolean> = { 'coach-chat': false };
+const LOCKED_NOW: Record<PremiumFeature, boolean> = { 'coach-chat': false, 'create-squad': false, 'create-challenge': false };
 
 export function hasPremium(): boolean {
   // TODO when payments exist: read the user's subscription here.
