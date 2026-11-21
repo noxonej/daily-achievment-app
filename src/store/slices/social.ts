@@ -3,12 +3,29 @@ import type { AppState, JoinedChallenge } from '../../lib/types';
 import type { Action } from '../actions';
 import { todayKey } from '../../lib/date';
 import { challengeDay, isFinished } from '../../lib/social';
+import { INVITE_COINS, INVITE_ITEM, INVITED_GIFT, MAX_INVITE_REWARDS } from '../../lib/invites';
 
 /** XP for each challenge quest ticked (on top of your normal quests). */
 export const CHALLENGE_TICK_XP = 10;
 
 export function socialSlice(state: AppState, action: Action): AppState | undefined {
   switch (action.type) {
+    case 'INVITE_REWARD': {
+      const won = state.wonCosmeticIds ?? [];
+      const withItem = won.includes(INVITE_ITEM) ? won : [...won, INVITE_ITEM];
+      if (!action.friend) {
+        if ((state.gifts ?? []).includes(INVITED_GIFT)) return state;
+        return { ...state, gifts: [...(state.gifts ?? []), INVITED_GIFT], wonCosmeticIds: withItem };
+      }
+      const claimed = state.invite?.claimed ?? [];
+      if (claimed.includes(action.friend) || claimed.length >= MAX_INVITE_REWARDS) return state;
+      return {
+        ...state,
+        invite: { ...(state.invite ?? {}), claimed: [...claimed, action.friend] },
+        bonusShards: (state.bonusShards ?? 0) + INVITE_COINS,
+        wonCosmeticIds: withItem,
+      };
+    }
     case 'SQUAD_ADD': {
       const list = state.squads ?? [];
       return list.includes(action.code) ? state : { ...state, squads: [...list, action.code].slice(-10) };

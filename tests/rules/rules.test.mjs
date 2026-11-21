@@ -1,6 +1,6 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'node:fs';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 const env = await initializeTestEnvironment({ projectId: 'demo-squzo', firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8'), host: '127.0.0.1', port: 8085 } });
 let pass = 0, fail = 0;
@@ -71,6 +71,28 @@ await t('challenge score ok', () => assertSucceeds(setDoc(doc(bob, `challenges/$
 await t('challenge score spam refused', () => assertFails(setDoc(doc(bob, `challenges/${CH}/players/bob`), { name: 'Bob', score: 4, fullDays: 1, finished: false, at: serverTimestamp() })));
 await t('challenge fake score refused', () => assertFails(setDoc(doc(carol, `challenges/${CH}/players/carol`), { name: 'C', score: 9999, fullDays: 1, finished: false, at: serverTimestamp() })));
 await t('challenge board public ok', () => assertSucceeds(getDoc(doc(anon, `challenges/${CH}/players/bob`))));
+
+// ---- invites (B6). 'me' has a profile (above). Frank was invited by me.
+const frank = env.authenticatedContext('frank').firestore();
+const day = Math.floor(Date.now() / 86400000);
+await t('invitedBy self refused', () => assertFails(setDoc(doc(frank, 'invitedBy', 'frank'), { by: 'frank' })));
+await t('invitedBy unknown user refused', () => assertFails(setDoc(doc(frank, 'invitedBy', 'frank'), { by: 'nobody' })));
+await t('invitedBy ok', () => assertSucceeds(setDoc(doc(frank, 'invitedBy', 'frank'), { by: 'me' })));
+await t('invitedBy change refused', () => assertFails(setDoc(doc(frank, 'invitedBy', 'frank'), { by: 'bob' })));
+await t('invite doc for someone else refused', () => assertFails(setDoc(doc(frank, 'invites/bob/from/frank'), { name: 'Frank', days: [], claimed: false })));
+await t('invite doc with days refused', () => assertFails(setDoc(doc(frank, 'invites/me/from/frank'), { name: 'Frank', days: [1, 2, 3], claimed: false })));
+await t('invite doc ok', () => assertSucceeds(setDoc(doc(frank, 'invites/me/from/frank'), { name: 'Frank', days: [], claimed: false })));
+await t('invite add today ok', () => assertSucceeds(updateDoc(doc(frank, 'invites/me/from/frank'), { days: [day] })));
+await t('invite add today twice refused', () => assertFails(updateDoc(doc(frank, 'invites/me/from/frank'), { days: [day, day] })));
+await t('invite fake future day refused', () => assertFails(updateDoc(doc(frank, 'invites/me/from/frank'), { days: [day, day + 1] })));
+await t('invite claim before 3 days refused', () => assertFails(updateDoc(doc(me, 'invites/me/from/frank'), { claimed: true })));
+await t("invite friend can't claim", () => assertFails(updateDoc(doc(frank, 'invites/me/from/frank'), { claimed: true })));
+await env.withSecurityRulesDisabled((c) => updateDoc(doc(c.firestore(), 'invites/me/from/frank'), { days: [day - 2, day - 1, day] }));
+await t('invite claim after 3 days ok', () => assertSucceeds(updateDoc(doc(me, 'invites/me/from/frank'), { claimed: true })));
+await t('invite unclaim refused', () => assertFails(updateDoc(doc(me, 'invites/me/from/frank'), { claimed: false })));
+await t('invite delete refused', () => assertFails(deleteDoc(doc(frank, 'invites/me/from/frank'))));
+await t('invite name blank ok', () => assertSucceeds(updateDoc(doc(frank, 'invites/me/from/frank'), { name: '' })));
+await t('invite read by stranger refused', () => assertFails(getDoc(doc(bob, 'invites/me/from/frank'))));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();

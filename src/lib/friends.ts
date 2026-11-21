@@ -1,3 +1,4 @@
+import { APP_URL } from './config';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { plausibleWeekXp } from './fairPlay';
 import { safePicture } from './url';
@@ -109,7 +110,8 @@ export function dismissFriendToast(id: string) {
   setTimeout(() => set({ toasts: current.toasts.filter((t) => t.id !== id) }), 300);
 }
 
-function toast(icon: string, text: string, look?: string) {
+/** Shows a friends toast (also used by invite rewards). */
+export function toast(icon: string, text: string, look?: string) {
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   set({ toasts: [...current.toasts, { id, icon, text, look }].slice(-3) });
   setTimeout(() => dismissFriendToast(id), 5000);
@@ -206,7 +208,7 @@ export function rememberInvite(code: string) {
 }
 
 export function inviteLink(code: string): string {
-  return `${window.location.origin}${import.meta.env.BASE_URL}?invite=${encodeURIComponent(code)}`;
+  return `${APP_URL}?invite=${encodeURIComponent(code)}`;
 }
 
 function makeCode(name: string): string {

@@ -6,6 +6,8 @@ import type { NewGoalInput, NewQuestInput } from './state';
 export type Action =
   | { type: 'TOGGLE_QUEST'; questId: string }
   | { type: 'SQUAD_ADD'; code: string }
+  /** B6: `friend` set = a friend you invited reached 3 days; unset = you (the invited one) did. */
+  | { type: 'INVITE_REWARD'; friend?: string; name?: string }
   | { type: 'SQUAD_REMOVE'; code: string }
   | { type: 'CHALLENGE_JOIN'; challenge: Challenge }
   | { type: 'CHALLENGE_TICK'; code: string; index: number }

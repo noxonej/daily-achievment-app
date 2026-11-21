@@ -24,13 +24,14 @@ export async function deleteMyCloudData(accountId: string, opts: { stepsToken?: 
   const uid = api.uid();
   const ids = async (parent: string, collection: string) => (await api.query(parent, collection).catch(() => [])).map((d) => d.id);
 
-  const [activity, friends, cheers, requests, blocks, profile] = await Promise.all([
+  const [activity, friends, cheers, requests, blocks, profile, invitedBy] = await Promise.all([
     ids(`activity/${uid}`, 'items'),
     ids(`friends/${uid}`, 'list'),
     ids(`cheers/${uid}`, 'items'),
     ids(`requests/${uid}`, 'from'),
     ids(`blocks/${uid}`, 'list'),
     api.get<{ code?: unknown }>(`profiles/${uid}`).catch(() => null),
+    api.get<{ by?: unknown }>(`invitedBy/${uid}`).catch(() => null),
   ]);
   const code = typeof profile?.code === 'string' ? profile.code : '';
   const own = code ? await api.get<{ uid?: unknown }>(`codes/${code}`).catch(() => null) : null;
@@ -50,6 +51,8 @@ export async function deleteMyCloudData(accountId: string, opts: { stepsToken?: 
   // The other side of each friendship, and your friend code (one by one: either may already be gone).
   await Promise.all(friends.map((id) => api.remove(`friends/${id}/list/${uid}`).catch(() => undefined)));
   if (own?.uid === uid) await api.remove(`codes/${code}`).catch(() => undefined);
+  // Invite counters can't be deleted (anti-farm), so blank your name on the one who invited you.
+  if (typeof invitedBy?.by === 'string') await api.patch(`invites/${invitedBy.by}/from/${uid}`, { name: '' }).catch(() => undefined);
 
   // Phone-keyed documents (no sign-in): the notification plan and the Apple Health steps inbox.
   const tokenDocs = [`pushQueue/${pushToken()}`, ...(opts.stepsToken ? [`stepsInbox/${opts.stepsToken}`] : [])];

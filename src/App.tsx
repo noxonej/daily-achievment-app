@@ -23,6 +23,7 @@ import { useGoogleAutoBackup } from './components/GoogleConnect';
 import { AutoSteps } from './components/AutoSteps';
 import { rememberInvite, useFriendsEngine } from './lib/friends';
 import { readJoinLink } from './lib/links';
+import { rememberInviteReward, useInviteEngine } from './lib/invites';
 import { FriendToasts } from './components/FriendToasts';
 import { setIntent } from './lib/intents';
 import { useSettingsPage } from './lib/settingsNav';
@@ -67,6 +68,7 @@ export default function App() {
     level: stats.level,
     streak: stats.currentStreak,
   });
+  useInviteEngine(auth?.account.id ?? null, state, dispatch);
   const wardrobeOpen = useWardrobeOpen();
   const settingsPage = useSettingsPage();
   // Fetch the lazy screens in the background so they're cached for offline use.
@@ -107,6 +109,7 @@ export default function App() {
     const invite = params.get('invite');
     if (invite) {
       rememberInvite(invite);
+      rememberInviteReward(invite);
       setIntent('you-friends');
       setViewState('you');
     }

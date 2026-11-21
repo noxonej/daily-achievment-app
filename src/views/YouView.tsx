@@ -6,6 +6,7 @@ import { InfoTip } from '../components/Guide';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
 import { IrlStatsCard } from '../components/stats/IrlStatsCard';
+import { InviteCard } from '../components/InviteCard';
 import { Avatar } from '../components/Avatar';
 import { Coin } from '../components/Coin';
 import { RankBadge } from '../components/RankBadge';
@@ -153,6 +154,7 @@ export function YouView() {
         </div>
 
         <IrlStatsCard />
+        <InviteCard onConnect={() => setSection('friends')} />
 
         <Segmented
           value={section}

@@ -272,5 +272,36 @@ service cloud.firestore {
       allow create, update: if signedIn() && me() == uid && bid != uid
         && d().keys().hasOnly(['at']) && optNum('at', 0, 4102444800000);
     }
+
+    // Invites (B6). invitedBy/{uid} names the one person who invited you: set once, never changed.
+    // invites/{inviter}/from/{friend} counts the friend's active days, one real (server) day at a time,
+    // so a reward needs 3 different days of actually using the app. The inviter may only mark it claimed.
+    function serverDay() { return int(request.time.toMillis() / 86400000); }
+    match /invitedBy/{uid} {
+      allow get: if signedIn() && me() == uid;
+      allow create: if signedIn() && me() == uid
+        && d().keys().hasOnly(['by']) && d().by is string && d().by != uid
+        && exists(/databases/$(db)/documents/profiles/$(d().by));
+    }
+    match /invites/{inviter}/from/{friend} {
+      // No deletes: removing and re-creating the doc would let one friend pay out again and again.
+      allow read: if signedIn() && (me() == inviter || me() == friend);
+      allow create: if signedIn() && me() == friend && inviter != friend
+        && get(/databases/$(db)/documents/invitedBy/$(friend)).data.by == inviter
+        && d().keys().hasOnly(['name', 'days', 'claimed'])
+        && str(d().name, 40) && d().days == [] && d().claimed == false;
+      // The friend adds today (server clock), at most once a day, up to 3 days.
+      allow update: if signedIn() && me() == friend
+        && d().diff(resource.data).affectedKeys().hasOnly(['days'])
+        && resource.data.days.size() < 3 && !(serverDay() in resource.data.days)
+        && d().days == resource.data.days.concat([serverDay()]);
+      // "Delete my cloud data" blanks the friend's name (the doc itself stays, see above).
+      allow update: if signedIn() && me() == friend
+        && d().diff(resource.data).affectedKeys().hasOnly(['name']) && d().name == '';
+      // The inviter collects the reward once the friend has 3 days.
+      allow update: if signedIn() && me() == inviter
+        && d().diff(resource.data).affectedKeys().hasOnly(['claimed'])
+        && d().claimed == true && resource.data.days.size() >= 3;
+    }
   }
 }
