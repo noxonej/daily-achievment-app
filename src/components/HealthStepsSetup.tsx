@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { SITE_ORIGIN } from '../lib/config';
 import { useApp } from '../store/AppContext';
 import { Modal } from './Modal';
 import { Check, Copy } from 'lucide-react';
@@ -63,6 +64,7 @@ export function HealthStepsSetup({ open, onClose }: { open: boolean; onClose: ()
             <span className="mt-1.5 block text-[11px] text-slate-500 break-all select-all">{url}</span>
             Then tap <i>Show More</i>: Method <b className="text-white">PATCH</b> (not GET, or nothing is sent), Request Body <b className="text-white">JSON</b>. Add a field <code className="text-white">fields</code> (Dictionary), inside it{' '}
             <code className="text-white">steps</code> (Dictionary), inside that <code className="text-white">doubleValue</code> (Number) and pick <i>Statistics</i>.
+            {' '}Under <i>Headers</i> add <code className="text-white">Referer</code> with the value <code className="text-white break-all">{SITE_ORIGIN}/</code> (Squzo's database only answers its own website).
           </Step>
           <Step n={5}>Tap ▶ once. Allow Health when iPhone asks, then come back and test it below.</Step>
           <Step n={6}>
