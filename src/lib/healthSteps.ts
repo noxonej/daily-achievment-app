@@ -9,6 +9,7 @@
  * The token is a long random secret saved in your Squzo data (so it moves with your backup).
  */
 import { publicDocUrl } from './firebase';
+import { fsFetch } from './appCheck';
 import { todayKey } from './date';
 
 export function newStepsToken(): string {
@@ -23,7 +24,7 @@ export const inboxUrl = (token: string) => publicDocUrl(`stepsInbox/${token}`);
 /** Today's step total from the inbox, or null when there's nothing from today (or we're offline). */
 export async function readInbox(token: string): Promise<number | null> {
   try {
-    const res = await fetch(inboxUrl(token), { cache: 'no-store' });
+    const res = await fsFetch(inboxUrl(token), { cache: 'no-store' });
     if (!res.ok) return null;
     const doc = (await res.json()) as { fields?: { steps?: { doubleValue?: number; integerValue?: string } }; updateTime?: string };
     const raw = doc.fields?.steps;

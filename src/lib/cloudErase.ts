@@ -2,6 +2,7 @@
  * "Delete my cloud data" (Settings → Account): removes everything Squzo saved about you in Firebase,
  * then the Firebase sign-in itself (EU right to erasure). What's on this phone stays.
  */
+import { fsFetch } from './appCheck';
 import { db, deleteFirebaseUser, loadSession, publicDocUrl } from './firebase';
 import { addDaysToKey, parseKey, todayKey, weekKey } from './date';
 import { pushToken } from './push';
@@ -23,11 +24,12 @@ export async function deleteMyCloudData(accountId: string, opts: { stepsToken?: 
   const uid = api.uid();
   const ids = async (parent: string, collection: string) => (await api.query(parent, collection).catch(() => [])).map((d) => d.id);
 
-  const [activity, friends, cheers, requests, profile] = await Promise.all([
+  const [activity, friends, cheers, requests, blocks, profile] = await Promise.all([
     ids(`activity/${uid}`, 'items'),
     ids(`friends/${uid}`, 'list'),
     ids(`cheers/${uid}`, 'items'),
     ids(`requests/${uid}`, 'from'),
+    ids(`blocks/${uid}`, 'list'),
     api.get<{ code?: unknown }>(`profiles/${uid}`).catch(() => null),
   ]);
   const code = typeof profile?.code === 'string' ? profile.code : '';
@@ -38,6 +40,7 @@ export async function deleteMyCloudData(accountId: string, opts: { stepsToken?: 
     ...cheers.map((id) => `cheers/${uid}/items/${id}`),
     ...requests.map((id) => `requests/${uid}/from/${id}`),
     ...friends.map((id) => `friends/${uid}/list/${id}`),
+    ...blocks.map((id) => `blocks/${uid}/list/${id}`),
     ...recentWeeks().map((w) => `boards/${w}/players/${uid}`),
     `push/${uid}`,
     `profiles/${uid}`,
@@ -50,7 +53,7 @@ export async function deleteMyCloudData(accountId: string, opts: { stepsToken?: 
 
   // Phone-keyed documents (no sign-in): the notification plan and the Apple Health steps inbox.
   const tokenDocs = [`pushQueue/${pushToken()}`, ...(opts.stepsToken ? [`stepsInbox/${opts.stepsToken}`] : [])];
-  await Promise.all(tokenDocs.map((p) => fetch(publicDocUrl(p), { method: 'DELETE' }).catch(() => undefined)));
+  await Promise.all(tokenDocs.map((p) => fsFetch(publicDocUrl(p), { method: 'DELETE' }).catch(() => undefined)));
 
   await deleteFirebaseUser(accountId);
 }

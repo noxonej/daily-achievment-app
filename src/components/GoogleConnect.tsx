@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { safePicture } from '../lib/url';
 import { useApp } from '../store/AppContext';
 import { useAuth } from '../store/AuthContext';
 import type { AppState } from '../lib/types';
@@ -146,8 +147,8 @@ export function GoogleCard() {
       {linked ? (
         <>
           <div className="flex items-center gap-3">
-            {linked.picture ? (
-              <img src={linked.picture} alt="" referrerPolicy="no-referrer" className="w-11 h-11 rounded-full object-cover" />
+            {safePicture(linked.picture) ? (
+              <img src={safePicture(linked.picture)} alt="" referrerPolicy="no-referrer" className="w-11 h-11 rounded-full object-cover" />
             ) : (
               <span className="w-11 h-11 rounded-full bg-[#fff] flex items-center justify-center">
                 <GoogleG size={22} />

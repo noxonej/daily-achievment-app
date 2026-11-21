@@ -1,4 +1,5 @@
 import { publicDocUrl } from './firebase';
+import { fsFetch } from './appCheck';
 import type { NudgeStatus } from './nudges';
 
 /**
@@ -47,7 +48,7 @@ function b64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
 async function publicKey(): Promise<string | null> {
   if (cachedKey !== undefined) return cachedKey;
   try {
-    const res = await fetch(publicDocUrl('config/push'), { cache: 'no-store' });
+    const res = await fsFetch(publicDocUrl('config/push'), { cache: 'no-store' });
     if (!res.ok) return (cachedKey = null);
     const doc = (await res.json()) as { fields?: { publicKey?: { stringValue?: string } } };
     const k = doc?.fields?.publicKey?.stringValue;
@@ -72,9 +73,29 @@ async function subscription(key: string): Promise<PushSubscription | null> {
   return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key) });
 }
 
-async function save(token: string, data: object): Promise<boolean> {
-  const body = { fields: { data: { stringValue: JSON.stringify(data) }, updatedAt: { integerValue: String(Date.now()) } } };
-  const res = await fetch(publicDocUrl(`pushQueue/${token}`), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+/**
+ * The push service's host name ("fcm.googleapis.com"), sent next to the plan so the database rules
+ * can refuse addresses that aren't a real push service. "none" when notifications are off.
+ */
+export function pushHost(endpoint: unknown): string {
+  if (typeof endpoint !== 'string') return 'none';
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === 'https:' ? u.hostname.toLowerCase() : 'none';
+  } catch {
+    return 'none';
+  }
+}
+
+async function save(token: string, data: { on: boolean; sub?: { endpoint?: unknown } }): Promise<boolean> {
+  const body = {
+    fields: {
+      data: { stringValue: JSON.stringify(data) },
+      updatedAt: { integerValue: String(Date.now()) },
+      host: { stringValue: pushHost(data.sub?.endpoint) },
+    },
+  };
+  const res = await fsFetch(publicDocUrl(`pushQueue/${token}`), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   return res.ok;
 }
 

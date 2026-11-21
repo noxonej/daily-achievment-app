@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config'
 // daylight-saving time, so date bugs around the clock change show up.
 export default defineConfig({
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     setupFiles: ['src/test/setup.ts'],
     env: { TZ: 'Europe/Vilnius' },
   },

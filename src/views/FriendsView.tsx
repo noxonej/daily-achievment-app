@@ -17,24 +17,23 @@ import {
   inviteLink,
   refreshFriends,
   removeFriend,
+  blockUser,
+  reportPlayer,
   useFriends,
   weekXp,
   type ActivityItem,
   type FriendProfile,
 } from '../lib/friends';
-import { normalizeLook } from '../data/avatar';
+import { parseLook } from '../data/avatar';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { GoogleButton } from '../components/GoogleConnect';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Modal } from '../components/Modal';
 import type { Character, Sharing } from '../lib/types';
 
 function lookOf(p: { look?: string } | undefined): Character {
-  try {
-    return normalizeLook(p?.look ? JSON.parse(p.look) : undefined);
-  } catch {
-    return normalizeLook(undefined);
-  }
+  return parseLook(p?.look);
 }
 
 export function timeAgo(at: number): string {
@@ -116,6 +115,7 @@ function Connected() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [removing, setRemoving] = useState<FriendProfile | null>(null);
+  const [reporting, setReporting] = useState<{ uid: string; name: string } | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const share: Sharing = { ...DEFAULT_SHARING, ...(state.sharing ?? {}) };
   const byUid = new Map(f.friends.map((p) => [p.uid, p]));
@@ -212,6 +212,9 @@ function Connected() {
               </button>
               <button onClick={() => void declineRequest(r.uid)} aria-label={`Decline ${r.name}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10">
                 <Icon name="✕" size={15} />
+              </button>
+              <button onClick={() => void blockUser(r.uid)} aria-label={`Block ${r.name}`} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-300 hover:bg-white/10">
+                <Icon name="🚫" size={14} />
               </button>
             </div>
           ))}
@@ -345,6 +348,11 @@ function Connected() {
                 <span className="text-xs text-slate-500 font-normal"> · LV {p.level}</span>
               </span>
               <span className="font-display font-bold text-white tabular-nums text-sm">{p.weekXp} XP</span>
+              {p.uid !== me.uid && (
+                <button onClick={() => setReporting({ uid: p.uid, name: p.name })} aria-label={`Report ${p.name} for cheating`} className="w-7 h-7 -mr-1 rounded-lg flex items-center justify-center text-slate-600 hover:text-amber-300">
+                  <Icon name="🏁" size={13} />
+                </button>
+              )}
             </li>
           ))}
         </ol>
@@ -417,17 +425,48 @@ function Connected() {
       </section>
 
       <ConfirmDialog
-        open={!!removing}
-        title={`Remove ${removing?.name}?`}
-        message="You'll stop seeing each other's activity. You can add each other again with your codes."
-        confirmLabel="Remove friend"
+        open={!!reporting}
+        title={`Report ${reporting?.name}?`}
+        message="If these numbers look fake, we'll hide this player on your phone right away and check the report. Fair play keeps the race fun."
+        confirmLabel="Report"
         danger
-        onCancel={() => setRemoving(null)}
+        onCancel={() => setReporting(null)}
         onConfirm={() => {
-          if (removing) void removeFriend(removing.uid);
-          setRemoving(null);
+          if (reporting) void reportPlayer(reporting.uid);
+          setReporting(null);
         }}
       />
+
+      <Modal open={!!removing} onClose={() => setRemoving(null)} title={removing?.name ?? ''}>
+        <p className="text-sm text-slate-300 mb-4">
+          <b className="text-white">Remove</b>: you stop seeing each other's activity, and can add each other again with your codes.
+          <br />
+          <b className="text-white">Block</b>: also stops them from sending you requests or cheers.
+        </p>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => {
+              if (removing) void removeFriend(removing.uid);
+              setRemoving(null);
+            }}
+            className="rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-2.5"
+          >
+            Remove friend
+          </button>
+          <button
+            onClick={() => {
+              if (removing) void blockUser(removing.uid);
+              setRemoving(null);
+            }}
+            className="rounded-xl bg-red-500/15 border border-red-400/40 hover:bg-red-500/25 text-red-200 font-semibold py-2.5"
+          >
+            Block {removing?.name}
+          </button>
+          <button onClick={() => setRemoving(null)} className="py-2 text-sm text-slate-400">
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

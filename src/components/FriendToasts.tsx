@@ -1,5 +1,5 @@
 import { dismissFriendToast, useFriends } from '../lib/friends';
-import { normalizeLook } from '../data/avatar';
+import { parseLook } from '../data/avatar';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 
@@ -10,12 +10,7 @@ export function FriendToasts({ onOpen }: { onOpen: () => void }) {
   return (
     <div className="fixed top-[calc(env(safe-area-inset-top)+60px+0.5rem)] left-0 right-0 z-[65] flex flex-col items-center gap-2 px-4 pointer-events-none">
       {toasts.map((t) => {
-        let look;
-        try {
-          look = t.look ? normalizeLook(JSON.parse(t.look)) : undefined;
-        } catch {
-          look = undefined;
-        }
+        const look = t.look ? parseLook(t.look) : undefined;
         return (
           <button
             key={t.id}

@@ -1,4 +1,5 @@
 /** Reducer slice: Money: accounts, spending, savings goals, budget, bills, crypto and wishes. Returns undefined for actions it doesn't handle. */
+import { safeLink } from '../../lib/url';
 import type { AppState, MoneyKind, WishItem } from '../../lib/types';
 import {  todayKey } from '../../lib/date';
 import {  moneyId } from '../../lib/money';
@@ -202,7 +203,7 @@ export function moneySlice(state: AppState, action: Action): AppState | undefine
       return withMoney(state, (m) => {
         const list = m.wishlist ?? [];
         const old = w.id ? list.find((x) => x.id === w.id) : undefined;
-        const link = w.link?.trim() ? (/^https?:\/\//i.test(w.link.trim()) ? w.link.trim() : `https://${w.link.trim()}`) : undefined;
+        const link = safeLink(w.link);
         const item: WishItem = { id: old?.id ?? moneyId('wish'), name: w.name.trim(), price: Math.round(w.price), icon: w.icon || '🎁', link, addedAt: old?.addedAt ?? todayKey() };
         return { ...m, wishlist: old ? list.map((x) => (x.id === old.id ? item : x)) : [...list, item] };
       });

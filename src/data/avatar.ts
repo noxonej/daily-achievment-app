@@ -324,12 +324,27 @@ export function paidFor(item: AvatarItem | undefined, recorded: number | undefin
   return recorded ?? item.unlock.paid ?? item.unlock.cost;
 }
 
+/**
+ * A look saved as text by someone else (a friend's profile, the leaderboard). Never throws: bad or
+ * broken text, wrong types or unknown items all fall back to the default look.
+ */
+export function parseLook(raw: unknown): Character {
+  if (typeof raw !== 'string' || !raw || raw.length > 4000) return normalizeLook(undefined);
+  try {
+    const v: unknown = JSON.parse(raw);
+    return normalizeLook(v && typeof v === 'object' && !Array.isArray(v) ? (v as Partial<Character>) : undefined);
+  } catch {
+    return normalizeLook(undefined);
+  }
+}
+
 /** Fills any missing or unknown slot (e.g. a save from the old character system) with the default. */
 export function normalizeLook(look: Partial<Character> | undefined | null): Character {
   const out = { ...DEFAULT_LOOK };
   if (!look || typeof look !== 'object') return out;
   for (const slot of Object.keys(DEFAULT_LOOK) as Array<keyof Character>) {
-    const item = findItem(look[slot]);
+    const id = look[slot];
+    const item = typeof id === 'string' ? findItem(id) : undefined;
     if (item && item.slot === slot) out[slot] = item.id;
   }
   return out;

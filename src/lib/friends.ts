@@ -1,4 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { plausibleWeekXp } from './fairPlay';
+import { safePicture } from './url';
 import type { AppState, Sharing } from './types';
 import { db, friendsConfigured, friendsSignIn, clearSession, loadSession } from './firebase';
 import { addDaysToKey, todayKey, weekKey, parseKey } from './date';
@@ -172,7 +174,7 @@ function asProfile(raw: unknown): Omit<FriendProfile, 'uid'> | null {
     streak: num(r.streak),
     weekXp: num(r.weekXp),
     week: str(r.week, 12),
-    picture: str(r.picture, 500),
+    picture: safePicture(r.picture),
     active: str(r.active, 400),
     updatedAt: num(r.updatedAt),
   };
@@ -269,40 +271,77 @@ const codeDocKey = (acc: string) => `dayforge-code-doc-${acc}`;
  * can list everyone's profile. Claims a new code (creating codes/{code} only if it's free) or makes
  * sure the code you already have is registered there (one-time migration for older accounts).
  */
-async function ensureCode(ctx: Ctx, existing: string | undefined): Promise<string> {
+/**
+ * Makes sure profiles/{uid}.code and codes/{code} agree (A6: the rules only let you claim the code that
+ * is already in your own profile). Order: write the profile with the code first, then claim the code.
+ * When the code changes, the old codes/{code} doc is removed so codes can't pile up.
+ */
+async function ensureCodeAndProfile(ctx: Ctx, existing: Omit<FriendProfile, 'uid'> | null, build: (code: string) => Omit<FriendProfile, 'uid'>): Promise<Omit<FriendProfile, 'uid'>> {
   const api = db(ctx.accountId);
   const uid = api.uid();
-  if (existing) {
-    if (readJson<string | null>(codeDocKey(ctx.accountId), null) === existing) return existing;
+  const registered = readJson<string | null>(codeDocKey(ctx.accountId), null);
+  const save = async (p: Omit<FriendProfile, 'uid'>) => {
+    const changed =
+      !existing ||
+      (['name', 'code', 'look', 'level', 'streak', 'weekXp', 'week', 'picture', 'active'] as const).some(
+        (k) => (existing as Record<string, unknown>)[k] !== (p as Record<string, unknown>)[k],
+      );
+    if (changed) await api.set(`profiles/${uid}`, p as never);
+    existing = p;
+  };
+  const done = async (p: Omit<FriendProfile, 'uid'>) => {
+    writeJson(codeDocKey(ctx.accountId), p.code);
+    if (registered && registered !== p.code) await api.remove(`codes/${registered}`).catch(() => undefined);
+    return p;
+  };
+
+  const have = existing?.code && FRIEND_CODE.test(existing.code) ? existing.code : undefined;
+  if (have) {
+    const p = build(have);
+    if (registered === have) {
+      await save(p);
+      return p;
+    }
     // If the database can't be asked right now (offline, or its rules not updated yet), keep the
     // code as it is and try again on the next refresh.
-    const doc = await api.get<{ uid?: unknown }>(`codes/${existing}`).catch(() => 'later' as const);
-    if (doc === 'later') return existing;
-    if (doc?.uid === uid || (!doc && (await api.create(`codes/${existing}`, { uid })))) {
-      writeJson(codeDocKey(ctx.accountId), existing);
-      return existing;
+    const doc = await api.get<{ uid?: unknown }>(`codes/${have}`).catch(() => 'later' as const);
+    if (doc === 'later') {
+      await save(p);
+      return p;
     }
-    if (!doc) return existing;
-    // Someone else already owns this code (it could happen before codes were checked): get a new one.
+    if (doc?.uid === uid) {
+      await save(p);
+      return done(p);
+    }
+    if (!doc) {
+      await save(p);
+      if (await api.create(`codes/${have}`, { uid })) return done(p);
+    }
+    // Someone else owns this code (it could happen before codes were checked): get a new one.
   }
   for (let i = 0; i < 6; i++) {
     const c = makeCode(ctx.name);
-    if (await api.create(`codes/${c}`, { uid })) {
-      writeJson(codeDocKey(ctx.accountId), c);
-      return c;
-    }
+    const taken = await api.get<{ uid?: unknown }>(`codes/${c}`).catch(() => ({ uid: 'unknown' }));
+    if (taken) continue;
+    const p = build(c);
+    await save(p);
+    if (await api.create(`codes/${c}`, { uid })) return done(p);
   }
-  // Couldn't register one right now: use a fresh code; the next refresh registers it.
-  return makeCode(ctx.name);
+  // Couldn't register one right now: keep what the profile has; the next refresh tries again.
+  const p = build(have ?? makeCode(ctx.name));
+  await save(p);
+  return p;
 }
 
-async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
+const FRIEND_CODE = /^[A-Z]{3,4}-[0-9]{4}$/;
+
+/** Exported for tests. */
+export async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
   const api = db(ctx.accountId);
   const uid = api.uid();
   const existing = asProfile(await api.get(`profiles/${uid}`));
   const share = { ...DEFAULT_SHARING, ...(ctx.state.sharing ?? {}) };
-  const code = await ensureCode(ctx, existing?.code);
-  const profile: Omit<FriendProfile, 'uid'> = {
+  const build = (code: string): Omit<FriendProfile, 'uid'> => ({
     name: ctx.name.trim().slice(0, 40) || 'Player',
     code,
     look: JSON.stringify(ctx.state.character),
@@ -312,15 +351,10 @@ async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
     weekXp: share.quests ? clamp(weekXp(ctx.state), 50000) : 0,
     week: weekKey(),
     active: share.streak ? activeDays(ctx.state) : '',
-    ...(ctx.picture && ctx.picture.length <= 500 ? { picture: ctx.picture } : {}),
+    ...(safePicture(ctx.picture) ? { picture: safePicture(ctx.picture) } : {}),
     updatedAt: Date.now(),
-  };
-  const changed =
-    !existing ||
-    (['name', 'code', 'look', 'level', 'streak', 'weekXp', 'week', 'picture', 'active'] as const).some(
-      (k) => (existing as Record<string, unknown>)[k] !== (profile as Record<string, unknown>)[k],
-    );
-  if (changed) await api.set(`profiles/${uid}`, profile as never);
+  });
+  const profile = await ensureCodeAndProfile(ctx, existing, build);
   return { uid, ...profile };
 }
 
@@ -342,7 +376,11 @@ async function syncGlobal(ctx: Ctx, me: FriendProfile) {
   if (Date.now() - globalAt < 10 * 60_000 && current.global) return;
   globalAt = Date.now();
   const rows = await api.query<unknown>(`boards/${weekKey()}`, 'players', { orderBy: 'weekXp', limit: 50 }).catch(() => []);
-  const global = rows.flatMap((r) => asPlayer(r.id, r.data) ?? []);
+  // Fair play (A7): hide numbers that aren't possible for that level / day, and anyone you reported.
+  const hidden = new Set(readJson<string[]>(reportedKey(ctx.accountId), []));
+  const global = rows
+    .flatMap((r) => asPlayer(r.id, r.data) ?? [])
+    .filter((p) => p.uid === me.uid || (!hidden.has(p.uid) && plausibleWeekXp(p.level, p.weekXp)));
   const startLevel = rankForLevel(ctx.level).startLevel;
   const cacheKey = `dayforge-rarity-${ctx.accountId}`;
   let rarity = readJson<RealRarity | null>(cacheKey, null);
@@ -391,7 +429,7 @@ export async function refreshFriends(): Promise<void> {
       ),
     );
     const feed = feedLists.flat().sort((a, b) => b.at - a.at).slice(0, 40);
-    const requests = reqDocs.flatMap((d) => asRequest(d.id, d.data) ?? []);
+    const requests = reqDocs.flatMap((d) => asRequest(d.id, d.data) ?? []).filter((r) => !isBlocked(r.uid));
     const cheers = cheerDocs.flatMap((d) => asCheer(d.id, d.data) ?? []);
 
     // Toasts for news since last time (the very first sync just sets the starting point).
@@ -485,6 +523,26 @@ export async function declineRequest(fromUid: string) {
   set({ requests: current.requests.filter((r) => r.uid !== fromUid) });
 }
 
+const blockedKey = (acc: string) => `dayforge-blocked-${acc}`;
+
+/** Blocks someone: removes the friendship and any request, and they can't send new requests or cheers. */
+export async function blockUser(uid: string) {
+  const ctx = ctxRef;
+  const me = current.me;
+  if (!ctx || !me || uid === me.uid) return;
+  const list = readJson<string[]>(blockedKey(ctx.accountId), []);
+  if (!list.includes(uid)) writeJson(blockedKey(ctx.accountId), [...list, uid].slice(-500));
+  const api = db(ctx.accountId);
+  await api.set(`blocks/${me.uid}/list/${uid}`, { at: Date.now() });
+  await api.remove(`requests/${me.uid}/from/${uid}`).catch(() => undefined);
+  if (current.friends.some((f) => f.uid === uid)) await removeFriend(uid);
+  set({ requests: current.requests.filter((r) => r.uid !== uid) });
+}
+
+export function isBlocked(uid: string): boolean {
+  return !!ctxRef && readJson<string[]>(blockedKey(ctxRef.accountId), []).includes(uid);
+}
+
 export async function removeFriend(uid: string) {
   const ctx = ctxRef;
   const me = current.me;
@@ -493,6 +551,25 @@ export async function removeFriend(uid: string) {
   await api.remove(`friends/${me.uid}/list/${uid}`);
   await api.remove(`friends/${uid}/list/${me.uid}`).catch(() => undefined);
   set({ friends: current.friends.filter((f) => f.uid !== uid), feed: current.feed.filter((f) => f.uid !== uid) });
+}
+
+const reportedKey = (acc: string) => `dayforge-reported-${acc}`;
+
+/**
+ * Reports a leaderboard player as cheating: hides them on this phone right away and leaves a note
+ * (reports/{them}/from/{me}) that only the admin can read.
+ */
+export async function reportPlayer(uid: string) {
+  const ctx = ctxRef;
+  const me = current.me;
+  if (!ctx || !me || uid === me.uid) return;
+  const list = readJson<string[]>(reportedKey(ctx.accountId), []);
+  if (!list.includes(uid)) writeJson(reportedKey(ctx.accountId), [...list, uid].slice(-200));
+  const player = (current.global ?? []).find((p) => p.uid === uid);
+  set({ global: (current.global ?? []).filter((p) => p.uid !== uid) });
+  await db(ctx.accountId)
+    .setStamped(`reports/${uid}/from/${me.uid}`, { week: weekKey(), weekXp: clamp(player?.weekXp ?? 0, 1000000), level: clamp(player?.level ?? 0, 1000) }, 'at')
+    .catch(() => undefined);
 }
 
 const cheeredKey = (acc: string) => `dayforge-cheered-${acc}`;
@@ -509,7 +586,8 @@ export async function cheer(item: ActivityItem) {
   if (done.includes(item.id)) return;
   writeJson(cheeredKey(ctx.accountId), [...done, item.id].slice(-300));
   set({ feed: [...current.feed] });
-  await db(ctx.accountId).add(`cheers/${item.uid}/items`, { fromUid: me.uid, fromName: me.name.slice(0, 40), text: item.text.slice(0, 200), at: Date.now() });
+  // One cheer per friend per item (A8): the id says who cheered what, and the rules allow it once.
+  await db(ctx.accountId).create(`cheers/${item.uid}/items/${me.uid}_${item.id}`, { fromUid: me.uid, fromName: me.name.slice(0, 40), text: item.text.slice(0, 200), at: Date.now() });
 }
 
 /* ---------------------------------------------------------------- outbox */
@@ -544,7 +622,12 @@ async function flushOutbox(accountId: string, all = false) {
   const api = db(accountId);
   const uid = api.uid();
   for (const b of ready) {
-    await api.add(`activity/${uid}/items`, { kind: b.kind, text: b.text.slice(0, 200), icon: b.icon.slice(0, 32), ...(b.value !== undefined ? { value: b.value } : {}), at: b.at });
+    try {
+      await api.add(`activity/${uid}/items`, { kind: b.kind, text: b.text.slice(0, 200), icon: b.icon.slice(0, 32), ...(b.value !== undefined ? { value: b.value } : {}), at: b.at });
+    } catch (e) {
+      // Refused by the rules (e.g. older than a week after being offline): drop it instead of retrying forever.
+      if (!(e instanceof Error && e.message === 'Not allowed.')) throw e;
+    }
     unqueue(accountId, [b.key]);
   }  // Keep the leaderboard card (XP, streak, level) in step with what was just shared.
   if (ctxRef?.accountId === accountId) await ensureProfile(ctxRef).catch(() => undefined);
