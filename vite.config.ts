@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { DEFAULT_APP_URL } from './src/site.ts'
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
@@ -73,8 +74,11 @@ function csp(): Plugin {
 }
 
 // https://vite.dev/config/
+// The base path comes from the one app URL (src/site.ts or VITE_APP_URL). The phone apps
+// (Capacitor, CAPACITOR=1) are served from the root of the app instead.
+const APP_PATH = new URL(process.env.VITE_APP_URL || DEFAULT_APP_URL).pathname.replace(/\/*$/, '/')
 export default defineConfig({
-  base: '/daily-achievment-app/',
+  base: process.env.CAPACITOR === '1' ? '/' : APP_PATH,
   plugins: [react(), tailwindcss(), assetManifest(), csp()],
   // The app's version (package.json), shown in Settings → About.
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
