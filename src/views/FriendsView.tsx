@@ -22,7 +22,7 @@ import {
   type ActivityItem,
   type FriendProfile,
 } from '../lib/friends';
-import { normalizeLook } from '../data/avatar';
+import { parseLook } from '../data/avatar';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { GoogleButton } from '../components/GoogleConnect';
@@ -30,11 +30,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { Character, Sharing } from '../lib/types';
 
 function lookOf(p: { look?: string } | undefined): Character {
-  try {
-    return normalizeLook(p?.look ? JSON.parse(p.look) : undefined);
-  } catch {
-    return normalizeLook(undefined);
-  }
+  return parseLook(p?.look);
 }
 
 export function timeAgo(at: number): string {
