@@ -1,4 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { safePicture } from './url';
 import type { AppState, Sharing } from './types';
 import { db, friendsConfigured, friendsSignIn, clearSession, loadSession } from './firebase';
 import { addDaysToKey, todayKey, weekKey, parseKey } from './date';
@@ -172,7 +173,7 @@ function asProfile(raw: unknown): Omit<FriendProfile, 'uid'> | null {
     streak: num(r.streak),
     weekXp: num(r.weekXp),
     week: str(r.week, 12),
-    picture: str(r.picture, 500),
+    picture: safePicture(r.picture),
     active: str(r.active, 400),
     updatedAt: num(r.updatedAt),
   };
@@ -312,7 +313,7 @@ async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
     weekXp: share.quests ? clamp(weekXp(ctx.state), 50000) : 0,
     week: weekKey(),
     active: share.streak ? activeDays(ctx.state) : '',
-    ...(ctx.picture && ctx.picture.length <= 500 ? { picture: ctx.picture } : {}),
+    ...(safePicture(ctx.picture) ? { picture: safePicture(ctx.picture) } : {}),
     updatedAt: Date.now(),
   };
   const changed =

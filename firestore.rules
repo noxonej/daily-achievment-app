@@ -21,10 +21,16 @@ service cloud.firestore {
     // the full legendary bonus (+5%) is ~7,100 a day, ~50,000 a week. Nobody real gets close.
     function maxWeekXp() { return 50000; }
 
+    // Profile pictures: Google account photos only, so nobody can make friends' phones load their own
+    // server (and log their IP addresses).
+    function optPicture() {
+      return !('picture' in d()) || (str(d().picture, 500) && d().picture.matches('^https://lh[0-9][.]googleusercontent[.]com/.*'));
+    }
+
     function validProfile() {
       return d().keys().hasOnly(['name', 'code', 'look', 'level', 'streak', 'weekXp', 'week', 'active', 'picture', 'updatedAt'])
         && str(d().name, 40) && friendCode(d().code)
-        && optStr('look', 4000) && optStr('week', 10) && optStr('active', 400) && optStr('picture', 500)
+        && optStr('look', 4000) && optStr('week', 10) && optStr('active', 400) && optPicture()
         && optNum('level', 0, 200) && optNum('streak', 0, 3650) && optNum('weekXp', 0, maxWeekXp())
         && optNum('updatedAt', 0, 4102444800000);
     }
