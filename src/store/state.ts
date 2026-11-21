@@ -2,6 +2,7 @@
  * Shared state helpers for the reducer slices (src/store/slices) and the rest of the app:
  * initial state, content migrations, and small helpers several slices need.
  */
+import { cappedXp } from '../lib/xpCap';
 import { safeLink } from '../lib/url';
 import type { AppState, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, QuestMeasure, MoneyState, SavingsGoal } from '../lib/types';
 import {  todayKey, weekKey } from '../lib/date';
@@ -131,6 +132,8 @@ export interface NewQuestInput {
   noteList?: number;
   noteMinWords?: number;
   measure?: QuestMeasure;
+  /** IRL stats it grows (round 2). */
+  stats?: Quest['stats'];
 }
 
 /** True when this goal's account holds only this goal's money (no other goal shares it). */
@@ -174,11 +177,12 @@ export function recomputeDailyLog(quests: Quest[], completedIds: string[], exist
   // Skipped quests (Skip Pass) always stay done for today, but earn nothing.
   const skipped = existing?.skipped ?? [];
   const completedQuestIds = skipped.length ? [...new Set([...completedIds, ...skipped])] : completedIds;
-  const xpEarned = completedQuestIds.reduce((sum, id) => {
-    if (skipped.includes(id)) return sum;
-    const q = quests.find((x) => x.id === id);
-    return sum + (q ? questReward(dateKey, id, q.xp).xp : 0);
-  }, 0);
+  const earned = completedQuestIds.flatMap((id) => {
+    const q = skipped.includes(id) ? undefined : quests.find((x) => x.id === id);
+    return q ? [{ quest: q, xp: questReward(dateKey, id, q.xp).xp }] : [];
+  });
+  // B8: at most DAILY_TYPE_CAP XP a day per quest type (Body, Mind, ...).
+  const { xp: xpEarned, lost } = cappedXp(earned);
   const perfectDay = activeDaily.length > 0 && activeDaily.every((q) => completedQuestIds.includes(q.id));
   return {
     ...existing,
@@ -186,6 +190,7 @@ export function recomputeDailyLog(quests: Quest[], completedIds: string[], exist
     completedQuestIds,
     xpEarned: Math.round(xpEarned * (existing?.xpBoost ?? 1) * (1 + currentBonusPct / 100)),
     ...(currentBonusPct > 0 ? { bonusPct: currentBonusPct } : {}),
+    xpCapped: lost > 0 ? lost : undefined,
     perfectDay,
     dailyQuestCount: activeDaily.length,
   };

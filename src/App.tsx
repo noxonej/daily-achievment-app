@@ -22,6 +22,9 @@ import { useNudges } from './lib/nudges';
 import { useGoogleAutoBackup } from './components/GoogleConnect';
 import { AutoSteps } from './components/AutoSteps';
 import { rememberInvite, useFriendsEngine } from './lib/friends';
+import { readJoinLink } from './lib/links';
+import { rememberInviteReward, useInviteEngine } from './lib/invites';
+import { Paywall } from './components/Paywall';
 import { FriendToasts } from './components/FriendToasts';
 import { setIntent } from './lib/intents';
 import { useSettingsPage } from './lib/settingsNav';
@@ -66,6 +69,7 @@ export default function App() {
     level: stats.level,
     streak: stats.currentStreak,
   });
+  useInviteEngine(auth?.account.id ?? null, state, dispatch);
   const wardrobeOpen = useWardrobeOpen();
   const settingsPage = useSettingsPage();
   // Fetch the lazy screens in the background so they're cached for offline use.
@@ -106,10 +110,17 @@ export default function App() {
     const invite = params.get('invite');
     if (invite) {
       rememberInvite(invite);
+      rememberInviteReward(invite);
       setIntent('you-friends');
       setViewState('you');
     }
-    if (params.has('view') || params.has('focus') || params.has('breathe') || params.has('add') || params.has('source') || invite) {
+    // A challenge or squad link: show it on You → Squads.
+    const join = readJoinLink(params);
+    if (join) {
+      setIntent('you-squads');
+      setViewState('you');
+    }
+    if (params.has('view') || params.has('focus') || params.has('breathe') || params.has('add') || params.has('source') || invite || join) {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
@@ -170,6 +181,7 @@ export default function App() {
           <b>Couldn't save on this phone.</b> Its storage is full. Your changes work for now, but export a backup in Settings → Data and free some space.
         </div>
       )}
+      <Paywall />
       <FriendToasts
         onOpen={() => {
           setIntent('you-friends');

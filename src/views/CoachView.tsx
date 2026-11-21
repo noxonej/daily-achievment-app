@@ -8,7 +8,8 @@ import type { ViewId } from '../components/NavTabs';
 import { askCoach, STARTERS, type CoachReply } from '../lib/coachChat';
 import { addDaysToKey, todayKey } from '../lib/date';
 import { focusTimer } from '../lib/focusTimer';
-import { premiumLocked } from '../lib/premium';
+import { premiumLocked, TRIAL_DAYS } from '../lib/premium';
+import { paywall } from '../lib/paywall';
 
 type Msg = { id: number; from: 'me' | 'coach'; text: string; reply?: CoachReply };
 
@@ -118,6 +119,9 @@ export function CoachView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
             <Icon name="🔒" size={22} className="mx-auto text-slate-300" />
             <p className="mt-2 font-semibold text-white">Part of Squzo Premium</p>
             <p className="text-[13px] text-slate-400">Your tips above stay free.</p>
+            <button onClick={() => paywall.open('coach-chat')} className="mt-3 rounded-full bg-amber-400 text-slate-900 font-bold text-sm px-4 py-2">
+              {`Try ${TRIAL_DAYS} days free`}
+            </button>
           </div>
         ) : (
           <>

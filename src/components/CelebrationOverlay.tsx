@@ -1,3 +1,6 @@
+import { ShareButton } from './ShareButton';
+import { InviteButton } from './InviteCard';
+import { L } from '../lib/lang';
 import { useEffect } from 'react';
 import { useApp } from '../store/AppContext';
 import { titleForLevel } from '../lib/xp';
@@ -68,6 +71,10 @@ export function CelebrationOverlay() {
           >
             Let's go
           </button>
+          <div className="mt-3 flex justify-center gap-2 fade-up [animation-delay:1.35s]">
+            <ShareButton kind="stats" label={L('Share my stats', 'Dalintis rodikliais')} />
+            <InviteButton />
+          </div>
         </div>
       </div>
     );

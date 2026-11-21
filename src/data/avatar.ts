@@ -11,7 +11,9 @@ export type Unlock =
   | { kind: 'streak'; days: number }
   | { kind: 'chest' }
   /** Only from the daily box, at a very small chance. */
-  | { kind: 'box' };
+  | { kind: 'box' }
+  /** Only by inviting a friend who sticks around for 3 days (B6), or being invited. */
+  | { kind: 'invite' };
 
 export interface AvatarItem {
   id: string;
@@ -171,6 +173,7 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: 'hw-catears', slot: 'headwear', name: 'Cat ears', rarity: 'rare', unlock: chest, style: 'catears', c1: '#334155' },
   { id: 'hw-viking', slot: 'headwear', name: 'Viking helm', rarity: 'epic', unlock: level(10), style: 'viking' },
   { id: 'hw-wizard', slot: 'headwear', name: 'Wizard hat', rarity: 'epic', unlock: chest, style: 'wizard', c1: '#4c1d95', c2: '#fde047' },
+  { id: 'hw-squadcap', slot: 'headwear', name: 'Squad cap', rarity: 'epic', unlock: { kind: 'invite' }, style: 'cap', c1: '#7c3aed', c2: '#facc15' },
   { id: 'hw-crown', slot: 'headwear', name: 'Crown', rarity: 'legendary', unlock: streak(30), style: 'crown' },
   { id: 'hw-halo', slot: 'headwear', name: 'Halo', rarity: 'legendary', unlock: chest, style: 'halo' },
   { id: 'hw-party', slot: 'headwear', name: 'Party hat', rarity: 'common', unlock: free, style: 'party', c1: '#ec4899', c2: '#facc15' },

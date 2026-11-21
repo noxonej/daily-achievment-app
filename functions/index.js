@@ -7,10 +7,12 @@ const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const webpush = require('web-push');
 const { runOnce } = require('./sender');
+const { cleanProofs } = require('./cleanup');
 
 initializeApp();
 
 exports.sendReminders = onSchedule({ schedule: 'every 15 minutes', timeZone: 'UTC', memory: '256MiB' }, async () => {
+  await cleanProofs(getFirestore()).catch((e) => console.error('cleanup failed', e.message));
   const stats = await runOnce(getFirestore(), webpush);
   console.log('push round', stats);
 });

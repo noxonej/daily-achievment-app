@@ -40,6 +40,8 @@ function unlockLabel(item: AvatarItem): string {
       return 'Chest only';
     case 'box':
       return 'Daily box only';
+    case 'invite':
+      return 'Invite a friend';
   }
 }
 
@@ -132,7 +134,7 @@ export function Wardrobe() {
     }
   }
   const hint = (i: AvatarItem) =>
-    i.unlock.kind === 'chest' ? 'Win it from a chest' : i.unlock.kind === 'box' ? 'Daily box prize' : unlockLabel(i);
+    i.unlock.kind === 'chest' ? 'Win it from a chest' : i.unlock.kind === 'box' ? 'Daily box prize' : i.unlock.kind === 'invite' ? 'Invite a friend who stays 3 days' : unlockLabel(i);
 
   return (
     <div data-overlay className="fixed inset-0 z-[75] bg-canvas flex flex-col backdrop-in">
@@ -249,7 +251,7 @@ export function Wardrobe() {
                     <Avatar look={{ ...look, [item.slot]: item.id }} size={84} bare={item.slot !== 'backdrop'} framing={HEAD_SLOTS.has(item.slot) ? 'head' : 'full'} className={isOwnedItem || isTrying ? '' : 'saturate-[.6] opacity-80'} />
                     {!isOwnedItem && (
                       <span className="absolute bottom-1 right-1 w-6 h-6 rounded-lg bg-black/45 flex items-center justify-center text-[#fff]">
-                        <Icon name={item.unlock.kind === 'chest' ? 'df:chest' : item.unlock.kind === 'box' ? '📦' : '🔒'} size={12} />
+                        <Icon name={item.unlock.kind === 'chest' ? 'df:chest' : item.unlock.kind === 'box' ? '📦' : item.unlock.kind === 'invite' ? '🤝' : '🔒'} size={12} />
                       </span>
                     )}
                     {equipped && (

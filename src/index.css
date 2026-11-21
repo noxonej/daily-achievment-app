@@ -1534,3 +1534,8 @@ button.bg-amber-500:not(:disabled):active { transform: scale(0.97); }
 @media (pointer: coarse) {
   :is(input, select, textarea):is(.text-xs, .text-sm, .text-\[11px\], .text-\[14px\], .text-\[15px\]) { font-size: 16px; }
 }
+
+/* IRL stats radar (round 2): the shape grows out of the middle. */
+.radar-grow { animation: radar-grow 0.9s var(--ease-out, cubic-bezier(.2,.8,.2,1)) both; }
+@keyframes radar-grow { from { transform: scale(0.2); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .radar-grow { animation: none; } }

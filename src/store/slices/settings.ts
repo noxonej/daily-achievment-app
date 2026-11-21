@@ -1,4 +1,6 @@
 /** Reducer slice: Profile, settings, onboarding, import and reset. Returns undefined for actions it doesn't handle. */
+import { todayKey } from '../../lib/date';
+import { FIRST_WIN, FIRST_WIN_XP } from '../../lib/firstWin';
 import type { AppState, WeekdayId } from '../../lib/types';
 import {  untwisted } from '../../lib/dailyTwist';
 import {  normalizeLook } from '../../data/avatar';
@@ -28,7 +30,7 @@ export function settingsSlice(state: AppState, action: Action): AppState | undef
       }
       // Start small: 4 daily quests that match what they want to work on. The rest stay in the list
       // (paused) and can be switched on any time in Settings → Quests.
-      const keep = new Set(starterQuestTitles(action.profile.focusAreas));
+      const keep = new Set(action.keep?.length ? action.keep : starterQuestTitles(action.profile.focusAreas));
       // Water: about 2 L a day for girls and women, 2.5 L for boys and men (EFSA), in 250 ml glasses.
       const glasses = action.profile.gender === 'male' ? 10 : 8;
       const quests = state.quests.map((q) => {
@@ -42,6 +44,20 @@ export function settingsSlice(state: AppState, action: Action): AppState | undef
       return { ...state, onboarded: true, profile: action.profile, weekPlan: { ...plan, days }, quests, wildcardEnabled: true };
     }
 
+
+    case 'FIRST_WIN': {
+      // First quest in onboarding: it's done today, and a welcome bonus takes you to level 2.
+      if ((state.gifts ?? []).includes(FIRST_WIN)) return state;
+      const today = todayKey();
+      const log = state.dayLogs[today] ?? { date: today, completedQuestIds: [], xpEarned: 0, perfectDay: false, dailyQuestCount: 0 };
+      const task = { id: `first-${Date.now()}`, text: action.title.slice(0, 80), done: true };
+      return {
+        ...state,
+        gifts: [...(state.gifts ?? []), FIRST_WIN],
+        bonusXp: (state.bonusXp ?? 0) + FIRST_WIN_XP,
+        dayLogs: { ...state.dayLogs, [today]: { ...log, quickTasks: [...(log.quickTasks ?? []), task] } },
+      };
+    }
 
     case 'SET_PROFILE':
       return { ...state, profile: { ...state.profile, ...action.profile } };

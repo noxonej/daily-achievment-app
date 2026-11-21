@@ -3,6 +3,7 @@
  * each slice in turn and uses the first answer. Action types and the saved state shape are the
  * same as before the split (2026-11-19).
  */
+import { socialSlice } from './slices/social';
 import type { AppState } from '../lib/types';
 import { legendaryBonus, worldOf } from '../world/catalog';
 import type { Action } from './actions';
@@ -31,7 +32,7 @@ export {
   type NewGoalInput,
 } from './state';
 
-const SLICES = [questsSlice, rewardsSlice, worldSlice, planSlice, moneySlice, friendsSlice, wellbeingSlice, settingsSlice];
+const SLICES = [socialSlice, questsSlice, rewardsSlice, worldSlice, planSlice, moneySlice, friendsSlice, wellbeingSlice, settingsSlice];
 
 export function reducer(state: AppState, action: Action): AppState {
   // Legendary collection XP bonus for today's XP (see recomputeDailyLog in state.ts).

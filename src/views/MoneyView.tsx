@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { WealthPackCard } from '../components/money/WealthPackCard';
 import { SavePanel } from '../components/money/SavePanel';
 import { InfoTip } from '../components/Guide';
 import type { MoneyAccount, MoneyKind, SavingsGoal, SpendCategory } from '../lib/types';
@@ -166,6 +167,7 @@ export function MoneyView() {
                 onAddMoney={(g) => setTransferOpen({ fromKind: 'spending', toId: g.accountId })}
                 onTakeOut={(g) => setTransferOpen({ fromId: g.accountId, toKind: 'spending' })}
               />
+              <WealthPackCard />
               <TopTip onMore={() => setTab('learn')} />
               <button
                 onClick={() => setTab('tools')}

@@ -1,4 +1,6 @@
 import { settings } from '../lib/settingsNav';
+import { ChallengeToday } from '../components/today/ChallengeToday';
+import { StatRow } from '../components/stats/IrlStatsCard';
 import { EditQuestsRow } from '../components/EditQuestsRow';
 import { GettingStarted } from '../components/Guide';
 import { FriendsPeek } from '../components/FriendsPeek';
@@ -8,6 +10,7 @@ import { t } from '../lib/prefs';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { todayKey, formatDisplayDate } from '../lib/date';
+import { L } from '../lib/lang';
 import { QuestCard } from '../components/QuestCard';
 import { NoteQuestCard } from '../components/NoteQuestCard';
 import { MeasureQuestCard } from '../components/MeasureQuestCard';
@@ -197,6 +200,23 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
             )}
           </>
         }
+      />
+
+      <StatRow onOpen={() => onNavigate('you')} />
+      {(state.dayLogs[todayKey()]?.xpCapped ?? 0) > 0 && (
+        <p className="-mt-2 px-1 text-[11px] text-slate-400">
+          {L(
+            `Daily limit reached for one quest type: ${state.dayLogs[todayKey()]!.xpCapped} XP not counted. Spread quests across Body, Mind, Wealth, Discipline and Social.`,
+            `Pasiekta dienos riba vienam užduočių tipui: ${state.dayLogs[todayKey()]!.xpCapped} XP neįskaityta. Paskirstyk užduotis tarp Kūno, Proto, Turtų, Disciplinos ir Bendravimo.`,
+          )}
+        </p>
+      )}
+
+      <ChallengeToday
+        onOpen={() => {
+          setIntent('you-squads');
+          onNavigate('you');
+        }}
       />
 
       {(state.prefs?.scrollLock ?? 0) > 0 && (

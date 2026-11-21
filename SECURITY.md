@@ -22,6 +22,10 @@ https://github.com/noxonej/daily-achievment-app/security/advisories/new
 | What you finished (quests, runs, badges) | `activity/{uid}/items` | You and your friends | No |
 | Cheers | `cheers/{uid}/items` | Only you | No |
 | Public weekly board (only if you turn it on) | `boards/{week}/players/{uid}` | Anyone signed in | No |
+| Squads (name, members' first names) and squad feed | `squads/{code}`, `squads/{code}/feed` | Squad doc: anyone signed in who has the code; feed: members only | No |
+| Challenges (title, quests) and their boards | `challenges/{code}`, `.../players/{uid}` | Anyone with the link (no sign-in) | No |
+| Challenge photo proof (optional, ≤200 KB JPEG, first name, day) | `challenges/{code}/proofs/{uid}_{day}` | Only players on that challenge's board. Deleted after 7 days by the push sender; you can delete yours any time | No |
+| Who invited you, and your invite day counter (first name + up to 3 day numbers) | `invitedBy/{uid}`, `invites/{inviter}/from/{uid}` | You and the person who invited you. These can't be deleted (so one friend can't be paid out twice); "Delete my cloud data" blanks your name in it | No |
 | Cheating reports | `reports/{player}/from/{reporter}` | Only the admin (push sender) | No |
 | Notification plan + push address | `pushQueue/{random token}` | Only the push sender | No (no name or account in it) |
 | Apple Health steps (if you set up the Shortcut) | `stepsInbox/{random token}` | Whoever has the 32-character token (your app and Shortcut) | No (one number) |

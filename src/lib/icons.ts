@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  Sofa, Frame, LampFloor, Grid3x3, RectangleHorizontal, Users, Building2, Mic, Ear, Video, Flag, Puzzle, Send, PersonStanding, Cat,
+  Camera, Sofa, Frame, LampFloor, Grid3x3, RectangleHorizontal, Users, Building2, Mic, Ear, Video, Flag, Puzzle, Send, PersonStanding, Cat,
   Activity, Archive, Award, Backpack, Banknote, Bath, Bed, BedDouble, Bell, BookOpen, Brush, Bus, Cake, Calculator,
   Calendar, CalendarDays, Car, ChartColumn, Check, ChefHat, CircleCheck, CircleDashed, Clapperboard, ClipboardList,
   Cloud, CloudSun, Coffee, Compass, CookingPot, Crown, CupSoda, Diamond, Dices, Dog, Download, Droplet, Dumbbell,
@@ -43,7 +43,7 @@ const EMOJI_ICONS: Record<string, LucideIcon> = {
   '📴': PhoneOff, '📔': Notebook, '🍜': Soup, '🚶': Footprints, '🗄': Archive, '😊': Smile, '📵': PhoneOff,
   '✏': Pencil, '✉': Mail, '🚿': ShowerHead, '🗂': FolderOpen, '🌬': Wind, '🔮': Sparkle, '👨‍🍳': ChefHat,
   '👨': User, '🔧': Wrench, '💠': Diamond, '🌠': Sparkles, '☄': Orbit, '🎂': Cake, '🍲': CookingPot,
-  '📮': Mailbox, '🧼': Bath, '🥤': CupSoda, '🗒': StickyNote, '🤝': Handshake, '🥾': Footprints, '🌤': CloudSun,
+  '📷': Camera, '🔗': Link, '❤': Heart, '📮': Mailbox, '🧼': Bath, '🥤': CupSoda, '🗒': StickyNote, '🤝': Handshake, '🥾': Footprints, '🌤': CloudSun,
   '🙌': Hand, '🔁': Repeat,
   '👥': Users, '🏢': Building2, '🎤': Mic, '📲': Smartphone, '👂': Ear, '💶': Banknote, '📨': Send, '👋': Hand, '🎥': Video, '🧍': PersonStanding, '🦁': Cat, '🙋': Hand, '🏁': Flag, '🧩': Puzzle,
   // UI-only ids (not used as saved data)

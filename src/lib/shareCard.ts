@@ -1,4 +1,5 @@
 import { APP_NAME, APP_TAGLINE } from './brand';
+import { cardLink, inviteCode } from './shareCards';
 
 export interface ShareCardData {
   title: string;
@@ -66,9 +67,14 @@ export async function drawShareCard(d: ShareCardData): Promise<Blob> {
   g.fillStyle = 'rgba(255,255,255,0.75)';
   g.font = font(600, 42);
   g.fillText(d.footer, W / 2, H - 230);
+  // The app's address and your invite code, so every share can bring a friend (B4).
+  const code = inviteCode();
   g.fillStyle = '#5eead4';
   g.font = font(700, 40);
-  g.fillText(APP_TAGLINE, W / 2, H - 160);
+  g.fillText(code ? `Add me: ${code}` : APP_TAGLINE, W / 2, H - 160);
+  g.fillStyle = 'rgba(255,255,255,0.6)';
+  g.font = font(600, 32);
+  g.fillText(cardLink(code), W / 2, H - 105);
 
   return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not make the image.'))), 'image/png'));
 }

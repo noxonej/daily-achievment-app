@@ -41,6 +41,8 @@ export interface Quest {
   measure?: QuestMeasure;
   /** Today's daily twist (a slightly different amount or version), with what to go back to tomorrow. */
   twist?: { date: string; baseTitle: string; baseDescription?: string; baseTarget?: number; baseNoteList?: number };
+  /** IRL stats this quest grows (custom quests; built-in ones use their category). Added round 2, optional. */
+  stats?: Array<'body' | 'mind' | 'wealth' | 'discipline' | 'social'>;
 }
 
 export type GoalTimeframe = 'weekly' | 'monthly' | 'yearly' | 'custom';
@@ -107,6 +109,8 @@ export interface DayLog {
   date: string;
   completedQuestIds: string[];
   xpEarned: number;
+  /** XP held back today by the per-type daily cap (B8, round 2). Optional. */
+  xpCapped?: number;
   perfectDay: boolean;
   dailyQuestCount: number;
   /** Notes written on individual quests (e.g. Gratitude x3), keyed by quest id. */
@@ -511,6 +515,38 @@ export interface AppState {
   createdAt: string;
   /** Home, garage and vehicles (added in content v4; missing on older saves). */
   world?: WorldState;
+  /** Squads you're in, by their join code (round 2, optional). */
+  squads?: string[];
+  /** Challenges you joined (round 2, optional). */
+  challenges?: JoinedChallenge[];
+  /** Invite rewards: who invited you, and rewards already paid (round 2, optional). */
+  invite?: { by?: string; claimed?: string[] };
+}
+
+/** A challenge quest: what to do each day. */
+export interface ChallengeQuest {
+  title: string;
+  icon: string;
+}
+
+/** A challenge someone hosts (e.g. an athlete): fixed quests for 7, 14 or 30 days. */
+export interface Challenge {
+  code: string;
+  title: string;
+  hostName: string;
+  days: 7 | 14 | 30;
+  /** First day, YYYY-MM-DD. */
+  start: string;
+  quests: ChallengeQuest[];
+  /** Finish badge icon. */
+  badge: string;
+}
+
+/** A challenge you joined, with what you ticked each day (quest indexes). */
+export interface JoinedChallenge extends Challenge {
+  joinedAt: string;
+  done: Record<string, number[]>;
+  finishedAt?: string;
 }
 
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'legend';
