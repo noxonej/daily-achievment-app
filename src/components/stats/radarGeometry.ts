@@ -16,7 +16,9 @@ export function point(cx: number, cy: number, r: number, i: number): [number, nu
  */
 export function chartMax(stats: IrlStats): number {
   const best = Math.max(...STAT_IDS.map((id) => stats[id].level));
-  return Math.min(100, Math.max(10, Math.ceil((best + 2) / 10) * 10));
+  // Brand new players (level 1–7): a small ring so their first quests visibly grow the shape.
+  if (best < 8) return Math.max(4, best + 2);
+  return Math.min(100, Math.ceil((best + 2) / 10) * 10);
 }
 
 /** 0–1 per stat (a little inner floor so the shape never collapses to a dot). */

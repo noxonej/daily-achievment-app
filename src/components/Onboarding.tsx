@@ -1,55 +1,54 @@
-import { Switch } from './Switch';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useApp } from '../store/AppContext';
 import type { FocusArea, Profile } from '../lib/types';
 import { FOCUS_AREAS, buildRoutine } from '../lib/routine';
-import { formatPlanTime, planCategory } from '../lib/weekPlan';
-import { Logo, Wordmark } from './Logo';
 import { Icon } from './Icon';
 import { DEFAULT_LOOK, normalizeLook } from '../data/avatar';
+import { untwisted } from '../lib/dailyTwist';
+import { starterQuestTitles } from '../store/state';
+import { questStats, STATS } from '../lib/irlStats';
+import { FIRST_WIN, FIRST_WIN_TITLE, FIRST_WIN_XP } from '../lib/firstWin';
+import { L, isLt } from '../lib/lang';
+import { logEvent } from '../lib/analytics';
+import { useIrlStats } from './stats/useIrlStats';
+import { StatsRadar } from './stats/StatsRadar';
+import { Burst } from './fx/Burst';
 
-// Kept short on purpose: about you, your day, then your plan. The character and colours are picked
-// for you (change them any time in Rewards and Settings).
-type Step = 'welcome' | 'focus' | 'day' | 'preview';
-const STEPS: Step[] = ['welcome', 'focus', 'day', 'preview'];
+// Round 2 (B5): three screens, and you finish a real quest before the app even opens.
+// 1. what you want to level up, 2. pick 3 daily quests, 3. do your first quest right now.
+// Wake/bed times and school hours use sensible defaults (07:00, 22:30, 8–15); change them in Plan.
+type Step = 'goal' | 'quests' | 'first';
+const STEPS: Step[] = ['goal', 'quests', 'first'];
 
-/**
- * The app's look follows what you want to work on: the first goal you pick sets the colour and
- * background (you can still change them on the character step or in Settings).
- */
-const timeInput =
-  'time-input block w-full min-w-0 max-w-full rounded-xl bg-white/5 border border-white/10 px-3 h-12 text-base text-white focus:outline-none focus:border-amber-400/60';
-
-/** First-run setup: a few questions, then a personal week plan is built and the app opens. */
-const GENDERS: Array<{ id: NonNullable<Profile['gender']>; label: string }> = [
-  { id: 'female', label: 'Girl' },
-  { id: 'male', label: 'Guy' },
-  { id: 'unsaid', label: 'Rather not say' },
+/** First-run setup: pick a goal, pick 3 quests, finish your first quest. About 30 seconds. */
+const GENDERS: Array<{ id: NonNullable<Profile['gender']>; label: string; lt: string }> = [
+  { id: 'female', label: 'Girl', lt: 'Mergina' },
+  { id: 'male', label: 'Guy', lt: 'Vaikinas' },
+  { id: 'unsaid', label: 'Rather not say', lt: 'Nesakysiu' },
 ];
 
 export function Onboarding() {
-  const { state, dispatch } = useApp();
-  // If the name was already given when the account was created, skip straight to the goals.
-  const [step, setStep] = useState<Step>(() => (state.profile?.name ? 'focus' : 'welcome'));
+  const { state, dispatch, stats } = useApp();
+  const [step, setStep] = useState<Step>('goal');
   const [dir, setDir] = useState<'right' | 'left'>('right');
   const [name, setName] = useState(state.profile?.name ?? '');
-  // Only ask for a name if the account didn't already give one.
   const [askName] = useState(() => !state.profile?.name);
   const [areas, setAreas] = useState<FocusArea[]>([]);
-  const [wake, setWake] = useState('07:00');
-  const [bed, setBed] = useState('22:30');
-  const [hasBusy, setHasBusy] = useState(true);
-  const [busyStart, setBusyStart] = useState('08:00');
-  const [busyEnd, setBusyEnd] = useState('15:00');
-  const [remind, setRemind] = useState(true);
-  const [lockApps, setLockApps] = useState(false);
   const [gender, setGender] = useState<NonNullable<Profile['gender']> | undefined>(state.profile?.gender);
-
+  const [picked, setPicked] = useState<string[] | null>(null);
+  const [won, setWon] = useState(() => (state.gifts ?? []).includes(FIRST_WIN));
+  const [started] = useState(() => Date.now());
   const index = STEPS.indexOf(step);
-  const routine = useMemo(
-    () => buildRoutine({ focusAreas: areas, wakeTime: wake, bedTime: bed, busy: hasBusy ? { start: busyStart, end: busyEnd } : null }),
-    [areas, wake, bed, hasBusy, busyStart, busyEnd],
-  );
+
+  // Quests to pick from: the ones that match the goals first, then other built-in daily quests.
+  const options = useMemo(() => {
+    const daily = state.quests.filter((q) => q.frequency === 'daily' && !q.custom && !q.wildcardDate);
+    const titles = new Map(daily.map((q) => [untwisted(q).title, q]));
+    const first = starterQuestTitles(areas).filter((t) => titles.has(t));
+    const rest = [...titles.keys()].filter((t) => !first.includes(t));
+    return [...first, ...rest].slice(0, 9).map((t) => titles.get(t)!);
+  }, [state.quests, areas]);
+  const chosen = picked ?? options.slice(0, 3).map((q) => untwisted(q).title);
 
   function go(next: Step) {
     setDir(STEPS.indexOf(next) > index ? 'right' : 'left');
@@ -58,17 +57,14 @@ export function Onboarding() {
 
   /** Small touches that match the answers (starting hair). */
   function matchLook() {
-    // A girl's starting character gets a ponytail instead of the default twists (only if untouched).
     if (gender === 'female' && normalizeLook(state.character).hair === DEFAULT_LOOK.hair) {
       dispatch({ type: 'EQUIP_COSMETIC', slot: 'hair', itemId: 'hair-ponytail' });
     }
-    // Colours: every new account starts on the Squzo look (Obsidian + Flame), where each tab has its own glow.
   }
 
-  function finish(withPlan: boolean, askReminders = true) {
-    // Reminders are on by default: ask the phone for permission now (this tap counts as the
-    // person's go-ahead), and switch the app's reminders on if they said yes.
-    if (askReminders && remind && typeof Notification !== 'undefined') {
+  function finish(skip = false) {
+    // Reminders are on by default: this tap counts as the go-ahead to ask the phone.
+    if (!skip && typeof Notification !== 'undefined') {
       try {
         if (Notification.permission === 'granted') dispatch({ type: 'SET_PREFS', prefs: { nudges: true } });
         else if (Notification.permission === 'default')
@@ -79,99 +75,66 @@ export function Onboarding() {
         // notifications are optional
       }
     }
-    if (lockApps) dispatch({ type: 'SET_PREFS', prefs: { scrollLock: 3 } });
+    const wakeTime = '07:00';
+    const bedTime = '22:30';
+    const plan = buildRoutine({ focusAreas: areas, wakeTime, bedTime, busy: { start: '08:00', end: '15:00' } });
     dispatch({
       type: 'COMPLETE_ONBOARDING',
-      profile: { name: name.trim(), focusAreas: areas, wakeTime: wake, bedTime: bed, ...(gender ? { gender } : {}) },
-      plan: withPlan ? routine : { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+      profile: { name: name.trim(), focusAreas: areas, wakeTime, bedTime, ...(gender ? { gender } : {}) },
+      plan,
+      keep: skip ? undefined : chosen,
     });
+    logEvent('onboarding_done', { secs: Math.round((Date.now() - started) / 1000), skip });
   }
 
   function toggleArea(a: FocusArea) {
     setAreas((xs) => (xs.includes(a) ? xs.filter((x) => x !== a) : [...xs, a]));
+    setPicked(null);
+  }
+  function toggleQuest(title: string) {
+    setPicked(chosen.includes(title) ? chosen.filter((t) => t !== title) : [...chosen, title].slice(-3));
   }
 
   return (
     <div className="fixed inset-0 z-[90] bg-canvas bg-grid overflow-y-auto">
       <div className="min-h-full max-w-md mx-auto px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col">
-        {step !== 'welcome' && (
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={() => go(STEPS[Math.max(0, index - 1)])}
-              aria-label="Back"
-              className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10"
-            >
-              <Icon name="⬅" size={20} />
-            </button>
-            <div className="flex-1 flex gap-1.5" aria-label={`Step ${index} of ${STEPS.length - 1}`}>
-              {STEPS.slice(1).map((s, i) => (
-                <span
-                  key={s}
-                  className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${i < index ? 'bg-amber-400' : 'bg-white/10'}`}
-                />
-              ))}
-            </div>
-            <button onClick={() => finish(false, false)} className="text-sm font-semibold text-slate-500 hover:text-slate-300 px-1">
-              Skip
-            </button>
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => go(STEPS[Math.max(0, index - 1)])}
+            aria-label="Back"
+            disabled={index === 0 || won}
+            className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10 disabled:opacity-0"
+          >
+            <Icon name="⬅" size={20} />
+          </button>
+          <div className="flex-1 flex gap-1.5" aria-label={`Step ${index + 1} of ${STEPS.length}`}>
+            {STEPS.map((s, i) => (
+              <span key={s} className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${i <= index ? 'bg-amber-400' : 'bg-white/10'}`} />
+            ))}
           </div>
-        )}
+          <button onClick={() => finish(true)} className="text-sm font-semibold text-slate-500 hover:text-slate-300 px-1">
+            {L('Skip', 'Praleisti')}
+          </button>
+        </div>
 
         <div key={step} className={`flex-1 flex flex-col ${dir === 'right' ? 'animate-view-right' : 'animate-view-left'}`}>
-          {step === 'welcome' && (
-            <>
-              <div className="flex-1 flex flex-col items-center justify-center text-center pt-10">
-                <Logo size={84} animated className="drop-shadow-[0_12px_32px_rgba(245,158,11,0.35)]" />
-                <Wordmark className="text-3xl mt-5" />
-                <p className="text-slate-300 mt-3 text-lg leading-snug max-w-xs">
-                  Become a better you, one day at a time.
-                </p>
-                <ul className="mt-8 space-y-3 text-left w-full max-w-xs stagger">
-                  <Feature icon="🎯" title="Daily quests" text="Small wins, streaks and levels" />
-                  <Feature icon="📅" title="A plan for your week" text="Made for you in 3 taps" />
-                  <Feature icon="💰" title="Money and big goals" text="Save, read, train, learn" />
-                </ul>
-              </div>
-              <Primary onClick={() => go('focus')}>Start</Primary>
-              <p className="text-center text-xs text-slate-500 mt-3">3 quick questions, about 30 seconds.</p>
-            </>
-          )}
-
-          {step === 'focus' && (
+          {step === 'goal' && (
             <>
               <Title
-                title={name.trim() ? `What do you want to get better at, ${name.trim()}?` : 'What do you want to get better at?'}
-                sub="Pick one or more."
+                title={name.trim() ? L(`What do you want to level up, ${name.trim()}?`, `Ką nori patobulinti, ${name.trim()}?`) : L('What do you want to level up?', 'Ką nori patobulinti?')}
+                sub={L('Pick one or more. Squzo turns it into daily quests.', 'Pasirink vieną ar kelis. Squzo pavers tai kasdienėmis užduotimis.')}
               />
               {askName && (
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your first name (optional)"
-                  aria-label="Your first name"
+                  placeholder={L('Your first name (optional)', 'Tavo vardas (nebūtina)')}
+                  aria-label={L('Your first name', 'Tavo vardas')}
                   maxLength={24}
                   autoComplete="given-name"
                   className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 h-12 text-base text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/60 mb-4"
                 />
               )}
-              <div className="mb-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">I'm a</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {GENDERS.map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => setGender(g.id)}
-                      aria-pressed={gender === g.id}
-                      className={`rounded-xl border px-2 py-2.5 text-sm font-semibold transition ${
-                        gender === g.id ? 'border-amber-400 bg-amber-500/10 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/25'
-                      }`}
-                    >
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
               <div className="grid grid-cols-2 gap-2.5">
                 {FOCUS_AREAS.map((a) => {
                   const on = areas.includes(a.id);
@@ -180,15 +143,9 @@ export function Onboarding() {
                       key={a.id}
                       onClick={() => toggleArea(a.id)}
                       aria-pressed={on}
-                      className={`relative text-left rounded-2xl border p-3.5 transition ${
-                        on ? 'border-amber-400 bg-amber-500/10' : 'border-white/10 bg-white/[0.03] hover:border-white/25'
-                      }`}
+                      className={`relative text-left rounded-2xl border p-3.5 transition ${on ? 'border-amber-400 bg-amber-500/10' : 'border-white/10 bg-white/[0.03] hover:border-white/25'}`}
                     >
-                      <span
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 transition ${
-                          on ? 'bg-amber-500 text-white' : 'bg-white/5 text-amber-300'
-                        }`}
-                      >
+                      <span className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 transition ${on ? 'bg-amber-500 text-white' : 'bg-white/5 text-amber-300'}`}>
                         <Icon name={a.icon} size={20} />
                       </span>
                       <span className="block text-sm font-bold text-white leading-tight">{a.label}</span>
@@ -202,93 +159,118 @@ export function Onboarding() {
                   );
                 })}
               </div>
+              <div className="mt-4 flex gap-1.5" role="radiogroup" aria-label={L("I'm a", 'Aš esu')}>
+                {GENDERS.map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={gender === g.id}
+                    onClick={() => setGender(g.id)}
+                    className={`flex-1 rounded-full border px-2 py-1.5 text-xs font-semibold transition ${gender === g.id ? 'border-amber-400 bg-amber-500/10 text-white' : 'border-white/10 text-slate-400'}`}
+                  >
+                    {isLt() ? g.lt : g.label}
+                  </button>
+                ))}
+              </div>
               <div className="flex-1 min-h-6" />
               <Primary
                 onClick={() => {
                   matchLook();
-                  go('day');
+                  go('quests');
                 }}
                 disabled={areas.length === 0}
               >
-                {areas.length === 0 ? 'Pick at least one' : 'Continue'}
+                {areas.length === 0 ? L('Pick at least one', 'Pasirink bent vieną') : L('Continue', 'Toliau')}
               </Primary>
             </>
           )}
 
-          {step === 'day' && (
+          {step === 'quests' && (
             <>
-              <Title title="What does your day look like?" sub="Rough times are fine. You can change everything later." />
-              <div className="time-grid">
-                <TimeField label="I wake up at" icon="🌅" value={wake} onChange={setWake} />
-                <TimeField label="I go to bed at" icon="🌙" value={bed} onChange={setBed} />
-              </div>
-              <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-white">School or work on weekdays?</p>
-                    <p className="text-xs text-slate-400">We'll plan around it.</p>
-                  </div>
-                  <Switch on={hasBusy} onChange={setHasBusy} label="School or work on weekdays" />
-                </div>
-                {hasBusy && (
-                  <div className="time-grid mt-4">
-                    <TimeField label="Starts" value={busyStart} onChange={setBusyStart} />
-                    <TimeField label="Ends" value={busyEnd} onChange={setBusyEnd} />
-                  </div>
-                )}
-              </div>
+              <Title title={L('Pick 3 daily quests', 'Pasirink 3 kasdienes užduotis')} sub={L('Small and doable. You can add more later.', 'Mažos ir įmanomos. Daugiau pridėsi vėliau.')} />
+              <ul className="space-y-2">
+                {options.map((q) => {
+                  const title = untwisted(q).title;
+                  const on = chosen.includes(title);
+                  const st = questStats(q)[0];
+                  return (
+                    <li key={q.id}>
+                      <button
+                        onClick={() => toggleQuest(title)}
+                        aria-pressed={on}
+                        className={`w-full flex items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition ${on ? 'border-amber-400 bg-amber-500/10' : 'border-white/10 bg-white/[0.03]'}`}
+                      >
+                        <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${on ? 'bg-amber-500 text-white' : 'bg-white/5 text-amber-300'}`}>
+                          <Icon name={q.icon} size={18} />
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-[15px] font-bold text-white truncate">{title}</span>
+                          <span className="block text-xs font-semibold" style={{ color: STATS[st].color }}>
+                            +{STATS[st].label}
+                          </span>
+                        </span>
+                        <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${on ? 'bg-amber-500 border-amber-500 text-white' : 'border-white/20'}`}>{on && <Icon name="✓" size={13} strokeWidth={3} />}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
               <div className="flex-1 min-h-6" />
-              <Primary onClick={() => go('preview')}>Continue</Primary>
+              <Primary onClick={() => go('first')} disabled={chosen.length === 0}>
+                {L(`Continue with ${chosen.length}`, `Toliau su ${chosen.length}`)}
+              </Primary>
             </>
           )}
 
-          {step === 'preview' && (
-            <>
-              <Title title="Your week is ready" sub="Here's Monday. Tap anything later to change it." />
-              <ul className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/[0.06] rows-stagger">
-                {routine.mon.map((i) => (
-                  <li key={i.time + i.text} className="flex items-center gap-3 px-4 py-2.5">
-                    <span className={`w-1 self-stretch rounded-full ${planCategory(i.category)?.bar ?? 'bg-slate-600'}`} />
-                    <span className="w-[4.5rem] shrink-0 text-sm font-bold tabular-nums text-amber-300">{formatPlanTime(i.time!)}</span>
-                    <span className="text-[15px] text-slate-100">{i.text}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-xs text-slate-500 mt-3 text-center">Weekends get a later start and free time.</p>
-              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/[0.06]">
-                <SwitchRow icon="🔔" title="Reminders" text="A morning boost and an evening check." on={remind} onChange={setRemind} />
-                <SwitchRow icon="🔒" title="Quests before scrolling" text="Social apps only after 3 quests." on={lockApps} onChange={setLockApps} />
-              </div>
-              <p className="text-xs text-slate-500 mt-3 text-center leading-relaxed">
-                <Icon name="🏆" size={12} className="inline -mt-0.5 mr-1 text-amber-300" />
-                Play fair: only tick a quest when you really did it. The only person you'd fool is you.
-              </p>
-              <div className="flex-1 min-h-6" />
-              <Primary onClick={() => finish(true)}>Start my week</Primary>
-              <button onClick={() => finish(false)} className="mt-2 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200">
-                I'll make my own plan
-              </button>
-            </>
-          )}
+          {step === 'first' && <FirstWin won={won} level={stats.level} onWin={() => {
+            dispatch({ type: 'FIRST_WIN', title: FIRST_WIN_TITLE });
+            setWon(true);
+            logEvent('quest_done');
+          }} onFinish={() => finish()} />}
         </div>
       </div>
     </div>
   );
 }
 
-function Feature({ icon, title, text }: { icon: string; title: string; text: string }) {
+/** Screen 3: do one tiny quest right now, see the XP land, level 2 and your stats appear. */
+function FirstWin({ won, level, onWin, onFinish }: { won: boolean; level: number; onWin: () => void; onFinish: () => void }) {
+  const irl = useIrlStats();
   return (
-    <li className="flex items-center gap-3">
-      <span className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center">
-        <Icon name={icon} size={20} />
-      </span>
-      <span>
-        <span className="block text-sm font-bold text-white">{title}</span>
-        <span className="block text-xs text-slate-400">{text}</span>
-      </span>
-    </li>
+    <>
+      <Title
+        title={won ? L(`Level ${level}! You're on your way.`, `${level} lygis! Pradėjai.`) : L('Your first quest, right now', 'Tavo pirma užduotis, dabar')}
+        sub={won ? L('Every real quest grows these stats.', 'Kiekviena tikra užduotis augina šiuos rodiklius.') : L('Go get a glass of water. Tap when it’s done.', 'Atsigerk stiklinę vandens. Paspausk, kai baigsi.')}
+      />
+      {!won ? (
+        <button
+          onClick={onWin}
+          className="relative mx-auto mt-4 w-56 h-56 rounded-full bg-gradient-to-b from-sky-400 to-sky-600 text-white flex flex-col items-center justify-center gap-2 shadow-[0_20px_60px_-15px_rgba(56,189,248,0.8)] active:scale-95 transition-transform"
+        >
+          <Icon name="💧" size={64} />
+          <span className="font-display text-lg font-bold">{L('I drank it', 'Išgėriau')}</span>
+          <span className="text-sm font-bold opacity-90">+15 XP · +{L('Body', 'Kūnas')}</span>
+        </button>
+      ) : (
+        <div className="relative flex flex-col items-center">
+          <Burst size={2} sparks={14} color="#fbbf24" />
+          <p className="font-display text-5xl font-black text-amber-300 animate-num-pop">+{FIRST_WIN_XP + 15} XP</p>
+          <div className="text-slate-300 mt-1">
+            <StatsRadar stats={irl} size={290} />
+          </div>
+        </div>
+      )}
+      <div className="flex-1 min-h-6" />
+      {won && <Primary onClick={onFinish}>{L('Start my day', 'Pradėti dieną')}</Primary>}
+      <p className="text-xs text-slate-500 mt-3 text-center leading-relaxed">
+        <Icon name="🏆" size={12} className="inline -mt-0.5 mr-1 text-amber-300" />
+        {L("Play fair: only tick a quest when you really did it. The only person you'd fool is you.", 'Žaisk sąžiningai: pažymėk tik tai, ką tikrai padarei.')}
+      </p>
+    </>
   );
 }
+
 
 function Title({ title, sub }: { title: string; sub: string }) {
   return (
@@ -311,29 +293,4 @@ function Primary({ onClick, disabled, children }: { onClick: () => void; disable
   );
 }
 
-function TimeField({ label, icon, value, onChange }: { label: string; icon?: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label className="block min-w-0">
-      <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-300 mb-1.5">
-        {icon && <Icon name={icon} size={15} className="text-amber-300" />}
-        {label}
-      </span>
-      <input type="time" value={value} onChange={(e) => onChange(e.target.value || value)} className={timeInput} />
-    </label>
-  );
-}
 
-function SwitchRow({ icon, title, text, on, onChange }: { icon: string; title: string; text: string; on: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3">
-      <div className="min-w-0">
-        <p className="flex items-center gap-2 text-sm font-bold text-white">
-          <Icon name={icon} size={16} className="shrink-0 text-amber-300" />
-          {title}
-        </p>
-        <p className="text-xs text-slate-400 mt-0.5">{text}</p>
-      </div>
-      <Switch on={on} onChange={onChange} label={title} />
-    </div>
-  );
-}

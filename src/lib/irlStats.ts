@@ -166,6 +166,8 @@ export function statPoints(state: AppState, extras: StatExtras = {}, since?: str
   for (const [d, m] of Object.entries(state.focusMinutes ?? {})) if (!since || d >= since) pts.discipline += Math.min(240, m || 0) / 2;
   for (const n of state.sleep?.log ?? []) if ((!since || n.date >= since) && n.hours >= 7) pts.body += 10;
   for (const d of Object.keys(state.moods ?? {})) if (!since || d >= since) pts.mind += 3;
+  // Onboarding's first quest (a glass of water) counts for Body.
+  if (!since && (state.gifts ?? []).includes('first-win')) pts.body += 15;
   // Money habits: every day you tracked spending, and every savings goal you reached.
   const trackedDays = new Set((state.money?.expenses ?? []).filter((e) => !since || e.date >= since).map((e) => e.date));
   pts.wealth += trackedDays.size * 5;

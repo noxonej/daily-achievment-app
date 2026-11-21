@@ -79,7 +79,11 @@ export type Action =
       type: 'COMPLETE_ONBOARDING';
       profile: Profile;
       plan: Record<WeekdayId, Array<Omit<PlanItem, 'id'>>>;
+      /** The daily quests picked in onboarding (titles). Without it, starter quests are chosen. */
+      keep?: string[];
     }
+  /** Onboarding's "do your first quest right now" (once per account). */
+  | { type: 'FIRST_WIN'; title: string }
   | { type: 'SET_PROFILE'; profile: Partial<Profile> }
   | { type: 'SET_MOOD'; date: string; mood: Mood | null }
   | { type: 'SET_APPEARANCE'; appearance: Partial<Appearance> }
