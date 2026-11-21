@@ -117,6 +117,15 @@ service cloud.firestore {
       allow delete: if signedIn() && me() == uid;
     }
 
+    // "Report cheating" on the public board: one note per reporter per player, readable only by the
+    // admin (push sender), so reports can't be used to see who reported whom.
+    match /reports/{target}/from/{from} {
+      allow create: if signedIn() && me() == from && target != from
+        && d().keys().hasOnly(['week', 'weekXp', 'level', 'at'])
+        && str(d().week, 10) && numIn(d().weekXp, 0, 1000000) && numIn(d().level, 0, 1000)
+        && d().at == request.time;
+    }
+
     // Push reminders: your reminder plan + push address, written by the app, read by the server.
     match /push/{uid} {
       allow read, write: if signedIn() && me() == uid;

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { plausibleWeekXp } from './fairPlay';
 import { safePicture } from './url';
 import type { AppState, Sharing } from './types';
 import { db, friendsConfigured, friendsSignIn, clearSession, loadSession } from './firebase';
@@ -375,7 +376,11 @@ async function syncGlobal(ctx: Ctx, me: FriendProfile) {
   if (Date.now() - globalAt < 10 * 60_000 && current.global) return;
   globalAt = Date.now();
   const rows = await api.query<unknown>(`boards/${weekKey()}`, 'players', { orderBy: 'weekXp', limit: 50 }).catch(() => []);
-  const global = rows.flatMap((r) => asPlayer(r.id, r.data) ?? []);
+  // Fair play (A7): hide numbers that aren't possible for that level / day, and anyone you reported.
+  const hidden = new Set(readJson<string[]>(reportedKey(ctx.accountId), []));
+  const global = rows
+    .flatMap((r) => asPlayer(r.id, r.data) ?? [])
+    .filter((p) => p.uid === me.uid || (!hidden.has(p.uid) && plausibleWeekXp(p.level, p.weekXp)));
   const startLevel = rankForLevel(ctx.level).startLevel;
   const cacheKey = `dayforge-rarity-${ctx.accountId}`;
   let rarity = readJson<RealRarity | null>(cacheKey, null);
@@ -526,6 +531,25 @@ export async function removeFriend(uid: string) {
   await api.remove(`friends/${me.uid}/list/${uid}`);
   await api.remove(`friends/${uid}/list/${me.uid}`).catch(() => undefined);
   set({ friends: current.friends.filter((f) => f.uid !== uid), feed: current.feed.filter((f) => f.uid !== uid) });
+}
+
+const reportedKey = (acc: string) => `dayforge-reported-${acc}`;
+
+/**
+ * Reports a leaderboard player as cheating: hides them on this phone right away and leaves a note
+ * (reports/{them}/from/{me}) that only the admin can read.
+ */
+export async function reportPlayer(uid: string) {
+  const ctx = ctxRef;
+  const me = current.me;
+  if (!ctx || !me || uid === me.uid) return;
+  const list = readJson<string[]>(reportedKey(ctx.accountId), []);
+  if (!list.includes(uid)) writeJson(reportedKey(ctx.accountId), [...list, uid].slice(-200));
+  const player = (current.global ?? []).find((p) => p.uid === uid);
+  set({ global: (current.global ?? []).filter((p) => p.uid !== uid) });
+  await db(ctx.accountId)
+    .setStamped(`reports/${uid}/from/${me.uid}`, { week: weekKey(), weekXp: clamp(player?.weekXp ?? 0, 1000000), level: clamp(player?.level ?? 0, 1000) }, 'at')
+    .catch(() => undefined);
 }
 
 const cheeredKey = (acc: string) => `dayforge-cheered-${acc}`;

@@ -17,6 +17,7 @@ import {
   inviteLink,
   refreshFriends,
   removeFriend,
+  reportPlayer,
   useFriends,
   weekXp,
   type ActivityItem,
@@ -112,6 +113,7 @@ function Connected() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [removing, setRemoving] = useState<FriendProfile | null>(null);
+  const [reporting, setReporting] = useState<{ uid: string; name: string } | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const share: Sharing = { ...DEFAULT_SHARING, ...(state.sharing ?? {}) };
   const byUid = new Map(f.friends.map((p) => [p.uid, p]));
@@ -341,6 +343,11 @@ function Connected() {
                 <span className="text-xs text-slate-500 font-normal"> · LV {p.level}</span>
               </span>
               <span className="font-display font-bold text-white tabular-nums text-sm">{p.weekXp} XP</span>
+              {p.uid !== me.uid && (
+                <button onClick={() => setReporting({ uid: p.uid, name: p.name })} aria-label={`Report ${p.name} for cheating`} className="w-7 h-7 -mr-1 rounded-lg flex items-center justify-center text-slate-600 hover:text-amber-300">
+                  <Icon name="🏁" size={13} />
+                </button>
+              )}
             </li>
           ))}
         </ol>
@@ -411,6 +418,19 @@ function Connected() {
           </div>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={!!reporting}
+        title={`Report ${reporting?.name}?`}
+        message="If these numbers look fake, we'll hide this player on your phone right away and check the report. Fair play keeps the race fun."
+        confirmLabel="Report"
+        danger
+        onCancel={() => setReporting(null)}
+        onConfirm={() => {
+          if (reporting) void reportPlayer(reporting.uid);
+          setReporting(null);
+        }}
+      />
 
       <ConfirmDialog
         open={!!removing}
