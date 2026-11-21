@@ -24,6 +24,7 @@ import { AutoSteps } from './components/AutoSteps';
 import { rememberInvite, useFriendsEngine } from './lib/friends';
 import { readJoinLink } from './lib/links';
 import { rememberInviteReward, useInviteEngine } from './lib/invites';
+import { Paywall } from './components/Paywall';
 import { FriendToasts } from './components/FriendToasts';
 import { setIntent } from './lib/intents';
 import { useSettingsPage } from './lib/settingsNav';
@@ -180,6 +181,7 @@ export default function App() {
           <b>Couldn't save on this phone.</b> Its storage is full. Your changes work for now, but export a backup in Settings → Data and free some space.
         </div>
       )}
+      <Paywall />
       <FriendToasts
         onOpen={() => {
           setIntent('you-friends');

@@ -20,6 +20,7 @@ import { timeAgo } from './FriendsView';
 import type { Challenge, JoinedChallenge } from '../lib/types';
 import { premiumLocked } from '../lib/premium';
 import { paywall } from '../lib/paywall';
+import { PremiumTag } from '../components/Paywall';
 
 const card = 'rounded-[24px] border border-white/10 bg-white/[0.03] p-4';
 const input = 'w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-white placeholder:text-slate-500 focus:outline-none focus:border-[var(--mood2)]';
@@ -138,6 +139,7 @@ function Challenges({ pending }: { pending?: string }) {
         >
           <Icon name="➕" size={15} />
           {L('Host your own challenge', 'Sukurk savo iššūkį')}
+          <PremiumTag locked={premiumLocked('create-challenge')} />
         </button>
       </div>
       <CreateChallenge open={creating} onClose={() => setCreating(false)} onMade={(c) => dispatch({ type: 'CHALLENGE_JOIN', challenge: c })} />
@@ -425,7 +427,9 @@ function Squads({ pending }: { pending?: string }) {
                 {L('Join', 'Jungtis')}
               </button>
             </div>
-            <p className="mt-4 text-sm font-bold text-white">{L('Start a squad', 'Sukurk komandą')}</p>
+            <p className="mt-4 text-sm font-bold text-white flex items-center gap-2">
+              {L('Start a squad', 'Sukurk komandą')} <PremiumTag locked={premiumLocked('create-squad')} />
+            </p>
             <div className="mt-2 flex gap-2">
               <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} placeholder={L('Squad name', 'Komandos pavadinimas')} className={input} aria-label={L('Squad name', 'Komandos pavadinimas')} />
               <button
