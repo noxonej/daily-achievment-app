@@ -27,3 +27,15 @@ describe('safePicture', () => {
     expect(safePicture(undefined)).toBeUndefined();
   });
 });
+
+describe('wishlist links from a backup file', async () => {
+  const { reducer } = await import('../store/reducer');
+  const { createInitialState } = await import('../store/state');
+  it('drops javascript: links on import', () => {
+    const base = createInitialState();
+    const evil = { ...base, money: { ...base.money, wishlist: [{ id: 'w1', name: 'x', price: 100, icon: '🎁', link: 'javascript:alert(1)', addedAt: '2026-11-01' }, { id: 'w2', name: 'y', price: 100, icon: '🎁', link: 'shop.com/a', addedAt: '2026-11-01' }] } };
+    const out = reducer(base, { type: 'IMPORT_STATE', state: evil });
+    expect(out.money.wishlist?.[0].link).toBeUndefined();
+    expect(out.money.wishlist?.[1].link).toBe('https://shop.com/a');
+  });
+});

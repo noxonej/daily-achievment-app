@@ -4,7 +4,7 @@ import {  untwisted } from '../../lib/dailyTwist';
 import {  normalizeLook } from '../../data/avatar';
 import { DEFAULT_PREFS } from '../../lib/i18n';
 import type { Action } from '../actions';
-import { createInitialState, planId, normalizePlan, starterQuestTitles, migrateContent } from '../state';
+import { createInitialState, planId, normalizePlan, starterQuestTitles, migrateContent, normalizeMoney } from '../state';
 
 export function settingsSlice(state: AppState, action: Action): AppState | undefined {
   switch (action.type) {
@@ -58,7 +58,8 @@ export function settingsSlice(state: AppState, action: Action): AppState | undef
     case 'IMPORT_STATE': {
       // Backups from before first-run setup existed belong to existing users, so never re-run setup for them.
       const merged = { ...createInitialState(), ...action.state, onboarded: action.state.onboarded ?? true, contentVersion: action.state.contentVersion ?? 1 };
-      return migrateContent({ ...merged, character: normalizeLook(merged.character) });
+      // Backup files are untrusted: money (wishlist links, A5) goes through the same checks as on load.
+      return migrateContent({ ...merged, money: normalizeMoney(merged.money), character: normalizeLook(merged.character) });
     }
 
 

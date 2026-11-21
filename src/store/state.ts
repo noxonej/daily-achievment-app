@@ -2,6 +2,7 @@
  * Shared state helpers for the reducer slices (src/store/slices) and the rest of the app:
  * initial state, content migrations, and small helpers several slices need.
  */
+import { safeLink } from '../lib/url';
 import type { AppState, DayLog, Difficulty, Frequency, GoalTimeframe, LongTermGoal, PlanItem, Quest, WeekLog, WeekPlan, WeekdayId, MoneyAccount, QuestMeasure, MoneyState, SavingsGoal } from '../lib/types';
 import {  todayKey, weekKey } from '../lib/date';
 import { buildDefaultQuests } from '../data/defaultQuests';
@@ -97,7 +98,8 @@ export function normalizeMoney(money: MoneyState | undefined): MoneyState {
     crypto: Array.isArray(money.crypto) ? money.crypto : [],
     cryptoPrices: money.cryptoPrices,
     bills: Array.isArray(money.bills) ? money.bills : [],
-    wishlist: Array.isArray(money.wishlist) ? money.wishlist : [],
+    // Links come from typing or a backup file: only http(s) survives (A5).
+    wishlist: Array.isArray(money.wishlist) ? money.wishlist.map((w) => (w && w.link !== undefined ? { ...w, link: safeLink(w.link) } : w)) : [],
     income: money.income,
     saveRate: money.saveRate,
     mode: money.mode,

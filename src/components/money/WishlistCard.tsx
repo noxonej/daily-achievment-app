@@ -1,3 +1,4 @@
+import { safeLink } from '../../lib/url';
 import { useEffect, useState } from 'react';
 import type { WishItem } from '../../lib/types';
 import { todayKey } from '../../lib/date';
@@ -106,8 +107,8 @@ export function WishlistCard() {
                       Start saving for it
                     </button>
                   )}
-                  {w.link && (
-                    <a href={w.link} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                  {safeLink(w.link) && (
+                    <a href={safeLink(w.link)} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
                       Open link
                     </a>
                   )}
@@ -153,6 +154,7 @@ function WishModal({ wish, onClose }: { wish: WishItem | 'new' | null; onClose: 
         </Field>
         <Field label="Link (optional)">
           <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="shop.com/…" inputMode="url" className={inputClass} />
+          {link.trim() !== '' && !safeLink(link) && <p className="mt-1 text-xs text-amber-300">That doesn't look like a web address, so it won't be saved.</p>}
         </Field>
         <IconGrid options={WISH_ICONS} value={icon} onChange={setIcon} size="sm" />
         {cents !== null && cents > 0 && <p className="text-sm text-slate-400">Tip: wait a day before buying anything over {fmt(2000)}. Half the time, you won't want it any more.</p>}
