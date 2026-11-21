@@ -270,40 +270,77 @@ const codeDocKey = (acc: string) => `dayforge-code-doc-${acc}`;
  * can list everyone's profile. Claims a new code (creating codes/{code} only if it's free) or makes
  * sure the code you already have is registered there (one-time migration for older accounts).
  */
-async function ensureCode(ctx: Ctx, existing: string | undefined): Promise<string> {
+/**
+ * Makes sure profiles/{uid}.code and codes/{code} agree (A6: the rules only let you claim the code that
+ * is already in your own profile). Order: write the profile with the code first, then claim the code.
+ * When the code changes, the old codes/{code} doc is removed so codes can't pile up.
+ */
+async function ensureCodeAndProfile(ctx: Ctx, existing: Omit<FriendProfile, 'uid'> | null, build: (code: string) => Omit<FriendProfile, 'uid'>): Promise<Omit<FriendProfile, 'uid'>> {
   const api = db(ctx.accountId);
   const uid = api.uid();
-  if (existing) {
-    if (readJson<string | null>(codeDocKey(ctx.accountId), null) === existing) return existing;
+  const registered = readJson<string | null>(codeDocKey(ctx.accountId), null);
+  const save = async (p: Omit<FriendProfile, 'uid'>) => {
+    const changed =
+      !existing ||
+      (['name', 'code', 'look', 'level', 'streak', 'weekXp', 'week', 'picture', 'active'] as const).some(
+        (k) => (existing as Record<string, unknown>)[k] !== (p as Record<string, unknown>)[k],
+      );
+    if (changed) await api.set(`profiles/${uid}`, p as never);
+    existing = p;
+  };
+  const done = async (p: Omit<FriendProfile, 'uid'>) => {
+    writeJson(codeDocKey(ctx.accountId), p.code);
+    if (registered && registered !== p.code) await api.remove(`codes/${registered}`).catch(() => undefined);
+    return p;
+  };
+
+  const have = existing?.code && FRIEND_CODE.test(existing.code) ? existing.code : undefined;
+  if (have) {
+    const p = build(have);
+    if (registered === have) {
+      await save(p);
+      return p;
+    }
     // If the database can't be asked right now (offline, or its rules not updated yet), keep the
     // code as it is and try again on the next refresh.
-    const doc = await api.get<{ uid?: unknown }>(`codes/${existing}`).catch(() => 'later' as const);
-    if (doc === 'later') return existing;
-    if (doc?.uid === uid || (!doc && (await api.create(`codes/${existing}`, { uid })))) {
-      writeJson(codeDocKey(ctx.accountId), existing);
-      return existing;
+    const doc = await api.get<{ uid?: unknown }>(`codes/${have}`).catch(() => 'later' as const);
+    if (doc === 'later') {
+      await save(p);
+      return p;
     }
-    if (!doc) return existing;
-    // Someone else already owns this code (it could happen before codes were checked): get a new one.
+    if (doc?.uid === uid) {
+      await save(p);
+      return done(p);
+    }
+    if (!doc) {
+      await save(p);
+      if (await api.create(`codes/${have}`, { uid })) return done(p);
+    }
+    // Someone else owns this code (it could happen before codes were checked): get a new one.
   }
   for (let i = 0; i < 6; i++) {
     const c = makeCode(ctx.name);
-    if (await api.create(`codes/${c}`, { uid })) {
-      writeJson(codeDocKey(ctx.accountId), c);
-      return c;
-    }
+    const taken = await api.get<{ uid?: unknown }>(`codes/${c}`).catch(() => ({ uid: 'unknown' }));
+    if (taken) continue;
+    const p = build(c);
+    await save(p);
+    if (await api.create(`codes/${c}`, { uid })) return done(p);
   }
-  // Couldn't register one right now: use a fresh code; the next refresh registers it.
-  return makeCode(ctx.name);
+  // Couldn't register one right now: keep what the profile has; the next refresh tries again.
+  const p = build(have ?? makeCode(ctx.name));
+  await save(p);
+  return p;
 }
 
-async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
+const FRIEND_CODE = /^[A-Z]{3,4}-[0-9]{4}$/;
+
+/** Exported for tests. */
+export async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
   const api = db(ctx.accountId);
   const uid = api.uid();
   const existing = asProfile(await api.get(`profiles/${uid}`));
   const share = { ...DEFAULT_SHARING, ...(ctx.state.sharing ?? {}) };
-  const code = await ensureCode(ctx, existing?.code);
-  const profile: Omit<FriendProfile, 'uid'> = {
+  const build = (code: string): Omit<FriendProfile, 'uid'> => ({
     name: ctx.name.trim().slice(0, 40) || 'Player',
     code,
     look: JSON.stringify(ctx.state.character),
@@ -315,13 +352,8 @@ async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
     active: share.streak ? activeDays(ctx.state) : '',
     ...(safePicture(ctx.picture) ? { picture: safePicture(ctx.picture) } : {}),
     updatedAt: Date.now(),
-  };
-  const changed =
-    !existing ||
-    (['name', 'code', 'look', 'level', 'streak', 'weekXp', 'week', 'picture', 'active'] as const).some(
-      (k) => (existing as Record<string, unknown>)[k] !== (profile as Record<string, unknown>)[k],
-    );
-  if (changed) await api.set(`profiles/${uid}`, profile as never);
+  });
+  const profile = await ensureCodeAndProfile(ctx, existing, build);
   return { uid, ...profile };
 }
 

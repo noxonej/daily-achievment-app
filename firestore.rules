@@ -72,12 +72,15 @@ service cloud.firestore {
     }
 
     // Friend codes: codes/{code} → { uid }. Look one up by its exact code; nobody can list them.
-    // A code can be claimed once (create only), only for yourself, and removed only by its owner.
+    // A code can be claimed once (create only), only for yourself and only if it's your profile's code,
+    // and removed only by its owner (the app removes the old one when your code changes).
     match /codes/{code} {
       allow get: if signedIn();
-      allow create: if signedIn() && code.size() <= 12
+      // Only a real friend code, and only the one already saved in your own profile (no squatting).
+      allow create: if signedIn() && friendCode(code)
         && request.resource.data.keys().hasOnly(['uid'])
-        && request.resource.data.uid == me();
+        && request.resource.data.uid == me()
+        && get(/databases/$(db)/documents/profiles/$(me())).data.code == code;
       allow delete: if signedIn() && resource.data.uid == me();
     }
 
