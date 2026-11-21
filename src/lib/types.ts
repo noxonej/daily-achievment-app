@@ -109,6 +109,8 @@ export interface DayLog {
   date: string;
   completedQuestIds: string[];
   xpEarned: number;
+  /** XP held back today by the per-type daily cap (B8, round 2). Optional. */
+  xpCapped?: number;
   perfectDay: boolean;
   dailyQuestCount: number;
   /** Notes written on individual quests (e.g. Gratitude x3), keyed by quest id. */
