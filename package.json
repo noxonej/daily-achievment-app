@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:app": "CAPACITOR=1 npm run build && cap sync",
+    "app:android": "cap open android",
+    "app:ios": "cap open ios"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "5.3.0",
@@ -22,6 +25,10 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/cli": "^7.6.10",
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/ios": "^7.6.10",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
