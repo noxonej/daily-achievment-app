@@ -131,6 +131,8 @@ export interface NewQuestInput {
   noteList?: number;
   noteMinWords?: number;
   measure?: QuestMeasure;
+  /** IRL stats it grows (round 2). */
+  stats?: Quest['stats'];
 }
 
 /** True when this goal's account holds only this goal's money (no other goal shares it). */

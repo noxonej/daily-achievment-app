@@ -146,6 +146,7 @@ export function questsSlice(state: AppState, action: Action): AppState | undefin
         noteList: action.quest.noteList,
         noteMinWords: action.quest.noteMinWords,
         measure: action.quest.measure,
+        ...(action.quest.stats?.length ? { stats: action.quest.stats } : {}),
       };
       return { ...state, quests: [...state.quests, q] };
     }

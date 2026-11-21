@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { STAT_IDS, STATS, questStats, type StatId } from '../lib/irlStats';
+import { L, isLt } from '../lib/lang';
 import { Modal } from './Modal';
 import type { Difficulty, Frequency, Quest } from '../lib/types';
 import { DIFFICULTY_LABEL, DIFFICULTY_XP } from '../lib/xp';
@@ -22,6 +24,7 @@ interface QuestFormModalProps {
     promptForNote?: boolean;
     details?: string;
     measure?: QuestMeasure;
+    stats?: StatId[];
   }) => void;
   initial?: Quest;
   defaultFrequency?: Frequency;
@@ -35,6 +38,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [icon, setIcon] = useState('🎯');
   const [category, setCategory] = useState('Custom');
+  const [statPick, setStatPick] = useState<StatId[]>([]);
   const [kind, setKind] = useState<'check' | 'note' | 'number'>('check');
   const [unit, setUnit] = useState<MeasureUnit>('reps');
   const [target, setTarget] = useState('');
@@ -55,6 +59,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
       setDifficulty(q?.difficulty ?? 'easy');
       setIcon(q?.icon ?? '🎯');
       setCategory(q?.category ?? 'Custom');
+      setStatPick(q?.stats ?? []);
       setKind(q?.measure ? 'number' : q?.promptForNote ? 'note' : 'check');
       setUnit(q?.measure?.unit ?? 'reps');
       setTarget(q?.measure ? String(q.measure.target) : '');
@@ -75,6 +80,7 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
       category: category.trim() || 'Custom',
       promptForNote: kind === 'note',
       details: details.trim() || undefined,
+      stats: statPick.length ? statPick : undefined,
       // Keep the glass size and quick buttons you set on the quest when the unit stays the same.
       measure: kind === 'number' ? { ...(initial?.measure?.unit === unit ? initial.measure : {}), unit, target: targetNum } : undefined,
     });
@@ -133,6 +139,34 @@ export function QuestFormModal({ open, onClose, onSubmit, initial, defaultFreque
             placeholder="Mind, Body, Life..."
             className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
           />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-400 mb-1.5">{L('Grows these stats (pick up to 2)', 'Kelia šiuos rodiklius (iki 2)')}</label>
+          <div className="flex flex-wrap gap-1.5">
+            {STAT_IDS.map((id) => {
+              const on = statPick.includes(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setStatPick(on ? statPick.filter((x) => x !== id) : [...statPick, id].slice(-2))}
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs font-bold ${on ? 'border-white/40 bg-white/15 text-white' : 'border-white/10 bg-white/5 text-slate-400'}`}
+                >
+                  <Icon name={STATS[id].icon} size={13} style={{ color: STATS[id].color }} />
+                  {isLt() ? STATS[id].lt : STATS[id].label}
+                </button>
+              );
+            })}
+          </div>
+          {statPick.length === 0 && (
+            <p className="mt-1 text-[11px] text-slate-500">
+              {L('Not picked: ', 'Nepasirinkta: ')}
+              {questStats({ title, category }).map((id) => (isLt() ? STATS[id].lt : STATS[id].label)).join(' + ')}
+              {L(' (guessed from the name)', ' (atspėta pagal pavadinimą)')}
+            </p>
+          )}
         </div>
 
         <div>

@@ -5,6 +5,7 @@ import { locale } from '../lib/locale';
 import { InfoTip } from '../components/Guide';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
+import { IrlStatsCard } from '../components/stats/IrlStatsCard';
 import { Avatar } from '../components/Avatar';
 import { Coin } from '../components/Coin';
 import { RankBadge } from '../components/RankBadge';
@@ -147,6 +148,8 @@ export function YouView() {
             {stats.chestsAvailable > 0 ? `Customize · open ${stats.chestsAvailable} ${stats.chestsAvailable === 1 ? 'chest' : 'chests'}` : t('you.customize')}
           </button>
         </div>
+
+        <IrlStatsCard />
 
         <Segmented
           value={section}

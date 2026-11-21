@@ -41,6 +41,8 @@ export interface Quest {
   measure?: QuestMeasure;
   /** Today's daily twist (a slightly different amount or version), with what to go back to tomorrow. */
   twist?: { date: string; baseTitle: string; baseDescription?: string; baseTarget?: number; baseNoteList?: number };
+  /** IRL stats this quest grows (custom quests; built-in ones use their category). Added round 2, optional. */
+  stats?: Array<'body' | 'mind' | 'wealth' | 'discipline' | 'social'>;
 }
 
 export type GoalTimeframe = 'weekly' | 'monthly' | 'yearly' | 'custom';

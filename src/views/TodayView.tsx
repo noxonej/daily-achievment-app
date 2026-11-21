@@ -1,4 +1,5 @@
 import { settings } from '../lib/settingsNav';
+import { StatRow } from '../components/stats/IrlStatsCard';
 import { EditQuestsRow } from '../components/EditQuestsRow';
 import { GettingStarted } from '../components/Guide';
 import { FriendsPeek } from '../components/FriendsPeek';
@@ -198,6 +199,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           </>
         }
       />
+
+      <StatRow onOpen={() => onNavigate('you')} />
 
       {(state.prefs?.scrollLock ?? 0) > 0 && (
         <ScrollLockCard done={doneCount + (wildcard && completed.includes(wildcard.id) ? 1 : 0)} need={state.prefs!.scrollLock!} />
