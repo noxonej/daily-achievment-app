@@ -50,6 +50,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // The landing pages (C3) are plain web pages: never cache them as the app's start page.
+  if (url.pathname.includes('/welcome/')) return;
 
   if (req.mode === 'navigate') {
     event.respondWith(

@@ -72,6 +72,15 @@ await t('challenge score spam refused', () => assertFails(setDoc(doc(bob, `chall
 await t('challenge fake score refused', () => assertFails(setDoc(doc(carol, `challenges/${CH}/players/carol`), { name: 'C', score: 9999, fullDays: 1, finished: false, at: serverTimestamp() })));
 await t('challenge board public ok', () => assertSucceeds(getDoc(doc(anon, `challenges/${CH}/players/bob`))));
 
+// ---- analytics (C1)
+const ev = { id: 'abcdefghij0123456789', ev: ['open', 'quest_done'], v: 1 };
+await t('stats write anon ok', () => assertSucceeds(setDoc(doc(anon, 'stats/2026-11-21/events/x1'), ev)));
+await t('stats read refused', () => assertFails(getDoc(doc(me, 'stats/2026-11-21/events/x1'))));
+await t('stats update refused', () => assertFails(setDoc(doc(anon, 'stats/2026-11-21/events/x1'), ev)));
+await t('stats extra field refused', () => assertFails(setDoc(doc(anon, 'stats/2026-11-21/events/x2'), { ...ev, email: 'a@b.c' })));
+await t('stats bad id refused', () => assertFails(setDoc(doc(anon, 'stats/2026-11-21/events/x3'), { ...ev, id: 'Jonas' })));
+await t('stats bad day refused', () => assertFails(setDoc(doc(anon, 'stats/nope/events/x4'), ev)));
+
 // ---- photo proof (B8). bob is on the CH board (above), carol isn't.
 const img = 'data:image/jpeg;base64,' + 'A'.repeat(1000);
 const proof = (uid, day, extra = {}) => ({ uid, name: 'X', day, img, at: serverTimestamp(), ...extra });

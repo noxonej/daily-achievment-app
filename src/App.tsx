@@ -25,6 +25,8 @@ import { rememberInvite, useFriendsEngine } from './lib/friends';
 import { readJoinLink } from './lib/links';
 import { rememberInviteReward, useInviteEngine } from './lib/invites';
 import { Paywall } from './components/Paywall';
+import { logEvent, startAnalytics } from './lib/analytics';
+import { todayKey } from './lib/date';
 import { FriendToasts } from './components/FriendToasts';
 import { setIntent } from './lib/intents';
 import { useSettingsPage } from './lib/settingsNav';
@@ -60,6 +62,14 @@ export default function App() {
   useApplyAppearance(state.appearance);
   useApplyPrefs(state.prefs);
   useNudges(state, stats);
+  // C1: anonymous counts (open, quest done). Off switch in Settings → Privacy.
+  useEffect(() => startAnalytics(), []);
+  const doneToday = state.dayLogs[todayKey()]?.completedQuestIds.length ?? 0;
+  const lastDone = useRef(doneToday);
+  useEffect(() => {
+    if (doneToday > lastDone.current) logEvent('quest_done');
+    lastDone.current = doneToday;
+  }, [doneToday]);
   useGoogleAutoBackup();
   useFriendsEngine({
     accountId: auth?.account.id ?? null,
