@@ -42,6 +42,7 @@ import { FLOOR, SCENE_H, SCENE_W, characterUrl, garageSceneUrl } from './px/gara
 import { vehicleSprite } from './px/sprite';
 import { TW_W } from './px/twowheel';
 import { BuyButton, Requirements } from './ui';
+import { CarFund } from './CarFund';
 import type { Pending } from './WorldView';
 
 /* ---------------------------------------------------------------- the scene */
@@ -171,6 +172,7 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
 
   return (
     <>
+      <CarFund vehicle={isCar(featured) ? featured : (VEHICLES.find((v) => isCar(v) && v.cls === "car") ?? featured)} />
       {refunds.length > 0 && !refundSeen && (
         <div className="rounded-[20px] bg-amber-500/10 p-3.5 flex items-start gap-3 text-[13px]">
           <Icon name="🚗" size={18} className="shrink-0 mt-0.5 text-amber-300" />
