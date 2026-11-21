@@ -1,3 +1,5 @@
+import { ShareButton } from './ShareButton';
+import { L } from '../lib/lang';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
@@ -207,6 +209,11 @@ function StreakScreen({ streak, best, closing, onClose }: { streak: number; best
       >
         Continue
       </button>
+      {milestone && [7, 14, 30, 50, 100, 365].includes(streak) && (
+        <div className="relative mt-3 fade-up" style={{ animationDelay: '2.5s' }}>
+          <ShareButton kind="streak" days={streak} label={L('Share my streak', 'Dalintis ruožu')} />
+        </div>
+      )}
     </div>
   );
 }

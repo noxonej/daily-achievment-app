@@ -1,3 +1,4 @@
+import { ShareButton } from '../components/ShareButton';
 import { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { useAuth } from '../store/AuthContext';
@@ -194,6 +195,7 @@ function JoinedChallengeCard({ c }: { c: JoinedChallenge }) {
           <p className="flex-1 text-sm font-bold text-amber-200">
             {L('Challenge finished! Badge earned', 'Iššūkis įveiktas! Ženklelis gautas')} <Icon name={c.badge} size={15} className="icon-inline" />
           </p>
+          <ShareButton kind="challenge" challenge={c} />
         </div>
       ) : live ? (
         <ul className="mt-3 space-y-1.5">

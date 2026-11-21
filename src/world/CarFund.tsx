@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ShareButton } from '../components/ShareButton';
 import { useApp } from '../store/AppContext';
 import { formatMoney } from '../lib/money';
 import { goalSaved, goalShare, vehicleGoal } from '../lib/wealth';
@@ -12,6 +14,7 @@ import { partsOf, vehicleHex, worldOf, type Vehicle } from './catalog';
  */
 export function CarFund({ vehicle }: { vehicle: Vehicle }) {
   const { state, dispatch } = useApp();
+  const [hide, setHide] = useState(true);
   const money = state.money;
   const goal = vehicleGoal(money);
   if (!money?.setupDone) return null;
@@ -58,7 +61,14 @@ export function CarFund({ vehicle }: { vehicle: Vehicle }) {
         {fmt(saved)} / {fmt(goal.target)}
         {pct >= 1 ? ` · ${L('Goal reached! 🎉', 'Tikslas pasiektas! 🎉')}` : ` · ${L('add money in the Money tab', 'pridėk pinigų Pinigų skiltyje')}`}
       </p>
-      <p className="mt-1 text-[10px] text-slate-500">{L('General information, not financial advice.', 'Bendra informacija, ne finansinė konsultacija.')}</p>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="text-[10px] text-slate-500">{L('General information, not financial advice.', 'Bendra informacija, ne finansinė konsultacija.')}</p>
+        <label className="flex items-center gap-1 text-[11px] text-slate-400">
+          <input type="checkbox" checked={hide} onChange={(e) => setHide(e.target.checked)} className="accent-emerald-400" />
+          {L('Hide amount', 'Slėpti sumą')}
+        </label>
+        <ShareButton kind="savings" amount={fmt(saved)} goal={goal.name} pct={pct} hide={hide} />
+      </div>
     </section>
   );
 }

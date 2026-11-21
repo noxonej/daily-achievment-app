@@ -1,3 +1,4 @@
+import { ShareButton } from '../ShareButton';
 import { useState } from 'react';
 import { STAT_IDS, STATS, overallStatLevel, type StatId } from '../../lib/irlStats';
 import { Icon } from '../Icon';
@@ -19,7 +20,7 @@ export function IrlStatsCard() {
             {L('Overall', 'Bendras')} <span className="tabular-nums">LV {overallStatLevel(s)}</span>
           </p>
         </div>
-        {/* share button: added with the share cards (B4) */}
+        <ShareButton kind="stats" />
       </div>
       <div className="text-slate-300 flex justify-center -my-1">
         <StatsRadar stats={s} size={300} />
