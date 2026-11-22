@@ -27,6 +27,8 @@ export interface Quest {
   createdAt: string;
   /** Set only on the auto-rotating daily wildcard quest; value is the date (YYYY-MM-DD) it belongs to. */
   wildcardDate?: string;
+  /** Daily wildcard: which of the day's options was chosen (0-2). */
+  wildcardPick?: number;
   /** Set only on the auto-rotating weekly wildcard quest; value is the ISO week (YYYY-Www) it belongs to. */
   wildcardWeekKey?: string;
   /** Shows an inline textarea on the card; writing something non-empty is what completes the quest. */

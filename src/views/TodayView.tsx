@@ -26,9 +26,9 @@ import { NowNextCard } from '../components/NowNextCard';
 import { MoodCheckIn } from '../components/MoodCheckIn';
 import { InstallCard } from '../components/InstallCard';
 import { WeekRecap } from '../components/WeekRecap';
-import { DailyBoxCard } from '../components/DailyBox';
+import { DailyRewardCard } from '../components/DailyBox';
+import { doneByHand } from '../store/reducer';
 import { YourWorldCard } from '../world/WorldCard';
-import { CheckInCard } from '../components/today/CheckInCard';
 import { sleepTool } from '../components/SleepTool';
 import { QuestSwapModal } from '../components/QuestSwapModal';
 import { DailyBoost } from '../components/today/DailyBoost';
@@ -91,7 +91,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   });
   const key = todayKey();
   // Where the daily rewards card sits is decided when Today opens, so it doesn't jump away as you claim.
-  const [rewardsOnTop] = useState(() => state.checkIn?.last !== key);
+  const [rewardsOnTop] = useState(() => state.checkIn?.last !== key || (state.dailyBox?.lastOpened !== key && doneByHand(state.dayLogs[key]) > 0));
   const log = state.dayLogs[key];
   const completed = log?.completedQuestIds ?? [];
   const notes = log?.notes ?? {};
@@ -223,8 +223,8 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         <ScrollLockCard done={doneCount + (wildcard && completed.includes(wildcard.id) ? 1 : 0)} need={state.prefs!.scrollLock!} />
       )}
 
-      {/* Daily rewards: up top until today's is claimed, then it moves down next to the box. */}
-      {rewardsOnTop && <CheckInCard />}
+      {/* Daily reward (check-in + box): up top while something is ready to claim, else below the quests. */}
+      {rewardsOnTop && <DailyRewardCard />}
 
       <GettingStarted onNavigate={onNavigate} />
 
@@ -340,9 +340,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         </div>
       )}
 
-      {!rewardsOnTop && <CheckInCard />}
-
-      <DailyBoxCard />
+      {!rewardsOnTop && <DailyRewardCard />}
 
       {/* How you feel and the wellness tools come first: they set up the rest of the day. */}
       <MoodCheckIn />

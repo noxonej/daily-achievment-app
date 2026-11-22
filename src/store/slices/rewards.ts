@@ -3,7 +3,9 @@ import type { AppState, CustomReward, Redemption } from '../../lib/types';
 import { claimCheckIn } from '../../lib/checkIn';
 import { SEASON_TIERS, claimedTiers, seasonKey, seasonPoints } from '../../lib/seasons';
 import { addDaysToKey, todayKey } from '../../lib/date';
-import {  boxPool } from '../../data/avatar';
+import { boxPool, chestPool } from '../../data/avatar';
+import { jackpotPool } from '../../lib/dailyBox';
+import { worldOf } from '../../world/catalog';
 import { MAX_SHIELDS, SHIELD_PRICE, computeDerivedStats, dayCountsForStreak, graceDays } from '../../lib/stats';
 import type { Action } from '../actions';
 import {  ownership, recomputeDailyLog, doneByHand } from '../state';
@@ -53,8 +55,18 @@ export function rewardsSlice(state: AppState, action: Action): AppState | undefi
           break;
         case 'cosmetic': {
           const stats = computeDerivedStats(state);
-          if (!boxPool(ownership(state, stats)).some((i) => i.id === r.itemId)) return state;
+          const ctx = ownership(state, stats);
+          // A mythic, or (once every mythic is collected) any wardrobe item you don't have yet.
+          const allowed = boxPool(ctx).some((i) => i.id === r.itemId) || (boxPool(ctx).length === 0 && chestPool(ctx).some((i) => i.id === r.itemId));
+          if (!allowed) return state;
           next = { ...next, wonCosmeticIds: [...(next.wonCosmeticIds ?? []), r.itemId] };
+          break;
+        }
+        case 'jackpot': {
+          const world = worldOf(state);
+          if (!jackpotPool(world, computeDerivedStats(state).level).some((p) => p.id === r.id)) return state;
+          // Free, like chest drops: stored as paid with 0 coins.
+          next = { ...next, world: { ...world, paid: { ...world.paid, [r.id]: 0 } } };
           break;
         }
       }

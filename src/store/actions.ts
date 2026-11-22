@@ -103,6 +103,7 @@ export type Action =
   | { type: 'SET_STEPS_TOKEN'; token: string }
   | { type: 'ADD_RUN'; km: number; seconds: number; source: 'gps' | 'manual' }
   | { type: 'OPEN_DAILY_BOX'; reward: BoxReward }
+  | { type: 'PICK_WILDCARD'; pick: number }
   | { type: 'GIFT_COINS'; id: string; amount: number }
   | { type: 'USE_SKIP_PASS'; questId: string }
   | { type: 'PRUNE_PLAN_EVENTS'; today: string }
