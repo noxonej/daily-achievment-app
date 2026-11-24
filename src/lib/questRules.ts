@@ -69,3 +69,16 @@ export function checkNote(quest: Quest, note: string): NoteCheck {
     hint: dup ? 'Each one needs to be different' : have < rule.count ? `${rule.count - have} more to go` : undefined,
   };
 }
+
+/**
+ * Whether a written quest counts as done after a change.
+ * - `ask` true: the "Mark done" tap. Counts only if the answer passes the rule.
+ * - `ask` false: the "Undo" tap.
+ * - `ask` undefined: just typing. Never completes anything; it only keeps a finished quest done
+ *   while the answer still passes (so fixing a typo doesn't un-tick it).
+ */
+export function noteDone(wasDone: boolean, passes: boolean, ask?: boolean): boolean {
+  if (ask === true) return passes;
+  if (ask === false) return false;
+  return wasDone && passes;
+}

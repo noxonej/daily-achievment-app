@@ -17,7 +17,8 @@ interface NoteQuestCardProps {
   quest: Quest;
   note: string;
   completed: boolean;
-  onChangeNote: (note: string) => void;
+  /** Saves the text. `done` is true for the "Mark done" tap and false for "Undo"; typing leaves it out. */
+  onChangeNote: (note: string, done?: boolean) => void;
   periodKey: string;
 }
 
@@ -49,6 +50,12 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote, periodKey 
   function handleBlur() {
     if (timerRef.current) clearTimeout(timerRef.current);
     onChangeNote(text);
+  }
+
+  // Typing never completes a written quest: you finish it yourself with this button (2026-11-24).
+  function markDone(done: boolean) {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    onChangeNote(text, done);
   }
 
   return (
@@ -127,10 +134,27 @@ export function NoteQuestCard({ quest, note, completed, onChangeNote, periodKey 
           <div className={`h-full rounded-full transition-all duration-300 ${check.done ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${(check.have / check.need) * 100}%` }} />
         </div>
         <span className={`text-[11px] font-semibold tabular-nums ${check.done ? 'text-emerald-300' : 'text-slate-400'}`}>
-          {check.done ? 'Done!' : rule.kind === 'list' ? `${check.have}/${check.need}` : `${check.have}/${check.need} words`}
+          {completed ? 'Done' : check.done ? 'Ready' : rule.kind === 'list' ? `${check.have}/${check.need}` : `${check.have}/${check.need} words`}
         </span>
       </div>
       {!check.done && check.hint && text.trim() && <p className="text-[11px] text-slate-500 mt-1">{check.hint}</p>}
+      {check.done && !completed && (
+        <button
+          type="button"
+          // Keep focus (and the phone keyboard) from jumping before the tap lands.
+          onPointerDown={(e) => e.preventDefault()}
+          onClick={() => markDone(true)}
+          className="note-done-btn mt-2.5 w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-[#03140c] font-bold text-sm py-2.5 flex items-center justify-center gap-1.5 transition"
+        >
+          <Icon name="✓" size={16} strokeWidth={3} />
+          Mark done · +{quest.xp} XP
+        </button>
+      )}
+      {completed && (
+        <button type="button" onClick={() => markDone(false)} className="mt-1.5 text-[11px] font-semibold text-slate-500 hover:text-slate-300">
+          Undo
+        </button>
+      )}
       {justCompleted && (
         <span className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none" aria-hidden="true">
           <span className="complete-sweep" />
