@@ -1,0 +1,57 @@
+name: Steps demo app
+
+# Builds the native step-counting demo (steps-demo/). Only runs when the demo changes, and never
+# touches the live website.
+# - Android: a debug .apk you can download from the run's "Artifacts" and install on a phone.
+# - iPhone: a compile check for the simulator (installing on a real iPhone needs a Mac + Xcode).
+on:
+  push:
+    paths:
+      - steps-demo/**
+      - .github/workflows/steps-demo.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: steps-demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npx cap sync android
+      - run: ./gradlew assembleDebug --no-daemon
+        working-directory: steps-demo/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: squzo-steps-demo-android
+          path: steps-demo/android/app/build/outputs/apk/debug/app-debug.apk
+
+  ios:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: steps-demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx cap sync ios
+      - name: Build for the iPhone simulator (no signing needed)
+        run: >
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO build

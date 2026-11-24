@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Squzo Steps Demo</title>
+  <style>
+    :root { --bg: #0c0a09; --card: #1c1917; --line: #292524; --text: #fafaf9; --dim: #a8a29e; --accent: #fb923c; --ok: #4ade80; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 24px); }
+    main { max-width: 440px; margin: 0 auto; display: grid; gap: 14px; }
+    h1 { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 0; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
+    .big { font: 800 64px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: -.02em; }
+    .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .dim { color: var(--dim); font-size: 14px; }
+    .bar { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 14px; }
+    .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .6s; }
+    .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 110px; margin-top: 10px; }
+    .week div { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .week b { width: 100%; border-radius: 6px; background: var(--accent); opacity: .85; min-height: 3px; }
+    .week span { font-size: 11px; color: var(--dim); }
+    button { width: 100%; border: 0; border-radius: 14px; padding: 14px; font: 700 16px system-ui, sans-serif; background: var(--accent); color: #1c1917; }
+    button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    .pill { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; background: var(--line); color: var(--dim); }
+    .pill.ok { color: var(--ok); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Squzo · steps demo</h1>
+
+  <section class="card">
+    <div class="row"><span class="dim">Today</span><span id="live" class="pill">not live</span></div>
+    <div class="big" id="steps">—</div>
+    <div class="row"><span class="dim" id="goalText">Goal 8,000</span><span class="dim" id="source"></span></div>
+    <div class="bar"><i id="fill"></i></div>
+  </section>
+
+  <section class="card" id="askCard" hidden>
+    <p style="margin-top:0">Let Squzo read your phone's step counter. Your phone counts steps all day, even when the app is closed, and Squzo picks them up when you open it.</p>
+    <button id="ask">Allow step counting</button>
+  </section>
+
+  <section class="card">
+    <span class="dim">Last 7 days</span>
+    <div class="week" id="week"></div>
+  </section>
+
+  <section class="card dim" id="note"></section>
+
+  <button class="ghost" id="refresh">Refresh</button>
+</main>
+
+<script>
+  // In the phone app, Capacitor puts our native plugin here. In a normal browser it's missing.
+  const Steps = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+    ? window.Capacitor.Plugins.SquzoSteps
+    : null;
+  const GOAL = 8000;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Number(n || 0).toLocaleString();
+
+  function showToday(steps, source) {
+    $('steps').textContent = fmt(steps);
+    $('fill').style.width = Math.min(100, (steps / GOAL) * 100) + '%';
+    $('goalText').textContent = steps >= GOAL ? 'Goal reached!' : `Goal ${fmt(GOAL)}`;
+    if (source) $('source').textContent = source === 'ios-motion' ? 'iPhone motion chip' : 'Android step counter';
+  }
+
+  function showWeek(days) {
+    const max = Math.max(GOAL, ...days.map((d) => d.steps));
+    $('week').innerHTML = days.map((d) => {
+      const day = new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'narrow' });
+      return `<div><b style="height:${Math.max(3, (d.steps / max) * 100)}%"></b><span>${day}</span></div>`;
+    }).join('');
+  }
+
+  async function load() {
+    if (!Steps) {
+      $('note').textContent = 'You are in a normal browser. Here, like in the live Squzo website, steps only count while the page is open. Install the demo app on a phone to see all-day counting.';
+      $('steps').textContent = '0';
+      showWeek(Array.from({ length: 7 }, (_, i) => ({ date: new Date(Date.now() - (6 - i) * 864e5).toISOString().slice(0, 10), steps: 0 })));
+      return;
+    }
+    const status = await Steps.getStatus();
+    if (!status.available) {
+      $('note').textContent = 'This phone has no step counter chip, so the demo cannot count steps here.';
+      return;
+    }
+    $('askCard').hidden = status.permission === 'granted';
+    $('note').textContent = status.source === 'ios-motion'
+      ? 'iPhone: the motion chip keeps your steps for 7 days, so closing the app loses nothing.'
+      : 'Android: the step chip counts all the time. The app checks it about every 15 minutes in the background. It starts from 0 the first time you open it.';
+    if (status.permission !== 'granted') return;
+
+    const today = await Steps.getToday();
+    showToday(today.steps, today.source);
+    const history = await Steps.getHistory({ days: 7 });
+    showWeek(history.days);
+    try {
+      await Steps.startLive();
+      $('live').textContent = 'live';
+      $('live').classList.add('ok');
+    } catch (e) { /* live updates are a bonus */ }
+  }
+
+  if (Steps) {
+    Steps.addListener('stepsChanged', (e) => showToday(e.steps));
+  }
+  $('ask').onclick = async () => { await Steps.requestAccess(); load(); };
+  $('refresh').onclick = load;
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(); });
+  load();
+</script>
+</body>
+</html>
