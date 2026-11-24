@@ -228,6 +228,8 @@ const FACES: Record<string, Spec> = {
   cosmic: { eyes: ['cosmic', 'cosmic'], mouth: 'soft' },
   silly: { eyes: ['happy', 'open'], mouth: 'tongue', extra: ['blush'] },
   sparkle: { eyes: ['sparkle', 'sparkle'], mouth: 'soft', extra: ['bling'] },
+  /** Only while sleeping in a room (not a wardrobe item). */
+  asleep: { eyes: ['closed', 'closed'], mouth: 'soft' },
 };
 const MOOD_FACE: Record<number, string> = { 1: 'sad', 2: 'sleepy', 3: 'calm', 4: 'happy', 5: 'laugh' };
 
@@ -651,7 +653,16 @@ function drawHands(g: Grid, item: AvatarItem) {
   }
 }
 
-function compose(look: Character, mood: number | undefined, step = 0): Grid {
+/** How the character is posed in a room (2026-11-24): standing, sitting on a seat or asleep in bed. */
+export interface Pose {
+  pose: 'stand' | 'sit' | 'sleep';
+  /** A face shown for a moment (a reaction), on top of the chosen expression. */
+  face?: string;
+  /** Duvet colour when asleep. */
+  blanket?: string;
+}
+
+function compose(look: Character, mood: number | undefined, step = 0, pose: Pose = { pose: 'stand' }): Grid {
   const g = blank();
   const skin = findItem(look.skin)?.c1 ?? '#f6c9a0';
   const skinDark = shade(skin, -0.18);
@@ -669,10 +680,20 @@ function compose(look: Character, mood: number | undefined, step = 0): Grid {
   // 2. legs and boots
   // Walking (step 1 / 2): one leg lifts a pixel while the other stays down.
   const lift = (left: boolean) => (step === 1 ? (left ? 1 : 0) : step === 2 ? (left ? 0 : 1) : 0);
-  rect(g, 13, 23, 3, 5 - lift(true), ostyle.pants);
-  rect(g, 16, 23, 3, 5 - lift(false), shade(ostyle.pants, -0.15));
-  rect(g, 12, 28 - lift(true), 4, 2, ostyle.boots);
-  rect(g, 16, 28 - lift(false), 4, 2, shade(ostyle.boots, -0.15));
+  if (pose.pose === 'sit') {
+    // Sitting, seen from the front: the lap (thighs coming towards you) and short shins.
+    rect(g, 12, 23, 4, 2, shade(ostyle.pants, 0.1));
+    rect(g, 16, 23, 4, 2, shade(ostyle.pants, -0.05));
+    rect(g, 12, 25, 3, 2, ostyle.pants);
+    rect(g, 17, 25, 3, 2, shade(ostyle.pants, -0.15));
+    rect(g, 11, 27, 4, 2, ostyle.boots);
+    rect(g, 17, 27, 4, 2, shade(ostyle.boots, -0.15));
+  } else {
+    rect(g, 13, 23, 3, 5 - lift(true), ostyle.pants);
+    rect(g, 16, 23, 3, 5 - lift(false), shade(ostyle.pants, -0.15));
+    rect(g, 12, 28 - lift(true), 4, 2, ostyle.boots);
+    rect(g, 16, 28 - lift(false), 4, 2, shade(ostyle.boots, -0.15));
+  }
   // 3. body
   drawOutfit(g, outfit, skin);
   if (ostyle.coat) {
@@ -695,7 +716,7 @@ function compose(look: Character, mood: number | undefined, step = 0): Grid {
   g[14][12] = skin;
   // 5. face
   const styleKey = findItem(look.expression)?.style ?? 'happy';
-  const key = styleKey === 'mood' ? (mood ? MOOD_FACE[mood] : 'happy') : styleKey;
+  const key = pose.pose === 'sleep' ? 'asleep' : pose.face && FACES[pose.face] ? pose.face : styleKey === 'mood' ? (mood ? MOOD_FACE[mood] : 'happy') : styleKey;
   const f = FACES[key] ?? FACES.happy;
   drawEye(g, f.eyes[0], 13, 1, skinDark);
   drawEye(g, f.eyes[1], 17, -1, skinDark);
@@ -749,6 +770,15 @@ function compose(look: Character, mood: number | undefined, step = 0): Grid {
   if (extras.has('pop')) [[7, 4], [8, 5], [6, 7], [24, 4], [23, 5], [25, 7]].forEach(([x, y]) => put(g, x, y, OUTLINE));
   if (extras.has('zzz')) [[23, 3], [24, 3], [24, 4], [23, 5], [24, 5], [26, 1], [27, 1], [26, 2]].forEach(([x, y]) => put(g, x, y, '#e2e8f0'));
   if (extras.has('bling')) [[8, 6], [7, 7], [9, 7], [8, 8], [24, 10], [23, 11], [25, 11], [24, 12]].forEach(([x, y]) => put(g, x, y, '#fde047'));
+  // 7b. asleep: tucked in under a duvet (the room turns the whole sprite on its side)
+  if (pose.pose === 'sleep') {
+    const b = pose.blanket ?? '#8fa3c0';
+    rect(g, 9, 17, 14, 13, b);
+    rect(g, 9, 17, 14, 2, shade(b, 0.3));
+    rect(g, 9, 19, 14, 1, shade(b, -0.12));
+    rect(g, 21, 20, 2, 10, shade(b, -0.18));
+    return g;
+  }
   // 8. pet
   if (pet && PETS[pet.style]) {
     const c = pet.c1 ?? (pet.style === 'robot' ? '#cbd5e1' : '#f1f5f9');
@@ -786,6 +816,8 @@ function toRects(g: Grid): Array<[number, number, number, string]> {
 
 /** Inside a scene where the character walks: 0 standing, 1/2 the two walking frames. */
 export const WalkStepContext = createContext(0);
+/** Inside a room: sitting, sleeping, or a quick reaction face. */
+export const PoseContext = createContext<Pose>({ pose: 'stand' });
 
 export function PixelAvatar({
   look,
@@ -816,9 +848,10 @@ export function PixelAvatar({
   const l = normalizeLook(look);
   const m = mood ?? todayMood;
   const step = useContext(WalkStepContext);
-  const key = JSON.stringify(l) + m + step;
+  const pose = useContext(PoseContext);
+  const key = JSON.stringify(l) + m + step + pose.pose + (pose.face ?? '') + (pose.blanket ?? '');
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const rects = useMemo(() => toRects(compose(l, m, step)), [key]);
+  const rects = useMemo(() => toRects(compose(l, m, step, pose)), [key]);
   // Small pictures (header, lists) zoom in on the head so the face stays readable.
   // "head": a close-up for square wardrobe tiles. Small round pictures (header, lists) get a looser
   // head-and-shoulders view so the face sits inside the circle with room around it.
@@ -834,7 +867,7 @@ export function PixelAvatar({
   // Blinking: only for wide-open eyes with nothing covering them (glasses, masks).
   const faceKey = findItem(l.expression)?.style ?? 'happy';
   const eyes = (FACES[faceKey === 'mood' ? (m ? MOOD_FACE[m] : 'happy') : faceKey] ?? FACES.happy).eyes;
-  const canBlink = alive && eyes[0] === 'open' && eyes[1] === 'open' && (!l.face || l.face === 'face-none');
+  const canBlink = alive && pose.pose !== 'sleep' && !pose.face && eyes[0] === 'open' && eyes[1] === 'open' && (!l.face || l.face === 'face-none');
   const skin = findItem(l.skin)?.c1 ?? '#f6c9a0';
   // Each character blinks on its own rhythm, so two on screen never blink together.
   const blinkDelay = `${-((id.charCodeAt(id.length - 2) * 7) % 40) / 10}s`;
