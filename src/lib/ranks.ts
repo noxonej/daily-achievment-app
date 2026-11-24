@@ -87,3 +87,30 @@ export function formatPct(p: number): string {
   if (p >= 0.1) return `${p.toFixed(1)}%`;
   return `${p.toFixed(2)}%`;
 }
+
+/**
+ * Each tier's own personality on the level-up screen (2026-11-24): a glow colour that reads well
+ * on the dark stage, a short motto, and the shape of its particles.
+ */
+export interface TierStyle {
+  glow: string;
+  motto: string;
+  mottoLt: string;
+  /** Particle shape: square pixels, sparkles (plus), or diamonds. */
+  spark: 'pixel' | 'plus' | 'diamond';
+}
+
+export const TIER_STYLE: Record<string, TierStyle> = {
+  hustler: { glow: '#f59e0b', motto: 'Every legend starts here', mottoLt: 'Kiekviena legenda prasideda čia', spark: 'pixel' },
+  challenger: { glow: '#a5c8ff', motto: 'Sharpened by habit', mottoLt: 'Užgrūdintas įpročių', spark: 'plus' },
+  elite: { glow: '#fbbf24', motto: 'Consistency pays off', mottoLt: 'Pastovumas atsiperka', spark: 'pixel' },
+  vanguard: { glow: '#2dd4bf', motto: 'Calm, cold focus', mottoLt: 'Rami, šalta koncentracija', spark: 'plus' },
+  titan: { glow: '#38bdf8', motto: 'Pressure made you', mottoLt: 'Spaudimas tave užgrūdino', spark: 'diamond' },
+  mythic: { glow: '#a78bfa', motto: 'Discipline, mastered', mottoLt: 'Disciplina įvaldyta', spark: 'diamond' },
+  apex: { glow: '#fb7185', motto: 'Few ever get here', mottoLt: 'Čia patenka nedaugelis', spark: 'plus' },
+  legend: { glow: '#e879f9', motto: 'You are Squzo', mottoLt: 'Tu esi Squzo', spark: 'diamond' },
+};
+
+export function tierStyle(rank: Rank): TierStyle {
+  return TIER_STYLE[rank.tier.id] ?? TIER_STYLE.hustler;
+}

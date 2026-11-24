@@ -240,19 +240,42 @@ function runFire(canvas: HTMLCanvasElement, size: number, opts: FireOptions, sti
     return () => {};
   }
 
+  // Battery (2026-11-24): the loop fully stops while the fire is off screen or the app is in the
+  // background (before, it kept waking up 60 times a second just to skip drawing), and the small
+  // header flame draws at about 30 fps, which looks the same at that size.
+  const minGap = size < 48 ? 1000 / 30 - 2 : 0;
+  let lastDraw = 0;
   const loop = (now: number) => {
-    const dt = Math.min(0.05, (now - last) / 1000);
-    last = now;
-    if (visible) draw(step(dt));
+    raf = 0;
+    if (!visible || document.hidden) return;
+    if (now - lastDraw >= minGap) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      lastDraw = now;
+      draw(step(dt));
+    }
     raf = requestAnimationFrame(loop);
   };
-  raf = requestAnimationFrame(loop);
+  const wake = () => {
+    if (raf || !visible || document.hidden) return;
+    last = performance.now();
+    raf = requestAnimationFrame(loop);
+  };
+  wake();
   // Stop working when it's scrolled out of sight.
-  const io = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver(([e]) => (visible = e.isIntersecting)) : null;
+  const io =
+    typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(([e]) => {
+          visible = e.isIntersecting;
+          wake();
+        })
+      : null;
   io?.observe(canvas);
+  document.addEventListener('visibilitychange', wake);
   return () => {
     cancelAnimationFrame(raf);
     io?.disconnect();
+    document.removeEventListener('visibilitychange', wake);
   };
 }
 
