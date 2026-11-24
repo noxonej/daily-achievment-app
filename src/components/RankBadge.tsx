@@ -17,7 +17,9 @@ export function RankBadge({ rank, size = 40, className = '', shine = false }: { 
   const chevrons = Array.from({ length: rank.division }, (_, i) => 41 - i * 7);
   // Shown as pixel art (2026-11-17): the badge is drawn, then snapped to a 24×24 pixel grid with a dark outline.
   const ref = useRef<SVGSVGElement>(null);
-  const px = usePixelated(ref, `rank|${rank.name}|${c1}${c2}${c3}`, 24, 24, { outline: true });
+  // Big badges (level-up, rank screen) use a finer 40-pixel grid so they stay crisp, not blocky.
+  const res = size >= 72 ? 40 : 24;
+  const px = usePixelated(ref, `rank|${rank.name}|${c1}${c2}${c3}|${res}`, res, res, { outline: true });
   return (
     <span className={`relative inline-block shrink-0 ${shine ? 'rank-shine' : ''} ${className}`} style={{ width: size, height: size }} role="img" aria-label={rank.name}>
     <svg ref={ref} viewBox="0 0 64 64" width={size} height={size} className="block" style={{ opacity: px ? 0 : 1 }} aria-hidden="true">

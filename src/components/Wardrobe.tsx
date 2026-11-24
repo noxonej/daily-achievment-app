@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DECOR_SLOTS, VEHICLES, WORLD_DROP_CHANCE, partsOf, rollLegendary, rollWorldDrop, vehicleHex, worldOf, type WorldDrop } from '../world/catalog';
 import { VehicleDraw } from '../world/VehicleDraw';
 import { STUDIO_FLOOR, STUDIO_H, STUDIO_W, studioUrl } from '../world/px/studio';
@@ -24,6 +24,7 @@ import { ChestArt } from './Chest';
 import { OpenBurst, PrizeHalo, StageLight } from './fx/RewardFx';
 import { Icon } from './Icon';
 import { Confetti } from './Confetti';
+import './chest.css';
 import { BUY_XP_SHARE } from '../lib/xp';
 
 function unlockLabel(item: AvatarItem): string {
@@ -381,17 +382,46 @@ function NewLook({ look, items, coins, onDone }: { look: Character; items: Avata
 
 const SKIP_PASS_CHANCE = 0.06;
 
+const reduced = () =>
+  typeof document !== 'undefined' && (document.documentElement.dataset.motion === 'reduce' || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+
 function ChestOpening({ onClose }: { onClose: () => void }) {
   const { state, stats, dispatch } = useApp();
   useBackToClose(true, onClose);
-  // closed → shake (anticipation) → opening (lid swings up, light, sparkles) → reveal
-  const [phase, setPhase] = useState<'closed' | 'shake' | 'opening' | 'reveal'>('closed');
+  // closed → charge (knocks that build up; rarer prizes knock more times) → opening (lid flies,
+  // light pours out in the prize colour) → reveal (the prize rises out of the chest).
+  // Reworked 2026-11-24: smoother, rarity-aware anticipation, no hard cut between chest and prize,
+  // and a tap during the build-up skips straight to the opening.
+  const [phase, setPhase] = useState<'closed' | 'charge' | 'opening' | 'reveal'>('closed');
+  const [beat, setBeat] = useState(0);
+  const [beats, setBeats] = useState(2);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
   // undefined = not opened yet, null = coins (everything owned), 'skip' = a Skip Pass.
   const [prize, setPrize] = useState<AvatarItem | null | 'skip' | { world: WorldDrop } | undefined>(undefined);
   const look = normalizeLook(state.character);
   const ctx = useMemo(() => ownership(state, stats), [state, stats]);
 
+  function buzz(p: number | number[]) {
+    try {
+      navigator.vibrate?.(p);
+    } catch {
+      // optional
+    }
+  }
+  function later(ms: number, fn: () => void) {
+    timers.current.push(setTimeout(fn, ms));
+  }
+  function burst() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setPhase('opening');
+    buzz(70);
+    later(reduced() ? 150 : 620, () => setPhase('reveal'));
+  }
+
   function openIt() {
+    if (phase === 'charge') return burst();
     if (phase !== 'closed') return;
     // A small chance (6%) of a Skip Pass instead of an item.
     // The very first chest is a lucky one (epic or legendary, never a Skip Pass).
@@ -406,23 +436,20 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
     // mid-animation can't re-roll a chest, and a chest can never pay out twice.
     dispatch({ type: 'OPEN_CHEST', itemId: won?.id ?? null, skip, worldId: worldDrop?.id });
     setPrize(skip ? 'skip' : worldDrop ? { world: worldDrop } : won);
-    setPhase('shake');
-    try {
-      navigator.vibrate?.([20, 60, 20, 60, 30]);
-    } catch {
-      // optional
-    }
-    setTimeout(() => {
-      setPhase('opening');
-      try {
-        navigator.vibrate?.(60);
-      } catch {
-        // optional
-      }
-    }, 700);
-    setTimeout(() => setPhase('reveal'), 1400);
+    // Rarer prizes build up longer: 2 knocks for common/rare, 3 for epic, 4 for legendary or better.
+    const rar = worldDrop?.rarity ?? won?.rarity ?? 'rare';
+    const n = rar === 'legendary' || rar === 'mythic' ? 4 : rar === 'epic' ? 3 : 2;
+    setBeats(n);
+    setBeat(0);
+    if (reduced()) return burst();
+    setPhase('charge');
+    for (let i = 0; i < n; i++)
+      later(i * 330, () => {
+        setBeat(i + 1);
+        buzz(18 + i * 10);
+      });
+    later(n * 330 + 120, burst);
   }
-
   const drop = prize && typeof prize === 'object' && 'world' in prize ? prize.world : null;
   const item = prize && prize !== 'skip' && !drop ? (prize as AvatarItem) : null;
   const r = drop ? RARITY[drop.rarity] : item ? RARITY[item.rarity] : prize === 'skip' ? { ...RARITY.epic, hex: '#14b8a6', text: 'text-teal-300', label: 'Rare drop' } : RARITY.legendary;
@@ -432,30 +459,41 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
   return (
     <div className="theme-dark box-stage fixed inset-0 z-[80] flex flex-col items-center justify-center px-6 backdrop-in" style={{ ['--ray' as string]: r.hex }}>
       <StageLight lit={phase === 'opening' || phase === 'reveal'} />
+      {phase === 'opening' && <span className="chest-flash" aria-hidden="true" />}
       <button onClick={onClose} aria-label="Close" className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 w-10 h-10 flex items-center justify-center rounded-full text-slate-300 hover:bg-white/10">
         <Icon name="✕" size={20} />
       </button>
 
       {phase !== 'reveal' ? (
-        <button onClick={openIt} className="flex flex-col items-center" aria-label="Open chest">
-          <div className="relative">
-            {phase === 'shake' && <span className="chest-leak" style={{ ['--ray' as string]: r.hex }} aria-hidden="true" />}
+        <button onClick={openIt} className="flex flex-col items-center" aria-label={phase === 'closed' ? 'Open chest' : 'Skip'}>
+          <div className="relative" style={{ ['--charge' as string]: String(beats ? beat / beats : 0) }}>
+            {phase === 'charge' && <span className="chest-leak is-charging" style={{ ['--ray' as string]: r.hex }} aria-hidden="true" />}
             {phase === 'opening' && <OpenBurst color={r.hex} />}
-            <div className={phase === 'closed' ? 'animate-float-soft' : phase === 'shake' ? 'box-shake' : 'chest-pop'}>
+            <div key={phase === 'charge' ? `k${beat}` : phase} className={phase === 'closed' ? 'animate-float-soft' : phase === 'charge' ? (beat > 0 ? 'chest-knock' : '') : 'chest-pop'} style={{ ['--amp' as string]: String(1 + beat * 0.55) }}>
               <ChestArt size={230} open={phase === 'opening'} glow={r.hex} shine={phase === 'closed'} />
             </div>
           </div>
-          <p className="mt-6 font-display text-2xl font-extrabold text-white">{phase === 'closed' ? 'Tap to open' : 'Opening…'}</p>
+          <p className="mt-6 font-display text-2xl font-extrabold text-white">{phase === 'closed' ? 'Tap to open' : phase === 'charge' ? 'Something is glowing…' : 'Opening…'}</p>
           <p className="text-sm text-slate-400 mt-1">
-            {(state.chestsOpened ?? 0) === 0 ? 'Your first chest is a lucky one: epic or better!' : 'Common 62% · Rare 26% · Epic 9.5% · Legendary 2.5% · World items · legendary vehicle 0.3%'}
+            {phase === 'charge'
+              ? 'Tap to skip'
+              : phase === 'opening'
+                ? '\u00a0'
+                : (state.chestsOpened ?? 0) === 0
+                ? 'Your first chest is a lucky one: epic or better!'
+                : 'Common 62% · Rare 26% · Epic 9.5% · Legendary 2.5% · World items · legendary vehicle 0.3%'}
           </p>
         </button>
       ) : (
         <div className="flex flex-col items-center text-center">
           <div className="relative">
+            {/* the open chest sinks away under the prize, so there's no hard cut */}
+            <span className="chest-sink" aria-hidden="true">
+              <ChestArt size={200} open glow={r.hex} />
+            </span>
             <PrizeHalo color={r.hex} big={drop?.rarity === 'legendary' || item?.rarity === 'legendary'} />
             {drop ? (
-              <div className="prize-card relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-b from-[#26324a] to-[#141a28] ring-1 ring-white/15" style={{ boxShadow: `0 24px 50px -20px #000, inset 0 0 0 2px ${r.hex}66` }}>
+              <div className="prize-card relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center chest-prize-rise bg-gradient-to-b from-[#26324a] to-[#141a28] ring-1 ring-white/15" style={{ boxShadow: `0 24px 50px -20px #000, inset 0 0 0 2px ${r.hex}66` }}>
                 {drop.kind === 'vehicle' && VEHICLES.find((v) => v.id === drop.id) ? (
                   <VehicleDraw vehicle={VEHICLES.find((v) => v.id === drop.id)!} hex={vehicleHex(worldOf(state), VEHICLES.find((v) => v.id === drop.id)!)} parts={partsOf(worldOf(state), VEHICLES.find((v) => v.id === drop.id)!)} spin className="w-[160px] h-auto" />
                 ) : (
@@ -466,16 +504,16 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
                 )}
               </div>
             ) : prize === 'skip' ? (
-              <div className="prize-card relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center animate-prize-in bg-gradient-to-b from-teal-500 to-emerald-700" style={{ boxShadow: `0 24px 50px -20px #000` }}>
+              <div className="prize-card relative w-[180px] h-[180px] rounded-[28%] flex items-center justify-center chest-prize-rise bg-gradient-to-b from-teal-500 to-emerald-700" style={{ boxShadow: `0 24px 50px -20px #000` }}>
                 <Icon name="⏭" size={96} strokeWidth={1.6} className="text-[#fff]" />
               </div>
             ) : (
-              <div className="prize-card relative rounded-[28%] p-1.5 animate-prize-in" style={{ background: `linear-gradient(160deg, ${r.hex}, color-mix(in srgb, ${r.hex} 55%, #000))`, boxShadow: `0 24px 50px -20px #000` }}>
+              <div className="prize-card relative rounded-[28%] p-1.5 chest-prize-rise" style={{ background: `linear-gradient(160deg, ${r.hex}, color-mix(in srgb, ${r.hex} 55%, #000))`, boxShadow: `0 24px 50px -20px #000` }}>
                 <Avatar look={item ? { ...look, [item.slot]: item.id } : look} size={180} />
               </div>
             )}
           </div>
-          <p className={`mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text} fade-up`}>{legendDrop ? 'Legendary vehicle · 0.3%' : drop ? `${r.label} · World` : item ? r.label : prize === 'skip' ? 'Rare drop' : 'Bonus'}</p>
+          <p className={`chest-stamp mt-7 text-xs font-black uppercase tracking-[0.25em] ${r.text}`}>{legendDrop ? 'Legendary vehicle · 0.3%' : drop ? `${r.label} · World` : item ? r.label : prize === 'skip' ? 'Rare drop' : 'Bonus'}</p>
           <p className="font-display text-3xl font-extrabold text-white mt-1 fade-up [animation-delay:.1s]">
             {drop ? drop.name : item ? item.name : prize === 'skip' ? 'Skip Pass' : `+${CHEST_DUPLICATE_SHARDS} coins`}
           </p>
@@ -521,6 +559,7 @@ function ChestOpening({ onClose }: { onClose: () => void }) {
               <button
                 onClick={() => {
                   setPrize(undefined);
+                  setBeat(0);
                   setPhase('closed');
                 }}
                 className="rounded-2xl bg-violet-500 hover:bg-violet-400 text-white font-bold px-5 py-3"

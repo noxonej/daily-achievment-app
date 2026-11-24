@@ -30,13 +30,13 @@ export function ProfileCard() {
         />
       </label>
       <div>
-        <span className="text-xs font-semibold text-slate-400">I'm a</span>
+        <span className="text-xs font-semibold text-slate-400">Character</span>
         <div className="grid grid-cols-3 gap-2 mt-1.5">
           {(
             [
-              ['female', 'Girl'],
-              ['male', 'Guy'],
-              ['unsaid', 'Rather not say'],
+              ['male', 'Male'],
+              ['female', 'Female'],
+              ['unsaid', 'Not set'],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -52,7 +52,7 @@ export function ProfileCard() {
             </button>
           ))}
         </div>
-        <span className="block text-[11px] text-slate-500 mt-1.5">Used for a few health tips (like iron or protein) and your water goal.</span>
+        <span className="block text-[11px] text-slate-500 mt-1.5">Used for a few health tips and your water goal. It never changes how your character looks.</span>
       </div>
       <div>
         <span className="text-xs font-semibold text-slate-400">What you're working on</span>
