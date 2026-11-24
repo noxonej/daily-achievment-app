@@ -1,0 +1,39 @@
+/* ---- Character daily life in the room (2026-11-24). Short, occasional moments; nothing loops except a slow "z" while asleep. ---- */
+.room-life-wave { animation: life-wave .5s ease-in-out 3; transform-origin: 50% 100%; }
+@keyframes life-wave { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-4deg); } }
+.room-life-hop { animation: life-hop .6s cubic-bezier(.3,1.4,.5,1) 2; transform-origin: 50% 100%; }
+@keyframes life-hop { 0%, 100% { transform: none; } 30% { transform: translateY(-9%) scaleY(1.04); } 60% { transform: scaleX(1.05) scaleY(.95); } }
+.room-life-cheer { animation: life-hop .55s cubic-bezier(.3,1.5,.5,1) 3; transform-origin: 50% 100%; }
+/* looks one way, then the other, then back */
+.room-life-look { animation: life-look 2.2s steps(1, end) both; }
+@keyframes life-look { 0%, 100% { transform: none; } 25% { transform: scaleX(-1); } 60% { transform: none; } 75% { transform: scaleX(-1); } 90% { transform: none; } }
+.room-life-stretch { animation: life-stretch 1.6s ease-in-out both; transform-origin: 50% 100%; }
+@keyframes life-stretch { 0%, 100% { transform: none; } 35%, 60% { transform: scaleY(1.07) scaleX(.96); } 75% { transform: scaleY(.97) scaleX(1.02); } }
+.room-life-yawn { animation: life-stretch 1.8s ease-in-out both; transform-origin: 50% 100%; }
+.room-life-nod { animation: life-nod .6s ease-in-out 3; transform-origin: 50% 100%; }
+@keyframes life-nod { 0%, 100% { transform: none; } 50% { transform: translateY(1.5%); } }
+.room-life-none { }
+
+/* Moving onto / off a seat or bed: a short glide instead of a jump. */
+.room-rest { transition: left .35s var(--ease-out, ease-out), bottom .35s var(--ease-out, ease-out), width .35s var(--ease-out, ease-out); }
+
+/* Sleeping: one small "z" drifting up every few seconds. */
+.room-zzz { left: 12%; top: 22%; color: #e2e8f0; font-size: 13px; text-shadow: 0 1px 0 #0b0c10, 1px 0 0 #0b0c10, -1px 0 0 #0b0c10, 0 -1px 0 #0b0c10; animation: life-z 4s ease-in-out infinite; }
+.room-zzz > span { position: absolute; left: 10px; top: -10px; font-size: 10px; animation: life-z 4s 2s ease-in-out infinite; opacity: 0; }
+@keyframes life-z { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: 1; } 80% { opacity: .9; } 100% { transform: translate(8px, -18px); opacity: 0; } }
+
+/* Tap target over the body (the room's drag still works around it). */
+.room-char-tap { left: 28%; right: 28%; top: 15%; bottom: 6%; border-radius: 30%; background: transparent; -webkit-tap-highlight-color: transparent; }
+.room-rest .room-char-tap { left: 10%; right: 10%; top: 25%; bottom: 25%; }
+
+/* The Sit / Sleep / Get up button: a small pixel game prompt. */
+.room-rest-chip {
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  padding: 6px 9px 5px; border-radius: 6px; font-size: 11px; color: #0b0c10; background: #fff;
+  box-shadow: 0 3px 0 #0b0c10, 0 0 0 2px #0b0c10; animation: life-chip-in .25s cubic-bezier(.2,1.5,.4,1) both;
+}
+.room-rest-chip:active { transform: translate(-50%, calc(-100% + 2px)) !important; box-shadow: 0 1px 0 #0b0c10, 0 0 0 2px #0b0c10; }
+@keyframes life-chip-in { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+
+:root[data-motion='reduce'] :is(.room-zzz, .room-zzz > span) { animation: none; opacity: 1; }
+:root[data-motion='reduce'] .room-rest { transition: none; }

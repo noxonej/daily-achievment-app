@@ -1,8 +1,12 @@
 import { HomeShell } from './shells';
-import { PetSprite, WalkStepContext } from '../../components/PixelAvatar';
+import { PetSprite, PoseContext, WalkStepContext, type Pose } from '../../components/PixelAvatar';
+import { isReduced, remember, restSpots, spotAt, useLife, type RestSpot } from './life';
+import { todayKey } from '../../lib/date';
+import { L } from '../../lib/lang';
+import './life.css';
 import { Icon } from '../../components/Icon';
 import { usePixelated } from '../px/pixelate';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { DecorSlot, WorldState } from '../../lib/types';
 import { DECOR, DECOR_SLOTS, PROPERTIES, decorFor, type DecorItem } from '../catalog';
 import { BEDS, CHAIRS, DESKS, SEATS, TABLES, TECH, type DrawProps } from './furniture';
@@ -427,47 +431,14 @@ export interface RoomProps {
   /** Pets that live in your home (the one you take along walks with your character). */
   pets?: Array<{ id: string; name: string }>;
   onTapPet?: (id: string) => void;
+  /** Quests finished today: the character cheers once when this went up since your last visit. */
+  cheer?: number;
 }
 
 /** Where pets hang out on the floor (room x), and how far each one wanders. */
 const PET_SPOTS = [250, 820, 470, 1010, 140, 700, 380, 930, 560, 1090];
 
 const ORDER: DecorSlot[] = ['light', 'poster', 'art', 'shelf', 'rug', 'bed', 'lamp', 'seat', 'plant', 'table', 'desk', 'tech', 'chair', 'collectible'];
-
-const GIMMICKS = [
-  { kind: 'wave', say: '👋' },
-  { kind: 'hop', say: '' },
-  { kind: 'spin', say: '' },
-  { kind: 'wiggle', say: '🎵' },
-  { kind: 'hop', say: '💪' },
-  { kind: 'wave', say: 'Hey!' },
-  { kind: 'wiggle', say: '😴' },
-] as const;
-
-/** Now and then (not always) your character does something: waves, hops, spins, hums. */
-function useGimmick(on: boolean) {
-  const [g, setG] = useState<{ kind: string; say: string; key: number } | null>(null);
-  useEffect(() => {
-    if (!on) return;
-    let t: ReturnType<typeof setTimeout>;
-    const next = () => {
-      t = setTimeout(() => {
-        const pick = GIMMICKS[Math.floor(Math.random() * GIMMICKS.length)];
-        setG({ ...pick, key: Date.now() });
-        t = setTimeout(() => {
-          setG(null);
-          next();
-        }, 1600);
-      }, 7000 + Math.random() * 9000);
-    };
-    next();
-    return () => {
-      clearTimeout(t);
-      setG(null);
-    };
-  }, [on]);
-  return g;
-}
 
 /** A home with nothing in it yet: its walls, window, view, floor and architecture (Homes list + preview). */
 export function HomeThumb({ id, className = '' }: { id: string; className?: string }) {
@@ -497,7 +468,7 @@ export function HomeThumb({ id, className = '' }: { id: string; className?: stri
   );
 }
 
-export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced, placing = null, onPlaceAt, onTapExtra, pets = [], onTapPet }: RoomProps) {
+export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced, placing = null, onPlaceAt, onTapExtra, pets = [], onTapPet, cheer = 0 }: RoomProps) {
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const time = forced ?? timeOfDay();
   const night = time === 'night';
@@ -514,7 +485,61 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const [moving, setMoving] = useState(false);
   const held = useRef<{ dx: number; dy: number } | null>(null);
   const walkRaf = useRef(0);
-  const gimmick = useGimmick(!moving);
+  /* daily life (2026-11-24): sit, sleep, small idle moments and reactions (see life.ts) */
+  const spots = useMemo(() => restSpots((sl) => decorFor(world, sl)), [world]);
+  const [rest, setRest] = useState<RestSpot | null>(() =>
+    walkable && night && !remember('session', 'squzo-room-awake') ? spots.find((sp) => sp.kind === 'bed') ?? null : null,
+  );
+  const [near, setNear] = useState<RestSpot | null>(null);
+  // The keyboard handler is set up once, so it reads these through refs (never a stale value).
+  const restRef = useRef(rest);
+  restRef.current = rest;
+  const spotsRef = useRef(spots);
+  spotsRef.current = spots;
+  const lifeState = rest ? (rest.kind === 'bed' ? 'sleep' : 'sit') : 'stand';
+  const { moment, play, poke, tap, clear } = useLife(lifeState, walkable && !focus && !moving, time !== 'day');
+  const pose = useMemo<Pose>(() => ({ pose: lifeState, face: moment?.face, blanket: rest?.blanket }), [lifeState, moment?.face, rest?.blanket]);
+  // One greeting when the room opens: a cheer after finishing quests, or a morning stretch.
+  useEffect(() => {
+    if (!walkable) return;
+    const day = todayKey();
+    const seen = Number(remember('local', `squzo-room-cheer:${day}`) ?? 0);
+    let id: ReturnType<typeof setTimeout> | undefined;
+    // Remembered only once it really plays (so a re-mount can't swallow it).
+    if (cheer > seen && !rest) {
+      const n = cheer - seen;
+      id = setTimeout(() => {
+        remember('local', `squzo-room-cheer:${day}`, String(cheer));
+        play({ kind: 'cheer', face: 'starstruck', say: n === 1 ? '+1 quest!' : `+${n} quests!`, ms: 2000 });
+      }, 900);
+    } else if (time === 'day' && new Date().getHours() < 11 && remember('local', 'squzo-room-morning') !== day && !rest) {
+      id = setTimeout(() => {
+        remember('local', 'squzo-room-morning', day);
+        play({ kind: 'stretch', face: 'sleepy', say: 'Good morning!', ms: 2200 });
+      }, 1100);
+    }
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  function standUp() {
+    const r = restRef.current;
+    if (!r) return;
+    if (r.kind === 'bed') remember('session', 'squzo-room-awake', '1');
+    restRef.current = null;
+    posRef.current = { x: r.kind === 'bed' ? r.x + 60 : r.x, y: 522 };
+    setPos(posRef.current);
+    setRest(null);
+    setNear(null);
+    clear();
+    poke();
+  }
+  function sitDown(sp: RestSpot) {
+    setRest(sp);
+    setNear(null);
+    setFacing(1);
+    clear();
+    poke();
+  }
   // While walking, position and camera are moved straight on the page every frame (no React render,
   // no camera easing), so it stays smooth on a phone (2026-11-18 fix for "walking is very glitchy").
   const posRef = useRef(pos);
@@ -537,7 +562,8 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const minX = size.w - sceneW;
   const clampX = (x: number) => Math.min(0, Math.max(minX, x));
   const centreX = clampX(size.w / 2 - 600 * k);
-  const tx0 = pan ?? centreX;
+  // Until you look around, the camera frames the character where it is (e.g. asleep in bed at night).
+  const tx0 = pan ?? (rest ? clampX(size.w / 2 - rest.x * k) : centreX);
 
   function placeChar() {
     const el = charRef.current;
@@ -552,6 +578,8 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     el.style.transform = `translate3d(${x}px, 0px, 0) scale(1)`;
   }
   function walk(dx: number, dy: number) {
+    if (restRef.current) standUp();
+    setNear(null);
     held.current = { dx, dy };
     if (dx) setFacing(dx > 0 ? 1 : -1);
     setMoving(true);
@@ -584,6 +612,8 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     setPos(posRef.current);
     if (panRef.current != null) setPan(panRef.current);
     setMoving(false);
+    setNear(spotAt(spotsRef.current, posRef.current.x));
+    poke();
   }
   useEffect(() => () => cancelAnimationFrame(walkRaf.current), []);
   useEffect(() => {
@@ -768,24 +798,52 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
         {/* the same scene as pixel art (see px/pixelate.ts) */}
         {pixels && <img src={pixels} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full object-contain pointer-events-none" draggable={false} />}
 
-        {/* your character, standing on the rug */}
+        {/* your character: standing on the rug, sitting, or asleep in bed */}
         {children && (
           <div
             ref={charRef}
-            className="absolute pointer-events-none"
-            style={charStyle(posRef.current)}
+            className={`absolute pointer-events-none ${rest ? 'room-rest' : ''}`}
+            style={rest ? restStyle(rest) : charStyle(posRef.current)}
           >
-            {gimmick && !moving && (
-              <span key={gimmick.key} className="room-bubble-say absolute left-1/2 -top-2 -translate-x-1/2 -translate-y-full" aria-hidden="true">
-                {gimmick.say}
+            {moment?.say && !moving && (
+              <span key={moment.key} className="room-bubble-say absolute left-1/2 -top-2 -translate-x-1/2 -translate-y-full z-[1]" aria-hidden="true">
+                {moment.say}
               </span>
             )}
-            <div style={{ transform: `scaleX(${facing})` }}>
-              <div className={moving ? 'room-walk' : gimmick ? `room-gim-${gimmick.kind}` : ''}>
-                <Stepper moving={moving}>{children}</Stepper>
+            {lifeState === 'sleep' && !moment?.say && (
+              <span className="room-zzz absolute px-label" aria-hidden="true">
+                z<span>z</span>
+              </span>
+            )}
+            <div style={{ transform: lifeState === 'sleep' ? 'rotate(-90deg)' : `scaleX(${facing})` }}>
+              <div key={moment?.key ?? 'still'} className={moving ? 'room-walk' : moment && !isReduced() ? `room-life-${moment.kind}` : ''}>
+                <PoseContext.Provider value={pose}>
+                  <Stepper moving={moving}>{children}</Stepper>
+                </PoseContext.Provider>
               </div>
             </div>
+            {walkable && !moving && !focus && (
+              <button
+                type="button"
+                onClick={tap}
+                aria-label={lifeState === 'sleep' ? 'Your character is sleeping' : 'Say hi to your character'}
+                className="room-char-tap absolute pointer-events-auto"
+              />
+            )}
           </div>
+        )}
+
+        {/* sit / sleep / get up */}
+        {walkable && !moving && !focus && !placing && (near || rest) && (
+          <button
+            type="button"
+            onClick={() => (rest ? standUp() : near && sitDown(near))}
+            className="room-rest-chip absolute pointer-events-auto"
+            style={chipStyle(rest ?? near!, !!rest, posRef.current)}
+          >
+            <Icon name={rest ? (rest.kind === 'bed' ? '☀️' : '⬆') : near!.kind === 'bed' ? '🛏' : '🛋'} size={13} />
+            <span className="px-label">{rest ? (rest.kind === 'bed' ? L('Wake up', 'Keltis') : L('Get up', 'Atsistoti')) : near!.kind === 'bed' ? L('Sleep', 'Miegoti') : L('Sit', 'Sėstis')}</span>
+          </button>
         )}
 
         {/* pets that live here: they wander about, tap one to take it along */}
@@ -866,7 +924,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
 
       {walkable && !focus && !placing && (
         <Joystick
-          side={pos.x * k + tx0 > size.w * 0.55 ? 'left' : 'right'}
+          side={(rest ? rest.x : pos.x) * k + tx0 > size.w * 0.55 ? 'left' : 'right'}
           onMove={(dx, dy) => {
             if (!dx && !dy) {
               if (held.current) stopWalk();
@@ -970,6 +1028,26 @@ function Joystick({ side, onMove, onEnd }: { side: 'left' | 'right'; onMove: (dx
 }
 
 /** Where the character stands: further back is a little smaller. */
+/** Sitting: feet on the spot. Lying down: the sprite's centre on the mattress (it's turned on its side). */
+function restStyle(r: RestSpot) {
+  const w = 172 * r.scale;
+  const y = r.kind === 'bed' ? r.y + w / 2 : r.y;
+  return {
+    left: `${(r.x / ROOM_W) * 100}%`,
+    bottom: `${((ROOM_H - y) / ROOM_H) * 100}%`,
+    width: `${(w / ROOM_W) * 100}%`,
+    transform: 'translateX(-50%)',
+    zIndex: '600',
+  };
+}
+
+/** The Sit / Sleep / Get up button floats above the character. */
+function chipStyle(r: RestSpot, resting: boolean, p: { x: number; y: number }) {
+  const x = resting ? r.x : p.x;
+  const top = resting ? (r.kind === 'bed' ? r.y - 120 : r.y - 175) : p.y - 190;
+  return { left: `${(x / ROOM_W) * 100}%`, top: `${(Math.max(20, top) / ROOM_H) * 100}%`, transform: 'translate(-50%, -100%)', zIndex: 700 };
+}
+
 function charStyle(p: { x: number; y: number }) {
   return {
     left: `${(p.x / ROOM_W) * 100}%`,

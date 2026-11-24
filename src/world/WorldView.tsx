@@ -1,4 +1,5 @@
 import './world.css';
+import { todayKey } from '../lib/date';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { PurchaseCelebration, PurchaseSheet } from './Purchase';
 import { usePixelated } from './px/pixelate';
@@ -197,13 +198,14 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
             if (it) pick(it.slot);
           }}
           pets={pets}
+          cheer={(state.dayLogs[todayKey()]?.completedQuestIds.length ?? 0)}
           onTapPet={(id) => {
             const name = pets.find((p) => p.id === id)?.name ?? 'Your pet';
             dispatch({ type: 'EQUIP_COSMETIC', slot: 'pet', itemId: id });
             say(`${name} is walking with you now`);
           }}
         >
-          <Avatar look={state.character} size={200} bare alive className="w-full h-auto world-idle" />
+          <Avatar look={state.character} size={200} bare alive className="w-full h-auto" />
         </Room>
         {placing && (
           <div className="theme-dark absolute inset-x-3 top-3 z-[10] flex items-center justify-between gap-2 rounded-2xl bg-black/75 backdrop-blur-md px-3.5 py-2.5 toast-in-up">
@@ -546,7 +548,7 @@ function HomePreview({ id, onClose, action }: { id: string; onClose: () => void;
       <div className="flex-1 min-h-0 px-3">
         <div className="relative h-full max-h-[460px]">
           <Room world={look} trophies={0} books={0} focus={null} time="day">
-            <Avatar look={state.character} size={200} bare alive className="w-full h-auto world-idle" />
+            <Avatar look={state.character} size={200} bare alive className="w-full h-auto" />
           </Room>
         </div>
       </div>
