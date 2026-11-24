@@ -1,0 +1,31 @@
+/* ---- Reward chest opening (2026-11-24 rework) ---- */
+/* Knocks: each beat is a short hop-and-rattle that gets a little bigger (--amp). */
+.chest-knock { animation: chest-knock .3s cubic-bezier(.3,.7,.4,1) both; transform-origin: 50% 92%; }
+@keyframes chest-knock {
+  0% { transform: none; }
+  20% { transform: translateY(calc(-6px * var(--amp))) rotate(calc(-2.5deg * var(--amp))) scaleY(1.03); }
+  45% { transform: translateY(0) rotate(calc(2deg * var(--amp))) scaleX(1.05) scaleY(.94); }
+  70% { transform: rotate(calc(-1deg * var(--amp))) scaleX(1.02) scaleY(.98); }
+  100% { transform: scaleX(1.03) scaleY(.97); }
+}
+/* light leaking from the lid seam grows with every knock */
+.chest-leak.is-charging { animation: none; opacity: calc(.25 + var(--charge, 0) * .75); transform: scaleX(calc(.5 + var(--charge, 0) * .6)); transition: opacity .25s ease-out, transform .25s ease-out; }
+/* a soft flash in the prize colour as the lid flies (not a full white screen) */
+.chest-flash { position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--ray) 55%, #fff) 0%, color-mix(in srgb, var(--ray) 25%, transparent) 30%, transparent 65%);
+  animation: chest-flash .55s ease-out both; }
+@keyframes chest-flash { 0% { opacity: 0; } 15% { opacity: .9; } 100% { opacity: 0; } }
+/* the open chest sinks under the prize */
+.chest-sink { position: absolute; left: 50%; top: 58%; transform: translate(-50%, 0); pointer-events: none; animation: chest-sink .7s cubic-bezier(.4,0,.6,1) both; }
+@keyframes chest-sink { 0% { opacity: 1; transform: translate(-50%, -10%) scale(1); } 100% { opacity: 0; transform: translate(-50%, 30%) scale(.8); } }
+/* the prize rises out of the chest, overshoots a little, settles */
+.chest-prize-rise { animation: chest-prize-rise .75s cubic-bezier(.2,1.25,.4,1) both; }
+@keyframes chest-prize-rise {
+  0% { transform: translateY(90px) scale(.35); opacity: 0; filter: brightness(2.2); }
+  35% { opacity: 1; }
+  70% { transform: translateY(-8px) scale(1.05); filter: brightness(1.15); }
+  100% { transform: none; filter: brightness(1); }
+}
+/* rarity label stamps in */
+.chest-stamp { animation: chest-stamp .45s .45s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes chest-stamp { 0% { transform: scale(1.8); opacity: 0; letter-spacing: .6em; } 100% { transform: none; opacity: 1; } }

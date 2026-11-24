@@ -5,7 +5,7 @@ import {  todayKey, weekKey } from '../../lib/date';
 import { applyDailyTwists, untwisted } from '../../lib/dailyTwist';
 import { buildWildcardQuestForDate, buildWeeklyWildcardQuestForWeek } from '../../lib/wildcard';
 import {  DIFFICULTY_XP } from '../../lib/xp';
-import { checkNote } from '../../lib/questRules';
+import { checkNote, noteDone } from '../../lib/questRules';
 import type { Action } from '../actions';
 import {  recomputeDailyLog, recomputeWeeklyLog, mondayKey, currentProgress, withProgress } from '../state';
 
@@ -54,35 +54,29 @@ export function questsSlice(state: AppState, action: Action): AppState | undefin
     case 'SET_QUEST_NOTE': {
       const quest = state.quests.find((q) => q.id === action.questId);
       if (!quest) return state;
-      // Only a real answer completes it (e.g. three different things for "Gratitude x3"), but whatever was typed is kept.
+      // Typing only saves the text. A written quest is completed by the explicit "Mark done" tap
+      // (action.done === true), and only if the answer meets the quest's rule. Editing a finished
+      // answer below the rule un-completes it again. (2026-11-24: quests used to tick themselves
+      // while you were still typing, 0.4 s after the word count was reached.)
       const hasText = action.note.trim().length > 0;
-      const hasContent = checkNote(quest, action.note).done;
-
-      if (quest.frequency === 'daily') {
-        const key = todayKey();
-        const existing = state.dayLogs[key];
-        const completed = existing ? [...existing.completedQuestIds] : [];
-        const idx = completed.indexOf(quest.id);
-        if (hasContent && idx < 0) completed.push(quest.id);
-        if (!hasContent && idx >= 0) completed.splice(idx, 1);
-        const notes = { ...(existing?.notes ?? {}) };
-        if (hasText) notes[quest.id] = action.note;
-        else delete notes[quest.id];
-        const newLog = recomputeDailyLog(state.quests, completed, { ...existing, notes });
+      const passes = checkNote(quest, action.note).done;
+      const isDaily = quest.frequency === 'daily';
+      const key = isDaily ? todayKey() : weekKey();
+      const existing = isDaily ? state.dayLogs[key] : state.weekLogs[key];
+      const completed = existing ? [...existing.completedQuestIds] : [];
+      const idx = completed.indexOf(quest.id);
+      const done = noteDone(idx >= 0, passes, action.done);
+      if (done && idx < 0) completed.push(quest.id);
+      if (!done && idx >= 0) completed.splice(idx, 1);
+      const notes = { ...(existing?.notes ?? {}) };
+      if (hasText) notes[quest.id] = action.note;
+      else delete notes[quest.id];
+      if (isDaily) {
+        const newLog = recomputeDailyLog(state.quests, completed, { ...state.dayLogs[key], notes });
         return { ...state, dayLogs: { ...state.dayLogs, [key]: newLog } };
-      } else {
-        const key = weekKey();
-        const existing = state.weekLogs[key];
-        const completed = existing ? [...existing.completedQuestIds] : [];
-        const idx = completed.indexOf(quest.id);
-        if (hasContent && idx < 0) completed.push(quest.id);
-        if (!hasContent && idx >= 0) completed.splice(idx, 1);
-        const notes = { ...(existing?.notes ?? {}) };
-        if (hasText) notes[quest.id] = action.note;
-        else delete notes[quest.id];
-        const newLog = recomputeWeeklyLog(state.quests, completed, { ...existing, notes });
-        return { ...state, weekLogs: { ...state.weekLogs, [key]: newLog } };
       }
+      const newLog = recomputeWeeklyLog(state.quests, completed, { ...state.weekLogs[key], notes });
+      return { ...state, weekLogs: { ...state.weekLogs, [key]: newLog } };
     }
 
 

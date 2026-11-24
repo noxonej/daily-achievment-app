@@ -15,10 +15,11 @@ type Section = 'weekly' | 'goals' | 'rewards';
 /** Weekly quests and long-term (monthly / yearly) goals in one place. */
 export function QuestsView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
   const wantGoals = useIntent('quests-goals');
+  const wantWeekly = useIntent('quests-weekly');
   const { state } = useApp();
   // Long-term goals come first: open on them whenever you have one.
   const hasGoals = state.goals.some((g) => !g.completedAt);
-  const [section, setSection] = useState<Section>(wantGoals || hasGoals ? 'goals' : 'weekly');
+  const [section, setSection] = useState<Section>(wantWeekly ? 'weekly' : wantGoals || hasGoals ? 'goals' : 'weekly');
   return (
     <div>
       <div className="max-w-2xl mx-auto px-4 pt-4">

@@ -40,6 +40,7 @@ import { ScrollLockCard } from '../components/today/ScrollLockCard';
 const RECAP_KEY = 'dayforge-recap-dismissed';
 import { setIntent } from '../lib/intents';
 import { YearGoalCard } from '../components/today/YearGoalCard';
+import { WeeklyStrip } from '../components/today/WeeklyStrip';
 import { SeasonCard } from '../components/today/SeasonCard';
 import { ReminderPrompt } from '../components/today/ReminderPrompt';
 import { BackupNudge } from '../components/today/BackupNudge';
@@ -322,7 +323,7 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
                 quest={quest}
                 note={notes[quest.id] ?? ''}
                 completed={completed.includes(quest.id)}
-                onChangeNote={(note) => dispatch({ type: 'SET_QUEST_NOTE', questId: quest.id, note })}
+                onChangeNote={(note, done) => dispatch({ type: 'SET_QUEST_NOTE', questId: quest.id, note, done })}
                 periodKey={key}
               />
             ) : (
@@ -339,6 +340,9 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           })}
         </div>
       )}
+
+      {/* Weekly quests sit right under the daily ones so they're never forgotten (2026-11-24). */}
+      <WeeklyStrip onNavigate={onNavigate} />
 
       {!rewardsOnTop && <DailyRewardCard />}
 
@@ -407,22 +411,6 @@ export function TodayView({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
       {(!simple || (log?.quickTasks?.length ?? 0) > 0) && <QuickTaskList />}
       {!simple && <DailyNoteBox />}
-
-      {!simple && (
-      <button
-        onClick={() => onNavigate('quests')}
-        className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left hover:border-white/20 transition"
-      >
-        <span className="flex items-center gap-3">
-          <span className="shrink-0 w-10 h-10 rounded-xl bg-white/5 text-sky-300 flex items-center justify-center"><Icon name="🗡" size={20} /></span>
-          <span>
-            <span className="block text-sm font-semibold text-white">{t('quests.weekly')}</span>
-            <span className="block text-xs text-slate-400">{t('quests.weeklySub')}</span>
-          </span>
-        </span>
-        <span className="text-slate-400">→</span>
-      </button>
-      )}
 
       {!simple && (
         <div className="text-center text-xs text-slate-500 pt-1">

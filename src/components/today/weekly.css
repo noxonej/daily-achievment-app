@@ -1,0 +1,39 @@
+/* Weekly quests strip on Today (2026-11-24). Sky blue = weekly, so it never reads as a daily quest. */
+.weekly-strip {
+  position: relative; isolation: isolate; overflow: hidden;
+  background: linear-gradient(135deg, color-mix(in srgb, #38bdf8 13%, transparent), color-mix(in srgb, #6366f1 8%, transparent) 70%);
+  border: 1px solid color-mix(in srgb, #38bdf8 34%, transparent);
+  transition: transform .18s var(--ease-out, ease-out), border-color .2s;
+}
+.weekly-strip::before { /* the left rail that marks "weekly" */
+  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: #38bdf8;
+}
+.weekly-strip:active { transform: scale(.985); }
+.weekly-strip:hover { border-color: color-mix(in srgb, #38bdf8 55%, transparent); }
+.weekly-strip.is-done { border-color: color-mix(in srgb, #34d399 45%, transparent); background: linear-gradient(135deg, color-mix(in srgb, #34d399 12%, transparent), transparent 75%); }
+.weekly-strip.is-done::before { background: #34d399; }
+.weekly-tag {
+  flex-shrink: 0; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: #0b1220;
+  background: #7dd3fc; border-radius: 4px; padding: 3px 5px 2px; box-shadow: 0 2px 0 #0369a1;
+}
+.weekly-seg { position: relative; height: 6px; border-radius: 2px; background: rgba(148, 163, 184, .18); overflow: hidden; }
+.weekly-seg-fill { position: absolute; inset: 0; background: linear-gradient(90deg, #38bdf8, #818cf8); transform-origin: left; transition: transform .6s var(--ease-out, ease-out); }
+.weekly-strip.is-done .weekly-seg-fill { background: #34d399; }
+.weekly-day {
+  width: 13px; height: 15px; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  font-size: 8.5px; font-weight: 800; color: #64748b; background: rgba(148, 163, 184, .1);
+}
+.weekly-day.past { color: #7dd3fc; background: rgba(56, 189, 248, .14); }
+.weekly-day.now { color: #0b1220; background: #7dd3fc; box-shadow: 0 0 0 1.5px rgba(125, 211, 252, .35); }
+:root[data-theme='light'] .weekly-strip { background: linear-gradient(135deg, #e0f2fe, #eef2ff 70%); border-color: #bae6fd; }
+:root[data-theme='light'] .weekly-strip.is-done { background: linear-gradient(135deg, #d1fae5, #f0fdf4 75%); border-color: #a7f3d0; }
+:root[data-theme='light'] .weekly-strip .text-white { color: #0f172a; }
+:root[data-theme='light'] .weekly-strip .text-slate-300 { color: #334155; }
+:root[data-theme='light'] .weekly-strip .text-sky-200\/80 { color: #0369a1; }
+:root[data-theme='light'] .weekly-day { background: #e2e8f0; color: #64748b; }
+:root[data-theme='light'] .weekly-day.past { background: #bae6fd; color: #0369a1; }
+:root[data-theme='light'] .weekly-seg { background: #cbd5e1; }
+/* Weekly quest cards (Goals → This week) carry the same sky rail. */
+.weekly-list > * { position: relative; }
+.weekly-list > *::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 0 3px 3px 0; background: #38bdf8; z-index: 1; pointer-events: none; }
+:root[data-theme='light'] .weekly-day.now { background: #0284c7; color: #fff; }

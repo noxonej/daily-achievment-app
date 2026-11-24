@@ -13,6 +13,7 @@ import { logEvent } from '../lib/analytics';
 import { useIrlStats } from './stats/useIrlStats';
 import { StatsRadar } from './stats/StatsRadar';
 import { Burst } from './fx/Burst';
+import { PixelAvatar } from './PixelAvatar';
 
 // Round 2 (B5): three screens, and you finish a real quest before the app even opens.
 // 1. what you want to level up, 2. pick 3 daily quests, 3. do your first quest right now.
@@ -21,10 +22,12 @@ type Step = 'goal' | 'quests' | 'first';
 const STEPS: Step[] = ['goal', 'quests', 'first'];
 
 /** First-run setup: pick a goal, pick 3 quests, finish your first quest. About 30 seconds. */
-const GENDERS: Array<{ id: NonNullable<Profile['gender']>; label: string; lt: string }> = [
-  { id: 'female', label: 'Girl', lt: 'Mergina' },
-  { id: 'male', label: 'Guy', lt: 'Vaikinas' },
-  { id: 'unsaid', label: 'Rather not say', lt: 'Nesakysiu' },
+// 2026-11-24: the character is never made a girl or a guy for you. You pick Male, Female or
+// "Choose later"; the pick only sets the starting hair once, and nothing switches it afterwards.
+const GENDERS: Array<{ id: NonNullable<Profile['gender']>; label: string; lt: string; hair?: string }> = [
+  { id: 'male', label: 'Male', lt: 'Vyras', hair: 'hair-quiff' },
+  { id: 'female', label: 'Female', lt: 'Moteris', hair: 'hair-ponytail' },
+  { id: 'unsaid', label: 'Choose later', lt: 'Vėliau' },
 ];
 
 export function Onboarding() {
@@ -55,10 +58,11 @@ export function Onboarding() {
     setStep(next);
   }
 
-  /** Small touches that match the answers (starting hair). */
+  /** The starting hair for the picked character, set once here (only if it's still the default). */
   function matchLook() {
-    if (gender === 'female' && normalizeLook(state.character).hair === DEFAULT_LOOK.hair) {
-      dispatch({ type: 'EQUIP_COSMETIC', slot: 'hair', itemId: 'hair-ponytail' });
+    const hair = GENDERS.find((g) => g.id === gender)?.hair;
+    if (hair && normalizeLook(state.character).hair === DEFAULT_LOOK.hair) {
+      dispatch({ type: 'EQUIP_COSMETIC', slot: 'hair', itemId: hair });
     }
   }
 
@@ -159,20 +163,38 @@ export function Onboarding() {
                   );
                 })}
               </div>
-              <div className="mt-4 flex gap-1.5" role="radiogroup" aria-label={L("I'm a", 'Aš esu')}>
-                {GENDERS.map((g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={gender === g.id}
-                    onClick={() => setGender(g.id)}
-                    className={`flex-1 rounded-full border px-2 py-1.5 text-xs font-semibold transition ${gender === g.id ? 'border-amber-400 bg-amber-500/10 text-white' : 'border-white/10 text-slate-400'}`}
-                  >
-                    {isLt() ? g.lt : g.label}
-                  </button>
-                ))}
+              <p className="mt-5 text-xs font-semibold text-slate-400">{L('Your character', 'Tavo veikėjas')}</p>
+              <div className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label={L('Your character', 'Tavo veikėjas')}>
+                {GENDERS.map((g) => {
+                  const on = gender === g.id;
+                  const look = { ...normalizeLook(state.character), ...(g.hair ? { hair: g.hair } : {}) };
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => setGender(g.id)}
+                      className={`relative flex flex-col items-center gap-1 rounded-2xl border pt-2 pb-2.5 transition active:scale-[0.97] ${on ? 'border-amber-400 bg-amber-500/10' : 'border-white/10 bg-white/[0.03] hover:border-white/25'}`}
+                    >
+                      {g.hair ? (
+                        <PixelAvatar look={look} size={56} framing="bust" shape="circle" />
+                      ) : (
+                        <span className="w-14 h-14 rounded-full bg-white/[0.06] border border-dashed border-white/20 flex items-center justify-center text-slate-400">
+                          <Icon name="🕒" size={22} />
+                        </span>
+                      )}
+                      <span className={`text-xs font-bold ${on ? 'text-white' : 'text-slate-300'}`}>{isLt() ? g.lt : g.label}</span>
+                      {on && (
+                        <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center">
+                          <Icon name="✓" size={10} strokeWidth={3} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+              <p className="mt-1.5 text-[11px] text-slate-500">{L('Only sets your starting look. Change anything later in the wardrobe.', 'Tik pradinė išvaizda. Viską pakeisi vėliau drabužinėje.')}</p>
               <div className="flex-1 min-h-6" />
               <Primary
                 onClick={() => {

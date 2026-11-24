@@ -46,7 +46,7 @@ export type Action =
   | { type: 'LEGENDARY_PICK'; pickId: string; vehicleId: string }
   /** itemId is the rolled prize, or null when everything is owned (gives bonus coins instead). */
   | { type: 'OPEN_CHEST'; itemId: string | null; skip?: boolean; worldId?: string }
-  | { type: 'SET_QUEST_NOTE'; questId: string; note: string }
+  | { type: 'SET_QUEST_NOTE'; questId: string; note: string; /** true = the "Mark done" tap, false = undo; left out while typing. */ done?: boolean }
   /** Saves a quest's proof answer for today; the first proof per quest per day gives a small coin bonus. */
   | { type: 'PROOF_QUEST'; questId: string; text: string }
   | { type: 'SET_FREE_NOTE'; note: string }

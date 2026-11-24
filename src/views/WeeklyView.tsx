@@ -13,6 +13,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { Confetti } from '../components/Confetti';
 import type { ViewId } from '../components/NavTabs';
 import { Icon } from '../components/Icon';
+import '../components/today/weekly.css';
 
 export function WeeklyView({ embedded = false }: { onNavigate?: (v: ViewId) => void; embedded?: boolean }) {
   const { state, dispatch } = useApp();
@@ -61,7 +62,11 @@ export function WeeklyView({ embedded = false }: { onNavigate?: (v: ViewId) => v
         // Inside Quests the glowing "This week" card already shows the progress.
         <div className="relative -mt-2 flex items-center justify-between gap-2">
           {showConfetti && <Confetti count={36} />}
-          <p className="text-[11px] text-slate-500"><Icon name="🔄" size="1.15em" className="icon-inline" />{t('today.newQuestsIn', { t: resetLabel })}</p>
+          <p className="flex items-center gap-2 text-[12px] text-slate-400">
+            <span className="weekly-tag px-label">Weekly</span>
+            <span className="tabular-nums">{doneCount}/{activeWeekly.length}</span>
+            <span><Icon name="⏳" size="1.1em" className="icon-inline" />{t('today.newQuestsIn', { t: resetLabel })}</span>
+          </p>
           {isPerfect && (
             <span className="text-xs font-bold text-sky-300 bg-sky-500/10 border border-sky-500/30 rounded-full px-2.5 py-1">
               <Icon name="🛡" size="1.15em" className="icon-inline" />Perfect week
@@ -114,7 +119,7 @@ export function WeeklyView({ embedded = false }: { onNavigate?: (v: ViewId) => v
           </button>
         </div>
       ) : (
-        <div className="space-y-2.5 rows-stagger">
+        <div className="weekly-list space-y-2.5 rows-stagger">
           {sorted.map((quest) =>
             quest.measure ? (
               <MeasureQuestCard
@@ -131,7 +136,7 @@ export function WeeklyView({ embedded = false }: { onNavigate?: (v: ViewId) => v
                 quest={quest}
                 note={notes[quest.id] ?? ''}
                 completed={completed.includes(quest.id)}
-                onChangeNote={(note) => dispatch({ type: 'SET_QUEST_NOTE', questId: quest.id, note })}
+                onChangeNote={(note, done) => dispatch({ type: 'SET_QUEST_NOTE', questId: quest.id, note, done })}
                 periodKey={key}
               />
             ) : (
