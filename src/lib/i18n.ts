@@ -724,12 +724,19 @@ export function tl(key: TKey, vars?: Record<string, string | number>): string {
   return translate(shownLanguage(locale()), key, vars);
 }
 
+const pluralRules = new Map<string, Intl.PluralRules>();
+
 /** Plural-aware translator: picks `base.one` / `base.few` / `base.other` for n, and fills {n}. */
 export function tn(base: string, n: number, vars?: Record<string, string | number>): string {
   const lang = shownLanguage(locale());
   let rule = 'other';
   try {
-    rule = new Intl.PluralRules(lang).select(n);
+    let rules = pluralRules.get(lang);
+    if (!rules) {
+      rules = new Intl.PluralRules(lang);
+      pluralRules.set(lang, rules);
+    }
+    rule = rules.select(n);
   } catch {
     // old browser: 'other'
   }

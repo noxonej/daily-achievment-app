@@ -61,10 +61,17 @@ export function WorldView() {
 
   function confirm(p: Pending) {
     dispatch({ type: 'WORLD_BUY', id: p.id, vehicleId: p.vehicleId });
-    setBought({ id: p.id, key: Date.now() });
+    // Paid things: the item drops into the room / garage when the reveal fades out, not hidden behind it.
     if (p.coins > 0) setParty(p);
+    else setBought({ id: p.id, key: Date.now() });
   }
-  const endParty = useCallback(() => setParty(null), []);
+  const partyRef = useRef<Pending | null>(null);
+  partyRef.current = party;
+  const endParty = useCallback(() => {
+    const p = partyRef.current;
+    if (p) setBought({ id: p.id, key: Date.now() });
+    setParty(null);
+  }, []);
   const decorThumb = useCallback(
     (id: string) => {
       const item = DECOR.find((d) => d.id === id);

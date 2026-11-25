@@ -1,0 +1,108 @@
+/* ---- Shop purchase reveal (2026-11-25) ----
+   arrive → charge (knocks) → open (flash, light, coins) → reveal (item rises / lights up) → show (info, one by one).
+   transform, opacity and filter only, so it stays smooth on phones. */
+
+/* Everything in the pod sits on the same grid cell, so the box and the item swap without a layout jump. */
+.pr-pod { width: min(300px, 82vw); height: 230px; display: grid; place-items: center; }
+.pr-pod > * { grid-area: 1 / 1; }
+
+/* the whole overlay fades away at the end instead of vanishing */
+.pr-out { animation: pr-out .28s ease-in both; pointer-events: none; }
+@keyframes pr-out { from { opacity: 1; } to { opacity: 0; } }
+.pr-out .pr-pod, .pr-out .pr-info { transition: transform .28s ease-in; transform: scale(.94) translateY(10px); }
+
+/* a soft flash in the rarity colour as it opens */
+.pr-flash { position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--ray) 55%, #fff) 0%, color-mix(in srgb, var(--ray) 22%, transparent) 30%, transparent 65%);
+  animation: pr-flash .55s ease-out both; }
+@keyframes pr-flash { 0% { opacity: 0; } 15% { opacity: .9; } 100% { opacity: 0; } }
+
+/* light leaking out, stronger with every knock */
+.pr-leak { position: absolute; left: 50%; top: 50%; width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ray) 60%, #fff 10%), color-mix(in srgb, var(--ray) 18%, transparent) 55%, transparent);
+  opacity: calc(.15 + var(--charge, 0) * .85); transform: scale(calc(.55 + var(--charge, 0) * .6));
+  transition: opacity .25s ease-out, transform .25s ease-out; }
+
+/* the box drops in and squashes on landing */
+.pr-drop { animation: pr-drop .48s cubic-bezier(.5, 0, .75, .3) both; }
+@keyframes pr-drop {
+  0% { transform: translateY(-55vh); opacity: 0; }
+  20% { opacity: 1; }
+  70% { transform: translateY(0) scale(1); }
+  82% { transform: translateY(0) scale(1.08, .9); }
+  100% { transform: none; }
+}
+/* each knock is a hop-and-rattle that gets a little bigger (--amp) */
+.pr-knock { display: block; animation: pr-knock .3s cubic-bezier(.3, .7, .4, 1) both; transform-origin: 50% 92%; }
+@keyframes pr-knock {
+  0% { transform: none; }
+  20% { transform: translateY(calc(-7px * var(--amp))) rotate(calc(-2.5deg * var(--amp))) scaleY(1.03); }
+  45% { transform: translateY(0) rotate(calc(2deg * var(--amp))) scaleX(1.05) scaleY(.94); }
+  70% { transform: rotate(calc(-1deg * var(--amp))) scaleX(1.02) scaleY(.98); }
+  100% { transform: none; }
+}
+/* the open box sinks away under the item */
+.pr-box { display: block; }
+.pr-sink { animation: pr-sink .65s cubic-bezier(.4, 0, .6, 1) both; }
+@keyframes pr-sink { 0% { transform: none; opacity: 1; } 100% { transform: translateY(34%) scale(.8); opacity: 0; } }
+
+/* the item rises out of the box mouth, glowing, overshoots a little and settles */
+.pr-rise { animation: pr-rise .8s cubic-bezier(.2, 1.25, .4, 1) both; }
+@keyframes pr-rise {
+  0% { transform: translateY(70px) scale(.3); opacity: 0; filter: brightness(2.6) drop-shadow(0 0 22px var(--ray)); }
+  30% { opacity: 1; }
+  70% { transform: translateY(-10px) scale(1.05); filter: brightness(1.2) drop-shadow(0 0 14px var(--ray)); }
+  100% { transform: none; opacity: 1; filter: brightness(1) drop-shadow(0 0 0 transparent); }
+}
+/* a gentle float once it has landed (its own wrapper, so it never fights the rise) */
+.pr-bob { animation: pr-bob 3s ease-in-out .8s infinite; }
+@keyframes pr-bob { 0%, 100% { transform: none; } 50% { transform: translateY(-6px); } }
+
+/* vehicles, homes, garages: a dark silhouette with a rim of light that grows… */
+.pr-fade-up { animation: pr-fade-up .48s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes pr-fade-up { from { opacity: 0; transform: translateY(18px) scale(.94); } to { opacity: 1; transform: none; } }
+.pr-sil { filter: brightness(0) drop-shadow(0 0 calc(3px + var(--charge, 0) * 14px) var(--ray)); transition: filter .25s ease-out; }
+/* homes and garages are rectangles, so a black shape says nothing: show them dim and blurry instead */
+.pr-sil.pr-soft { filter: brightness(.35) blur(calc(8px - var(--charge, 0) * 4px)) drop-shadow(0 0 calc(3px + var(--charge, 0) * 14px) var(--ray)); }
+.pr-resolve.pr-soft { animation-name: pr-resolve-soft; }
+@keyframes pr-resolve-soft {
+  0% { filter: brightness(.35) blur(4px) drop-shadow(0 0 16px var(--ray)); transform: scale(1); }
+  30% { filter: brightness(1.9) blur(0px) drop-shadow(0 0 26px var(--ray)); transform: scale(1.05); }
+  100% { filter: brightness(1) blur(0px) drop-shadow(0 0 0 transparent); transform: none; }
+}
+/* …then lights up into full colour */
+.pr-resolve { animation: pr-resolve .75s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes pr-resolve {
+  0% { filter: brightness(0) drop-shadow(0 0 16px var(--ray)); transform: scale(1); }
+  30% { filter: brightness(2.4) drop-shadow(0 0 26px var(--ray)); transform: scale(1.06); }
+  100% { filter: brightness(1) drop-shadow(0 0 0 transparent); transform: none; }
+}
+
+/* slow light rays behind rare+ items */
+.pr-rays { position: absolute; left: 50%; top: 50%; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; pointer-events: none; opacity: 0; mix-blend-mode: screen;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--ray) 30%, transparent) 0deg 7deg, transparent 7deg 22deg);
+  -webkit-mask: radial-gradient(closest-side, #000 15%, transparent 72%); mask: radial-gradient(closest-side, #000 15%, transparent 72%);
+  animation: pr-rays-in .8s ease-out .1s forwards, pr-spin 18s linear infinite; }
+@keyframes pr-rays-in { to { opacity: .8; } }
+@keyframes pr-spin { to { transform: rotate(360deg); } }
+
+/* info appears line by line */
+.pr-info > * { opacity: 0; transform: translateY(8px); }
+.pr-info[data-on] > * { animation: pr-line .4s cubic-bezier(.2, .9, .3, 1) both; }
+.pr-info[data-on] > .pr-i2 { animation-delay: .07s; }
+.pr-info[data-on] > .pr-i3 { animation-delay: .14s; }
+.pr-info[data-on] > .pr-i4 { animation-delay: .22s; }
+.pr-info[data-on] > .pr-i5 { animation-delay: .6s; }
+@keyframes pr-line { to { opacity: 1; transform: none; } }
+.pr-rarity { border: 1px solid; border-radius: 9999px; padding: 4px 10px; }
+.pr-owned { display: inline-flex; align-items: center; gap: 6px; border-radius: 9999px; padding: 7px 12px; color: #fff;
+  background: color-mix(in srgb, var(--ray) 26%, rgba(255, 255, 255, .06)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ray) 70%, #fff 10%); }
+.pr-info[data-on] .pr-owned { animation: pr-stamp .45s .3s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes pr-stamp { 0% { transform: scale(1.7) rotate(-6deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+:root[data-motion='reduce'] :is(.pr-out, .pr-flash, .pr-drop, .pr-knock, .pr-sink, .pr-rise, .pr-bob, .pr-fade-up, .pr-resolve, .pr-rays, .pr-info > *, .pr-owned) { animation: none !important; opacity: 1; transform: none; filter: none; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.pr-out, .pr-flash, .pr-drop, .pr-knock, .pr-sink, .pr-rise, .pr-bob, .pr-fade-up, .pr-resolve, .pr-rays, .pr-info > *, .pr-owned) { animation: none !important; opacity: 1; transform: none; filter: none; }
+}
+/* small or short phones: the stage shrinks a little so the name and "Owned" stay on screen */
+@media (max-height: 640px) { .pr-pod { scale: .8; } .pr-info { margin-top: 0; } }

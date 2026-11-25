@@ -87,17 +87,56 @@ export function AppProvider({ children, storageKey = LEGACY_STORAGE_KEY }: { chi
   }, [storageKey]);
 
   const [saveFailed, setSaveFailed] = useState(false);
-  useEffect(() => {
+  // Saving (2026-11-25): turning the whole save into text and writing it to the phone's storage
+  // blocks the screen for a moment, and it used to happen on every single change: each letter typed
+  // in a note, every step-count update. Now a burst of changes is saved once, 300 ms after the last
+  // one, and straight away when the app is hidden or closed, so nothing is lost.
+  const latest = useRef(state);
+  latest.current = state;
+  const dirty = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const flushSave = useCallback(() => {
+    clearTimeout(saveTimer.current);
+    if (!dirty.current) return;
+    dirty.current = false;
     let json = '';
     try {
-      json = JSON.stringify(state);
+      json = JSON.stringify(latest.current);
     } catch {
       setSaveFailed(true);
       return;
     }
     // If the phone's storage is full the change still works this session, and the app says so.
     setSaveFailed(!writeSave(storageKey, json));
-  }, [state, storageKey]);
+  }, [storageKey]);
+  const firstSave = useRef(true);
+  useEffect(() => {
+    dirty.current = true;
+    // The first save (right after loading, which may have migrated old data) is written at once.
+    if (firstSave.current) {
+      firstSave.current = false;
+      flushSave();
+      return;
+    }
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(flushSave, 300);
+  }, [state, flushSave]);
+  useEffect(() => {
+    const onHide = () => document.visibilityState === 'hidden' && flushSave();
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', flushSave);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', flushSave);
+      // Switching accounts: save what's pending, unless this account was just deleted.
+      try {
+        if (localStorage.getItem(storageKey) !== null) flushSave();
+      } catch {
+        // ignore
+      }
+      clearTimeout(saveTimer.current);
+    };
+  }, [flushSave, storageKey]);
 
   // Level-up celebration
   useEffect(() => {
