@@ -459,7 +459,47 @@ const WALK_SPEED = 250;
 const RUN_SPEED = 440;
 
 /** Something that was just placed or bought (plays the drop-in); uid = a decoration in the layout. */
-export type Dropped = { slot: DecorSlot; key: number; uid?: string };
+export type Dropped = { slot: DecorSlot; key: number; uid?: string; /** A whole new home. */ whole?: boolean };
+
+/** One decoration drawn on its own, as pixel art like the room (decorating ghost, purchase reveal). */
+export function ItemArt({ itemId, tier }: { itemId: string; tier: number }) {
+  const item = itemOf({ id: itemId });
+  const ref = useRef<SVGSVGElement>(null);
+  const [x, y, w, h] = item ? rectOf(item.slot) : [0, 0, 10, 10];
+  const pixels = usePixelated(ref, `ghost|${itemId}|${tier}`, Math.max(8, Math.round(w / 3)), Math.max(8, Math.round(h / 3)));
+  if (!item) return null;
+  const win = windowRect(tier);
+  return (
+    <>
+      <svg ref={ref} viewBox={`${x} ${y} ${w} ${h}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full" style={{ opacity: pixels ? 0 : 1 }} aria-hidden="true">
+        <RoomDefs />
+        <SlotArt item={item} night={false} win={win} trophies={3} books={6} />
+      </svg>
+      {pixels && <img src={pixels} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full" draggable={false} />}
+    </>
+  );
+}
+
+/**
+ * A new thing materialising in its real spot (2026-11-27, replaces the gift box): it builds up
+ * row by row from the floor behind a bright scan line, in a beam of light, with a few pixel
+ * sparks, then settles into the room picture.
+ */
+function Materialise({ itemId, box, tier, phase }: { itemId: string; box: [number, number, number, number]; tier: number; phase: 'build' | 'settle' }) {
+  const [x, y, w, h] = box;
+  return (
+    <div className={`mat-wrap absolute pointer-events-none is-${phase}`} style={{ left: `${(x / ROOM_W) * 100}%`, top: `${(y / ROOM_H) * 100}%`, width: `${(w / ROOM_W) * 100}%`, height: `${(h / ROOM_H) * 100}%` }} aria-hidden="true">
+      <span className="mat-beam" />
+      <div className="mat-art absolute inset-0">
+        <ItemArt itemId={itemId} tier={tier} />
+      </div>
+      <span className="mat-scan" />
+      {[8, 30, 52, 74, 92, 20, 64].map((l, i) => (
+        <span key={i} className="mat-spark" style={{ left: `${l}%`, top: `${[18, 70, 8, 56, 26, 44, 90][i]}%`, animationDelay: `${0.55 + i * 0.08}s` }} />
+      ))}
+    </div>
+  );
+}
 
 const CAMERA_EASE = 'transform 0.7s cubic-bezier(.22,.9,.24,1)';
 
@@ -533,10 +573,37 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const momentClip = useMemo(() => (moment && moment.kind !== 'none' ? { name: moment.kind as ClipName, key: moment.key } : null), [moment]);
   // A jump or an "admire the new thing" reach wins over an idle moment when it is newer.
   const [admire, setAdmire] = useState<{ name: ClipName; key: number } | null>(null);
+  const droppedRef = useRef(dropped);
+  droppedRef.current = dropped;
   const clip = [momentClip, jump, admire].reduce<{ name: ClipName; key: number } | null>((a, b) => (b && (!a || b.key > a.key) ? b : a), null);
   useEffect(() => {
-    if (dropped && walkable) setAdmire({ name: 'reach', key: dropped.key });
-  }, [dropped, walkable]);
+    if (droppedRef.current && walkable) setAdmire({ name: 'reach', key: droppedRef.current.key });
+  }, [dropped?.key, walkable]);
+  // A purchase materialising in its spot: hidden from the room picture while it builds up.
+  const [mat, setMat] = useState<(Dropped & { phase: 'build' | 'settle' }) | null>(null);
+  useEffect(() => {
+    const dropped = droppedRef.current;
+    if (!dropped || decorating || isReduced()) return;
+    const key = dropped.key;
+    setMat({ ...dropped, phase: 'build' });
+    const t1 = setTimeout(() => setMat((m) => (m && m.key === key ? { ...m, phase: 'settle' } : m)), dropped.whole ? 900 : 1150);
+    const t2 = setTimeout(() => setMat((m) => (m && m.key === key ? null : m)), dropped.whole ? 1300 : 1800);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+    // Parents build `dropped` fresh on every render; only a new key is a new arrival.
+  }, [dropped?.key, decorating]);
+  const matItem = useMemo(() => {
+    if (!mat || mat.whole) return null;
+    const placedItem = mat.uid ? layoutOf(world).find((p) => p.uid === mat.uid) : undefined;
+    if (placedItem) return { id: placedItem.id, box: boxOf(placedItem), hide: placedItem.uid };
+    if (isMovable(mat.slot)) return null;
+    const item = decorFor(world, mat.slot);
+    return item.model === 'none' ? null : { id: item.id, box: rectOf(mat.slot), hide: `slot:${mat.slot}` };
+  }, [mat, world]);
+  const sceneHide = hide ?? (mat?.phase === 'build' ? matItem?.hide : undefined);
+  const matX = matItem ? matItem.box[0] + matItem.box[2] / 2 : null;
   // One greeting when the room opens: a cheer after finishing quests, or a morning stretch.
   useEffect(() => {
     if (!walkable) return;
@@ -735,14 +802,15 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   }
 
   useEffect(() => () => cancelAnimationFrame(inertia.current), []);
+  const lookX = lookAt ?? matX;
   useEffect(() => {
-    if (lookAt == null) return;
-    const target = clampX(size.w / 2 - lookAt * k);
+    if (lookX == null) return;
+    const target = clampX(size.w / 2 - lookX * k);
     // Only move if the thing is (partly) off screen.
-    const sx = lookAt * k + tx0;
+    const sx = lookX * k + tx0;
     if (sx < 60 || sx > size.w - 60) setPan(target);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lookAt]);
+  }, [lookX]);
   // When the camera zooms back out, keep looking at the same part of the room.
   const lastFocus = useRef(focus);
   useEffect(() => {
@@ -829,7 +897,14 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
           transition: moving || drag.current?.moved || inertia.current ? 'none' : CAMERA_EASE,
         }}
       >
-        <RoomScene world={world} time={time} focus={focus} trophies={trophies} books={books} dropped={dropped} hide={hide} />
+        <RoomScene world={world} time={time} focus={focus} trophies={trophies} books={books} dropped={dropped} hide={sceneHide} />
+        {mat && matItem && <Materialise itemId={matItem.id} box={matItem.box} tier={(PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0]).tier} phase={mat.phase} />}
+        {mat?.whole && (
+          <span key={mat.key} className={`absolute inset-0 pointer-events-none mat-room-wrap is-${mat.phase}`} aria-hidden="true">
+            <span className="mat-room absolute inset-0" />
+            <span className="mat-room-scan" />
+          </span>
+        )}
 
         {/* your character: standing on the rug, sitting, or asleep in bed */}
         {(character || children) && (
@@ -1044,18 +1119,22 @@ const RoomScene = memo(function RoomScene({ world, time, focus, trophies, books,
           <Floor item={get('floor')} />
           <HomeShell id={property.id} />
           <g opacity={dimmed('window') ? 0.35 : 1}>
-            <Placed slot="window" item={get('window')} dropped={dropped}>
-              <SlotArt item={get('window')} night={night} win={win} />
-            </Placed>
+            {hide !== 'slot:window' && (
+              <Placed slot="window" item={get('window')} dropped={dropped}>
+                <SlotArt item={get('window')} night={night} win={win} />
+              </Placed>
+            )}
           </g>
           {/* wall decorations and rugs, then things standing further back than the furniture */}
           {placed.filter(({ item }) => onWall(item.slot) || item.slot === 'rug').map(drawPlaced)}
           {standing.filter((x) => x.bottom < 470).map(drawPlaced)}
           {fixed.map((s) => (
             <g key={s} opacity={dimmed(s) ? 0.35 : 1}>
-              <Placed slot={s} item={get(s)} dropped={dropped}>
-                <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
-              </Placed>
+              {hide !== `slot:${s}` && (
+                <Placed slot={s} item={get(s)} dropped={dropped}>
+                  <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
+                </Placed>
+              )}
             </g>
           ))}
           {standing.filter((x) => x.bottom >= 470).map(drawPlaced)}

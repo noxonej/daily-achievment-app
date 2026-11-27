@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../store/AppContext';
 import { useBackToClose } from '../lib/backstack';
@@ -69,6 +69,7 @@ export function GarageScene({
   className = '',
   swapKey,
   arrive,
+  fit,
 }: {
   world: WorldState;
   /** Your stats (for the trophies). A visitor's garage passes `earned` instead. */
@@ -85,6 +86,8 @@ export function GarageScene({
   swapKey?: string | number;
   /** A new `arrive` value drives the vehicle in and makes the character cheer. */
   arrive?: number;
+  /** Something new fitted: scanned onto the car, or (all) built into the whole garage. */
+  fit?: { key: number; all?: boolean };
 }) {
   const mine = useMemo(() => (stats ? trophiesEarned(stats) : new Set<string>()), [stats]);
   const earned = earnedProp ?? mine;
@@ -135,6 +138,11 @@ export function GarageScene({
           {[14, 38, 61, 83].map((l, i) => (
             <span key={i} className="garage-spark" style={{ left: `${l}%`, top: `${[30, 52, 24, 46][i]}%`, animationDelay: `${i * 0.7}s`, ['--rc' as string]: RARITY_COLOR[rarity] }} />
           ))}
+        </span>
+      )}
+      {fit && (
+        <span key={`fit-${fit.key}`} className={`garage-fit pointer-events-none ${fit.all ? 'is-all' : ''}`} style={fit.all ? box(0, 0, SCENE_W, SCENE_H) : box(vx, FLOOR - GY - lift, vw, CAR_H)} aria-hidden="true">
+          <span className="garage-fit-bar" />
         </span>
       )}
       {arrive ? <span key={`dust-${arrive}`} className="garage-dust" style={box(vx + vw - 30, FLOOR - 8, 40, 10)} aria-hidden="true" /> : null}
@@ -188,6 +196,10 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
   const refunds = refundedVehicles(world);
   const refundSeen = (state.guide ?? []).includes('garage-refund-2026-11');
   const myUpgrades = garageUpgradesOf(world);
+  // Show the garage when something new arrives in it.
+  useEffect(() => {
+    if (bought && !GARAGE_SPOTS.some((g) => g.id === bought.id)) document.querySelector('.garage-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [bought]);
   const tuned = tunedStats(stage, parts);
   const parked = owned.filter((v) => v.id !== stage.id);
 
@@ -238,6 +250,15 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
           env={tryEnv ?? undefined}
           upgrades={tryUp ? new Set([...myUpgrades, tryUp]) : undefined}
           arrive={bought && bought.id === stage.id ? bought.key : undefined}
+          fit={
+            !bought
+              ? undefined
+              : PAINTS.some((p) => p.id === bought.id) || PARTS.some((p) => p.id === bought.id)
+                ? { key: bought.key }
+                : GARAGE_UPGRADES.some((u) => u.id === bought.id) || GARAGE_ENVS.some((g) => g.id === bought.id)
+                  ? { key: bought.key, all: true }
+                  : undefined
+          }
           swapKey={`${hex}${JSON.stringify(parts)}`}
           className={silhouette ? 'garage-silhouette' : ''}
         />

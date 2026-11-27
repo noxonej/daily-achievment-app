@@ -49,3 +49,27 @@
 .room-jump:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 1px 0 rgba(0,0,0,.35); }
 .room-jump { transition: opacity .2s; }
 .room-jump.room-stick-faded { opacity: .4; }
+
+/* Purchases materialise in their real spot (2026-11-27, replaces the gift box) */
+.mat-wrap { z-index: 3; }
+.mat-art { clip-path: inset(100% 0 0 0); animation: mat-build 1s steps(12, end) forwards; }
+@keyframes mat-build {
+  0% { clip-path: inset(100% 0 0 0); filter: brightness(2.6) saturate(0); }
+  80% { clip-path: inset(0 0 0 0); filter: brightness(1.8) saturate(0.4); }
+  100% { clip-path: inset(0 0 0 0); filter: none; }
+}
+.mat-scan { position: absolute; left: -6%; right: -6%; height: 5%; min-height: 3px; background: #fff; box-shadow: 0 0 10px 2px rgba(180, 230, 255, 0.9); bottom: 0; opacity: 0; animation: mat-scan 0.85s steps(12, end) forwards; }
+@keyframes mat-scan { 0% { bottom: 0; opacity: 1; } 99% { bottom: 100%; opacity: 1; } 100% { bottom: 100%; opacity: 0; } }
+.mat-beam { position: absolute; left: 8%; right: 8%; top: -40%; bottom: 0; background: linear-gradient(to top, rgba(170, 225, 255, 0.45), rgba(170, 225, 255, 0)); opacity: 0; animation: mat-beam 1.2s ease-out forwards; }
+@keyframes mat-beam { 0% { opacity: 0; transform: scaleX(0.2); } 25% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+.mat-spark { position: absolute; width: 4%; min-width: 3px; aspect-ratio: 1; background: #fff; box-shadow: 0 0 6px #bfe7ff; opacity: 0; animation: mat-spark 0.6s steps(3, end) both; }
+@keyframes mat-spark { 0% { opacity: 0; transform: scale(0.3); } 40% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0; transform: translateY(-80%) scale(0.5); } }
+.mat-wrap.is-settle { animation: mat-settle 0.6s steps(4, end) forwards; }
+@keyframes mat-settle { to { opacity: 0; } }
+/* a whole new home: the room builds up from the floor */
+.mat-room { z-index: 4; background: #07080c; clip-path: inset(0 0 0 0); animation: mat-room 0.9s steps(14, end) forwards; }
+.mat-room-wrap { z-index: 4; }
+.mat-room-scan { position: absolute; left: 0; right: 0; height: 1.2%; min-height: 3px; background: #fff; box-shadow: 0 0 12px 3px rgba(180, 230, 255, 0.8); bottom: 0; animation: mat-scan 0.9s steps(14, end) forwards; }
+@keyframes mat-room { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 100% 0); } }
+.mat-room-wrap.is-settle { opacity: 0; transition: opacity 0.3s; }
+:root[data-motion='reduce'] :is(.mat-wrap, .mat-room-wrap) { display: none; }

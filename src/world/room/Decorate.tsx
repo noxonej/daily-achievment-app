@@ -1,10 +1,9 @@
 import './decorate.css';
 import { useEffect, useRef, useState } from 'react';
 import type { PlacedDecor, WorldState } from '../../lib/types';
-import { usePixelated } from '../px/pixelate';
-import { RoomDefs, ROOM_H, ROOM_W, SlotArt, windowRect } from './Room';
+import { ItemArt, ROOM_H, ROOM_W } from './Room';
 import { PROPERTIES } from '../catalog';
-import { blockedBy, boxOf, clampSpot, itemOf, layoutOf, rectOf } from './layout';
+import { blockedBy, boxOf, clampSpot, itemOf, layoutOf } from './layout';
 
 /**
  * Decorating mode (2026-11-27): tap a decoration to pick it up, drag it where you want it and see
@@ -21,25 +20,6 @@ export interface Draft {
   isNew: boolean;
   /** Trying something you don't own yet. */
   buy?: boolean;
-}
-
-/** The decoration being moved, drawn on its own (pixel art like the room). */
-function Ghost({ itemId, tier }: { itemId: string; tier: number }) {
-  const item = itemOf({ id: itemId });
-  const ref = useRef<SVGSVGElement>(null);
-  const [x, y, w, h] = item ? rectOf(item.slot) : [0, 0, 10, 10];
-  const pixels = usePixelated(ref, `ghost|${itemId}|${tier}`, Math.max(8, Math.round(w / 3)), Math.max(8, Math.round(h / 3)));
-  if (!item) return null;
-  const win = windowRect(tier);
-  return (
-    <>
-      <svg ref={ref} viewBox={`${x} ${y} ${w} ${h}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full" style={{ opacity: pixels ? 0 : 1 }} aria-hidden="true">
-        <RoomDefs />
-        <SlotArt item={item} night={false} win={win} trophies={3} books={6} />
-      </svg>
-      {pixels && <img src={pixels} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full" draggable={false} />}
-    </>
-  );
 }
 
 export function DecorateOverlay({ world, draft, onSelect, onDraft }: { world: WorldState; draft: Draft | null; onSelect: (p: PlacedDecor) => void; onDraft: (d: Draft) => void }) {
@@ -111,7 +91,7 @@ export function DecorateOverlay({ world, draft, onSelect, onDraft }: { world: Wo
                 onDraft({ ...shown, ...c });
               }}
             >
-              <Ghost itemId={shown.itemId} tier={tier} />
+              <ItemArt itemId={shown.itemId} tier={tier} />
               {blocked && (
                 <span className="deco-why absolute left-1/2 -top-1 -translate-x-1/2 -translate-y-full px-label" aria-live="polite">
                   Overlaps {blocked}

@@ -1,7 +1,7 @@
 import './world.css';
 import { todayKey } from '../lib/date';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { PurchaseCelebration, PurchaseSheet } from './Purchase';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PurchaseSheet, PurchaseToast } from './Purchase';
 import { usePixelated } from './px/pixelate';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
@@ -57,23 +57,21 @@ export function WorldView() {
   const toGarage = useIntent('world-garage');
   const [section, setSection] = useState<Section>(toGarage ? 'garage' : 'room');
   const [pending, setPending] = useState<Pending | null>(null);
-  const [party, setParty] = useState<Pending | null>(null);
+  const [toast, setToast] = useState<(Pending & { key: number }) | null>(null);
   const [bought, setBought] = useState<{ id: string; key: number; uid?: string } | null>(null);
   const coins = useCountUp(stats.availableShards, 700);
 
   function confirm(p: Pending) {
-    dispatch({ type: 'WORLD_BUY', id: p.id, vehicleId: p.vehicleId, at: p.at, uid: p.uid });
-    // Paid things: the item drops into the room / garage when the reveal fades out, not hidden behind it.
-    if (p.coins > 0) setParty(p);
-    else setBought({ id: p.id, key: Date.now(), uid: p.uid });
+    // Every new decoration gets its id here, so the room knows which one to build up in place.
+    const decor = DECOR.find((d) => d.id === p.id);
+    const uid = p.uid ?? (decor && isMovable(decor.slot) && decor.model !== 'none' ? `b${Date.now().toString(36)}` : undefined);
+    dispatch({ type: 'WORLD_BUY', id: p.id, vehicleId: p.vehicleId, at: p.at, uid });
+    const key = Date.now();
+    // A new home: go and see it build up.
+    if (PROPERTIES.some((x) => x.id === p.id)) setSection('room');
+    setBought({ id: p.id, key, uid });
+    if (p.coins > 0) setToast({ ...p, key });
   }
-  const partyRef = useRef<Pending | null>(null);
-  partyRef.current = party;
-  const endParty = useCallback(() => {
-    const p = partyRef.current;
-    if (p) setBought({ id: p.id, key: Date.now(), uid: p.uid });
-    setParty(null);
-  }, []);
   const decorThumb = useCallback(
     (id: string) => {
       const item = DECOR.find((d) => d.id === id);
@@ -128,7 +126,7 @@ export function WorldView() {
           setPending(null);
         }}
       />
-      <PurchaseCelebration item={party} decorThumb={decorThumb} onDone={endParty} />
+      <PurchaseToast item={toast} onDone={() => setToast(null)} />
     </div>
   );
 }
@@ -179,7 +177,13 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
   const slotInfo = slot ? DECOR_SLOTS.find((s) => s.id === slot) : null;
   // A fresh purchase drops into the room the same way placing does.
   const boughtDecor = bought ? DECOR.find((d) => d.id === bought.id) : null;
-  const dropped: Dropped | null = placed ?? (boughtDecor ? { slot: boughtDecor.slot, key: bought!.key, uid: bought!.uid } : null);
+  const boughtHome = bought && PROPERTIES.some((p) => p.id === bought.id) && bought.id === world.property;
+  const dropped: Dropped | null = placed ?? (boughtDecor ? { slot: boughtDecor.slot, key: bought!.key, uid: bought!.uid } : boughtHome ? { slot: 'wall', key: bought!.key, whole: true } : null);
+  // Bring the room into view so you see the new thing appear.
+  useEffect(() => {
+    if (bought && (boughtDecor || boughtHome)) document.querySelector('.room-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bought?.key]);
   const draftItem = draft ? itemOf({ id: draft.itemId }) : null;
   const blocked = draft ? draftBlocked(world, draft) : null;
   /** Start moving a new copy of a decoration (or try one you don't own yet). */
@@ -220,7 +224,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
 
   return (
     <>
-      <div className="relative world-scene-in h-[min(92vw,420px)]">
+      <div className="room-card relative world-scene-in h-[min(92vw,420px)]">
         <Room
           walkable={!placing}
           world={sceneWorld}
