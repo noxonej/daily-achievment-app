@@ -14,9 +14,7 @@ import type { DecorSlot, DerivedStats, WorldState } from '../lib/types';
 import {
   DECOR,
   DECOR_SLOTS,
-  MAX_EXTRAS,
   PROPERTIES,
-  extraSpot,
   canUnlock,
   decorFor,
   owns,
@@ -26,7 +24,9 @@ import {
 } from './catalog';
 import { GarageSection } from './Garage';
 import { BuyButton, Requirements } from './ui';
-import { HomeThumb, Room, RoomDefs, SlotArt, windowRect, type TimeOfDay } from './room/Room';
+import { HomeThumb, Room, RoomDefs, SlotArt, windowRect, type Dropped, type TimeOfDay } from './room/Room';
+import { DecorateOverlay, draftBlocked, type Draft } from './room/Decorate';
+import { MAX_PLACED, freeSpot, isMovable, itemOf, layoutOf, onWall } from './room/layout';
 import { createPortal } from 'react-dom';
 import { AVATAR_ITEMS, isOwned } from '../data/avatar';
 import { ownership } from '../store/reducer';
@@ -40,6 +40,9 @@ export interface Pending {
   name: string;
   coins: number;
   vehicleId?: string;
+  /** A decoration bought while trying it: where it goes in the room. */
+  at?: { x: number; y: number };
+  uid?: string;
 }
 
 /**
@@ -55,20 +58,20 @@ export function WorldView() {
   const [section, setSection] = useState<Section>(toGarage ? 'garage' : 'room');
   const [pending, setPending] = useState<Pending | null>(null);
   const [party, setParty] = useState<Pending | null>(null);
-  const [bought, setBought] = useState<{ id: string; key: number } | null>(null);
+  const [bought, setBought] = useState<{ id: string; key: number; uid?: string } | null>(null);
   const coins = useCountUp(stats.availableShards, 700);
 
   function confirm(p: Pending) {
-    dispatch({ type: 'WORLD_BUY', id: p.id, vehicleId: p.vehicleId });
+    dispatch({ type: 'WORLD_BUY', id: p.id, vehicleId: p.vehicleId, at: p.at, uid: p.uid });
     // Paid things: the item drops into the room / garage when the reveal fades out, not hidden behind it.
     if (p.coins > 0) setParty(p);
-    else setBought({ id: p.id, key: Date.now() });
+    else setBought({ id: p.id, key: Date.now(), uid: p.uid });
   }
   const partyRef = useRef<Pending | null>(null);
   partyRef.current = party;
   const endParty = useCallback(() => {
     const p = partyRef.current;
-    if (p) setBought({ id: p.id, key: Date.now() });
+    if (p) setBought({ id: p.id, key: Date.now(), uid: p.uid });
     setParty(null);
   }, []);
   const decorThumb = useCallback(
@@ -139,17 +142,20 @@ const TIMES: Array<{ id: TimeOfDay | undefined; label: string; icon: string }> =
   { id: 'night', get label() { return t('world.night'); }, icon: '🌙' },
 ];
 
-function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p: Pending) => void; bought: { id: string; key: number } | null }) {
+function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p: Pending) => void; bought: { id: string; key: number; uid?: string } | null }) {
   const { state, dispatch } = useApp();
   const world = worldOf(state);
   const [slot, setSlot] = useState<DecorSlot | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<{ slot: DecorSlot; key: number } | null>(null);
+  const [placed, setPlaced] = useState<Dropped | null>(null);
   const [timeIx, setTimeIx] = useState(0);
-  const [placing, setPlacing] = useState<DecorItem | null>(null);
+  // Free decorating (2026-11-27): moving things around, with a preview before saving.
+  const [decorating, setDecorating] = useState(false);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const placing = decorating;
   const [note, setNote] = useState<{ text: string; key: number } | null>(null);
   const time = TIMES[timeIx];
-  const extras = world.extras ?? [];
+  const layout = layoutOf(world);
   // Every pet you own lives here; the one you take along walks with your character.
   const ctx = useMemo(() => ownership(state, stats), [state, stats]);
   const pets = useMemo(
@@ -166,12 +172,46 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const books = useMemo(() => state.goals.filter((g) => g.kind === 'books').reduce((n, g) => n + (g.log?.length ?? 0), 0), [state.goals]);
   const trophies = state.unlockedAchievements.length;
-  const items = slot ? DECOR.filter((d) => d.slot === slot) : [];
+  const movable = !!slot && isMovable(slot);
+  // Decorations: "leave empty" isn't needed any more (put things away instead).
+  const items = slot ? DECOR.filter((d) => d.slot === slot && !(isMovable(slot) && d.model === 'none')) : [];
   const current = slot ? decorFor(world, slot) : null;
   const slotInfo = slot ? DECOR_SLOTS.find((s) => s.id === slot) : null;
   // A fresh purchase drops into the room the same way placing does.
   const boughtDecor = bought ? DECOR.find((d) => d.id === bought.id) : null;
-  const dropped = placed ?? (boughtDecor ? { slot: boughtDecor.slot, key: bought!.key } : null);
+  const dropped: Dropped | null = placed ?? (boughtDecor ? { slot: boughtDecor.slot, key: bought!.key, uid: bought!.uid } : null);
+  const draftItem = draft ? itemOf({ id: draft.itemId }) : null;
+  const blocked = draft ? draftBlocked(world, draft) : null;
+  /** Start moving a new copy of a decoration (or try one you don't own yet). */
+  function startNew(item: DecorItem, buy = false) {
+    const at = freeSpot(world, layout, item.id);
+    setSlot(null);
+    setPreviewId(null);
+    setDecorating(true);
+    setDraft({ uid: `d${Date.now().toString(36)}`, itemId: item.id, ...at, isNew: true, buy });
+  }
+  function saveDraft() {
+    if (!draft || !draftItem || blocked) return;
+    if (draft.buy) {
+      onBuy({ id: draftItem.id, name: draftItem.name, coins: draftItem.unlock.coins, at: { x: draft.x, y: draft.y }, uid: draft.uid });
+      setDraft(null);
+      setDecorating(false);
+      return;
+    }
+    if (draft.isNew) dispatch({ type: 'WORLD_LAYOUT_ADD', uid: draft.uid, itemId: draft.itemId, x: draft.x, y: draft.y, s: draft.s });
+    else dispatch({ type: 'WORLD_LAYOUT_MOVE', uid: draft.uid, x: draft.x, y: draft.y, s: draft.s });
+    setPlaced({ slot: draftItem.slot, key: Date.now(), uid: draft.uid });
+    say(draft.isNew ? `${draftItem.name} placed` : `${draftItem.name} moved`);
+    // The preview stays a moment longer, until the room picture has caught up.
+    const d = draft;
+    setTimeout(() => setDraft((x) => (x === d ? null : x)), 220);
+  }
+  function putAway() {
+    if (!draft || draft.isNew || !draftItem) return;
+    dispatch({ type: 'WORLD_LAYOUT_REMOVE', uid: draft.uid });
+    say(`${draftItem.name} put away`);
+    setDraft(null);
+  }
 
   function pick(s: DecorSlot | null) {
     setSlot(s);
@@ -191,17 +231,17 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
           editing={!slot && !placing}
           dropped={dropped}
           time={time.id}
-          placing={placing ? (placing.slot as 'shelf' | 'collectible') : null}
-          onPlaceAt={(x, y) => {
-            if (!placing) return;
-            const at = extraSpot(placing.slot as 'shelf' | 'collectible', x, y);
-            dispatch({ type: 'WORLD_EXTRA_ADD', itemId: placing.id, x: at.x, y: at.y });
-            say(`${placing.name} placed`);
-            setPlacing(null);
-          }}
-          onTapExtra={(i) => {
-            const it = DECOR.find((d) => d.id === extras[i]?.id);
-            if (it) pick(it.slot);
+          decorating={decorating}
+          lookAt={draft && draftItem ? draft.x + 60 : null}
+          hide={draft && !draft.isNew ? draft.uid : undefined}
+          overlay={<DecorateOverlay world={world} draft={draft} onSelect={(p) => setDraft({ uid: p.uid, itemId: p.id, x: p.x, y: p.y, s: p.s, isNew: false })} onDraft={setDraft} />}
+          onTapPlaced={(uid) => {
+            const p = layout.find((x) => x.uid === uid);
+            const it = p && itemOf(p);
+            if (!p || !it) return;
+            setDecorating(true);
+            setSlot(null);
+            setDraft({ uid: p.uid, itemId: p.id, x: p.x, y: p.y, s: p.s, isNew: false });
           }}
           pets={pets}
           cheer={(state.dayLogs[todayKey()]?.completedQuestIds.length ?? 0)}
@@ -212,15 +252,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
           }}
           character={{ look: state.character }}
         />
-        {placing && (
-          <div className="theme-dark absolute inset-x-3 top-3 z-[10] flex items-center justify-between gap-2 rounded-2xl bg-black/80 px-3.5 py-2.5 toast-in-up">
-            <span className="text-[13px] font-semibold text-white">{placing.slot === 'shelf' ? `Tap the wall to hang your ${placing.name.toLowerCase()}` : `Tap the floor to put your ${placing.name.toLowerCase()}`}</span>
-            <button onClick={() => setPlacing(null)} className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[12px] font-semibold text-white">
-              Cancel
-            </button>
-          </div>
-        )}
-        {note && !placing && (
+        {note && (
           <div key={note.key} className="theme-dark pointer-events-none absolute left-1/2 bottom-3 z-[10] -translate-x-1/2 rounded-full bg-black/75 px-3.5 py-1.5 text-[13px] font-semibold text-white whitespace-nowrap toast-in-up">
             {note.text}
           </div>
@@ -256,11 +288,70 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
         </div>
       </div>
 
-      {!slot && !placing && (
-        <p className="text-[13px] text-slate-400 -mt-1">
-          {t('world.walkHint')}
-          {pets.length > 0 ? t('world.petHint') : ''}
-        </p>
+      {decorating ? (
+        <div className="deco-bar sheet-up rounded-[22px] bg-white/[0.045] p-3">
+          {draft && draftItem ? (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-white truncate">{draftItem.name}</p>
+                  <p className={`text-[12px] ${blocked ? 'text-red-300' : 'text-emerald-300'}`}>{blocked ? `Overlaps ${blocked}. Drag it somewhere free.` : draft.buy ? 'Preview: drag it where you want it.' : 'Fits here. Drag to move.'}</p>
+                </div>
+                {(draftItem.slot === 'poster' || draftItem.slot === 'art') && (
+                  <div className="flex gap-1 shrink-0" role="radiogroup" aria-label="Size">
+                    {(['s', 'm', 'l'] as const).map((k) => {
+                      const on = (draft.s ?? 'm') === k;
+                      return (
+                        <button key={k} role="radio" aria-checked={on} onClick={() => setDraft({ ...draft, s: k })} className={`w-9 h-8 rounded-lg text-[12px] font-bold ${on ? 'seg-pill seg-on' : 'bg-white/[0.06] text-slate-300'}`}>
+                          {k.toUpperCase()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <div className="mt-3 flex gap-2">
+                {!draft.isNew && (
+                  <button onClick={putAway} className="rounded-full bg-white/[0.07] px-3.5 py-2 text-[13px] font-semibold text-slate-200">
+                    Put away
+                  </button>
+                )}
+                <button onClick={() => setDraft(null)} className="rounded-full bg-white/[0.07] px-3.5 py-2 text-[13px] font-semibold text-slate-200">
+                  Cancel
+                </button>
+                {draft.buy ? (
+                  <div className="ml-auto">
+                    <BuyButton gate={blocked ? { ok: false, reason: 'space', text: 'Overlaps' } : canUnlock(draftItem.unlock, stats)} coins={draftItem.unlock.coins} onClick={saveDraft} verb="Get" />
+                  </div>
+                ) : (
+                  <button onClick={saveDraft} disabled={!!blocked} className="ml-auto rounded-full bg-amber-500 disabled:opacity-40 px-5 py-2 text-[13px] font-bold text-[#fff]">
+                    {draft.isNew ? 'Place here' : 'Save'}
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[13px] text-slate-300 leading-snug">Tap a decoration to move it. Add more from the list below ({layout.length}/{MAX_PLACED}).</p>
+              <button onClick={() => setDecorating(false)} className="shrink-0 rounded-full bg-amber-500 px-4 py-2 text-[13px] font-bold text-[#fff]">
+                Done
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        !slot && (
+          <div className="flex items-center justify-between gap-3 -mt-1">
+            <p className="text-[13px] text-slate-400">
+              {t('world.walkHint')}
+              {pets.length > 0 ? t('world.petHint') : ''}
+            </p>
+            <button onClick={() => setDecorating(true)} className="deco-open shrink-0 flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-2 text-[13px] font-semibold text-white">
+              <Icon name="✋" size={14} />
+              Decorate
+            </button>
+          </div>
+        )
       )}
 
       <div className="-mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar">
@@ -286,51 +377,23 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
             </button>
           </div>
           {(slot === 'wall' || slot === 'floor') && <TintPicker part={slot} />}
-          {(slot === 'poster' || slot === 'art') && (
-            <div className="mt-2 flex items-center justify-between rounded-2xl bg-white/[0.035] px-3 py-2">
-              <span className="text-[13px] font-semibold text-white">Size on the wall</span>
-              <div className="flex gap-1">
-                {(['s', 'm', 'l'] as const).map((k) => {
-                  const on = (world.sizes?.[slot] ?? 'm') === k;
-                  return (
-                    <button key={k} onClick={() => dispatch({ type: 'WORLD_SIZE', slot, size: k })} aria-pressed={on} className={`w-10 h-9 rounded-xl text-[13px] font-bold ${on ? 'seg-pill seg-on' : 'bg-white/[0.06] text-slate-300'}`}>
-                      {k.toUpperCase()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {(slot === 'shelf' || slot === 'collectible') && (
-            <div className="mt-2 rounded-2xl bg-white/[0.035] px-3 py-2.5">
-              <p className="text-[13px] font-semibold text-white">Put more around your room</p>
-              <p className="text-[12px] text-slate-400 leading-snug">Tap “+ More” on any {slot === 'shelf' ? 'shelf' : 'collectible'} you own, then tap where it goes. Up to {MAX_EXTRAS} extras.</p>
-              {extras.some((e) => DECOR.find((d) => d.id === e.id)?.slot === slot) && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {extras.map((e, i) => {
-                    const it = DECOR.find((d) => d.id === e.id);
-                    if (it?.slot !== slot) return null;
-                    return (
-                      <button key={i} onClick={() => dispatch({ type: 'WORLD_EXTRA_REMOVE', index: i })} className="flex items-center gap-1 rounded-full bg-white/10 pl-3 pr-2 py-1 text-[12px] font-semibold text-white" aria-label={`Take away extra ${it.name}`}>
-                        {it.name}
-                        <Icon name="✕" size={12} />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+          {movable && (
+            <p className="mt-2 rounded-2xl bg-white/[0.035] px-3 py-2.5 text-[12px] text-slate-400 leading-snug">
+              <b className="text-white font-semibold">Put as many as you like.</b> {onWall(slot) ? 'Hang them anywhere on the wall' : 'Stand them anywhere on the floor'}, even the same one twice. Drag them around with Decorate.
+            </p>
           )}
           <div className="mt-2 grid grid-cols-2 min-[520px]:grid-cols-3 gap-2 rows-stagger">
             {items.map((item) => {
               const have = ownsDecor(world, item);
-              const on = current?.id === item.id;
+              const count = movable ? layout.filter((p) => p.id === item.id).length : 0;
+              const on = movable ? count > 0 : current?.id === item.id;
               const trying = previewId === item.id;
               const gate = canUnlock(item.unlock, stats);
+              const full = movable && layout.length >= MAX_PLACED;
               return (
                 <div key={item.id} className={`rounded-[20px] p-2.5 transition-shadow ${on ? 'world-home-here' : trying ? 'bg-white/[0.06] ring-1 ring-white/40' : 'bg-white/[0.035]'}`}>
                   <button
-                    onClick={() => (have ? !on && place(item) : setPreviewId(trying ? null : item.id))}
+                    onClick={() => (movable ? (have ? !full && startNew(item) : !item.unlock.chest && startNew(item, true)) : have ? !on && place(item) : setPreviewId(trying ? null : item.id))}
                     className="block w-full rounded-2xl overflow-hidden"
                     aria-label={have ? `Place ${item.name}` : `Try ${item.name} in your room`}
                   >
@@ -340,29 +403,24 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
                   {item.blurb && <p className="text-[11px] text-slate-400 leading-snug mt-0.5">{item.blurb}</p>}
                   {!have && <Requirements unlock={item.unlock} stats={stats} compact />}
                   <div className="mt-2 flex gap-1.5">
-                    {on ? (
+                    {movable && have ? (
+                      <>
+                        {count > 0 && <span className="self-center text-xs font-bold text-[var(--mood)]">{count} in room</span>}
+                        <button disabled={full} onClick={() => startNew(item)} className="flex-1 rounded-full bg-white/10 hover:bg-white/15 disabled:opacity-40 px-3 py-1.5 text-xs font-semibold text-white">
+                          {count > 0 ? '+ Add another' : 'Place'}
+                        </button>
+                      </>
+                    ) : on ? (
                       <span className="flex-1 self-center text-xs font-bold text-[var(--mood)]">In your room</span>
                     ) : have ? (
                       <button onClick={() => place(item)} className="flex-1 rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 text-xs font-semibold text-white">
                         Place
                       </button>
                     ) : null}
-                    {have && (slot === 'shelf' || slot === 'collectible') && item.model !== 'none' && extras.length < MAX_EXTRAS && (
-                      <button
-                        onClick={() => {
-                          setPlacing(item);
-                          pick(null);
-                        }}
-                        className="shrink-0 rounded-full bg-[var(--mood)]/20 px-3 py-1.5 text-xs font-bold text-white"
-                        aria-label={`Put one more ${item.name} somewhere`}
-                      >
-                        + More
-                      </button>
-                    )}
-                    {have || on ? null : (
+                    {have ? null : (
                       <>
                         {!trying && !item.unlock.chest && (
-                          <button onClick={() => setPreviewId(item.id)} className="shrink-0 rounded-full bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-slate-200">
+                          <button onClick={() => (movable ? startNew(item, true) : setPreviewId(item.id))} className="shrink-0 rounded-full bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-slate-200">
                             Try
                           </button>
                         )}

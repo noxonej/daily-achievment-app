@@ -29,12 +29,15 @@ export type Action =
   | { type: 'UNLOCK_COSMETIC'; itemId: string }
   | { type: 'EQUIP_COSMETIC'; slot: CosmeticSlot; itemId: string }
   /** World: buy a home, decor, vehicle, paint or garage spot (applies it right away; paint goes on vehicleId). */
-  | { type: 'WORLD_BUY'; id: string; vehicleId?: string }
+  | { type: 'WORLD_BUY'; id: string; vehicleId?: string; at?: { x: number; y: number }; uid?: string }
   | { type: 'WORLD_MOVE'; property: string }
   | { type: 'WORLD_PLACE'; slot: DecorSlot; itemId: string }
   /** Put one more shelf or collectible you own anywhere in the room. */
   | { type: 'WORLD_EXTRA_ADD'; itemId: string; x: number; y: number }
   | { type: 'WORLD_EXTRA_REMOVE'; index: number }
+  | { type: 'WORLD_LAYOUT_ADD'; uid: string; itemId: string; x: number; y: number; s?: 's' | 'm' | 'l' }
+  | { type: 'WORLD_LAYOUT_MOVE'; uid: string; x: number; y: number; s?: 's' | 'm' | 'l' }
+  | { type: 'WORLD_LAYOUT_REMOVE'; uid: string }
   | { type: 'WORLD_FEATURE'; vehicleId: string }
   | { type: 'WORLD_PAINT'; vehicleId: string; paint: string }
   | { type: 'WORLD_MOD'; vehicleId: string; partId: string }

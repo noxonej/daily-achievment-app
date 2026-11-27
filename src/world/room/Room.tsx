@@ -10,11 +10,12 @@ import './life.css';
 import { Icon } from '../../components/Icon';
 import { usePixelated } from '../px/pixelate';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { DecorSlot, WorldState } from '../../lib/types';
+import type { DecorSlot, PlacedDecor, WorldState } from '../../lib/types';
 import { DECOR, DECOR_SLOTS, PROPERTIES, decorFor, type DecorItem } from '../catalog';
 import { BEDS, CHAIRS, DESKS, SEATS, TABLES, TECH, type DrawProps } from './furniture';
 import { ART, COLLECTIBLES, LAMPS, LIGHTS, PLANTS, POSTERS, RUGS, SHELVES, WINDOWS, type Win } from './decor';
 import { mix, shade, tint } from './paint';
+import { boxOf, isMovable, itemOf, layoutOf, onWall, placeTransform, rectOf } from './layout';
 import { fullPrefs, t } from '../../lib/prefs';
 import { useApp } from '../../store/AppContext';
 
@@ -120,12 +121,24 @@ export function RoomDefs() {
 }
 
 /** Which slots light the room at night, and where the light comes from. */
-function lightsFor(get: (s: DecorSlot) => DecorItem, win: Win): Array<{ x: number; y: number; r: number; color: string; o: number }> {
+function lightsFor(get: (s: DecorSlot) => DecorItem, win: Win, layout: PlacedDecor[]): Array<{ x: number; y: number; r: number; color: string; o: number }> {
   const out: Array<{ x: number; y: number; r: number; color: string; o: number }> = [];
-  const lamp = get('lamp');
-  if (lamp.model === 'arc') out.push({ x: 490, y: 240, r: 210, color: '#ffcf8a', o: 0.75 });
-  else if (lamp.model === 'tube') out.push({ x: 376, y: 340, r: 170, color: lamp.color ?? '#7cc7ff', o: 0.6 });
-  else if (lamp.model !== 'none') out.push({ x: 376, y: 300, r: 190, color: '#ffcf8a', o: 0.75 });
+  // Decorations that glow light up wherever you put them (offset from their old spot).
+  for (const p of layout) {
+    const item = itemOf(p);
+    if (!item) continue;
+    const [rx, ry] = rectOf(item.slot);
+    const at = (x: number, y: number, r: number, color: string, o: number) => out.push({ x: x - rx + p.x, y: y - ry + p.y, r, color, o });
+    if (item.slot === 'lamp') {
+      if (item.model === 'arc') at(490, 240, 210, '#ffcf8a', 0.75);
+      else if (item.model === 'tube') at(376, 340, 170, item.color ?? '#7cc7ff', 0.6);
+      else if (item.model !== 'none') at(376, 300, 190, '#ffcf8a', 0.75);
+    }
+    if (item.slot === 'art' && item.model === 'neon') at(790, 168, 120, item.color ?? '#7cc7ff', 0.6);
+    if (item.slot === 'collectible' && item.model === 'aquarium') at(1154, 356, 120, '#67e8f9', 0.5);
+    if (item.slot === 'collectible' && item.model === 'arcade') at(1152, 330, 120, '#93c5fd', 0.5);
+    if (item.slot === 'shelf' && item.model === 'glass') at(990, 150, 130, '#fff1cf', 0.45);
+  }
   const light = get('light');
   if (light.model === 'bulb') out.push({ x: 600, y: 110, r: 300, color: '#ffe2a8', o: 0.45 });
   if (light.model === 'pendant') out.push({ x: 600, y: 160, r: 320, color: '#ffe2a8', o: 0.55 });
@@ -136,18 +149,12 @@ function lightsFor(get: (s: DecorSlot) => DecorItem, win: Win): Array<{ x: numbe
   const tech = get('tech');
   if (tech.model !== 'none' && tech.model !== 'laptop') out.push({ x: 990, y: 295, r: 170, color: '#8fb8ff', o: 0.55 });
   if (tech.model === 'laptop') out.push({ x: 990, y: 315, r: 110, color: '#8fb8ff', o: 0.45 });
-  const art = get('art');
-  if (art.model === 'neon') out.push({ x: 790, y: 168, r: 120, color: art.color ?? '#7cc7ff', o: 0.6 });
-  const col = get('collectible');
-  if (col.model === 'aquarium') out.push({ x: 1154, y: 356, r: 120, color: '#67e8f9', o: 0.5 });
-  if (col.model === 'arcade') out.push({ x: 1152, y: 330, r: 120, color: '#93c5fd', o: 0.5 });
-  const shelf = get('shelf');
-  if (shelf.model === 'glass') out.push({ x: 990, y: 150, r: 130, color: '#fff1cf', o: 0.45 });
   const desk = get('desk');
   if (desk.model === 'gaming') out.push({ x: 990, y: 370, r: 140, color: desk.accent ?? '#7cc7ff', o: 0.35 });
   // Moonlight through the window.
   out.push({ x: win.x + win.w / 2, y: win.y + win.h, r: win.w, color: '#9fb4ff', o: 0.18 });
-  return out;
+  // Too many glowing things would be slow to draw: keep the brightest 14.
+  return out.sort((a, b) => b.o - a.o).slice(0, 14);
 }
 
 /* ---------------------------------------------------------------- wall, floor, window */
@@ -422,16 +429,20 @@ export interface RoomProps {
   /** Show the tap pins on every spot. */
   editing?: boolean;
   /** Slot that just got something new (plays the drop-in). */
-  dropped?: { slot: DecorSlot; key: number } | null;
+  dropped?: Dropped | null;
   /** The character, stood on the rug. */
   children?: ReactNode;
   /** Forced time of day (screenshots, previews). */
   time?: TimeOfDay;
-  /** Placing an extra shelf/collectible: the next tap in the room says where it goes. */
-  placing?: 'shelf' | 'collectible' | null;
-  onPlaceAt?: (x: number, y: number) => void;
-  /** Tap an extra item you placed. */
-  onTapExtra?: (index: number) => void;
+  /** Decorating mode (2026-11-27): no walking; `overlay` (inside the camera, room-scaled) handles moving things. */
+  decorating?: boolean;
+  overlay?: ReactNode;
+  /** Tap a decoration in the room (outside decorating mode). */
+  onTapPlaced?: (uid: string) => void;
+  /** A decoration left out of the picture (it is being moved). */
+  hide?: string;
+  /** Glide the camera to this room x (the decoration you picked up). */
+  lookAt?: number | null;
   /** Pets that live in your home (the one you take along walks with your character). */
   pets?: Array<{ id: string; name: string }>;
   onTapPet?: (id: string) => void;
@@ -446,6 +457,9 @@ export const CHAR_W = 224;
 /** Walking and running speed, room units per second (matched to the stride of each loop). */
 const WALK_SPEED = 250;
 const RUN_SPEED = 440;
+
+/** Something that was just placed or bought (plays the drop-in); uid = a decoration in the layout. */
+export type Dropped = { slot: DecorSlot; key: number; uid?: string };
 
 const CAMERA_EASE = 'transform 0.7s cubic-bezier(.22,.9,.24,1)';
 
@@ -482,7 +496,8 @@ export function HomeThumb({ id, className = '' }: { id: string; className?: stri
   );
 }
 
-export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced, placing = null, onPlaceAt, onTapExtra, pets = [], onTapPet, cheer = 0, character }: RoomProps) {
+export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced, decorating = false, overlay, onTapPlaced, hide, lookAt = null, pets = [], onTapPet, cheer = 0, character }: RoomProps) {
+  const placing = decorating;
   const time = forced ?? timeOfDay();
   const night = time === 'night';
 
@@ -720,6 +735,14 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   }
 
   useEffect(() => () => cancelAnimationFrame(inertia.current), []);
+  useEffect(() => {
+    if (lookAt == null) return;
+    const target = clampX(size.w / 2 - lookAt * k);
+    // Only move if the thing is (partly) off screen.
+    const sx = lookAt * k + tx0;
+    if (sx < 60 || sx > size.w - 60) setPan(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookAt]);
   // When the camera zooms back out, keep looking at the same part of the room.
   const lastFocus = useRef(focus);
   useEffect(() => {
@@ -784,11 +807,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 50);
   };
 
-  const extras = (world.extras ?? []).flatMap((e, i) => {
-    const item = DECOR.find((d) => d.id === e.id);
-    const r = item && DECOR_SLOTS.find((s) => s.id === item.slot)?.rect;
-    return item && r ? [{ ...e, i, item, r }] : [];
-  });
+  const layout = layoutOf(world);
 
   return (
     <div
@@ -810,13 +829,13 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
           transition: moving || drag.current?.moved || inertia.current ? 'none' : CAMERA_EASE,
         }}
       >
-        <RoomScene world={world} time={time} focus={focus} trophies={trophies} books={books} dropped={dropped} />
+        <RoomScene world={world} time={time} focus={focus} trophies={trophies} books={books} dropped={dropped} hide={hide} />
 
         {/* your character: standing on the rug, sitting, or asleep in bed */}
         {(character || children) && (
           <div
             ref={charRef}
-            className={`absolute pointer-events-none ${rest ? 'room-rest' : ''}`}
+            className={`absolute pointer-events-none ${rest ? 'room-rest' : ''} ${decorating ? 'opacity-40' : ''}`}
             style={rest ? restStyle(rest, !!character) : charStyle(posRef.current, !!character)}
           >
             {moment?.say && !moving && (
@@ -893,38 +912,30 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
           })}
 
         {/* extra items you placed: tap to move or take away */}
-        {onTapExtra &&
+        {/* decorations: tap one to change it */}
+        {onTapPlaced &&
           !focus &&
-          !placing &&
-          extras.map((e) => (
-            <button
-              key={`t${e.i}`}
-              type="button"
-              onClick={() => onTapExtra(e.i)}
-              aria-label={`Extra ${e.item.name}`}
-              className="absolute rounded-xl"
-              style={{ left: `${(e.x / ROOM_W) * 100}%`, top: `${(e.y / ROOM_H) * 100}%`, width: `${(e.r[2] / ROOM_W) * 100}%`, height: `${(e.r[3] / ROOM_H) * 100}%`, zIndex: 2 }}
-            />
-          ))}
+          !decorating &&
+          layout.map((p) => {
+            const [x, y, w, h] = boxOf(p);
+            return (
+              <button
+                key={`t${p.uid}`}
+                type="button"
+                onClick={() => onTapPlaced(p.uid)}
+                aria-label={`${itemOf(p)?.name ?? 'Decoration'}: change`}
+                className="absolute rounded-xl"
+                style={{ left: `${(x / ROOM_W) * 100}%`, top: `${(y / ROOM_H) * 100}%`, width: `${(w / ROOM_W) * 100}%`, height: `${(h / ROOM_H) * 100}%`, zIndex: onWall(itemOf(p)?.slot ?? 'poster') ? 1 : 2 }}
+              />
+            );
+          })}
 
-        {/* placing an extra: tap where it goes */}
-        {placing && onPlaceAt && (
-          <button
-            type="button"
-            aria-label={placing === 'shelf' ? 'Tap the wall to hang it' : 'Tap the floor to put it there'}
-            className="absolute inset-0 z-[900] room-place cursor-crosshair"
-            onClick={(e) => {
-              const b = e.currentTarget.getBoundingClientRect();
-              onPlaceAt(((e.clientX - b.left) / b.width) * ROOM_W, ((e.clientY - b.top) / b.height) * ROOM_H);
-            }}
-          >
-            <span className="room-place-zone absolute inset-x-0" style={placing === 'shelf' ? { top: '6%', height: '58%' } : { top: '74%', height: '24%' }} />
-          </button>
-        )}
+        {decorating && overlay}
 
         {/* tap targets */}
         {onTapSlot &&
-          DECOR_SLOTS.filter((s) => s.id !== 'wall' && s.id !== 'floor').map((s) => {
+          !decorating &&
+          DECOR_SLOTS.filter((s) => s.id !== 'wall' && s.id !== 'floor' && !isMovable(s.id)).map((s) => {
             const [x, y, w, h] = s.rect;
             const on = focus === s.id;
             return (
@@ -988,19 +999,32 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
  * memoised component (2026-11-27) so walking, the walk pad, looking around and the character's
  * animations never re-render the thousands of shapes in it: it only redraws when the room changes.
  */
-const RoomScene = memo(function RoomScene({ world, time, focus, trophies, books, dropped }: { world: WorldState; time: TimeOfDay; focus: DecorSlot | null; trophies: number; books: number; dropped: { slot: DecorSlot; key: number } | null }) {
+const RoomScene = memo(function RoomScene({ world, time, focus, trophies, books, dropped, hide }: { world: WorldState; time: TimeOfDay; focus: DecorSlot | null; trophies: number; books: number; dropped: Dropped | null; hide?: string }) {
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const night = time === 'night';
   const win = windowRect(property.tier);
   const get = (s: DecorSlot) => decorFor(world, s);
-  const lights = night || time === 'dusk' ? lightsFor(get, win) : [];
+  // Free decorating: decorations come from the layout, not from their old fixed spots.
+  const layout = layoutOf(world);
+  const lights = night || time === 'dusk' ? lightsFor(get, win, layout) : [];
   const svgRef = useRef<SVGSVGElement>(null);
-  const pixels = usePixelated(svgRef, JSON.stringify([world.property, 'shell2', world.decor, world.tints, world.sizes, world.extras, time, focus, trophies, books]), PX_W, PX_H);
-  const extras = (world.extras ?? []).flatMap((e, i) => {
-    const item = DECOR.find((d) => d.id === e.id);
-    const r = item && DECOR_SLOTS.find((s) => s.id === item.slot)?.rect;
-    return item && r ? [{ ...e, i, item, r }] : [];
+  const pixels = usePixelated(svgRef, JSON.stringify([world.property, 'shell3', world.decor, world.tints, layout, time, focus, trophies, books, hide]), PX_W, PX_H);
+  const placed = layout.flatMap((p) => {
+    const item = itemOf(p);
+    return item && p.uid !== hide ? [{ p, item, bottom: boxOf(p)[1] + boxOf(p)[3] }] : [];
   });
+  const fresh = (uid: string) => dropped?.uid === uid;
+  const drawPlaced = ({ p, item }: (typeof placed)[number]) => (
+    <g key={p.uid} opacity={focus && focus !== item.slot ? 0.35 : 1}>
+      <g key={fresh(p.uid) ? `${p.uid}-${dropped!.key}` : p.uid} className={fresh(p.uid) ? 'room-drop' : ''} style={{ transformOrigin: `${boxOf(p)[0] + boxOf(p)[2] / 2}px ${boxOf(p)[1] + boxOf(p)[3]}px` }}>
+        <g transform={placeTransform(p)}>
+          <SlotArt item={item} night={night} trophies={trophies} books={books} win={win} />
+        </g>
+      </g>
+    </g>
+  );
+  const fixed = ORDER.filter((s) => !isMovable(s));
+  const standing = placed.filter(({ item }) => !onWall(item.slot) && item.slot !== 'rug').sort((a, b) => a.bottom - b.bottom);
   const dimmed = (s: DecorSlot) => !!focus && focus !== s && focus !== 'wall' && focus !== 'floor';
   return (
     <>
@@ -1019,30 +1043,22 @@ const RoomScene = memo(function RoomScene({ world, time, focus, trophies, books,
           )}
           <Floor item={get('floor')} />
           <HomeShell id={property.id} />
-          {extras.filter((e) => e.item.slot === 'shelf').map((e) => (
-            <g key={`x${e.i}`} opacity={focus ? 0.35 : 1} transform={`translate(${e.x - e.r[0]} ${e.y - e.r[1]})`}>
-              <SlotArt item={e.item} night={night} trophies={trophies} books={books} win={win} />
-            </g>
-          ))}
           <g opacity={dimmed('window') ? 0.35 : 1}>
             <Placed slot="window" item={get('window')} dropped={dropped}>
               <SlotArt item={get('window')} night={night} win={win} />
             </Placed>
           </g>
-          {ORDER.map((s) => (
+          {/* wall decorations and rugs, then things standing further back than the furniture */}
+          {placed.filter(({ item }) => onWall(item.slot) || item.slot === 'rug').map(drawPlaced)}
+          {standing.filter((x) => x.bottom < 470).map(drawPlaced)}
+          {fixed.map((s) => (
             <g key={s} opacity={dimmed(s) ? 0.35 : 1}>
               <Placed slot={s} item={get(s)} dropped={dropped}>
-                <g transform={sizeTransform(s, world.sizes)}>
-                  <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
-                </g>
+                <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
               </Placed>
             </g>
           ))}
-          {extras.filter((e) => e.item.slot === 'collectible').sort((a, b) => a.y + a.r[3] - (b.y + b.r[3])).map((e) => (
-            <g key={`x${e.i}`} opacity={focus ? 0.35 : 1} transform={`translate(${e.x - e.r[0]} ${e.y - e.r[1]})`}>
-              <SlotArt item={e.item} night={night} trophies={trophies} books={books} win={win} />
-            </g>
-          ))}
+          {standing.filter((x) => x.bottom >= 470).map(drawPlaced)}
 
           {/* lighting: darken the room, then add the light of what you own */}
           {time === 'dusk' && <rect width={ROOM_W} height={ROOM_H} fill="#ff9a5a" opacity={0.1} style={{ mixBlendMode: 'multiply' }} />}
@@ -1067,20 +1083,6 @@ const RoomScene = memo(function RoomScene({ world, time, focus, trophies, books,
     </>
   );
 });
-
-/** Wraps an item so a newly placed one drops in with a little bounce and dust. */
-const SIZE_SCALE = { s: 0.7, m: 1, l: 1.35 } as const;
-
-/** Wall art can hang small, medium or big; it grows from the middle of its spot. */
-function sizeTransform(slot: DecorSlot, sizes: WorldState['sizes']): string | undefined {
-  if (slot !== 'poster' && slot !== 'art') return undefined;
-  const k = SIZE_SCALE[sizes?.[slot] ?? 'm'];
-  const r = DECOR_SLOTS.find((x) => x.id === slot)?.rect;
-  if (k === 1 || !r) return undefined;
-  const cx = r[0] + r[2] / 2;
-  const cy = r[1] + r[3] / 2;
-  return `translate(${cx} ${cy}) scale(${k}) translate(${-cx} ${-cy})`;
-}
 
 function Placed({ slot, item, dropped, children }: { slot: DecorSlot; item: DecorItem; dropped: { slot: DecorSlot; key: number } | null; children: ReactNode }) {
   const fresh = dropped?.slot === slot;

@@ -441,6 +441,17 @@ export interface WorldState {
   sizes?: Partial<Record<'poster' | 'art', 's' | 'm' | 'l'>>;
   /** Extra shelves and collectibles you placed anywhere in the room (2026-11-17). x/y = top-left in room units. */
   extras?: Array<{ id: string; x: number; y: number }>;
+  /** Free decorating (2026-11-27): every movable decoration and where it is. Unset = built from the old spots. */
+  layout?: PlacedDecor[];
+}
+
+/** One decoration placed in the room; x/y = top-left in room units, s = size (wall art). */
+export interface PlacedDecor {
+  uid: string;
+  id: string;
+  x: number;
+  y: number;
+  s?: 's' | 'm' | 'l';
 }
 
 export interface AppState {
