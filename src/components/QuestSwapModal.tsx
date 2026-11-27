@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { Quest } from '../lib/types';
-import { QUEST_LIBRARY } from '../data/questLibrary';
+import { swapOptions, type Replacement } from '../lib/questSwap';
 import { useApp } from '../store/AppContext';
 import { Modal } from './Modal';
 import { Icon } from './Icon';
@@ -22,15 +23,50 @@ export function QuestSwapModal({
   const skip = mode === 'skip';
   const { state } = useApp();
 
-  function pickReplacement() {
-    const taken = new Set(state.quests.map((q) => q.title.toLowerCase()));
-    const pool = QUEST_LIBRARY.filter((l) => l.frequency === 'daily' && !l.measure && !l.promptForNote && !taken.has(l.title.toLowerCase()));
-    const choice = pool[Math.floor(Math.random() * pool.length)] ?? { title: 'Take a 10-minute walk', description: 'Fresh air, no phone.', icon: '🚶' };
-    return { title: choice.title, description: choice.description, icon: choice.icon };
+  // Step 2 of a swap: pick one of three genuinely different quests (2026-11-27).
+  const [picking, setPicking] = useState<{ quest: Quest; options: Replacement[] } | null>(null);
+  const close = () => {
+    setPicking(null);
+    onClose();
+  };
+  const WHY: Record<Replacement['why'], string> = { 'same-area': 'Same area, different goal', easier: 'A bit easier', fresh: 'Something new' };
+
+  if (picking && !skip) {
+    return (
+      <Modal open={open} onClose={close} title="Pick your new quest">
+        <p className="text-sm text-slate-400 mb-4">
+          Instead of <b className="text-slate-200">{picking.quest.title}</b>. None of these are the same goal again, and none are harder. Same XP as the original.
+        </p>
+        <div className="space-y-2">
+          {picking.options.map((o) => (
+            <button
+              key={o.title}
+              onClick={() => {
+                onSwap(picking.quest.id, { title: o.title, description: o.description, icon: o.icon });
+                setPicking(null);
+              }}
+              className="w-full flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 text-left transition hover:border-sky-400/50"
+            >
+              <span className="shrink-0 w-9 h-9 rounded-lg bg-white/5 text-slate-200 flex items-center justify-center">
+                <Icon name={o.icon} size={18} />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-semibold text-white">{o.title}</span>
+                {o.description && <span className="block text-xs text-slate-400 leading-snug">{o.description}</span>}
+                <span className="block text-[11px] font-semibold text-sky-300 mt-0.5">{WHY[o.why]}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setPicking(null)} className="mt-3 w-full text-center text-xs font-semibold text-slate-400 hover:text-white py-2">
+          Back
+        </button>
+      </Modal>
+    );
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={skip ? 'Skip a quest' : 'Swap a quest'}>
+    <Modal open={open} onClose={close} title={skip ? 'Skip a quest' : 'Swap a quest'}>
       <p className="text-sm text-slate-400 mb-4">
         {skip
           ? "Busy or sick? Skip one of today's quests. It counts as done for your streak and perfect day, but gives no XP. Save it for days you really need it."
@@ -43,7 +79,7 @@ export function QuestSwapModal({
           {candidates.map((q) => (
             <button
               key={q.id}
-              onClick={() => onSwap(q.id, skip ? { title: q.title, icon: q.icon } : pickReplacement())}
+              onClick={() => (skip ? onSwap(q.id, { title: q.title, icon: q.icon }) : setPicking({ quest: q, options: swapOptions(state, q) }))}
               className={`w-full flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 text-left transition ${skip ? 'hover:border-teal-400/50' : 'hover:border-sky-400/50'}`}
             >
               <span className="shrink-0 w-9 h-9 rounded-lg bg-white/5 text-slate-200 flex items-center justify-center">

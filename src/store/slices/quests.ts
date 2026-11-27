@@ -1,3 +1,4 @@
+import { sameObjective } from '../../lib/questSwap';
 /** Reducer slice: Quests, goals, quick tasks, measures, steps and runs. Returns undefined for actions it doesn't handle. */
 import type { AppState, GoalLogEntry, LongTermGoal, Quest, RunRecord } from '../../lib/types';
 import { PROOF_BONUS } from '../../lib/proof';
@@ -403,6 +404,8 @@ export function questsSlice(state: AppState, action: Action): AppState | undefin
       const log = state.dayLogs[today];
       if (!quest || quest.frequency !== 'daily' || (state.questSwaps ?? 0) <= 0) return state;
       if (log?.completedQuestIds.includes(quest.id) || log?.swaps?.[quest.id]) return state;
+      // A swap must be a genuinely different quest (2026-11-27), not the same goal with a new number.
+      if (sameObjective(quest, action.replacement)) return state;
       const swaps = { ...(log?.swaps ?? {}), [quest.id]: action.replacement };
       return {
         ...state,
