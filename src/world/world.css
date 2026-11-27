@@ -89,7 +89,10 @@
 @media (prefers-reduced-motion: reduce) { .room-pet, .room-pet-hop, .room-place-zone { animation: none; } }
 
 /* walking (2026-11-17): joystick + pet walk frames */
-.room-stick { background: radial-gradient(circle, rgba(0,0,0,.18) 0 55%, rgba(0,0,0,.38) 56% 100%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.28); backdrop-filter: blur(6px); transition: opacity .2s; opacity: .85; }
+.room-stick { background: radial-gradient(circle, rgba(0,0,0,.18) 0 55%, rgba(0,0,0,.38) 56% 100%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.28); transition: opacity .2s; opacity: .85; }
+/* No backdrop blur: the room moves under the pad every frame while walking and re-blurring it was a big part of the lag (2026-11-27). */
+.room-stick-faded:not(.room-stick-on) { opacity: .35; }
+.room-stick-faded.room-stick-on { opacity: .55; }
 .room-stick-on { opacity: 1; }
 .room-stick-arrows { position: absolute; inset: 0; pointer-events: none;
   background:

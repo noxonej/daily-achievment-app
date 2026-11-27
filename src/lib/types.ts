@@ -352,6 +352,8 @@ export interface Prefs {
   nudgeTo?: string;
   /** Easier reading: bigger gaps, text and line spacing for people who find dense screens hard to read. */
   reading?: 'normal' | 'roomy' | 'extra';
+  /** Which side of the room the walk pad sits on (2026-11-27, default right). */
+  walkPad?: 'left' | 'right';
 }
 
 export type Accent = 'squzo' | 'flame' | 'cyber' | 'amber' | 'ocean' | 'emerald' | 'violet' | 'rose' | 'sunset' | 'pink' | 'teal' | 'lime' | 'indigo';

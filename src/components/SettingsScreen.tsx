@@ -1,3 +1,4 @@
+import { L } from '../lib/lang';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useBackToClose } from '../lib/backstack';
 import { useApp } from '../store/AppContext';
@@ -317,6 +318,31 @@ function AppearancePage() {
         />
         <SwitchRow label={t('prefs.splash')} on={prefs.splash} onChange={(v) => setPrefs({ splash: v })} />
       </Group>
+
+      {/* Walk pad side in the World room (2026-11-27). */}
+      <section>
+        <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{L('Walk pad side', 'Ėjimo pulto pusė')}</p>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-xs text-slate-400">{L('Where the walk pad and Jump button sit in your room.', 'Kurioje kambario pusėje yra ėjimo pultas ir šuolio mygtukas.')}</p>
+        <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label={L('Walk pad side', 'Ėjimo pulto pusė')}>
+          {(['left', 'right'] as const).map((side) => {
+            const on = (prefs.walkPad ?? 'right') === side;
+            return (
+              <button
+                key={side}
+                role="radio"
+                aria-checked={on}
+                onClick={() => setPrefs({ walkPad: side })}
+                className={`relative h-16 rounded-xl border-2 transition ${on ? 'border-amber-400 bg-amber-500/10' : 'border-white/10 hover:border-white/25'}`}
+              >
+                <span className={`absolute bottom-2 w-6 h-6 rounded-full bg-white/25 ring-2 ring-white/40 ${side === 'left' ? 'left-2' : 'right-2'}`} aria-hidden="true" />
+                <span className="text-sm font-semibold text-white">{side === 'left' ? L('Left', 'Kairėje') : L('Right', 'Dešinėje')}</span>
+              </button>
+            );
+          })}
+        </div>
+        </div>
+      </section>
     </div>
   );
 }
