@@ -1,24 +1,21 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../store/AppContext';
 import { useBackToClose } from '../lib/backstack';
 import { BUY_XP_SHARE } from '../lib/xp';
 import { Coin } from '../components/Coin';
-import { Confetti } from '../components/Confetti';
 import { Icon } from '../components/Icon';
-import { OpenBurst, PrizeHalo, StageLight } from '../components/fx/RewardFx';
-import { Gift } from '../components/fx/Gift';
+import { StageLight } from '../components/fx/RewardFx';
 import './reveal.css';
 import { VehicleDraw } from './VehicleDraw';
 import { HomeThumb } from './room/Room';
 import { garageSceneUrl } from './px/garage';
-import { DECOR, GARAGE_ENVS, GARAGE_SPOTS, PAINTS, PARTS, PROPERTIES, RARITY_COLOR, VEHICLES, partsOf, vehicleHex, worldOf, type Vehicle } from './catalog';
+import { DECOR, GARAGE_ENVS, GARAGE_SPOTS, GARAGE_UPGRADES, PAINTS, PARTS, PROPERTIES, RARITY_COLOR, VEHICLES, garageEnvOf, garageUpgradesOf, partsOf, vehicleHex, worldOf, type Vehicle } from './catalog';
 
 /**
  * Buying, made fun (2026-11-17). A shop sheet that shows the thing on a lit plinth with what it
  * costs, what you'll have left and the XP you get back; you hold the button to buy (like a game
- * shop), then a short celebration that fits what you bought: a new ride rolls in, a home's door
- * opens, decor is unboxed, an upgrade sparkles.
+ * shop), then the thing materialises in its real place (see PurchaseToast).
  */
 
 export type Kind = 'vehicle' | 'home' | 'decor' | 'upgrade' | 'garage';
@@ -33,17 +30,17 @@ export interface Buyable {
 export function kindOf(id: string): Kind {
   if (VEHICLES.some((v) => v.id === id)) return 'vehicle';
   if (PROPERTIES.some((p) => p.id === id)) return 'home';
-  if (GARAGE_ENVS.some((g) => g.id === id) || GARAGE_SPOTS.some((g) => g.id === id)) return 'garage';
+  if (GARAGE_ENVS.some((g) => g.id === id) || GARAGE_SPOTS.some((g) => g.id === id) || GARAGE_UPGRADES.some((g) => g.id === id)) return 'garage';
   if (PAINTS.some((p) => p.id === id) || PARTS.some((p) => p.id === id)) return 'upgrade';
   return 'decor';
 }
 
 const LABEL: Record<Kind, { tag: string; done: string; color: string }> = {
-  vehicle: { tag: 'New ride', done: 'It’s yours. Time for a drive.', color: '#7cc7ff' },
+  vehicle: { tag: 'New ride', done: 'Parked in your garage.', color: '#7cc7ff' },
   home: { tag: 'New home', done: 'Welcome home.', color: '#fcd34d' },
-  decor: { tag: 'For your room', done: 'Unboxed and placed in your room.', color: '#f9a8d4' },
-  upgrade: { tag: 'Upgrade', done: 'Fitted. Looking sharp.', color: '#a3e635' },
-  garage: { tag: 'Garage', done: 'Your cars just moved in.', color: '#c4b5fd' },
+  decor: { tag: 'For your room', done: 'Placed in your room.', color: '#f9a8d4' },
+  upgrade: { tag: 'Upgrade', done: 'Fitted to your car.', color: '#a3e635' },
+  garage: { tag: 'Garage', done: 'Built into your garage.', color: '#c4b5fd' },
 };
 
 /** The thing itself, drawn the way the game draws it. */
@@ -63,6 +60,8 @@ export function BuyArt({ item, decorThumb, big = false }: { item: Buyable; decor
     return <VehicleDraw vehicle={v} hex={paint?.hex ?? vehicleHex(world, v)} parts={{ ...partsOf(world, v), ...(part ? { [part.kind]: part.value } : {}) }} className={big ? 'w-[min(280px,78vw)]' : 'w-[220px]'} />;
   }
   if (kind === 'home') return <HomeThumb id={item.id} className={`${big ? 'w-[min(300px,80vw)]' : 'w-[240px]'} aspect-[16/10] rounded-2xl`} />;
+  if (GARAGE_UPGRADES.some((g) => g.id === item.id))
+    return <img src={garageSceneUrl(garageEnvOf(world).id, new Set(), new Set([...garageUpgradesOf(world), item.id]))} alt="" className={`px-art ${big ? 'w-[min(300px,80vw)]' : 'w-[240px]'} rounded-2xl`} />;
   if (kind === 'garage' && GARAGE_ENVS.some((g) => g.id === item.id)) return <img src={garageSceneUrl(item.id, new Set())} alt="" className={`px-art ${big ? 'w-[min(300px,80vw)]' : 'w-[240px]'} rounded-2xl`} />;
   const d = DECOR.find((x) => x.id === item.id);
   if (d && decorThumb) return <div className={big ? 'w-[220px]' : 'w-[180px]'}>{decorThumb(d.id)}</div>;
@@ -205,166 +204,54 @@ function buzz(p: number | number[]) {
   }
 }
 
-type Phase = 'arrive' | 'charge' | 'open' | 'reveal' | 'show' | 'out';
-
 /**
- * Step 2: the reveal (rebuilt 2026-11-25). Before, decor shook in a box for a moment and then the
- * item simply replaced the box. Now every purchase has a little story:
- * arrive (the box drops in, or the vehicle/home appears as a dark silhouette) → charge (knocks
- * that build up, light leaking out; rarer things knock more) → open (lid flies off, light and coins
- * pour out, a soft flash in the rarity colour) → reveal (the item rises out of the box and comes into
- * colour) → show (rarity, name, an "Owned" stamp and the XP you got back, one after another).
- * Tap during the build-up to skip ahead; tap at the end and it fades out, and only then does the
- * item drop into your room or garage, so it feels like it moves in.
+ * Step 2 (rebuilt 2026-11-27): no more gift box. The thing you bought materialises in its real
+ * place (the room builds it up from the floor, a ride drives into the garage, new parts are
+ * scanned onto the car) and this small banner says what you got, how rare it is and the XP back.
+ * It never covers the scene, closes by itself and can be tapped away.
  */
-export function PurchaseCelebration({ item, onDone, decorThumb }: { item: Buyable | null; onDone: () => void; decorThumb?: (id: string) => ReactNode }) {
-  const [phase, setPhase] = useState<Phase>('arrive');
-  const [beat, setBeat] = useState(0);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const clear = () => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-  };
-  const later = (ms: number, fn: () => void) => void timers.current.push(setTimeout(fn, ms));
-  const kind = item ? kindOf(item.id) : 'decor';
-  const rarity = item ? rarityOf(item) : 'common';
-  const beats = rarity === 'legendary' ? 4 : rarity === 'epic' ? 3 : 2;
-  const boxed = kind === 'decor' || kind === 'upgrade';
-
-  const close = useCallback(() => {
-    clear();
-    setPhase('out');
-    timers.current.push(setTimeout(onDone, reducedMotion() ? 0 : 280));
-  }, [onDone]);
-  useBackToClose(!!item, close);
-
-  const show = useCallback(() => {
-    clear();
-    setPhase('show');
-    later(6500, close);
-  }, [close]);
-
-  const burst = useCallback(() => {
-    clear();
-    setPhase('open');
-    buzz(60);
-    later(boxed ? 420 : 300, () => {
-      setPhase('reveal');
-      later(750, show);
-    });
-  }, [boxed, show]);
-
+export function PurchaseToast({ item, onDone }: { item: (Buyable & { key: number }) | null; onDone: () => void }) {
+  const [leaving, setLeaving] = useState(false);
   useEffect(() => {
     if (!item) return;
-    clear();
-    setBeat(0);
-    if (reducedMotion()) {
-      setPhase('show');
-      later(6500, close);
-      return clear;
-    }
-    setPhase('arrive');
-    const arrive = kind === 'vehicle' ? 900 : 480;
-    later(arrive, () => {
-      setPhase('charge');
-      for (let i = 0; i < beats; i++)
-        later(i * 320, () => {
-          setBeat(i + 1);
-          buzz(14 + i * 8);
-        });
-      later(beats * 320 + 120, burst);
-    });
-    return clear;
+    setLeaving(false);
+    buzz([20, 40, 30]);
+    const t1 = setTimeout(() => setLeaving(true), reducedMotion() ? 3200 : 2900);
+    const t2 = setTimeout(onDone, 3300);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item]);
-
+  }, [item?.key]);
   if (!item) return null;
-  const label = LABEL[kind];
+  const kind = kindOf(item.id);
+  const rarity = rarityOf(item);
   const color = RARITY_COLOR[rarity];
   const xp = Math.round(item.coins * BUY_XP_SHARE);
-  const before = phase === 'arrive' || phase === 'charge';
-  const revealed = phase === 'reveal' || phase === 'show' || phase === 'out';
-  const charge = beats ? beat / beats : 0;
-  const tap = () => (before ? burst() : phase === 'show' ? close() : undefined);
-
   return createPortal(
-    <div
-      data-overlay
-      className={`theme-dark box-stage pr-stage fixed inset-0 z-[86] flex flex-col items-center justify-center px-6 ${phase === 'out' ? 'pr-out' : ''}`}
-      style={{ ['--ray' as string]: color }}
-      onClick={tap}
-      role="dialog"
-      aria-label={`${label.tag}: ${item.name}`}
-    >
-      {/* No fade-in on the dark stage: the shop sheet is dark too, so cutting straight to it never flashes the page underneath. */}
-      <StageLight tint={label.color} lit={!before} />
-      <span className="box-stage-floor" aria-hidden="true" />
-      {phase === 'open' && <span className="pr-flash" aria-hidden="true" />}
-      {phase === 'show' && <Confetti count={rarity === 'legendary' ? 44 : 28} />}
-
-      <div className="relative flex flex-col items-center">
-        <div className="pr-pod relative -translate-y-[9vh]" style={{ ['--charge' as string]: String(charge) }}>
-          {before && <span className="pr-leak" aria-hidden="true" />}
-          {revealed && <PrizeHalo color={color} big={rarity === 'legendary' || rarity === 'epic'} />}
-          {revealed && rarity !== 'common' && <span className="pr-rays" aria-hidden="true" />}
-
-          {boxed ? (
-            <>
-              {/* the box: drops in, knocks, opens, then sinks away under the item */}
-              {phase !== 'show' && phase !== 'out' && (
-                <span className={`pr-box ${phase === 'arrive' ? 'pr-drop' : ''} ${phase === 'reveal' ? 'pr-sink' : ''}`}>
-                  <span key={phase === 'charge' ? `k${beat}` : phase} className={phase === 'charge' && beat > 0 ? 'pr-knock' : ''} style={{ ['--amp' as string]: String(1 + beat * 0.5) }}>
-                    <Gift size={176} phase={phase === 'open' || phase === 'reveal' ? 'open' : 'idle'} />
-                  </span>
-                </span>
-              )}
-              {phase === 'open' && <OpenBurst color={color} coins={8} />}
-              {revealed && (
-                <div className="pr-rise relative">
-                  <div className="pr-bob">
-                    <BuyArt item={item} decorThumb={decorThumb} big />
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {/* vehicles, homes and garages: a dark silhouette that lights up */}
-              {phase === 'open' && <OpenBurst color={color} coins={6} />}
-              <div className={kind === 'vehicle' && phase === 'arrive' ? 'buy-drive-in' : phase === 'arrive' ? 'pr-fade-up' : ''}>
-                <div key={phase === 'charge' ? `k${beat}` : 'art'} className={phase === 'charge' && beat > 0 ? 'pr-knock' : ''} style={{ ['--amp' as string]: String(0.6 + beat * 0.3) }}>
-                  <div className={`relative ${before ? (kind === 'vehicle' ? 'pr-sil' : 'pr-sil pr-soft') : kind === 'vehicle' ? 'pr-resolve' : 'pr-resolve pr-soft'}`}>
-                    <div className={revealed ? 'pr-bob' : ''}>
-                      <BuyArt item={item} decorThumb={decorThumb} big />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="pr-info absolute top-full left-1/2 -translate-x-1/2 w-[min(340px,88vw)] mt-5 flex flex-col items-center text-center" data-on={phase === 'show' || phase === 'out' ? '' : undefined}>
-          <p className="pr-i1 flex items-center gap-2">
-            <span className="pr-rarity px-label text-[10px]" style={{ color, borderColor: `${color}88`, background: `${color}1f` }}>{RARITY_LABEL[rarity]}</span>
-            <span className="px-label text-[10px]" style={{ color: label.color }}>{label.tag}</span>
-          </p>
-          <p className="pr-i2 mt-2 font-display text-[28px] font-semibold text-[#fff] leading-tight">{item.name}</p>
-          <p className="pr-i3 mt-1 text-[14px] text-slate-300">{label.done}</p>
-          <div className="pr-i4 mt-4 flex items-center gap-2">
-            <span className="pr-owned px-label text-[11px]">
-              <Icon name="✓" size={14} strokeWidth={3} /> Owned
-            </span>
-            {xp > 0 && (
-              <span className="rounded-full bg-emerald-400/15 px-3 py-1.5 text-emerald-200">
-                <span className="num-px text-[20px]">+{xp} XP</span>
-              </span>
-            )}
-          </div>
-          <p className="pr-i5 mt-5 text-[12px] text-slate-500">Tap to continue</p>
-        </div>
-        {before && <p className="absolute top-full mt-10 left-0 right-0 text-center text-[12px] text-slate-500">Tap to skip</p>}
-      </div>
+    <div className="fixed inset-x-0 top-[max(0.75rem,env(safe-area-inset-top))] z-[86] flex justify-center px-4 pointer-events-none">
+      <button
+        key={item.key}
+        onClick={onDone}
+        role="status"
+        aria-live="polite"
+        className={`buy-toast theme-dark pointer-events-auto flex items-center gap-3 rounded-2xl pl-2 pr-3.5 py-2 text-left ${leaving ? 'is-leaving' : ''} is-${rarity}`}
+        style={{ ['--rc' as string]: color }}
+      >
+        <span className="buy-toast-icon shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-[#fff]">
+          <Icon name="✓" size={20} strokeWidth={3} />
+        </span>
+        <span className="min-w-0">
+          <span className="flex items-center gap-1.5">
+            <span className="px-label text-[9px]" style={{ color }}>{RARITY_LABEL[rarity]}</span>
+            <span className="px-label text-[9px] text-slate-400">{LABEL[kind].tag}</span>
+          </span>
+          <span className="block font-display text-[16px] font-semibold text-[#fff] leading-tight truncate max-w-[200px]">{item.name}</span>
+          <span className="block text-[11px] text-slate-400">{LABEL[kind].done}</span>
+        </span>
+        {xp > 0 && <span className="shrink-0 num-px text-[18px] text-emerald-300">+{xp} XP</span>}
+      </button>
     </div>,
     document.body,
   );
