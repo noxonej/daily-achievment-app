@@ -65,12 +65,15 @@ export function GarageScene({
   look,
   env,
   upgrades,
+  earned: earnedProp,
   className = '',
   swapKey,
   arrive,
 }: {
   world: WorldState;
-  stats: DerivedStats;
+  /** Your stats (for the trophies). A visitor's garage passes `earned` instead. */
+  stats?: DerivedStats;
+  earned?: Set<string>;
   vehicle: Vehicle | null;
   hex?: string;
   parts?: CarMods;
@@ -83,7 +86,8 @@ export function GarageScene({
   /** A new `arrive` value drives the vehicle in and makes the character cheer. */
   arrive?: number;
 }) {
-  const earned = useMemo(() => trophiesEarned(stats), [stats]);
+  const mine = useMemo(() => (stats ? trophiesEarned(stats) : new Set<string>()), [stats]);
+  const earned = earnedProp ?? mine;
   const place = env ?? garageEnvOf(world).id;
   const up = upgrades ?? garageUpgradesOf(world);
   const vw = vehicle ? (isCar(vehicle) ? CAR_W : TW_W) : 0;

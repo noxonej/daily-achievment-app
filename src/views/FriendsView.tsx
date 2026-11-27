@@ -30,6 +30,7 @@ import { Icon } from '../components/Icon';
 import { GoogleButton } from '../components/GoogleConnect';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { ShowcaseEditor, VisitShowcase } from '../components/ShowcaseView';
 import type { Character, Sharing } from '../lib/types';
 
 function lookOf(p: { look?: string } | undefined): Character {
@@ -116,6 +117,8 @@ function Connected() {
   const [copied, setCopied] = useState(false);
   const [removing, setRemoving] = useState<FriendProfile | null>(null);
   const [reporting, setReporting] = useState<{ uid: string; name: string } | null>(null);
+  // Visiting someone's showcase (2026-11-27), or your own.
+  const [visit, setVisit] = useState<{ uid: string; name: string; look?: string } | 'me' | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const share: Sharing = { ...DEFAULT_SHARING, ...(state.sharing ?? {}) };
   const byUid = new Map(f.friends.map((p) => [p.uid, p]));
@@ -282,6 +285,11 @@ function Connected() {
               }}
             >
               <span className={`w-6 text-center font-display font-extrabold tabular-nums ${i === 0 ? 'text-yellow-300' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-orange-300' : 'text-slate-500'}`}>{i + 1}</span>
+              <button
+                onClick={() => setVisit(p.isMe ? 'me' : { uid: p.uid, name: p.name, look: p.look })}
+                aria-label={p.isMe ? 'Your showcase' : `Visit ${p.name}`}
+                className="sc-visit flex-1 min-w-0 flex items-center gap-3 text-left"
+              >
               <span className="w-10 h-10 rounded-full overflow-hidden bg-raised shrink-0">
                 <Avatar look={p.isMe ? state.character : lookOf(p)} size={40} />
               </span>
@@ -298,6 +306,7 @@ function Connected() {
                   )}
                 </span>
               </span>
+              </button>
               <span className="font-display font-bold text-white tabular-nums">{p.weekXp ?? 0} XP</span>
               {!p.isMe && (
                 <button onClick={() => setRemoving(p)} aria-label={`Options for ${p.name}`} className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-300">
@@ -310,6 +319,7 @@ function Connected() {
         {f.friends.length === 0 && (
           <p className="px-4 pb-4 -mt-1 text-xs text-slate-400">Add a friend with their code, or tap Invite and send them your link.</p>
         )}
+        {f.friends.length > 0 && <p className="px-4 pb-3 -mt-1 text-[11px] text-slate-500">Tap a friend to visit their home and garage.</p>}
       </section>
 
       {/* Everyone */}
@@ -340,13 +350,19 @@ function Connected() {
           {(f.global ?? []).slice(0, 50).map((p, i) => (
             <li key={p.uid} className={`flex items-center gap-3 rounded-xl px-2 py-1.5 ${p.uid === me.uid ? 'bg-sky-500/[0.10]' : ''}`}>
               <span className={`w-6 text-center font-display font-extrabold tabular-nums ${i === 0 ? 'text-yellow-300' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-orange-300' : 'text-slate-500'}`}>{i + 1}</span>
-              <span className="w-8 h-8 rounded-full overflow-hidden bg-raised shrink-0">
-                <Avatar look={lookOf(p)} size={32} />
-              </span>
-              <span className="flex-1 min-w-0 text-sm font-semibold text-white truncate">
-                {p.uid === me.uid ? `${p.name} (you)` : p.name}
-                <span className="text-xs text-slate-500 font-normal"> · LV {p.level}</span>
-              </span>
+              <button
+                onClick={() => setVisit(p.uid === me.uid ? 'me' : { uid: p.uid, name: p.name, look: p.look })}
+                aria-label={p.uid === me.uid ? 'Your showcase' : `Visit ${p.name}`}
+                className="sc-visit flex-1 min-w-0 flex items-center gap-3 text-left"
+              >
+                <span className="w-8 h-8 rounded-full overflow-hidden bg-raised shrink-0">
+                  <Avatar look={lookOf(p)} size={32} />
+                </span>
+                <span className="flex-1 min-w-0 text-sm font-semibold text-white truncate">
+                  {p.uid === me.uid ? `${p.name} (you)` : p.name}
+                  <span className="text-xs text-slate-500 font-normal"> · LV {p.level}</span>
+                </span>
+              </button>
               <span className="font-display font-bold text-white tabular-nums text-sm">{p.weekXp} XP</span>
               {p.uid !== me.uid && (
                 <button onClick={() => setReporting({ uid: p.uid, name: p.name })} aria-label={`Report ${p.name} for cheating`} className="w-7 h-7 -mr-1 rounded-lg flex items-center justify-center text-slate-600 hover:text-amber-300">
@@ -423,6 +439,9 @@ function Connected() {
           </div>
         </div>
       </section>
+
+      {visit === 'me' && <ShowcaseEditor onClose={() => setVisit(null)} />}
+      {visit && visit !== 'me' && <VisitShowcase uid={visit.uid} name={visit.name} look={visit.look} onClose={() => setVisit(null)} />}
 
       <ConfirmDialog
         open={!!reporting}

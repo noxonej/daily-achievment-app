@@ -8,6 +8,8 @@ import { addDaysToKey, todayKey, weekKey, parseKey } from './date';
 import { showSystemNotification } from './notify';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { rankForLevel } from './ranks';
+import { buildShowcase, parseShowcase, type Showcase } from './showcase';
+import { computeDerivedStats } from './stats';
 
 /* ---------------------------------------------------------------- types */
 
@@ -371,6 +373,37 @@ export async function ensureProfile(ctx: Ctx): Promise<FriendProfile> {
   return { uid, ...profile };
 }
 
+/**
+ * Your profile showcase (showcase/{uid}, see showcase.ts): written only when something in it
+ * changed, at most every two minutes, and removed when you set it to "nobody".
+ */
+let showcaseAt = 0;
+async function syncShowcase(ctx: Ctx, me: FriendProfile) {
+  const key = `dayforge-showcase-${ctx.accountId}`;
+  const doc = buildShowcase(ctx.state, computeDerivedStats(ctx.state), ctx.name);
+  const sig = doc ? JSON.stringify({ ...doc, at: 0 }) : 'off';
+  if (readJson<string>(key, '') === sig) return;
+  if (doc && Date.now() - showcaseAt < 120_000) return;
+  showcaseAt = Date.now();
+  const api = db(ctx.accountId);
+  if (doc) await api.set(`showcase/${me.uid}`, doc as never);
+  else await api.remove(`showcase/${me.uid}`).catch(() => undefined);
+  writeJson(key, sig);
+}
+
+/** Someone's showcase: the checked contents, 'hidden' when they don't share it with you, or null if there is none. */
+export async function getShowcase(uid: string): Promise<Showcase | 'hidden' | null> {
+  const ctx = ctxRef;
+  if (!ctx || !loadSession(ctx.accountId)) return 'hidden';
+  try {
+    const raw = await db(ctx.accountId).get(`showcase/${uid}`);
+    return raw ? parseShowcase(uid, raw) : null;
+  } catch (e) {
+    if (e instanceof Error && e.message === 'Not allowed.') return 'hidden';
+    throw e;
+  }
+}
+
 /** Public weekly board (only people who turned it on) and real rank rarity, refreshed at most every 10 minutes. */
 let globalAt = 0;
 let onBoard: boolean | null = null;
@@ -464,6 +497,7 @@ export async function refreshFriends(): Promise<void> {
 
     set({ status: 'ready', error: undefined, me, friends: profiles, requests, feed, cheers });
     await syncGlobal(ctx, me).catch(() => undefined);
+    await syncShowcase(ctx, me).catch(() => undefined);
 
     // A friend's invite link opened before connecting: send them a request now.
     const invite = readJson<string | null>(INVITE_KEY, null);

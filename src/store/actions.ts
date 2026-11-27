@@ -1,5 +1,5 @@
 import type { Challenge } from '../lib/types';
-import type { AppState, CosmeticSlot, GoalLogEntry, PlanCategory, PlanItem, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, WishItem, CustomReward, SleepState, DecorSlot } from '../lib/types';
+import type { AppState, CosmeticSlot, GoalLogEntry, PlanCategory, PlanItem, WeekdayId, MoneyAccount, Mood, Profile, Appearance, Prefs, NoteEntry, QuestMeasure, MoneyKind, MoneyState, SavingsGoal, SpendCategory, CryptoHolding, Bill, Sharing, ShowcasePrefs, WishItem, CustomReward, SleepState, DecorSlot } from '../lib/types';
 import type { BoxReward } from '../lib/dailyBox';
 import type { NewGoalInput, NewQuestInput } from './state';
 
@@ -112,6 +112,7 @@ export type Action =
   | { type: 'GUIDE_MARK'; key: string }
   | { type: 'SET_STREAK_POP'; date: string }
   | { type: 'SET_SHARING'; sharing: Partial<Sharing> }
+  | { type: 'SET_SHOWCASE'; showcase: Partial<ShowcasePrefs> }
   | { type: 'MONEY_UPSERT_CRYPTO'; holding: Omit<CryptoHolding, 'id'> & { id?: string } }
   | { type: 'MONEY_DELETE_CRYPTO'; holdingId: string }
   | { type: 'MONEY_SET_CRYPTO_PRICES'; prices: NonNullable<MoneyState['cryptoPrices']> }

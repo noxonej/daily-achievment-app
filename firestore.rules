@@ -98,6 +98,23 @@ service cloud.firestore {
       allow delete: if signedIn() && me() == uid;
     }
 
+    // Profile showcase (2026-11-27): character, level, real milestones, featured badges, and if the
+    // owner leaves them on their room, garage and vehicles. `who` decides who can open it: friends, or
+    // everyone signed in (people find you on the public board). Read one at a time by id; no listing.
+    function validShowcase() {
+      return d().keys().hasOnly(['name', 'who', 'look', 'level', 'xp', 'streak', 'best', 'quests', 'perfect', 'badges', 'featured', 'room', 'garage', 'cars', 'at'])
+        && str(d().name, 40) && d().who in ['friends', 'everyone']
+        && optStr('look', 4000) && optStr('featured', 200) && optStr('room', 8000) && optStr('garage', 3000) && optStr('cars', 1500)
+        && optNum('level', 0, 200) && optNum('xp', 0, 100000000) && optNum('streak', 0, 3650) && optNum('best', 0, 3650)
+        && optNum('quests', 0, 1000000) && optNum('perfect', 0, 100000) && optNum('badges', 0, 500)
+        && optNum('at', 0, 4102444800000);
+    }
+    match /showcase/{uid} {
+      allow get: if signedIn() && (me() == uid || (!blocked(uid, me()) && (resource.data.who == 'everyone' || friendOf(uid))));
+      allow create, update: if signedIn() && me() == uid && validShowcase();
+      allow delete: if signedIn() && me() == uid;
+    }
+
     // Friend codes: codes/{code} → { uid }. Look one up by its exact code; nobody can list them.
     // A code can be claimed once (create only), only for yourself and only if it's your profile's code,
     // and removed only by its owner (the app removes the old one when your code changes).

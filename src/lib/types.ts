@@ -323,6 +323,21 @@ export interface Sharing {
   global?: boolean;
 }
 
+/**
+ * Your profile showcase (2026-11-27): what other players see when they visit you. Your character,
+ * level and real milestones always; your room, garage and collection only if you leave them on.
+ */
+export interface ShowcasePrefs {
+  /** Who can open it: friends (default), everyone (also people on the public board), or nobody. */
+  who: 'friends' | 'everyone' | 'nobody';
+  room: boolean;
+  garage: boolean;
+  stats: boolean;
+  collection: boolean;
+  /** Up to 3 achievement ids to show first (unset = your best ones). */
+  featured?: string[];
+}
+
 export interface Prefs {
   /** Some days a quest asks for a bit more, less, or a different version (on unless turned off). */
   dailyTwists?: boolean;
@@ -504,6 +519,7 @@ export interface AppState {
   streakPopDate?: string;
   /** What friends can see. Money, plans, diary and notes are never shared. */
   sharing?: Sharing;
+  showcase?: ShowcasePrefs;
   /** Real-life rewards bought with shards. */
   rewards?: CustomReward[];
   /** Rewards bought so far (newest last). */

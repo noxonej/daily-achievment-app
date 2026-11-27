@@ -117,6 +117,22 @@ await t('invite delete refused', () => assertFails(deleteDoc(doc(frank, 'invites
 await t('invite name blank ok', () => assertSucceeds(updateDoc(doc(frank, 'invites/me/from/frank'), { name: '' })));
 await t('invite read by stranger refused', () => assertFails(getDoc(doc(bob, 'invites/me/from/frank'))));
 
+// ---- showcase (2026-11-27)
+const show = { name: 'Jonas', who: 'friends', level: 12, xp: 4000, featured: 'level-10', room: '{}', garage: '{}', cars: 'v-bike', at: now };
+await t('showcase own write ok', () => assertSucceeds(setDoc(doc(me, 'showcase', 'me'), show)));
+await t('showcase for someone else refused', () => assertFails(setDoc(doc(bob, 'showcase', 'me'), show)));
+await t('showcase extra field refused', () => assertFails(setDoc(doc(me, 'showcase', 'me'), { ...show, coins: 999 })));
+await t('showcase bad who refused', () => assertFails(setDoc(doc(me, 'showcase', 'me'), { ...show, who: 'all' })));
+await t('showcase huge room refused', () => assertFails(setDoc(doc(me, 'showcase', 'me'), { ...show, room: 'x'.repeat(9000) })));
+await env.withSecurityRulesDisabled(async (c) => setDoc(doc(c.firestore(), 'friends/me/list/carol'), { at: now }));
+await t('showcase friend read ok', () => assertSucceeds(getDoc(doc(carol, 'showcase', 'me'))));
+await t('showcase blocked friend refused', () => assertFails(getDoc(doc(bob, 'showcase', 'me'))));
+await t('showcase stranger refused (friends only)', () => assertFails(getDoc(doc(dave, 'showcase', 'me'))));
+await t('showcase signed out refused', () => assertFails(getDoc(doc(anon, 'showcase', 'me'))));
+await t('showcase set to everyone ok', () => assertSucceeds(setDoc(doc(me, 'showcase', 'me'), { ...show, who: 'everyone' })));
+await t('showcase stranger read when everyone ok', () => assertSucceeds(getDoc(doc(dave, 'showcase', 'me'))));
+await t('showcase still hidden from blocked', () => assertFails(getDoc(doc(bob, 'showcase', 'me'))));
+await t('showcase delete own ok', () => assertSucceeds(deleteDoc(doc(me, 'showcase', 'me'))));
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
