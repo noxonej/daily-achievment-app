@@ -8,7 +8,7 @@ export const SCENE_W = 192;
 export const SCENE_H = 108;
 export const FLOOR = 94;
 
-type Env = (px: Px, t: Set<string>) => void;
+type Env = (px: Px, t: Set<string>, up: Set<string>) => void;
 
 function vgrad(px: Px, y0: number, y1: number, top: string, bottom: string, x0 = 0, x1 = SCENE_W) {
   for (let y = y0; y < y1; y++) {
@@ -138,7 +138,7 @@ function trophies(px: Px, t: Set<string>, opts: { dark?: boolean } = {}) {
 
 export const GARAGE_ART: Record<string, Env> = {
   /** Starter lock-up: roller door, block wall, one work light. */
-  'gx-lockup'(px, t) {
+  'gx-lockup'(px, t, up) {
     vgrad(px, 0, FLOOR, '#3a4150', '#2a303b');
     // block wall
     for (let y = 2; y < FLOOR; y += 6) for (let x = (y / 6) % 2 ? 0 : 8; x < SCENE_W; x += 16) px.rect(x, y, 1, 6, '#232833');
@@ -157,11 +157,11 @@ export const GARAGE_ART: Record<string, Env> = {
     floorTiles(px, '#4a515e', '#3a404b');
     // oil stain
     dither(px, 96, FLOOR + 4, 24, 3, '#1d222b', 0.5);
-    toolbox(px, 14, FLOOR - 15);
+    if (!up.has('gu-lounge')) toolbox(px, 14, FLOOR - 15);
     trophies(px, t);
   },
   /** Tuning workshop: pegboard tools, car-lift posts, parts shelf. */
-  'gx-workshop'(px, t) {
+  'gx-workshop'(px, t, up) {
     vgrad(px, 0, FLOOR, '#3f4a42', '#2c352f');
     // pegboard
     px.rect(40, 10, 70, 34, '#8a6a46');
@@ -193,7 +193,7 @@ export const GARAGE_ART: Record<string, Env> = {
       cone(px, x, 6, 34, '#f4f1ea', 0.08);
     }
     floorTiles(px, '#5b6560', '#47504b');
-    toolbox(px, 12, FLOOR - 15);
+    if (!up.has('gu-lounge')) toolbox(px, 12, FLOOR - 15);
     tyreStack(px, 158, 2);
     trophies(px, t);
   },
@@ -263,7 +263,7 @@ export const GARAGE_ART: Record<string, Env> = {
     trophies(px, t, { dark: true });
   },
   /** Pit lane: grandstand, pit board, tyre stacks. */
-  'gx-pitlane'(px, t) {
+  'gx-pitlane'(px, t, up) {
     vgrad(px, 0, 40, '#6fa8dc', '#cfe3f2');
     // grandstand
     px.rect(0, 26, SCENE_W, 30, '#5b616e');
@@ -284,23 +284,148 @@ export const GARAGE_ART: Record<string, Env> = {
     const r = ramp('#3b3e46');
     for (let y = FLOOR; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) px.set(x, y, y === FLOOR ? r[5] : (x * 7 + y * 3) % 11 === 0 ? r[4] : r[3]);
     for (let x = 0; x < SCENE_W; x++) px.set(x, FLOOR + 9, '#e9e6dd');
-    tyreStack(px, 4, 4);
+    if (!up.has('gu-lounge')) tyreStack(px, 4, 4);
     trophies(px, t);
   },
 };
 
-export function drawGarage(env: string, earned: Set<string>): Px {
+/* ------------------------------------------------------------------ upgrades */
+
+/** The spotlight ride's stage, from x0 to x1 (scene pixels). */
+export interface Stage {
+  x0: number;
+  x1: number;
+}
+
+/** How far a display stage lifts the vehicle (scene pixels). */
+export const STAGE_LIFT = 3;
+
+function ledCeiling(px: Px) {
+  px.rect(0, 0, SCENE_W, 2, '#16171c');
+  for (const x of [22, 78, 134]) {
+    px.rect(x, 2, 36, 2, '#2a2c33');
+    px.rect(x + 1, 3, 34, 1, '#f4fbff');
+    for (let i = 0; i < 36; i += 2) px.set(x + i, 4, '#cfefff', 0.5);
+  }
+  // The whole place gets a little brighter.
+  for (let y = 4; y < FLOOR; y++) for (let x = 0; x < SCENE_W; x++) if ((x + y) % 3 === 0) px.set(x, y, '#ffffff', 0.035);
+  for (const x of [40, 96, 152]) cone(px, x, 4, 30, '#eaf6ff', 0.07);
+}
+
+function toolWall(px: Px) {
+  // Above the ride, clear of the name card in the top-left corner.
+  const x = 62;
+  const y = 8;
+  px.rect(x, y, 36, 22, '#6b5236');
+  px.rect(x, y, 36, 1, '#8a6a46');
+  for (let j = y + 2; j < y + 22; j += 3) for (let i = x + 2; i < x + 36; i += 3) px.set(i, j, '#4e3b26');
+  // spanners in a row, getting bigger
+  for (let k = 0; k < 4; k++) {
+    px.rect(x + 3 + k * 3, y + 3, 1, 8 + k, '#c9ced6');
+    px.rect(x + 2 + k * 3, y + 2, 3, 2, '#c9ced6');
+  }
+  // drill
+  px.rect(x + 17, y + 4, 8, 4, '#e5b80b');
+  px.rect(x + 25, y + 5, 3, 1, '#c9ced6');
+  px.rect(x + 18, y + 8, 3, 6, '#2a2c33');
+  // clock
+  px.disc(x + 31, y + 7, 3, '#f4f1ea');
+  px.set(x + 31, y + 6, '#16171c');
+  px.set(x + 31, y + 5, '#16171c');
+  px.set(x + 32, y + 7, '#16171c');
+  // hammer
+  px.rect(x + 27, y + 14, 1, 7, '#8a6a46');
+  px.rect(x + 25, y + 13, 5, 2, '#8d939d');
+}
+
+function glossFloor(px: Px) {
+  for (let y = FLOOR + 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) px.set(x, y, '#0d0f14', 0.5);
+  // two light streaks across the shine
+  for (let y = FLOOR + 1; y < SCENE_H; y++) {
+    const k = y - FLOOR;
+    for (const x0 of [34, 120]) for (let i = 0; i < 6; i++) if ((i + y) % 2 === 0) px.set(x0 + i - k, y, '#ffffff', 0.14);
+  }
+  for (let x = 0; x < SCENE_W; x++) px.set(x, FLOOR, '#ffffff', 0.25);
+}
+
+function lounge(px: Px) {
+  const r = ramp('#7a3b4a');
+  // sofa
+  px.rect(1, FLOOR - 14, 24, 6, r[3]);
+  px.rect(1, FLOOR - 14, 24, 1, r[5]);
+  px.rect(0, FLOOR - 9, 26, 6, r[4]);
+  px.rect(0, FLOOR - 9, 26, 1, r[6]);
+  px.rect(0, FLOOR - 11, 3, 8, r[2]);
+  px.rect(23, FLOOR - 11, 3, 8, r[2]);
+  px.rect(12, FLOOR - 9, 1, 5, r[2]);
+  px.rect(1, FLOOR - 3, 2, 3, '#16171c');
+  px.rect(23, FLOOR - 3, 2, 3, '#16171c');
+  // floor lamp
+  px.rect(28, FLOOR - 26, 1, 26, '#2a2c33');
+  px.rect(26, FLOOR - 1, 5, 1, '#2a2c33');
+  px.rect(25, FLOOR - 30, 7, 4, '#f0d9a0');
+  px.rect(25, FLOOR - 30, 7, 1, '#fff1c2');
+  cone(px, 28, FLOOR - 26, 10, '#ffe2a0', 0.1);
+  // coffee machine on a little cabinet
+  px.rect(2, FLOOR - 30, 14, 14, '#2a2c33');
+  px.rect(2, FLOOR - 30, 14, 1, '#4a4d57');
+  px.rect(5, FLOOR - 27, 8, 5, '#16171c');
+  px.set(7, FLOOR - 25, '#7cff9a');
+  px.rect(8, FLOOR - 21, 3, 3, '#f4f1ea');
+  px.rect(1, FLOOR - 16, 16, 2, '#5a4030');
+}
+
+function neon(px: Px, stage?: Stage) {
+  const c = '#ff4fd8';
+  const y = FLOOR - 34;
+  for (let x = 0; x < SCENE_W; x++) {
+    px.set(x, y, '#ffd1f4');
+    px.set(x, y - 1, c, 0.5);
+    px.set(x, y + 1, c, 0.5);
+    if ((x + y) % 2 === 0) {
+      px.set(x, y - 2, c, 0.18);
+      px.set(x, y + 2, c, 0.18);
+    }
+  }
+  // the glow on the floor under the ride
+  const x0 = stage?.x0 ?? 60;
+  const x1 = stage?.x1 ?? 186;
+  for (let yy = FLOOR + 1; yy < Math.min(SCENE_H, FLOOR + 6); yy++) for (let x = x0 + 4; x < x1 - 4; x++) if ((x + yy) % 2 === 0) px.set(x, yy, c, 0.28 - (yy - FLOOR) * 0.04);
+}
+
+function plinth(px: Px, stage?: Stage) {
+  const x0 = (stage?.x0 ?? 60) - 4;
+  const x1 = (stage?.x1 ?? 186) + 4;
+  const top = FLOOR - STAGE_LIFT;
+  px.rect(x0, top, x1 - x0, STAGE_LIFT + 4, '#1f2229');
+  px.rect(x0, top, x1 - x0, 1, '#8d939d');
+  px.rect(x0, top + 1, x1 - x0, 1, '#4a4d57');
+  // little lights along the front edge
+  for (let x = x0 + 3; x < x1 - 2; x += 6) {
+    px.set(x, top + STAGE_LIFT + 1, '#ffe2a0');
+    px.set(x, top + STAGE_LIFT + 2, '#ffe2a0', 0.35);
+  }
+}
+
+export function drawGarage(env: string, earned: Set<string>, up: Set<string> = new Set(), stage?: Stage): Px {
   const px = new Px(SCENE_W, SCENE_H);
-  (GARAGE_ART[env] ?? GARAGE_ART['gx-lockup'])(px, earned);
+  (GARAGE_ART[env] ?? GARAGE_ART['gx-lockup'])(px, earned, up);
+  if (up.has('gu-floor')) glossFloor(px);
+  if (up.has('gu-toolwall')) toolWall(px);
+  if (up.has('gu-neon')) neon(px, stage);
+  if (up.has('gu-lounge')) lounge(px);
+  if (up.has('gu-plinth')) plinth(px, stage);
+  if (up.has('gu-lights')) ledCeiling(px);
   return px;
 }
 
 const sceneCache = new Map<string, string>();
-export function garageSceneUrl(env: string, earned: Set<string>): string {
-  const key = `${env}|${[...earned].sort().join(',')}`;
+export function garageSceneUrl(env: string, earned: Set<string>, up: Set<string> = new Set(), stage?: Stage): string {
+  const key = `${env}|${[...earned].sort().join(',')}|${[...up].sort().join(',')}|${stage ? `${stage.x0}-${stage.x1}` : ''}`;
   let url = sceneCache.get(key);
   if (!url) {
-    url = drawGarage(env, earned).toDataURL();
+    url = drawGarage(env, earned, up, stage).toDataURL();
+    if (sceneCache.size > 40) sceneCache.clear();
     sceneCache.set(key, url);
   }
   return url;
