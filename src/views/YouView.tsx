@@ -16,6 +16,7 @@ import { StatsView } from './StatsView';
 import { AchievementsView } from './AchievementsView';
 import { DiaryView } from './DiaryView';
 import { FriendsView } from './FriendsView';
+import { ShowcaseEditor } from '../components/ShowcaseView';
 import { SquadsView } from './SquadsView';
 import { L } from '../lib/lang';
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -43,6 +44,7 @@ export function YouView() {
   const { xpIntoLevel, xpForNextLevel } = levelFromTotalXp(stats.totalXp);
   const friendRequests = useFriends().requests.length;
   const name = state.profile?.name;
+  const [showcase, setShowcase] = useState(false);
 
   return (
     <div>
@@ -151,6 +153,10 @@ export function YouView() {
             <Icon name="👕" size={18} />
             {stats.chestsAvailable > 0 ? `Customize · open ${stats.chestsAvailable} ${stats.chestsAvailable === 1 ? 'chest' : 'chests'}` : t('you.customize')}
           </button>
+          <button onClick={() => setShowcase(true)} className="pc-pill relative mt-2 w-full flex items-center justify-center gap-2 rounded-full text-[13px] font-semibold py-2.5">
+            <Icon name="🏠" size={15} />
+            Your showcase · what friends see
+          </button>
         </div>
 
         <IrlStatsCard />
@@ -168,6 +174,7 @@ export function YouView() {
           ]}
         />
       </div>
+      {showcase && <ShowcaseEditor onClose={() => setShowcase(false)} />}
       <div key={section} className="animate-view-right">
         {section === 'stats' && <StatsView embedded />}
         {section === 'badges' && <AchievementsView embedded />}
