@@ -213,7 +213,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
           character={{ look: state.character }}
         />
         {placing && (
-          <div className="theme-dark absolute inset-x-3 top-3 z-[10] flex items-center justify-between gap-2 rounded-2xl bg-black/75 backdrop-blur-md px-3.5 py-2.5 toast-in-up">
+          <div className="theme-dark absolute inset-x-3 top-3 z-[10] flex items-center justify-between gap-2 rounded-2xl bg-black/80 px-3.5 py-2.5 toast-in-up">
             <span className="text-[13px] font-semibold text-white">{placing.slot === 'shelf' ? `Tap the wall to hang your ${placing.name.toLowerCase()}` : `Tap the floor to put your ${placing.name.toLowerCase()}`}</span>
             <button onClick={() => setPlacing(null)} className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[12px] font-semibold text-white">
               Cancel
@@ -221,18 +221,18 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
           </div>
         )}
         {note && !placing && (
-          <div key={note.key} className="theme-dark pointer-events-none absolute left-1/2 bottom-3 z-[10] -translate-x-1/2 rounded-full bg-black/70 backdrop-blur-md px-3.5 py-1.5 text-[13px] font-semibold text-white whitespace-nowrap toast-in-up">
+          <div key={note.key} className="theme-dark pointer-events-none absolute left-1/2 bottom-3 z-[10] -translate-x-1/2 rounded-full bg-black/75 px-3.5 py-1.5 text-[13px] font-semibold text-white whitespace-nowrap toast-in-up">
             {note.text}
           </div>
         )}
         <div className={`theme-dark pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2 ${placing ? 'invisible' : ''}`}>
           {slot ? (
-            <button onClick={() => pick(null)} className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-md pl-2.5 pr-3.5 py-1.5 text-[13px] font-semibold text-white">
+            <button onClick={() => pick(null)} className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/65 pl-2.5 pr-3.5 py-1.5 text-[13px] font-semibold text-white">
               <Icon name="↩" size={14} />
               Whole room
             </button>
           ) : (
-            <span className="flex items-center gap-2 rounded-full bg-black/45 backdrop-blur-md pl-3 pr-3.5 py-1.5">
+            <span className="flex items-center gap-2 rounded-full bg-black/60 pl-3 pr-3.5 py-1.5">
               <Icon name="🏠" size={13} className="text-white/70" />
               <span className="text-[13px] font-semibold text-white">{property.name}</span>
             </span>
@@ -246,7 +246,7 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
             )}
             <button
               onClick={() => setTimeIx((timeIx + 1) % TIMES.length)}
-              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md px-3 py-1.5 text-[12px] font-semibold text-white"
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[12px] font-semibold text-white"
               aria-label={t('world.light', { x: time.label })}
             >
               <Icon name={time.icon} size={13} />

@@ -9,13 +9,14 @@ import { L } from '../../lib/lang';
 import './life.css';
 import { Icon } from '../../components/Icon';
 import { usePixelated } from '../px/pixelate';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { DecorSlot, WorldState } from '../../lib/types';
 import { DECOR, DECOR_SLOTS, PROPERTIES, decorFor, type DecorItem } from '../catalog';
 import { BEDS, CHAIRS, DESKS, SEATS, TABLES, TECH, type DrawProps } from './furniture';
 import { ART, COLLECTIBLES, LAMPS, LIGHTS, PLANTS, POSTERS, RUGS, SHELVES, WINDOWS, type Win } from './decor';
 import { mix, shade, tint } from './paint';
-import { t } from '../../lib/prefs';
+import { fullPrefs, t } from '../../lib/prefs';
+import { useApp } from '../../store/AppContext';
 
 /**
  * Your room (2026-11-14 World rebuild): a wide, lit room you look into like a stage set.
@@ -446,6 +447,8 @@ export const CHAR_W = 224;
 const WALK_SPEED = 250;
 const RUN_SPEED = 440;
 
+const CAMERA_EASE = 'transform 0.7s cubic-bezier(.22,.9,.24,1)';
+
 /** Where pets hang out on the floor (room x), and how far each one wanders. */
 const PET_SPOTS = [250, 820, 470, 1010, 140, 700, 380, 930, 560, 1090];
 
@@ -480,11 +483,8 @@ export function HomeThumb({ id, className = '' }: { id: string; className?: stri
 }
 
 export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced, placing = null, onPlaceAt, onTapExtra, pets = [], onTapPet, cheer = 0, character }: RoomProps) {
-  const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const time = forced ?? timeOfDay();
   const night = time === 'night';
-  const win = windowRect(property.tier);
-  const get = useCallback((s: DecorSlot) => decorFor(world, s), [world]);
 
   /* camera */
   const viewport = useRef<HTMLDivElement>(null);
@@ -569,7 +569,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const panRef = useRef<number | null>(null);
   const charRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ x: number; start: number; moved: boolean; v: number; t: number } | null>(null);
+  const drag = useRef<{ x: number; start: number; cur: number; moved: boolean; v: number; t: number } | null>(null);
   const inertia = useRef(0);
   useLayoutEffect(() => {
     const el = viewport.current;
@@ -584,9 +584,21 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const sceneW = ROOM_W * k;
   const minX = size.w - sceneW;
   const clampX = (x: number) => Math.min(0, Math.max(minX, x));
-  const centreX = clampX(size.w / 2 - 600 * k);
+  // The walk pad has one fixed side (Settings → Display), and the camera keeps the character a
+  // little towards the other side so the pad never covers it (2026-11-27).
+  const padSide = fullPrefs(useApp().state.prefs).walkPad ?? 'right';
+  const frameAt = walkable ? (padSide === 'right' ? 0.42 : 0.58) : 0.5;
+  const centreX = clampX(size.w * frameAt - 600 * k);
+  const stickFaded = useRef(false);
+  function stickFade(on: boolean) {
+    if (stickFaded.current === on) return;
+    stickFaded.current = on;
+    viewport.current?.querySelectorAll('.room-stick, .room-jump').forEach((el) => el.classList.toggle('room-stick-faded', on));
+  }
+  /** Is the character (its screen x) close to the pad's corner? */
+  const overPad = (sx: number) => (padSide === 'right' ? sx > size.w - 150 : sx < 150);
   // Until you look around, the camera frames the character where it is (e.g. asleep in bed at night).
-  const tx0 = pan ?? (rest ? clampX(size.w / 2 - rest.x * k) : centreX);
+  const tx0 = pan ?? (rest ? clampX(size.w * frameAt - rest.x * k) : centreX);
 
   function placeChar() {
     const el = charRef.current;
@@ -599,6 +611,12 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     if (!el) return;
     el.style.transition = 'none';
     el.style.transform = `translate3d(${x}px, 0px, 0) scale(1)`;
+  }
+  /** After moving the camera by hand, let the zoom-to-item glide work again. */
+  function releaseCamera() {
+    requestAnimationFrame(() => {
+      if (cameraRef.current && !held.current && !drag.current && !inertia.current) cameraRef.current.style.transition = CAMERA_EASE;
+    });
   }
   function walk(dx: number, dy: number) {
     if (restRef.current) standUp();
@@ -623,11 +641,17 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
         setRunning(run);
       }
       const v = run ? RUN_SPEED : WALK_SPEED;
-      const x = Math.min(1110, Math.max(90, p.x + h.dx * v * dt));
+      // Near the room's edge the camera stops, so the character stops short of the pad's corner.
+      const padEdge = 118;
+      const hiX = padSide === 'right' ? Math.min(1110, (size.w - padEdge - minX) / k) : 1110;
+      const loX = padSide === 'left' ? Math.max(90, padEdge / k) : 90;
+      const x = Math.min(hiX, Math.max(loX, p.x + h.dx * v * dt));
       const y = Math.min(552, Math.max(500, p.y + h.dy * v * 0.32 * dt));
       posRef.current = { x, y };
       placeChar();
-      const target = clampX(size.w / 2 - x * k);
+      const target = clampX(size.w * frameAt - x * k);
+      // Never let the walk pad sit on top of the character: fade it while they overlap.
+      stickFade(overPad(x * k + camX));
       camX += (target - camX) * Math.min(1, dt * 6);
       panRef.current = camX;
       placeCamera(camX);
@@ -642,6 +666,8 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     setPos(posRef.current);
     if (panRef.current != null) setPan(panRef.current);
     setMoving(false);
+    releaseCamera();
+    stickFade(overPad(posRef.current.x * k + (panRef.current ?? tx0)));
     runRef.current = false;
     setRunning(false);
     setNear(spotAt(spotsRef.current, posRef.current.x));
@@ -709,7 +735,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     if (focus) return;
     cancelAnimationFrame(inertia.current);
     inertia.current = 0;
-    drag.current = { x: e.clientX, start: tx0, moved: false, v: 0, t: performance.now() };
+    drag.current = { x: e.clientX, start: tx0, cur: tx0, moved: false, v: 0, t: performance.now() };
   };
   const onMove = (e: React.PointerEvent) => {
     const d = drag.current;
@@ -720,11 +746,13 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     }
     if (d.moved) {
+      // Moved straight on the page, no React render per finger move (2026-11-27).
       const now = performance.now();
       const next = clampX(d.start + dx);
-      d.v = (next - tx0) / Math.max(1, now - d.t);
+      d.v = (next - d.cur) / Math.max(1, now - d.t);
       d.t = now;
-      setPan(next);
+      d.cur = next;
+      placeCamera(next);
     }
   };
   const onUp = () => {
@@ -733,13 +761,18 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     if (!d?.moved) return;
     // A little glide after you let go.
     let v = d.v * 16;
-    let x = tx0;
+    let x = d.cur;
     const step = () => {
       v *= 0.92;
       x = clampX(x + v);
-      setPan(x);
+      placeCamera(x);
       if (Math.abs(v) > 0.4) inertia.current = requestAnimationFrame(step);
-      else inertia.current = 0;
+      else {
+        // Hand the final spot to React once.
+        inertia.current = 0;
+        setPan(x);
+        releaseCamera();
+      }
     };
     inertia.current = requestAnimationFrame(step);
     // Swallow the click that ends a drag.
@@ -751,15 +784,11 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 50);
   };
 
-  const lights = night || time === 'dusk' ? lightsFor(get, win) : [];
-  const svgRef = useRef<SVGSVGElement>(null);
-  const pixels = usePixelated(svgRef, JSON.stringify([world.property, 'shell2', world.decor, world.tints, world.sizes, world.extras, time, focus, trophies, books]), PX_W, PX_H);
   const extras = (world.extras ?? []).flatMap((e, i) => {
     const item = DECOR.find((d) => d.id === e.id);
     const r = item && DECOR_SLOTS.find((s) => s.id === item.slot)?.rect;
     return item && r ? [{ ...e, i, item, r }] : [];
   });
-  const dimmed = (s: DecorSlot) => !!focus && focus !== s && focus !== 'wall' && focus !== 'floor';
 
   return (
     <div
@@ -778,69 +807,10 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
           width: sceneW,
           height: size.h,
           transform: `translate3d(${cam.x}px, ${cam.y}px, 0) scale(${cam.s})`,
-          transition: moving || drag.current?.moved || inertia.current ? 'none' : 'transform 0.7s cubic-bezier(.22,.9,.24,1)',
+          transition: moving || drag.current?.moved || inertia.current ? 'none' : CAMERA_EASE,
         }}
       >
-        <svg ref={svgRef} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} width="100%" height="100%" className="block" style={{ opacity: pixels ? 0 : 1 }} role="img" aria-label={t('world.roomIn', { x: property.name })}>
-          <RoomDefs />
-          <Wall item={get('wall')} />
-          <g clipPath="url(#winclip)">
-            <clipPath id="winclip">
-              <rect x={win.x} y={win.y} width={win.w} height={win.h} rx={3} />
-            </clipPath>
-            <WindowView view={property.view} time={time} win={win} />
-          </g>
-          <WindowFrame win={win} tier={property.tier} />
-          {time === 'day' && (
-            <path d={`M${win.x} ${win.y + win.h} L${win.x + win.w} ${win.y + win.h} L${win.x + win.w + 140} ${ROOM_H} L${win.x - 60} ${ROOM_H} Z`} fill="#fff4d6" opacity={0.1} />
-          )}
-          <Floor item={get('floor')} />
-          <HomeShell id={property.id} />
-          {extras.filter((e) => e.item.slot === 'shelf').map((e) => (
-            <g key={`x${e.i}`} opacity={focus ? 0.35 : 1} transform={`translate(${e.x - e.r[0]} ${e.y - e.r[1]})`}>
-              <SlotArt item={e.item} night={night} trophies={trophies} books={books} win={win} />
-            </g>
-          ))}
-          <g opacity={dimmed('window') ? 0.35 : 1}>
-            <Placed slot="window" item={get('window')} dropped={dropped}>
-              <SlotArt item={get('window')} night={night} win={win} />
-            </Placed>
-          </g>
-          {ORDER.map((s) => (
-            <g key={s} opacity={dimmed(s) ? 0.35 : 1}>
-              <Placed slot={s} item={get(s)} dropped={dropped}>
-                <g transform={sizeTransform(s, world.sizes)}>
-                  <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
-                </g>
-              </Placed>
-            </g>
-          ))}
-          {extras.filter((e) => e.item.slot === 'collectible').sort((a, b) => a.y + a.r[3] - (b.y + b.r[3])).map((e) => (
-            <g key={`x${e.i}`} opacity={focus ? 0.35 : 1} transform={`translate(${e.x - e.r[0]} ${e.y - e.r[1]})`}>
-              <SlotArt item={e.item} night={night} trophies={trophies} books={books} win={win} />
-            </g>
-          ))}
-
-          {/* lighting: darken the room, then add the light of what you own */}
-          {time === 'dusk' && <rect width={ROOM_W} height={ROOM_H} fill="#ff9a5a" opacity={0.1} style={{ mixBlendMode: 'multiply' }} />}
-          {night && <rect width={ROOM_W} height={ROOM_H} fill="#0c1230" opacity={0.55} style={{ mixBlendMode: 'multiply' }} />}
-          {/* each light is a soft pool in its own colour that fades out smoothly (no visible disc edge) */}
-          <defs>
-            {lights.map((l, i) => (
-              <radialGradient key={i} id={`lg${i}`}>
-                {[0, 0.18, 0.4, 0.65, 0.85, 1].map((o, j) => (
-                  <stop key={o} offset={o} stopColor={l.color} stopOpacity={[0.62, 0.42, 0.2, 0.07, 0.02, 0][j]} />
-                ))}
-              </radialGradient>
-            ))}
-          </defs>
-          {lights.map((l, i) => (
-            <circle key={i} cx={l.x} cy={l.y} r={l.r * 1.15} fill={`url(#lg${i})`} opacity={l.o * (night ? 0.9 : 0.35)} style={{ mixBlendMode: 'screen' }} pointerEvents="none" />
-          ))}
-          <rect width={ROOM_W} height={ROOM_H} fill="url(#vignette)" pointerEvents="none" />
-        </svg>
-        {/* the same scene as pixel art (see px/pixelate.ts) */}
-        {pixels && <img src={pixels} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full object-contain pointer-events-none" draggable={false} />}
+        <RoomScene world={world} time={time} focus={focus} trophies={trophies} books={books} dropped={dropped} />
 
         {/* your character: standing on the rug, sitting, or asleep in bed */}
         {(character || children) && (
@@ -980,7 +950,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
       {walkable && character && !focus && !placing && !rest && (
         <button
           type="button"
-          className={`room-jump absolute bottom-[112px] z-[5] ${(pos.x * k + tx0 > size.w * 0.55 ? 'left' : 'right') === 'left' ? 'left-[31px]' : 'right-[31px]'}`}
+          className={`room-jump absolute bottom-[112px] z-[5] ${padSide === 'left' ? 'left-[31px]' : 'right-[31px]'}`}
           onPointerDown={(e) => {
             e.stopPropagation();
             setJump({ name: 'jump', key: Date.now() });
@@ -992,7 +962,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
       )}
       {walkable && !focus && !placing && (
         <Joystick
-          side={(rest ? rest.x : pos.x) * k + tx0 > size.w * 0.55 ? 'left' : 'right'}
+          side={padSide}
           onMove={(dx, dy) => {
             if (!dx && !dy) {
               if (held.current) stopWalk();
@@ -1011,6 +981,92 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     </div>
   );
 }
+
+
+/**
+ * The room picture itself (walls, window, furniture, lighting), shown as pixel art. Kept in its own
+ * memoised component (2026-11-27) so walking, the walk pad, looking around and the character's
+ * animations never re-render the thousands of shapes in it: it only redraws when the room changes.
+ */
+const RoomScene = memo(function RoomScene({ world, time, focus, trophies, books, dropped }: { world: WorldState; time: TimeOfDay; focus: DecorSlot | null; trophies: number; books: number; dropped: { slot: DecorSlot; key: number } | null }) {
+  const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
+  const night = time === 'night';
+  const win = windowRect(property.tier);
+  const get = (s: DecorSlot) => decorFor(world, s);
+  const lights = night || time === 'dusk' ? lightsFor(get, win) : [];
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pixels = usePixelated(svgRef, JSON.stringify([world.property, 'shell2', world.decor, world.tints, world.sizes, world.extras, time, focus, trophies, books]), PX_W, PX_H);
+  const extras = (world.extras ?? []).flatMap((e, i) => {
+    const item = DECOR.find((d) => d.id === e.id);
+    const r = item && DECOR_SLOTS.find((s) => s.id === item.slot)?.rect;
+    return item && r ? [{ ...e, i, item, r }] : [];
+  });
+  const dimmed = (s: DecorSlot) => !!focus && focus !== s && focus !== 'wall' && focus !== 'floor';
+  return (
+    <>
+        <svg ref={svgRef} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} width="100%" height="100%" className="block" style={{ display: pixels ? 'none' : 'block' }} role="img" aria-label={t('world.roomIn', { x: property.name })}>
+          <RoomDefs />
+          <Wall item={get('wall')} />
+          <g clipPath="url(#winclip)">
+            <clipPath id="winclip">
+              <rect x={win.x} y={win.y} width={win.w} height={win.h} rx={3} />
+            </clipPath>
+            <WindowView view={property.view} time={time} win={win} />
+          </g>
+          <WindowFrame win={win} tier={property.tier} />
+          {time === 'day' && (
+            <path d={`M${win.x} ${win.y + win.h} L${win.x + win.w} ${win.y + win.h} L${win.x + win.w + 140} ${ROOM_H} L${win.x - 60} ${ROOM_H} Z`} fill="#fff4d6" opacity={0.1} />
+          )}
+          <Floor item={get('floor')} />
+          <HomeShell id={property.id} />
+          {extras.filter((e) => e.item.slot === 'shelf').map((e) => (
+            <g key={`x${e.i}`} opacity={focus ? 0.35 : 1} transform={`translate(${e.x - e.r[0]} ${e.y - e.r[1]})`}>
+              <SlotArt item={e.item} night={night} trophies={trophies} books={books} win={win} />
+            </g>
+          ))}
+          <g opacity={dimmed('window') ? 0.35 : 1}>
+            <Placed slot="window" item={get('window')} dropped={dropped}>
+              <SlotArt item={get('window')} night={night} win={win} />
+            </Placed>
+          </g>
+          {ORDER.map((s) => (
+            <g key={s} opacity={dimmed(s) ? 0.35 : 1}>
+              <Placed slot={s} item={get(s)} dropped={dropped}>
+                <g transform={sizeTransform(s, world.sizes)}>
+                  <SlotArt item={get(s)} night={night} trophies={trophies} books={books} win={win} />
+                </g>
+              </Placed>
+            </g>
+          ))}
+          {extras.filter((e) => e.item.slot === 'collectible').sort((a, b) => a.y + a.r[3] - (b.y + b.r[3])).map((e) => (
+            <g key={`x${e.i}`} opacity={focus ? 0.35 : 1} transform={`translate(${e.x - e.r[0]} ${e.y - e.r[1]})`}>
+              <SlotArt item={e.item} night={night} trophies={trophies} books={books} win={win} />
+            </g>
+          ))}
+
+          {/* lighting: darken the room, then add the light of what you own */}
+          {time === 'dusk' && <rect width={ROOM_W} height={ROOM_H} fill="#ff9a5a" opacity={0.1} style={{ mixBlendMode: 'multiply' }} />}
+          {night && <rect width={ROOM_W} height={ROOM_H} fill="#0c1230" opacity={0.55} style={{ mixBlendMode: 'multiply' }} />}
+          {/* each light is a soft pool in its own colour that fades out smoothly (no visible disc edge) */}
+          <defs>
+            {lights.map((l, i) => (
+              <radialGradient key={i} id={`lg${i}`}>
+                {[0, 0.18, 0.4, 0.65, 0.85, 1].map((o, j) => (
+                  <stop key={o} offset={o} stopColor={l.color} stopOpacity={[0.62, 0.42, 0.2, 0.07, 0.02, 0][j]} />
+                ))}
+              </radialGradient>
+            ))}
+          </defs>
+          {lights.map((l, i) => (
+            <circle key={i} cx={l.x} cy={l.y} r={l.r * 1.15} fill={`url(#lg${i})`} opacity={l.o * (night ? 0.9 : 0.35)} style={{ mixBlendMode: 'screen' }} pointerEvents="none" />
+          ))}
+          <rect width={ROOM_W} height={ROOM_H} fill="url(#vignette)" pointerEvents="none" />
+        </svg>
+        {/* the same scene as pixel art (see px/pixelate.ts) */}
+        {pixels && <img src={pixels} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full object-contain pointer-events-none" draggable={false} />}
+    </>
+  );
+});
 
 /** Wraps an item so a newly placed one drops in with a little bounce and dust. */
 const SIZE_SCALE = { s: 0.7, m: 1, l: 1.35 } as const;
@@ -1045,9 +1101,15 @@ function Placed({ slot, item, dropped, children }: { slot: DecorSlot; item: Deco
 
 /** A touch pad: put your thumb down and slide it the way you want to walk (2026-11-17). */
 function Joystick({ side, onMove, onEnd }: { side: 'left' | 'right'; onMove: (dx: number, dy: number) => void; onEnd: () => void }) {
-  const [knob, setKnob] = useState<{ x: number; y: number } | null>(null);
+  // The knob is moved straight on the page: no React render for every thumb movement (2026-11-27).
+  const pad = useRef<HTMLDivElement>(null);
+  const knob = useRef<HTMLSpanElement>(null);
   const base = useRef<{ x: number; y: number } | null>(null);
   const R = 30;
+  const setKnob = (x: number, y: number, on: boolean) => {
+    if (knob.current) knob.current.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+    pad.current?.classList.toggle('room-stick-on', on);
+  };
   const move = (e: React.PointerEvent) => {
     const b = base.current;
     if (!b) return;
@@ -1058,22 +1120,24 @@ function Joystick({ side, onMove, onEnd }: { side: 'left' | 'right'; onMove: (dx
       x = (x / d) * R;
       y = (y / d) * R;
     }
-    setKnob({ x, y });
+    setKnob(x, y, true);
     // A small dead zone in the middle so a resting thumb doesn't drift.
     if (d < 6) onMove(0, 0);
     else onMove(x / R, y / R);
   };
   const end = () => {
+    if (!base.current) return;
     base.current = null;
-    setKnob(null);
+    setKnob(0, 0, false);
     onEnd();
   };
   return (
     <div
+      ref={pad}
       role="slider"
       aria-label={t('world.walk')}
       aria-valuenow={0}
-      className={`room-stick absolute bottom-3 z-[5] w-[92px] h-[92px] rounded-full select-none touch-none ${side === 'left' ? 'left-3' : 'right-3'} ${knob ? 'room-stick-on' : ''}`}
+      className={`room-stick absolute bottom-3 z-[5] w-[92px] h-[92px] rounded-full select-none touch-none ${side === 'left' ? 'left-3' : 'right-3'}`}
       onPointerDown={(e) => {
         e.stopPropagation();
         e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -1087,10 +1151,11 @@ function Joystick({ side, onMove, onEnd }: { side: 'left' | 'right'; onMove: (dx
       }}
       onPointerUp={end}
       onPointerCancel={end}
+      onLostPointerCapture={end}
       onContextMenu={(e) => e.preventDefault()}
     >
       <span className="room-stick-arrows" aria-hidden="true" />
-      <span className="room-stick-knob" style={{ transform: `translate(calc(-50% + ${knob?.x ?? 0}px), calc(-50% + ${knob?.y ?? 0}px))` }} aria-hidden="true" />
+      <span ref={knob} className="room-stick-knob" style={{ transform: 'translate(-50%, -50%)' }} aria-hidden="true" />
     </div>
   );
 }
