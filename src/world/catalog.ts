@@ -584,7 +584,8 @@ export function unlockOf(id: string): Unlock | undefined {
     PAINTS.find((p) => p.id === id)?.unlock ??
     GARAGE_SPOTS.find((g) => g.id === id)?.unlock ??
     PARTS.find((p) => p.id === id)?.unlock ??
-    GARAGE_ENVS.find((g) => g.id === id)?.unlock
+    GARAGE_ENVS.find((g) => g.id === id)?.unlock ??
+    GARAGE_UPGRADES.find((g) => g.id === id)?.unlock
   );
 }
 
@@ -749,4 +750,46 @@ export const TROPHIES: Trophy[] = [
 
 export function trophiesEarned(stats: DerivedStats): Set<string> {
   return new Set(TROPHIES.filter((t) => stats[t.stat] >= t.target).map((t) => t.id));
+}
+
+/* ---------------------------------------------------------------- garage upgrades */
+
+/**
+ * Garage upgrades (2026-11-27): things you build into your garage. Each one is drawn into the
+ * garage picture itself (in every garage place you move to), so the space grows with you.
+ */
+export interface GarageUpgrade {
+  id: string;
+  name: string;
+  blurb: string;
+  unlock: Unlock;
+}
+
+export const GARAGE_UPGRADES: GarageUpgrade[] = [
+  { id: 'gu-lights', name: 'LED ceiling', blurb: 'Bright strip lights over your ride.', unlock: at(6, 500) },
+  { id: 'gu-toolwall', name: 'Tool wall', blurb: 'Spanners, a drill and a clock on the wall.', unlock: at(8, 700) },
+  { id: 'gu-floor', name: 'Gloss floor', blurb: 'A shiny floor your car reflects in.', unlock: at(12, 1200) },
+  { id: 'gu-lounge', name: 'Lounge corner', blurb: 'A small sofa, a lamp and a coffee machine.', unlock: at(18, 1600) },
+  { id: 'gu-neon', name: 'Neon strip', blurb: 'A glowing line along the wall and on the floor.', unlock: at(22, 2200) },
+  { id: 'gu-plinth', name: 'Display stage', blurb: 'Your spotlight ride stands on a lit stage.', unlock: at(28, 3500, streak(14)) },
+];
+
+export function garageUpgradesOf(world: WorldState): Set<string> {
+  return new Set(GARAGE_UPGRADES.filter((g) => g.id in world.paid).map((g) => g.id));
+}
+
+/**
+ * What the fitted parts do to a car's numbers. Small, believable changes: a body kit adds power,
+ * a wing helps it launch, lowering it makes it a little faster at the top.
+ */
+export function tunedStats(v: Vehicle, parts: Partial<CarMods>): { hp: number; zeroTo100: number; top: number } | null {
+  if (!v.stats) return null;
+  const kit = { stock: 0, sport: 0.06, rally: 0.08, wide: 0.12 }[parts.kit ?? 'stock'] ?? 0;
+  const wing = { none: 0, lip: 0.01, duck: 0.02, wing: 0.035, gt: 0.05 }[parts.spoiler ?? 'none'] ?? 0;
+  const stance = { stock: 0, low: 0.02, lifted: -0.03 }[parts.stance ?? 'stock'] ?? 0;
+  const aero = parts.rim === 'aero' || parts.rim === 'turbine' ? 0.015 : 0;
+  const hp = Math.round(v.stats.hp * (1 + kit));
+  const zeroTo100 = Math.max(1.9, Math.round(v.stats.zeroTo100 * (1 - kit * 0.6 - wing) * 10) / 10);
+  const top = Math.round(v.stats.top * (1 + kit * 0.3 + stance + aero - wing * 0.2));
+  return { hp, zeroTo100, top };
 }

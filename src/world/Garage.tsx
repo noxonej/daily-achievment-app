@@ -20,6 +20,9 @@ import {
   canFit,
   canUnlock,
   garageEnvOf,
+  GARAGE_UPGRADES,
+  garageUpgradesOf,
+  tunedStats,
   garageSpots,
   garageUsed,
   isCar,
@@ -38,7 +41,8 @@ import {
   type VehicleClass,
 } from './catalog';
 import { CAR_H, CAR_W, GY } from './px/cars';
-import { FLOOR, SCENE_H, SCENE_W, characterUrl, garageSceneUrl } from './px/garage';
+import { FLOOR, SCENE_H, SCENE_W, STAGE_LIFT, garageSceneUrl } from './px/garage';
+import { CharacterSprite, HEADROOM, SPRITE_H, SPRITE_W } from './char/CharacterSprite';
 import { vehicleSprite } from './px/sprite';
 import { TW_W } from './px/twowheel';
 import { BuyButton, Requirements } from './ui';
@@ -48,8 +52,9 @@ import type { Pending } from './WorldView';
 /* ---------------------------------------------------------------- the scene */
 
 /**
- * The garage as one pixel-art picture: the place you built, the trophies you earned, your
- * character standing next to the vehicle in the spotlight. Everything shares one pixel size.
+ * The garage as one pixel-art picture: the place you built, the upgrades you fitted, the trophies
+ * you earned, and your character standing next to the vehicle in the spotlight. Everything shares
+ * one pixel size. Rare rides get a coloured light, epic and legendary ones sparkle.
  */
 export function GarageScene({
   world,
@@ -59,8 +64,10 @@ export function GarageScene({
   parts,
   look,
   env,
+  upgrades,
   className = '',
   swapKey,
+  arrive,
 }: {
   world: WorldState;
   stats: DerivedStats;
@@ -69,42 +76,67 @@ export function GarageScene({
   parts?: CarMods;
   look: Parameters<typeof avatarPixels>[0];
   env?: string;
+  /** Upgrades to show (to preview one you don't have yet). Defaults to the ones you own. */
+  upgrades?: Set<string>;
   className?: string;
   swapKey?: string | number;
+  /** A new `arrive` value drives the vehicle in and makes the character cheer. */
+  arrive?: number;
 }) {
   const earned = useMemo(() => trophiesEarned(stats), [stats]);
   const place = env ?? garageEnvOf(world).id;
-  const bg = garageSceneUrl(place, earned);
-  const lookKey = JSON.stringify(look ?? {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const hero = useMemo(() => characterUrl(avatarPixels(look)), [lookKey]);
-  const car = vehicle ? vehicleSprite(vehicle, hex ?? vehicleHex(world, vehicle), parts ?? partsOf(world, vehicle), { crop: false, lights: place === 'gx-rooftop' }) : null;
+  const up = upgrades ?? garageUpgradesOf(world);
   const vw = vehicle ? (isCar(vehicle) ? CAR_W : TW_W) : 0;
   // Vehicle: right of centre, wheels on the floor line. Character: to its left.
   const vx = vehicle ? (isCar(vehicle) ? 58 : 86) : 0;
+  const stage = vehicle ? { x0: vx + 4, x1: vx + vw - 4 } : undefined;
+  const bg = garageSceneUrl(place, earned, up, stage);
+  const car = vehicle ? vehicleSprite(vehicle, hex ?? vehicleHex(world, vehicle), parts ?? partsOf(world, vehicle), { crop: false, lights: place === 'gx-rooftop' }) : null;
+  const lift = vehicle && up.has('gu-plinth') ? STAGE_LIFT : 0;
   const pct = (n: number, of: number) => `${(n / of) * 100}%`;
-  const legendary = vehicle?.cls === 'legendary';
+  const rarity = vehicle?.rarity ?? 'common';
+  const shine = rarity === 'epic' || rarity === 'legendary';
+  const clip = useMemo(() => (arrive ? { name: 'celebrate' as const, key: arrive } : null), [arrive]);
+  const heroX = vehicle ? vx - 28 : 80;
+  const box = (x: number, y: number, w: number, h: number) => ({ left: pct(x, SCENE_W), top: pct(y, SCENE_H), width: pct(w, SCENE_W), height: pct(h, SCENE_H) });
   return (
     <div className={`garage-scene relative w-full overflow-hidden ${className}`} style={{ aspectRatio: `${SCENE_W} / ${SCENE_H}` }}>
-      <img src={bg} alt="" className="px-art absolute inset-0 w-full h-full" draggable={false} />
-      {legendary && <span className="garage-legend-glow" aria-hidden="true" />}
+      <img key={bg.length + place} src={bg} alt="" className="px-art absolute inset-0 w-full h-full garage-bg" draggable={false} />
+      {vehicle && rarity !== 'common' && <span className={`garage-rarity is-${rarity}`} style={{ ['--rc' as string]: RARITY_COLOR[rarity] }} aria-hidden="true" />}
+      {car && vehicle && up.has('gu-floor') && (
+        // The shine on the floor: the vehicle mirrored under the floor line.
+        <span className="absolute overflow-hidden pointer-events-none" style={box(0, FLOOR + 1 - lift, SCENE_W, SCENE_H - FLOOR)} aria-hidden="true">
+          <img
+            key={`r-${vehicle.id}-${swapKey ?? ''}`}
+            src={car.url}
+            alt=""
+            draggable={false}
+            className="px-art absolute garage-reflect"
+            style={{ left: pct(vx, SCENE_W), top: `${(-(CAR_H - GY) / (SCENE_H - FLOOR)) * 100}%`, width: pct(vw, SCENE_W), height: `${(CAR_H / (SCENE_H - FLOOR)) * 100}%` }}
+          />
+        </span>
+      )}
       {car && vehicle && (
         <img
-          key={`${vehicle.id}-${swapKey ?? ''}`}
+          key={`${vehicle.id}-${swapKey ?? ''}-${arrive ?? ''}`}
           src={car.url}
           alt={vehicle.name}
           draggable={false}
-          className="px-art absolute garage-veh"
-          style={{ left: pct(vx, SCENE_W), top: pct(FLOOR - GY, SCENE_H), width: pct(vw, SCENE_W), height: pct(CAR_H, SCENE_H) }}
+          className={`px-art absolute ${arrive ? 'garage-veh-arrive' : 'garage-veh'}`}
+          style={box(vx, FLOOR - GY - lift, vw, CAR_H)}
         />
       )}
-      <img
-        src={hero}
-        alt="You"
-        draggable={false}
-        className="px-art absolute garage-hero"
-        style={{ left: pct(vehicle ? vx - 28 : 80, SCENE_W), top: pct(FLOOR - 31, SCENE_H), width: pct(32, SCENE_W), height: pct(32, SCENE_H) }}
-      />
+      {vehicle && shine && (
+        <span className="absolute pointer-events-none" style={box(vx, FLOOR - GY - lift, vw, CAR_H)} aria-hidden="true">
+          {[14, 38, 61, 83].map((l, i) => (
+            <span key={i} className="garage-spark" style={{ left: `${l}%`, top: `${[30, 52, 24, 46][i]}%`, animationDelay: `${i * 0.7}s`, ['--rc' as string]: RARITY_COLOR[rarity] }} />
+          ))}
+        </span>
+      )}
+      {arrive ? <span key={`dust-${arrive}`} className="garage-dust" style={box(vx + vw - 30, FLOOR - 8, 40, 10)} aria-hidden="true" /> : null}
+      <span className="absolute" style={box(heroX, FLOOR - 31 - HEADROOM, SPRITE_W, SPRITE_H)}>
+        <CharacterSprite look={look} base="idle" clip={clip} title="You" />
+      </span>
     </div>
   );
 }
@@ -137,6 +169,7 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
   const [tryPart, setTryPart] = useState<Part | null>(null);
   const [tryPaint, setTryPaint] = useState<string | null>(null);
   const [tryEnv, setTryEnv] = useState<string | null>(null);
+  const [tryUp, setTryUp] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
 
   const featured = VEHICLES.find((v) => v.id === world.vehicle && owns(world, v.id)) ?? owned[0] ?? VEHICLES[0];
@@ -150,6 +183,9 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
   const bonus = legendaryBonus(world);
   const refunds = refundedVehicles(world);
   const refundSeen = (state.guide ?? []).includes('garage-refund-2026-11');
+  const myUpgrades = garageUpgradesOf(world);
+  const tuned = tunedStats(stage, parts);
+  const parked = owned.filter((v) => v.id !== stage.id);
 
   const list = useMemo(() => {
     const l = VEHICLES.filter((v) => (filter === 'all' ? true : filter === 'owned' ? owns(world, v.id) : v.cls === filter));
@@ -196,7 +232,9 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
           parts={parts}
           look={state.character}
           env={tryEnv ?? undefined}
-          swapKey={`${hex}${JSON.stringify(parts)}${bought?.key ?? ''}`}
+          upgrades={tryUp ? new Set([...myUpgrades, tryUp]) : undefined}
+          arrive={bought && bought.id === stage.id ? bought.key : undefined}
+          swapKey={`${hex}${JSON.stringify(parts)}`}
           className={silhouette ? 'garage-silhouette' : ''}
         />
         <div className="absolute left-3 top-3 right-3 flex items-start justify-between gap-2 pointer-events-none">
@@ -214,18 +252,61 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
         </div>
       </div>
 
-      {stage.stats && (
+      {stage.stats && tuned && (
         <div className="grid grid-cols-3 gap-2 -mt-1">
-          {[
-            [`${stage.stats.hp}`, 'hp'],
-            [`${stage.stats.zeroTo100}s`, '0–100'],
-            [`${stage.stats.top}`, 'km/h'],
-          ].map(([v, l]) => (
-            <div key={l} className="rounded-2xl bg-white/[0.04] py-2 text-center">
-              <p className="num-px text-[24px] text-white leading-none">{v}</p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{l}</p>
-            </div>
-          ))}
+          {(
+            [
+              [tuned.hp, stage.stats.hp, 'hp', ''],
+              [tuned.zeroTo100, stage.stats.zeroTo100, '0–100', 's'],
+              [tuned.top, stage.stats.top, 'km/h', ''],
+            ] as const
+          ).map(([v, base, l, unit]) => {
+            // Lower is better for 0–100.
+            const better = l === '0–100' ? v < base : v > base;
+            const worse = l === '0–100' ? v > base : v < base;
+            return (
+              <div key={l} className="rounded-2xl bg-white/[0.04] py-2 text-center">
+                <p className="num-px text-[24px] text-white leading-none">
+                  {v}
+                  {unit}
+                </p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  {l}
+                  {(better || worse) && (
+                    <span className={`ml-1 normal-case tracking-normal ${better ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      {v > base ? '+' : '−'}
+                      {Math.abs(Math.round((v - base) * 10) / 10)}
+                    </span>
+                  )}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {tuned && stage.stats && (tuned.hp !== stage.stats.hp || tuned.top !== stage.stats.top || tuned.zeroTo100 !== stage.stats.zeroTo100) && (
+        <p className="-mt-1 text-[11px] text-slate-500 text-center">Green and red numbers are what your parts change.</p>
+      )}
+
+      {parked.length > 0 && (
+        <div>
+          <p className="eyebrow">Parked in your garage</p>
+          <div className="mt-2 -mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {parked.map((v) => {
+              const sp = vehicleSprite(v, vehicleHex(world, v), partsOf(world, v), { crop: true });
+              return (
+                <button key={v.id} onClick={() => inspect(v)} className={`veh-tile shrink-0 w-[112px] rounded-2xl p-1.5 text-left ${v.cls === 'legendary' ? 'is-legend' : ''}`} aria-label={`Look at ${v.name}`}>
+                  <span className="veh-plinth flex items-end justify-center rounded-xl h-[48px] px-1.5 pb-1">
+                    <img src={sp.url} alt="" draggable={false} className="px-art max-h-full w-auto max-w-full" />
+                  </span>
+                  <span className="mt-1 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-[1px] shrink-0" style={{ background: RARITY_COLOR[v.rarity] }} />
+                    <span className="text-[11px] font-semibold text-white truncate">{v.name}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -402,6 +483,57 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
         </div>
       )}
 
+      {/* upgrades you build into the garage itself */}
+      <div>
+        <div className="flex items-baseline justify-between">
+          <p className="eyebrow">Garage upgrades</p>
+          <p className="text-[12px] font-semibold text-slate-400">
+            <span className="num-px text-[17px] text-slate-200">{myUpgrades.size}</span>/<span className="num-px text-[17px]">{GARAGE_UPGRADES.length}</span>
+          </p>
+        </div>
+        <p className="mt-1 text-[12px] text-slate-500">Built into your garage picture, and they move with you to every place.</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {GARAGE_UPGRADES.map((u) => {
+            const mine = myUpgrades.has(u.id);
+            const g = canUnlock(u.unlock, stats);
+            const trying = tryUp === u.id;
+            return (
+              <div key={u.id} className={`part-tile rounded-2xl p-2.5 ${trying ? 'is-on' : ''}`}>
+                <button
+                  className="block w-full text-left"
+                  disabled={mine}
+                  onClick={() => {
+                    setTryUp(trying ? null : u.id);
+                    document.querySelector('.garage-scene')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  aria-label={mine ? `${u.name}, built` : `Preview ${u.name}`}
+                >
+                  <span className="block text-[13px] font-semibold text-white leading-tight">{u.name}</span>
+                  <span className="mt-0.5 block text-[11px] text-slate-400 leading-snug">{u.blurb}</span>
+                </button>
+                <div className="mt-2">
+                  {mine ? (
+                    <span className="text-[11px] font-semibold text-emerald-300">Built</span>
+                  ) : trying ? (
+                    <BuyButton gate={g} coins={u.unlock.coins} small onClick={() => { onBuy({ id: u.id, name: u.name, coins: u.unlock.coins }); setTryUp(null); }} verb="Build" />
+                  ) : g.ok || g.reason === 'coins' ? (
+                    <button onClick={() => setTryUp(u.id)} className="flex items-center gap-1 text-[11px] font-semibold text-slate-300">
+                      <Coin size={10} /> <span className="num-px text-[14px] text-slate-200">{u.unlock.coins.toLocaleString()}</span>
+                      <span className="ml-1 text-[var(--mood)]">Try it</span>
+                    </button>
+                  ) : (
+                    <button onClick={() => setTryUp(u.id)} className="flex items-center gap-1 text-[11px] text-slate-500">
+                      <Icon name="🔒" size={9} /> {g.text} <span className="ml-1 font-semibold text-[var(--mood)]">Try it</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {tryUp && <p className="mt-1.5 text-[11px] text-slate-400">Previewing the {GARAGE_UPGRADES.find((u) => u.id === tryUp)?.name.toLowerCase()} above. Tap it again to stop.</p>}
+      </div>
+
       {/* the collection */}
       <div>
         <div className="flex items-baseline justify-between">
@@ -481,7 +613,7 @@ export function GarageSection({ stats, onBuy, bought }: { stats: DerivedStats; o
                   onClick={() => setTryEnv(tryEnv === e.id ? null : e.id)}
                   aria-label={`Preview ${e.name}`}
                 >
-                  <img src={garageSceneUrl(e.id, trophiesEarned(stats))} alt="" className={`px-art w-full ${!mine && !g.ok ? 'opacity-50' : ''}`} draggable={false} />
+                  <img src={garageSceneUrl(e.id, trophiesEarned(stats), myUpgrades)} alt="" className={`px-art w-full ${!mine && !g.ok ? 'opacity-50' : ''}`} draggable={false} />
                 </button>
                 <p className="mt-1.5 text-[13px] font-semibold text-white leading-tight">{e.name}</p>
                 <p className="text-[11px] text-slate-400 leading-snug">{e.blurb}</p>
