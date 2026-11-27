@@ -1,6 +1,7 @@
 /** Reducer slice: Wardrobe and World: cosmetics, chests, home, decor, garage and cars. Returns undefined for actions it doesn't handle. */
 import type { AppState } from '../../lib/types';
 import { DECOR, GARAGE_ENVS, LEGENDARY_PICKS, PAINTS, PARTS, PROPERTIES, VEHICLES, canFit, worldChestPool, canUnlock, MAX_EXTRAS, garageSpots, garageUsed, isCar, legendaryPool, owns, ownsDecor, unlockOf, worldOf } from '../../world/catalog';
+import { MAX_PLACED, boxOf, clampSpot, freeSpot, isMovable, itemOf, layoutOf } from '../../world/room/layout';
 import { BUY_XP_SHARE } from '../../lib/xp';
 import { CHEST_DUPLICATE_SHARDS, chestPool, findItem, isOwned, normalizeLook } from '../../data/avatar';
 import {  computeDerivedStats } from '../../lib/stats';
@@ -39,6 +40,15 @@ export function worldSlice(state: AppState, action: Action): AppState | undefine
       }
       const decor = DECOR.find((d) => d.id === action.id);
       if (decor) next.decor = { ...world.decor, [decor.slot]: decor.id };
+      // Decorations go into the room where you previewed them, or the nearest free spot.
+      if (decor && isMovable(decor.slot) && decor.model !== 'none') {
+        const layout = layoutOf(world);
+        if (layout.length < MAX_PLACED) {
+          const [, , w, h] = boxOf({ id: decor.id, x: 0, y: 0 });
+          const at = action.at ? clampSpot(decor.slot, action.at.x, action.at.y, w, h) : freeSpot(world, layout, decor.id);
+          next.layout = [...layout, { uid: action.uid ?? `b${Object.keys(world.paid).length}-${decor.id}`, id: decor.id, ...at }];
+        }
+      }
       if (vehicle) next.vehicle = vehicle.id;
       if (GARAGE_ENVS.some((g) => g.id === action.id)) next.garage = action.id;
       if (PAINTS.some((p) => p.id === action.id) && action.vehicleId && owns(world, action.vehicleId)) {
@@ -74,6 +84,35 @@ export function worldSlice(state: AppState, action: Action): AppState | undefine
       const extras = (world.extras ?? []).filter((e) => e.id !== item.id);
       if (extras.length >= MAX_EXTRAS) return state;
       return { ...state, world: { ...world, extras: [...extras, { id: item.id, x: Math.round(action.x), y: Math.round(action.y) }] } };
+    }
+
+    case 'WORLD_LAYOUT_ADD': {
+      const world = worldOf(state);
+      const item = itemOf({ id: action.itemId });
+      const layout = layoutOf(world);
+      if (!item || !isMovable(item.slot) || item.model === 'none' || !ownsDecor(world, item) || layout.length >= MAX_PLACED || layout.some((p) => p.uid === action.uid)) return state;
+      const s = item.slot === 'poster' || item.slot === 'art' ? action.s : undefined;
+      const [, , w, h] = boxOf({ id: item.id, x: 0, y: 0, s });
+      const at = clampSpot(item.slot, action.x, action.y, w, h);
+      return { ...state, world: { ...world, layout: [...layout, { uid: action.uid, id: item.id, ...at, ...(s && s !== 'm' ? { s } : {}) }], decor: { ...world.decor, [item.slot]: item.id } } };
+    }
+
+    case 'WORLD_LAYOUT_MOVE': {
+      const world = worldOf(state);
+      const layout = layoutOf(world);
+      const p = layout.find((x) => x.uid === action.uid);
+      const item = p && itemOf(p);
+      if (!p || !item) return state;
+      const s = item.slot === 'poster' || item.slot === 'art' ? action.s ?? p.s : undefined;
+      const [, , w, h] = boxOf({ ...p, s });
+      const at = clampSpot(item.slot, action.x, action.y, w, h);
+      const moved: typeof p = { uid: p.uid, id: p.id, ...at, ...(s && s !== 'm' ? { s } : {}) };
+      return { ...state, world: { ...world, layout: layout.map((x) => (x.uid === p.uid ? moved : x)) } };
+    }
+
+    case 'WORLD_LAYOUT_REMOVE': {
+      const world = worldOf(state);
+      return { ...state, world: { ...world, layout: layoutOf(world).filter((x) => x.uid !== action.uid) } };
     }
 
     case 'WORLD_EXTRA_REMOVE': {

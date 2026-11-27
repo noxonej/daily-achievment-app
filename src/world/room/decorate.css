@@ -1,0 +1,13 @@
+/* ---- Decorating mode (2026-11-27) ---- */
+.deco-spot { border-radius: 10px; outline: 2px dashed rgba(255,255,255,.55); outline-offset: -2px; background: rgba(255,255,255,.06); -webkit-tap-highlight-color: transparent; }
+.deco-spot:hover { background: rgba(255,255,255,.14); }
+.deco-ghost { cursor: grab; border-radius: 8px; z-index: 2; animation: deco-lift .22s cubic-bezier(.2,1.4,.4,1) both; }
+.deco-ghost:active { cursor: grabbing; }
+.deco-ghost::after { content: ''; position: absolute; inset: -4px; border-radius: 10px; pointer-events: none; }
+.deco-ok::after { box-shadow: 0 0 0 2px #4ade80, 0 0 14px rgba(74,222,128,.55); }
+.deco-bad::after { box-shadow: 0 0 0 2px #f87171, 0 0 14px rgba(248,113,113,.6); }
+.deco-bad img, .deco-bad svg { opacity: .75; }
+.deco-ok { filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)); }
+.deco-why { white-space: nowrap; font-size: 9px; color: #fff; background: #b91c1c; padding: 3px 6px 2px; border-radius: 4px; }
+@keyframes deco-lift { from { transform: translateY(6px) scale(.96); } to { transform: none; } }
+:root[data-motion='reduce'] .deco-ghost { animation: none; }
