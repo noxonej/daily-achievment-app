@@ -1,4 +1,7 @@
-import { useEffect, useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useApp } from '../store/AppContext';
+import { CharacterSprite } from '../world/char/CharacterSprite';
+import type { ClipName } from '../world/char/anim';
 import { ShareButton } from './ShareButton';
 import { InviteButton } from './InviteCard';
 import { L, isLt } from '../lib/lang';
@@ -61,6 +64,7 @@ export function LevelUpScreen({ level, leaving, onClose }: { level: number; leav
       <div className="lvl-glow absolute pointer-events-none" aria-hidden="true" />
 
       <div className="relative w-full max-w-xs text-center">
+        <Celebrating />
         <p className="lvl-label px-label" aria-hidden="true">
           {label.split('').map((ch, i) => (
             <span key={i} style={{ animationDelay: `${120 + i * 35}ms` }}>
@@ -127,6 +131,21 @@ export function LevelUpScreen({ level, leaving, onClose }: { level: number; leav
           <InviteButton />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Your character jumps for joy as the new number lands (2026-11-27), then waves a second time. */
+function Celebrating() {
+  const { state } = useApp();
+  const [clip, setClip] = useState<{ name: ClipName; key: number } | null>(null);
+  useEffect(() => {
+    const a = setTimeout(() => setClip({ name: 'celebrate', key: 1 }), 620);
+    return () => clearTimeout(a);
+  }, []);
+  return (
+    <div className="lvl-hero mx-auto -mb-1 w-[92px]" aria-hidden="true">
+      <CharacterSprite look={state.character} base="idle" clip={clip} />
     </div>
   );
 }
