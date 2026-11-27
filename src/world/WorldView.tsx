@@ -6,7 +6,6 @@ import { usePixelated } from './px/pixelate';
 import { useApp } from '../store/AppContext';
 import { Segmented } from '../components/Segmented';
 import { InfoTip } from '../components/Guide';
-import { Avatar } from '../components/Avatar';
 import { Coin } from '../components/Coin';
 import { Icon } from '../components/Icon';
 import { useCountUp } from '../lib/useCountUp';
@@ -211,9 +210,8 @@ function RoomSection({ stats, onBuy, bought }: { stats: DerivedStats; onBuy: (p:
             dispatch({ type: 'EQUIP_COSMETIC', slot: 'pet', itemId: id });
             say(`${name} is walking with you now`);
           }}
-        >
-          <Avatar look={state.character} size={200} bare alive className="w-full h-auto" />
-        </Room>
+          character={{ look: state.character }}
+        />
         {placing && (
           <div className="theme-dark absolute inset-x-3 top-3 z-[10] flex items-center justify-between gap-2 rounded-2xl bg-black/75 backdrop-blur-md px-3.5 py-2.5 toast-in-up">
             <span className="text-[13px] font-semibold text-white">{placing.slot === 'shelf' ? `Tap the wall to hang your ${placing.name.toLowerCase()}` : `Tap the floor to put your ${placing.name.toLowerCase()}`}</span>
@@ -554,9 +552,7 @@ function HomePreview({ id, onClose, action }: { id: string; onClose: () => void;
       </div>
       <div className="flex-1 min-h-0 px-3">
         <div className="relative h-full max-h-[460px]">
-          <Room world={look} trophies={0} books={0} focus={null} time="day">
-            <Avatar look={state.character} size={200} bare alive className="w-full h-auto" />
-          </Room>
+          <Room world={look} trophies={0} books={0} focus={null} time="day" character={{ look: state.character }} />
         </div>
       </div>
       <div className="px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">

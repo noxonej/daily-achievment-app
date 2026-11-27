@@ -662,8 +662,131 @@ export interface Pose {
   blanket?: string;
 }
 
-function compose(look: Character, mood: number | undefined, step = 0, pose: Pose = { pose: 'stand' }): Grid {
+/**
+ * One animation frame of the character (2026-11-27 animation overhaul). The sprite is drawn in
+ * layers (hair behind, cape, legs, torso, arms, head, raised arms) and each layer can move by
+ * whole pixels, so walking, running, jumping and gestures keep the same proportions as the
+ * still picture. All numbers are sprite pixels; +y is down.
+ */
+export type ArmPose = 'down' | 'fwd' | 'back' | 'up' | 'wave' | 'out' | 'bentF' | 'bentB';
+export interface LegPose {
+  /** How far the boot is lifted off the floor. */
+  lift?: number;
+  /** Sideways step (a stride). */
+  dx?: number;
+}
+export interface Rig {
+  /** Torso, arms and head move down (+) or up (−); the legs stretch or bend to stay attached. */
+  body?: number;
+  /** The head on top of that (a nod), and sideways (a lean). */
+  head?: number;
+  headX?: number;
+  legs?: [LegPose, LegPose];
+  arms?: [ArmPose, ArmPose];
+  /** Both eyes drawn as this kind (a blink is 'closed'). */
+  eyes?: string;
+  /** Leave the pet out (it is drawn on the floor on its own while the character jumps). */
+  noPet?: boolean;
+}
+
+/** The old two walking frames (1 / 2) as a rig: one boot lifts a pixel. */
+function stepRig(step: number): Rig {
+  if (step === 1) return { legs: [{ lift: 1 }, {}] };
+  if (step === 2) return { legs: [{}, { lift: 1 }] };
+  return {};
+}
+
+/** Copies the painted pixels of `src` onto `dst`, moved by dx / dy. */
+function blit(dst: Grid, src: Grid, dx = 0, dy = 0) {
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const c = src[y][x];
+      if (c) put(dst, x + dx, y + dy, c);
+    }
+}
+
+/**
+ * Lifts one arm (rows 16–22 below the shoulder) out of the torso layer. `c` counts columns
+ * outwards from the body (0 = next to the torso), `r` rows down from the shoulder, so the same
+ * pose code works for both arms.
+ */
+function takeArm(t: Grid, left: boolean): Array<{ c: number; r: number; col: string }> {
+  const out: Array<{ c: number; r: number; col: string }> = [];
+  for (let y = 16; y <= 23; y++)
+    for (let x = 0; x < N; x++) {
+      const c = left ? 12 - x : x - 19;
+      if (c < 0 || c > 2) continue;
+      const col = t[y][x];
+      if (!col) continue;
+      out.push({ c, r: y - 16, col });
+      t[y][x] = null;
+    }
+  return out;
+}
+
+/** Puts an arm back in its pose. Raised arms are returned separately: they go over the head. */
+function placeArm(lo: Grid, hi: Grid, cells: Array<{ c: number; r: number; col: string }>, left: boolean, pose: ArmPose, dy: number) {
+  const X = (c: number) => (left ? 12 - c : 19 + c);
+  const sleeve = cells.find((p) => p.r === 0 && p.c === 0)?.col ?? cells[0]?.col;
+  const last = cells.reduce((m, p) => Math.max(m, p.r), 0);
+  for (const p of cells) {
+    let { c, r } = p;
+    const target = lo;
+    switch (pose) {
+      case 'fwd':
+        // Swinging towards you: the lower arm drops a pixel, so the arm looks longer.
+        if (r >= 2) {
+          if (r === 2) put(lo, X(c), 16 + 2 + dy, p.col);
+          r += 1;
+        }
+        break;
+      case 'back':
+        // Swinging away: a pixel shorter.
+        if (r === 1) continue;
+        if (r >= 2) r -= 1;
+        break;
+      case 'bentF':
+      case 'bentB': {
+        // Running: elbows bent, fists up in front (F) or pulled back at the hip (B).
+        const hand = r >= last - 1;
+        if (!hand && r > 1) continue;
+        if (hand) {
+          r = r - (last - 1) + (pose === 'bentF' ? 2 : 3);
+          c = c + (pose === 'bentF' ? -1 : 0);
+        }
+        break;
+      }
+      case 'up':
+      case 'wave': {
+        // Raised: the arm goes up and out in a diagonal (a "hooray" V), hand on top, clear of the head.
+        const o = 1 + Math.floor(r * 0.6) + (pose === 'wave' && r >= last - 2 ? 1 : 0);
+        put(hi, X(c + o), 15 - r + dy, p.col);
+        continue;
+      }
+      case 'out':
+        // Held out to the side (reaching, balancing): the arm turns flat.
+        put(lo, X(2 + r), 16 + Math.min(1, c) + dy, p.col);
+        continue;
+      default:
+        break;
+    }
+    put(target, X(c), 16 + r + dy, p.col);
+  }
+  if ((pose === 'up' || pose === 'wave') && sleeve) put(hi, X(1), 16 + dy, sleeve);
+}
+
+function compose(look: Character, mood: number | undefined, step = 0, pose: Pose = { pose: 'stand' }, rig?: Rig): Grid {
+  const R = rig ?? stepRig(step);
+  const body = pose.pose === 'sleep' ? 0 : R.body ?? 0;
+  const headY = pose.pose === 'sleep' ? 0 : body + (R.head ?? 0);
+  const headX = pose.pose === 'sleep' ? 0 : R.headX ?? 0;
   const g = blank();
+  const back = blank();
+  const cape = blank();
+  const legs = blank();
+  const torso = blank();
+  const head = blank();
+  const raised = blank();
   const skin = findItem(look.skin)?.c1 ?? '#f6c9a0';
   const skinDark = shade(skin, -0.18);
   const hairItem = findItem(look.hair);
@@ -675,116 +798,170 @@ function compose(look: Character, mood: number | undefined, step = 0, pose: Pose
   const ostyle = outfitLook(outfit);
 
   // 1. behind: long hair, capes
-  if (hairItem && HAIR_BACK[hairItem.style]) drawHair(g, HAIR_BACK[hairItem.style], hairColor);
-  if (ostyle.cape) rect(g, 12, 15, 8, 13, ostyle.cape);
+  if (hairItem && HAIR_BACK[hairItem.style]) drawHair(back, HAIR_BACK[hairItem.style], hairColor);
+  if (ostyle.cape) rect(cape, 12, 15, 8, 13, ostyle.cape);
   // 2. legs and boots
-  // Walking (step 1 / 2): one leg lifts a pixel while the other stays down.
-  const lift = (left: boolean) => (step === 1 ? (left ? 1 : 0) : step === 2 ? (left ? 0 : 1) : 0);
   if (pose.pose === 'sit') {
     // Sitting, seen from the front: the lap (thighs coming towards you) and short shins.
-    rect(g, 12, 23, 4, 2, shade(ostyle.pants, 0.1));
-    rect(g, 16, 23, 4, 2, shade(ostyle.pants, -0.05));
-    rect(g, 12, 25, 3, 2, ostyle.pants);
-    rect(g, 17, 25, 3, 2, shade(ostyle.pants, -0.15));
-    rect(g, 11, 27, 4, 2, ostyle.boots);
-    rect(g, 17, 27, 4, 2, shade(ostyle.boots, -0.15));
+    rect(legs, 12, 23, 4, 2, shade(ostyle.pants, 0.1));
+    rect(legs, 16, 23, 4, 2, shade(ostyle.pants, -0.05));
+    rect(legs, 12, 25, 3, 2, ostyle.pants);
+    rect(legs, 17, 25, 3, 2, shade(ostyle.pants, -0.15));
+    rect(legs, 11, 27, 4, 2, ostyle.boots);
+    rect(legs, 17, 27, 4, 2, shade(ostyle.boots, -0.15));
   } else {
-    rect(g, 13, 23, 3, 5 - lift(true), ostyle.pants);
-    rect(g, 16, 23, 3, 5 - lift(false), shade(ostyle.pants, -0.15));
-    rect(g, 12, 28 - lift(true), 4, 2, ostyle.boots);
-    rect(g, 16, 28 - lift(false), 4, 2, shade(ostyle.boots, -0.15));
+    // Each leg hangs from the hips (which move with the body) down to its boot (which can lift
+    // and step sideways), so a crouch bends the legs and a stretch lengthens them.
+    const top = 23 + body;
+    const [lp, rp] = R.legs ?? [{}, {}];
+    const leg = (x: number, bx: number, p: LegPose, pants: string, boot: string) => {
+      const lift = Math.max(0, p.lift ?? 0);
+      const dx = p.dx ?? 0;
+      const bootY = 28 - lift;
+      rect(legs, x + dx, top, 3, Math.max(1, bootY - top), pants);
+      rect(legs, bx + dx, bootY, 4, 2, boot);
+    };
+    leg(13, 12, lp, ostyle.pants, ostyle.boots);
+    leg(16, 16, rp, shade(ostyle.pants, -0.15), shade(ostyle.boots, -0.15));
   }
   // 3. body
-  drawOutfit(g, outfit, skin);
+  drawOutfit(torso, outfit, skin);
   if (ostyle.coat) {
     const c = outfit.c1 ?? '#64748b';
-    rect(g, 13, 23, 6, ostyle.coat, c);
-    rect(g, 18, 23, 1, ostyle.coat, shade(c, -0.22));
-    rect(g, 15, 23, 2, ostyle.coat, outfit.style === 'lab' ? '#e2e8f0' : outfit.c2 ?? shade(c, -0.3));
+    rect(torso, 13, 23, 6, ostyle.coat, c);
+    rect(torso, 18, 23, 1, ostyle.coat, shade(c, -0.22));
+    rect(torso, 15, 23, 2, ostyle.coat, outfit.style === 'lab' ? '#e2e8f0' : outfit.c2 ?? shade(c, -0.3));
   }
   // 3b. hands: gloves, watches and wristbands
   const hands = findItem(look.hands);
-  if (hands && hands.style !== 'none') drawHands(g, hands);
+  if (hands && hands.style !== 'none') drawHands(torso, hands);
+  // 3c. arms come off the torso so they can swing, bend and wave
+  const [al, ar] = pose.pose === 'sleep' ? (['down', 'down'] as const) : R.arms ?? (['down', 'down'] as const);
+  const armsLo = blank();
+  if (al !== 'down' || ar !== 'down') {
+    placeArm(armsLo, raised, takeArm(torso, true), true, al, 0);
+    placeArm(armsLo, raised, takeArm(torso, false), false, ar, 0);
+  }
   // 4. head with a rounded jaw and the far side a little darker
-  rect(g, 11, 6, 10, 9, skin);
-  g[6][11] = null;
-  g[6][20] = null;
-  g[14][11] = null;
-  g[14][20] = null;
-  rect(g, 20, 7, 1, 7, skinDark);
-  rect(g, 12, 14, 8, 1, skinDark);
-  g[14][12] = skin;
+  rect(head, 11, 6, 10, 9, skin);
+  head[6][11] = null;
+  head[6][20] = null;
+  head[14][11] = null;
+  head[14][20] = null;
+  rect(head, 20, 7, 1, 7, skinDark);
+  rect(head, 12, 14, 8, 1, skinDark);
+  head[14][12] = skin;
   // 5. face
   const styleKey = findItem(look.expression)?.style ?? 'happy';
   const key = pose.pose === 'sleep' ? 'asleep' : pose.face && FACES[pose.face] ? pose.face : styleKey === 'mood' ? (mood ? MOOD_FACE[mood] : 'happy') : styleKey;
   const f = FACES[key] ?? FACES.happy;
-  drawEye(g, f.eyes[0], 13, 1, skinDark);
-  drawEye(g, f.eyes[1], 17, -1, skinDark);
+  const eyes: [string, string] = R.eyes && pose.pose !== 'sleep' ? [R.eyes, R.eyes] : f.eyes;
+  drawEye(head, eyes[0], 13, 1, skinDark);
+  drawEye(head, eyes[1], 17, -1, skinDark);
   const brow = shade(hairColor, -0.35);
   if (f.brows === 'angry') {
-    [[12, 8], [13, 8], [14, 9], [19, 8], [18, 8], [17, 9]].forEach(([x, y]) => put(g, x, y, brow));
+    [[12, 8], [13, 8], [14, 9], [19, 8], [18, 8], [17, 9]].forEach(([x, y]) => put(head, x, y, brow));
   } else if (f.brows === 'sad') {
-    [[14, 8], [13, 8], [12, 9], [17, 8], [18, 8], [19, 9]].forEach(([x, y]) => put(g, x, y, brow));
+    [[14, 8], [13, 8], [12, 9], [17, 8], [18, 8], [19, 9]].forEach(([x, y]) => put(head, x, y, brow));
   } else if (f.brows === 'raised') {
-    [[13, 7], [14, 7], [17, 7], [18, 7]].forEach(([x, y]) => put(g, x, y, brow));
+    [[13, 7], [14, 7], [17, 7], [18, 7]].forEach(([x, y]) => put(head, x, y, brow));
   } else if (f.brows === 'one') {
-    [[17, 7], [18, 7], [13, 8], [14, 8]].forEach(([x, y]) => put(g, x, y, brow));
+    [[17, 7], [18, 7], [13, 8], [14, 8]].forEach(([x, y]) => put(head, x, y, brow));
   }
-  drawMouth(g, f.mouth, shade(skin, -0.3));
+  drawMouth(head, f.mouth, shade(skin, -0.3));
   const extras = new Set(f.extra ?? []);
   if (extras.has('blush')) {
-    put(g, 12, 12, '#f472b6');
-    put(g, 19, 12, '#f472b6');
+    put(head, 12, 12, '#f472b6');
+    put(head, 19, 12, '#f472b6');
   }
   if (extras.has('whiskers')) {
-    put(g, 9, 12, OUTLINE);
-    put(g, 22, 12, OUTLINE);
+    put(head, 9, 12, OUTLINE);
+    put(head, 22, 12, OUTLINE);
   }
   // 6. hair, glasses, hat
-  if (hairItem) drawHair(g, HAIR[hairItem.style], hairColor);
+  if (hairItem) drawHair(head, HAIR[hairItem.style], hairColor);
   if (face && GLASSES[face.style]) {
-    sprite(g, 10, 8, GLASSES[face.style], { ...HAT_PAL(face.c1 ?? '#1f2937', face.c2 ?? '#94a3b8'), C: face.c1 ?? '#f472b6' });
+    sprite(head, 10, 8, GLASSES[face.style], { ...HAT_PAL(face.c1 ?? '#1f2937', face.c2 ?? '#94a3b8'), C: face.c1 ?? '#f472b6' });
   }
   if (hat && HATS[hat.style]) {
     const rows = HATS[hat.style];
-    sprite(g, 8, 0, rows, HAT_PAL(hat.c1 ?? '#2563eb', hat.c2 ?? shade(hat.c1 ?? '#2563eb', -0.3)));
+    sprite(head, 8, 0, rows, HAT_PAL(hat.c1 ?? '#2563eb', hat.c2 ?? shade(hat.c1 ?? '#2563eb', -0.3)));
   }
   // 7. after-hair extras (they sit on top of everything)
   if (extras.has('tear')) {
-    put(g, 13, 11, '#7dd3fc');
-    put(g, 13, 12, '#38bdf8');
+    put(head, 13, 11, '#7dd3fc');
+    put(head, 13, 12, '#38bdf8');
   }
   if (extras.has('tear2')) {
-    put(g, 18, 11, '#7dd3fc');
-    put(g, 18, 12, '#38bdf8');
+    put(head, 18, 11, '#7dd3fc');
+    put(head, 18, 12, '#38bdf8');
   }
   if (extras.has('sweat')) {
-    put(g, 21, 7, '#7dd3fc');
-    put(g, 21, 8, '#38bdf8');
+    put(head, 21, 7, '#7dd3fc');
+    put(head, 21, 8, '#38bdf8');
   }
   if (extras.has('drop')) {
-    put(g, 22, 8, '#bae6fd');
-    put(g, 22, 9, '#7dd3fc');
+    put(head, 22, 8, '#bae6fd');
+    put(head, 22, 9, '#7dd3fc');
   }
-  if (extras.has('vein')) [[23, 4], [24, 5], [23, 6], [25, 4], [25, 6]].forEach(([x, y]) => put(g, x, y, '#ef4444'));
-  if (extras.has('pop')) [[7, 4], [8, 5], [6, 7], [24, 4], [23, 5], [25, 7]].forEach(([x, y]) => put(g, x, y, OUTLINE));
-  if (extras.has('zzz')) [[23, 3], [24, 3], [24, 4], [23, 5], [24, 5], [26, 1], [27, 1], [26, 2]].forEach(([x, y]) => put(g, x, y, '#e2e8f0'));
-  if (extras.has('bling')) [[8, 6], [7, 7], [9, 7], [8, 8], [24, 10], [23, 11], [25, 11], [24, 12]].forEach(([x, y]) => put(g, x, y, '#fde047'));
+  if (extras.has('vein')) [[23, 4], [24, 5], [23, 6], [25, 4], [25, 6]].forEach(([x, y]) => put(head, x, y, '#ef4444'));
+  if (extras.has('pop')) [[7, 4], [8, 5], [6, 7], [24, 4], [23, 5], [25, 7]].forEach(([x, y]) => put(head, x, y, OUTLINE));
+  if (extras.has('zzz')) [[23, 3], [24, 3], [24, 4], [23, 5], [24, 5], [26, 1], [27, 1], [26, 2]].forEach(([x, y]) => put(head, x, y, '#e2e8f0'));
+  if (extras.has('bling')) [[8, 6], [7, 7], [9, 7], [8, 8], [24, 10], [23, 11], [25, 11], [24, 12]].forEach(([x, y]) => put(head, x, y, '#fde047'));
+  // Put the layers together, back to front.
+  blit(g, back, headX, headY);
+  blit(g, cape, 0, body);
+  blit(g, legs);
+  blit(g, torso, 0, body);
+  blit(g, armsLo, 0, body);
+  blit(g, head, headX, headY);
+  blit(g, raised, 0, body);
   // 7b. asleep: tucked in under a duvet (the room turns the whole sprite on its side)
   if (pose.pose === 'sleep') {
     const b = pose.blanket ?? '#8fa3c0';
-    rect(g, 9, 17, 14, 13, b);
-    rect(g, 9, 17, 14, 2, shade(b, 0.3));
-    rect(g, 9, 19, 14, 1, shade(b, -0.12));
+    // Breathing under the duvet: its top edge rises a pixel.
+    const up = R.body && R.body < 0 ? 1 : 0;
+    rect(g, 9, 17 - up, 14, 13 + up, b);
+    rect(g, 9, 17 - up, 14, 2, shade(b, 0.3));
+    rect(g, 9, 19 - up, 14, 1, shade(b, -0.12));
     rect(g, 21, 20, 2, 10, shade(b, -0.18));
     return g;
   }
   // 8. pet
-  if (pet && PETS[pet.style]) {
+  if (pet && PETS[pet.style] && !R.noPet) {
     const c = pet.c1 ?? (pet.style === 'robot' ? '#cbd5e1' : '#f1f5f9');
     sprite(g, 23, 22, step ? petStep(PETS[pet.style], step) : PETS[pet.style], { C: c, c: shade(c, 0.3), d: shade(c, -0.25), K: '#1b1512', W: WHITE, P: '#f9a8d4', Y: '#facc15', R: '#ef4444', O: '#f97316', B: '#38bdf8', S: '#cbd5e1', G: '#bef264' });
   }
   return g;
+}
+
+/** Which eyes can close for a blink (stars, hearts, visors and so on stay as they are). */
+const BLINKABLE = new Set(['open', 'round', 'squint', 'side', 'sparkle', 'puppy', 'half']);
+export function canBlink(look: Partial<Character> | undefined, mood?: number, face?: string): boolean {
+  const l = normalizeLook(look);
+  const styleKey = findItem(l.expression)?.style ?? 'happy';
+  const key = face && FACES[face] ? face : styleKey === 'mood' ? (mood ? MOOD_FACE[mood] : 'happy') : styleKey;
+  const eyes = (FACES[key] ?? FACES.happy).eyes;
+  return BLINKABLE.has(eyes[0]) && BLINKABLE.has(eyes[1]);
+}
+
+/**
+ * One animation frame as outlined pixels (rows = y). Used by the animated character
+ * (src/world/char/CharacterSprite.tsx), which draws each frame once and then just shows it.
+ */
+export function riggedPixels(look: Partial<Character> | undefined, mood: number | undefined, pose: Pose, rig: Rig): (string | null)[][] {
+  return outlined(compose(normalizeLook(look), mood, 0, pose, { ...rig, noPet: true }));
+}
+
+function outlined(g: Grid): (string | null)[][] {
+  const out: (string | null)[][] = g.map((row) => row.slice());
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      if (g[y][x]) continue;
+      const near = (dx: number, dy: number) => !!g[y + dy]?.[x + dx];
+      if (near(1, 0) || near(-1, 0) || near(0, 1) || near(0, -1)) out[y][x] = OUTLINE;
+    }
+  return out;
 }
 
 /** Adds the one-pixel dark outline around everything, then merges runs of the same colour into rects. */
@@ -902,15 +1079,7 @@ export function PixelAvatar({
  * garage, at the same pixel size as the vehicles. Rows are y (0 = top), null = see-through.
  */
 export function avatarPixels(look: Partial<Character> | undefined, mood?: number): (string | null)[][] {
-  const g = compose(normalizeLook(look), mood);
-  const out: (string | null)[][] = g.map((row) => row.slice());
-  for (let y = 0; y < N; y++)
-    for (let x = 0; x < N; x++) {
-      if (g[y][x]) continue;
-      const near = (dx: number, dy: number) => !!g[y + dy]?.[x + dx];
-      if (near(1, 0) || near(-1, 0) || near(0, 1) || near(0, -1)) out[y][x] = OUTLINE;
-    }
-  return out;
+  return outlined(compose(normalizeLook(look), mood));
 }
 
 /** One pet on its own as outlined pixels (10×10), for pets roaming your home (2026-11-17). */

@@ -1,5 +1,8 @@
 import { HomeShell } from './shells';
 import { PetSprite, PoseContext, WalkStepContext, type Pose } from '../../components/PixelAvatar';
+import { CharacterSprite, HEADROOM, SPRITE_H, SPRITE_W } from '../char/CharacterSprite';
+import type { Base, ClipName } from '../char/anim';
+import type { Character } from '../../lib/types';
 import { isReduced, remember, restSpots, spotAt, useLife, type RestSpot } from './life';
 import { todayKey } from '../../lib/date';
 import { L } from '../../lib/lang';
@@ -433,7 +436,15 @@ export interface RoomProps {
   onTapPet?: (id: string) => void;
   /** Quests finished today: the character cheers once when this went up since your last visit. */
   cheer?: number;
+  /** The animated character (2026-11-27). Without it, `children` is shown as a still picture. */
+  character?: { look: Partial<Character>; mood?: number };
 }
+
+/** The character's width in room units (2026-11-27: 7 units per sprite pixel, was ~4.8). */
+export const CHAR_W = 224;
+/** Walking and running speed, room units per second (matched to the stride of each loop). */
+const WALK_SPEED = 250;
+const RUN_SPEED = 440;
 
 /** Where pets hang out on the floor (room x), and how far each one wanders. */
 const PET_SPOTS = [250, 820, 470, 1010, 140, 700, 380, 930, 560, 1090];
@@ -468,7 +479,7 @@ export function HomeThumb({ id, className = '' }: { id: string; className?: stri
   );
 }
 
-export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced, placing = null, onPlaceAt, onTapExtra, pets = [], onTapPet, cheer = 0 }: RoomProps) {
+export function Room({ walkable = false, world, trophies, books, focus, onTapSlot, editing = false, dropped = null, children, time: forced, placing = null, onPlaceAt, onTapExtra, pets = [], onTapPet, cheer = 0, character }: RoomProps) {
   const property = PROPERTIES.find((p) => p.id === world.property) ?? PROPERTIES[0];
   const time = forced ?? timeOfDay();
   const night = time === 'night';
@@ -483,7 +494,10 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const [pos, setPos] = useState({ x: 608, y: 532 });
   const [facing, setFacing] = useState<1 | -1>(1);
   const [moving, setMoving] = useState(false);
-  const held = useRef<{ dx: number; dy: number } | null>(null);
+  const [running, setRunning] = useState(false);
+  const runRef = useRef(false);
+  const [jump, setJump] = useState<{ name: ClipName; key: number } | null>(null);
+  const held = useRef<{ dx: number; dy: number; run?: boolean } | null>(null);
   const walkRaf = useRef(0);
   /* daily life (2026-11-24): sit, sleep, small idle moments and reactions (see life.ts) */
   const spots = useMemo(() => restSpots((sl) => decorFor(world, sl)), [world]);
@@ -499,6 +513,15 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
   const lifeState = rest ? (rest.kind === 'bed' ? 'sleep' : 'sit') : 'stand';
   const { moment, play, poke, tap, clear } = useLife(lifeState, walkable && !focus && !moving, time !== 'day');
   const pose = useMemo<Pose>(() => ({ pose: lifeState, face: moment?.face, blanket: rest?.blanket }), [lifeState, moment?.face, rest?.blanket]);
+  // The animation state (see char/anim.ts): a base loop plus one gesture at a time.
+  const animBase: Base = lifeState === 'sleep' ? 'sleep' : lifeState === 'sit' ? 'sit' : moving ? (running ? 'run' : 'walk') : 'idle';
+  const momentClip = useMemo(() => (moment && moment.kind !== 'none' ? { name: moment.kind as ClipName, key: moment.key } : null), [moment]);
+  // A jump or an "admire the new thing" reach wins over an idle moment when it is newer.
+  const [admire, setAdmire] = useState<{ name: ClipName; key: number } | null>(null);
+  const clip = [momentClip, jump, admire].reduce<{ name: ClipName; key: number } | null>((a, b) => (b && (!a || b.key > a.key) ? b : a), null);
+  useEffect(() => {
+    if (dropped && walkable) setAdmire({ name: 'reach', key: dropped.key });
+  }, [dropped, walkable]);
   // One greeting when the room opens: a cheer after finishing quests, or a morning stretch.
   useEffect(() => {
     if (!walkable) return;
@@ -569,7 +592,7 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     const el = charRef.current;
     if (!el) return;
     const p = posRef.current;
-    Object.assign(el.style, charStyle(p));
+    Object.assign(el.style, charStyle(p, !!character));
   }
   function placeCamera(x: number) {
     const el = cameraRef.current;
@@ -593,8 +616,15 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
       const dt = Math.min(0.05, (t - last) / 1000);
       last = t;
       const p = posRef.current;
-      const x = Math.min(1110, Math.max(90, p.x + h.dx * 260 * dt));
-      const y = Math.min(552, Math.max(500, p.y + h.dy * 80 * dt));
+      // Push the stick all the way (or hold Shift) to run.
+      const run = !!h.run || Math.hypot(h.dx, h.dy) > 0.86;
+      if (run !== runRef.current) {
+        runRef.current = run;
+        setRunning(run);
+      }
+      const v = run ? RUN_SPEED : WALK_SPEED;
+      const x = Math.min(1110, Math.max(90, p.x + h.dx * v * dt));
+      const y = Math.min(552, Math.max(500, p.y + h.dy * v * 0.32 * dt));
       posRef.current = { x, y };
       placeChar();
       const target = clampX(size.w / 2 - x * k);
@@ -612,6 +642,8 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     setPos(posRef.current);
     if (panRef.current != null) setPan(panRef.current);
     setMoving(false);
+    runRef.current = false;
+    setRunning(false);
     setNear(spotAt(spotsRef.current, posRef.current.x));
     poke();
   }
@@ -620,10 +652,22 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
     if (!walkable) return;
     const keys: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     const down = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.closest?.('input,textarea,button,select')) return;
+      if (e.key === ' ' && !restRef.current) {
+        e.preventDefault();
+        if (!e.repeat) setJump({ name: 'jump', key: Date.now() });
+        return;
+      }
       const d = keys[e.key];
-      if (!d || held.current || (e.target as HTMLElement)?.closest?.('input,textarea')) return;
+      if (!d) return;
       e.preventDefault();
+      if (held.current) {
+        held.current.run = e.shiftKey;
+        return;
+      }
       walk(d[0], d[1]);
+      const h = held.current as { dx: number; dy: number; run?: boolean } | null;
+      if (h) h.run = e.shiftKey;
     };
     const up = (e: KeyboardEvent) => keys[e.key] && stopWalk();
     window.addEventListener('keydown', down);
@@ -799,14 +843,14 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
         {pixels && <img src={pixels} alt="" aria-hidden="true" className="px-art absolute inset-0 w-full h-full object-contain pointer-events-none" draggable={false} />}
 
         {/* your character: standing on the rug, sitting, or asleep in bed */}
-        {children && (
+        {(character || children) && (
           <div
             ref={charRef}
             className={`absolute pointer-events-none ${rest ? 'room-rest' : ''}`}
-            style={rest ? restStyle(rest) : charStyle(posRef.current)}
+            style={rest ? restStyle(rest, !!character) : charStyle(posRef.current, !!character)}
           >
             {moment?.say && !moving && (
-              <span key={moment.key} className="room-bubble-say absolute left-1/2 -top-2 -translate-x-1/2 -translate-y-full z-[1]" aria-hidden="true">
+              <span key={moment.key} className="room-bubble-say absolute left-1/2 -translate-x-1/2 -translate-y-full z-[1]" style={{ top: character ? '22%' : '-0.5rem' }} aria-hidden="true">
                 {moment.say}
               </span>
             )}
@@ -816,18 +860,29 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
               </span>
             )}
             <div style={{ transform: lifeState === 'sleep' ? 'rotate(-90deg)' : `scaleX(${facing})` }}>
-              <div key={moment?.key ?? 'still'} className={moving ? 'room-walk' : moment && !isReduced() ? `room-life-${moment.kind}` : ''}>
-                <PoseContext.Provider value={pose}>
-                  <Stepper moving={moving}>{children}</Stepper>
-                </PoseContext.Provider>
-              </div>
+              {character ? (
+                <CharacterSprite
+                  look={character.look}
+                  mood={character.mood}
+                  base={animBase}
+                  clip={clip}
+                  face={moment?.face}
+                  blanket={rest?.blanket}
+                />
+              ) : (
+                <div key={moment?.key ?? 'still'} className={moving ? 'room-walk' : moment && !isReduced() ? `room-life-${moment.kind}` : ''}>
+                  <PoseContext.Provider value={pose}>
+                    <Stepper moving={moving}>{children}</Stepper>
+                  </PoseContext.Provider>
+                </div>
+              )}
             </div>
             {walkable && !moving && !focus && (
               <button
                 type="button"
                 onClick={tap}
                 aria-label={lifeState === 'sleep' ? 'Your character is sleeping' : 'Say hi to your character'}
-                className="room-char-tap absolute pointer-events-auto"
+                className={`room-char-tap absolute pointer-events-auto ${character ? 'room-char-tap-big' : ''}`}
               />
             )}
           </div>
@@ -922,6 +977,19 @@ export function Room({ walkable = false, world, trophies, books, focus, onTapSlo
           })}
       </div>
 
+      {walkable && character && !focus && !placing && !rest && (
+        <button
+          type="button"
+          className={`room-jump absolute bottom-[112px] z-[5] ${(pos.x * k + tx0 > size.w * 0.55 ? 'left' : 'right') === 'left' ? 'left-[31px]' : 'right-[31px]'}`}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            setJump({ name: 'jump', key: Date.now() });
+          }}
+          aria-label={L('Jump', 'Šokti')}
+        >
+          <span className="px-label">{L('Jump', 'Šok')}</span>
+        </button>
+      )}
       {walkable && !focus && !placing && (
         <Joystick
           side={(rest ? rest.x : pos.x) * k + tx0 > size.w * 0.55 ? 'left' : 'right'}
@@ -1029,9 +1097,22 @@ function Joystick({ side, onMove, onEnd }: { side: 'left' | 'right'; onMove: (dx
 
 /** Where the character stands: further back is a little smaller. */
 /** Sitting: feet on the spot. Lying down: the sprite's centre on the mattress (it's turned on its side). */
-function restStyle(r: RestSpot) {
-  const w = 172 * r.scale;
-  const y = r.kind === 'bed' ? r.y + w / 2 : r.y;
+function restStyle(r: RestSpot, big = false) {
+  const w = (big ? CHAR_W : 172) * r.scale;
+  if (big && r.kind === 'bed') {
+    // Lying down: the sprite is turned on its side, so its height runs along the mattress.
+    const h = (w * SPRITE_H) / SPRITE_W;
+    return {
+      left: `${(r.x / ROOM_W) * 100}%`,
+      bottom: `${((ROOM_H - r.y - h / 2) / ROOM_H) * 100}%`,
+      width: `${(w / ROOM_W) * 100}%`,
+      transform: 'translateX(-50%)',
+      zIndex: '600',
+    };
+  }
+  // Sitting: the sprite's feet are a little above the bottom of its canvas.
+  const feet = big ? (w / SPRITE_W) * (SPRITE_H - HEADROOM - 30) : 0;
+  const y = r.kind === 'bed' ? r.y + w / 2 : r.y + feet;
   return {
     left: `${(r.x / ROOM_W) * 100}%`,
     bottom: `${((ROOM_H - y) / ROOM_H) * 100}%`,
@@ -1044,15 +1125,18 @@ function restStyle(r: RestSpot) {
 /** The Sit / Sleep / Get up button floats above the character. */
 function chipStyle(r: RestSpot, resting: boolean, p: { x: number; y: number }) {
   const x = resting ? r.x : p.x;
-  const top = resting ? (r.kind === 'bed' ? r.y - 120 : r.y - 175) : p.y - 190;
+  const top = resting ? (r.kind === 'bed' ? r.y - 130 : r.y - 225) : p.y - 250;
   return { left: `${(x / ROOM_W) * 100}%`, top: `${(Math.max(20, top) / ROOM_H) * 100}%`, transform: 'translate(-50%, -100%)', zIndex: 700 };
 }
 
-function charStyle(p: { x: number; y: number }) {
+function charStyle(p: { x: number; y: number }, big = false) {
+  const w = (big ? CHAR_W : 172) * (0.92 + ((p.y - 500) / 52) * 0.16);
+  // The sprite's feet sit 2 pixels above the bottom of its canvas (the floor shadow is below them).
+  const below = big ? (w / SPRITE_W) * (SPRITE_H - HEADROOM - 30) : 0;
   return {
     left: `${(p.x / ROOM_W) * 100}%`,
-    bottom: `${((ROOM_H - p.y) / ROOM_H) * 100}%`,
-    width: `${((172 * (0.92 + ((p.y - 500) / 52) * 0.16)) / ROOM_W) * 100}%`,
+    bottom: `${((ROOM_H - p.y - below) / ROOM_H) * 100}%`,
+    width: `${(w / ROOM_W) * 100}%`,
     transform: 'translateX(-50%)',
     zIndex: String(Math.round(p.y)),
   };
