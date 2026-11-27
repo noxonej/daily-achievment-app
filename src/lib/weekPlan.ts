@@ -1,6 +1,6 @@
 import type { AppState, PlanCategory, PlanItem, WeekdayId } from './types';
 import { addDaysToKey, parseKey, todayKey, weekKey } from './date';
-import { hour12, locale, weekdayName } from './locale';
+import { dateFormat, hour12, locale, weekdayName } from './locale';
 
 export const WEEKDAYS: Array<{ id: WeekdayId; short: string; long: string }> = [
   { id: 'mon', short: 'Mon', long: 'Monday' },
@@ -74,7 +74,7 @@ export function planItemsForDay(state: AppState, day: WeekdayId): PlanItem[] {
 export function formatEventDate(date: string, today: string = todayKey()): string {
   if (date === today) return 'Today';
   if (date === addDaysToKey(today, 1)) return 'Tomorrow';
-  return parseKey(date).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
+  return dateFormat({ weekday: 'short', day: 'numeric', month: 'short' }).format(parseKey(date));
 }
 
 /** Ids ticked off this week. Last week's ticks are ignored, so every week starts fresh. */
@@ -87,7 +87,7 @@ export function checkedPlanIds(state: AppState): Set<string> {
 /** "07:15" → "7:15 AM" or "07:15" depending on the device's clock preference. */
 export function formatPlanTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
-  return new Date(2000, 0, 1, h, m).toLocaleTimeString(locale(), { hour: 'numeric', minute: '2-digit', hour12: hour12() });
+  return dateFormat({ hour: 'numeric', minute: '2-digit', hour12: hour12() }).format(new Date(2000, 0, 1, h, m));
 }
 
 export const PLAN_CATEGORIES: Array<{ id: PlanCategory; label: string; dot: string; text: string; bar: string; chip: string }> = [

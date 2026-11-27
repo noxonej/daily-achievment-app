@@ -7,9 +7,14 @@
 .room-viewport g { transition: opacity 0.5s var(--ease-out, ease); }
 .room-pin { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; font-size: 0; color: #1b1d24;
   background: rgba(255, 255, 255, 0.92); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.3);
-  animation: rm-pin 2.6s ease-in-out infinite, rm-pin-out 0.8s ease 6s forwards; }
-@keyframes rm-pin { 0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.3); } 50% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.3); } }
-@keyframes rm-pin-out { to { opacity: 0; } }
+  animation: rm-pin-out 0.8s ease 6s forwards; }
+/* The pulse ring (2026-11-25): before, the pins animated box-shadow forever, even after they had
+   faded out, which repainted the room every frame and was most of the World tab's idle work.
+   Now a ring scales (cheap, on the GPU) twice, and the faded pins are hidden for good. */
+.room-pin::after { content: ''; position: absolute; inset: -4px; border-radius: inherit; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22); pointer-events: none;
+  animation: rm-pin 2.6s ease-in-out 2; }
+@keyframes rm-pin { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.22); opacity: 0.4; } }
+@keyframes rm-pin-out { to { opacity: 0; visibility: hidden; } }
 .room-drop { animation: rm-drop 0.75s cubic-bezier(.3, 1.35, .45, 1) both; }
 @keyframes rm-drop { 0% { transform: translateY(-46px) scale(0.92); opacity: 0; } 45% { opacity: 1; } 70% { transform: translateY(0) scale(1.03, 0.96); } 100% { transform: none; } }
 .room-dust circle { transform-box: fill-box; transform-origin: center; animation: rm-dust 0.8s ease-out both; }

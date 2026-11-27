@@ -1,4 +1,4 @@
-import { locale } from './locale';
+import { dateFormat } from './locale';
 
 // All date helpers work in the user's local timezone using YYYY-MM-DD keys.
 
@@ -41,12 +41,12 @@ export function weekKey(d: Date = new Date()): string {
 
 export function formatDisplayDate(key: string): string {
   const d = parseKey(key);
-  return d.toLocaleDateString(locale(), { weekday: 'long', month: 'long', day: 'numeric' });
+  return dateFormat({ weekday: 'long', month: 'long', day: 'numeric' }).format(d);
 }
 
 export function formatShortDate(key: string): string {
   const d = parseKey(key);
-  return d.toLocaleDateString(locale(), { month: 'short', day: 'numeric' });
+  return dateFormat({ month: 'short', day: 'numeric' }).format(d);
 }
 
 export function currentYear(): number {
