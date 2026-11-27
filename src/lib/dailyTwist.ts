@@ -35,6 +35,8 @@ const TWISTS: Record<string, Twist[]> = {
     { title: 'Move your body for 30 minutes', description: 'A longer session: gym, sport, a long walk or a bike ride.' },
     { title: 'Stretch and mobility, 15 minutes', description: 'Easy day: loosen your hips, back and shoulders.' },
     { title: 'Walk outside for 25 minutes', description: 'Fresh air and daylight, no running needed.' },
+    { title: '3 rounds: 10 push-ups, 15 squats', description: 'A quick circuit anywhere. Rest a minute between rounds.' },
+    { title: 'Play a sport for 30 minutes', description: 'Football, basketball, anything with a ball counts.' },
   ],
   'Walk 8,000 steps': [
     { title: 'Walk 7,000 steps', description: "A slightly easier step day. Enter today's steps from your phone.", target: 7000 },
@@ -50,10 +52,17 @@ const TWISTS: Record<string, Twist[]> = {
   'No junk food': [
     { title: 'Eat a fruit and a vegetable at every meal', description: 'Add the good stuff instead of only cutting the bad.' },
     { title: 'No sugary drinks today', description: 'Water, tea or milk instead.' },
+    { title: 'No snacks bought outside today', description: 'Healthier and cheaper. Bring something from home.' },
+  ],
+  'Connect with someone': [
+    { title: 'Call someone instead of texting', description: 'A real voice call, even five minutes.' },
+    { title: 'Meet a friend in person', description: 'A walk, a game, a snack together.' },
   ],
   Journal: [
     { title: 'Journal: what did you learn today?', description: 'Write a few lines about one thing you learned.' },
     { title: 'Journal: what are you proud of?', description: 'A few lines about something you did well.' },
+    { title: 'Journal: what did money teach you today?', description: 'Something you bought, saved or wanted. Was it worth it?' },
+    { title: 'Journal: one thing to do better tomorrow', description: 'Be kind to yourself, be specific.' },
   ],
 };
 

@@ -292,6 +292,17 @@ export function questsSlice(state: AppState, action: Action): AppState | undefin
     }
 
 
+    case 'PICK_WILDCARD': {
+      // Choose another of today's bonus quests. Not after it's done: no swapping a finished one.
+      const today = todayKey();
+      const current = state.quests.find((q) => q.wildcardDate === today);
+      if (!current || (state.dayLogs[today]?.completedQuestIds ?? []).includes(current.id)) return state;
+      const next = buildWildcardQuestForDate(today, action.pick);
+      if (next.title === current.title) return state;
+      return { ...state, quests: state.quests.map((q) => (q.id === current.id ? { ...next, createdAt: current.createdAt } : q)) };
+    }
+
+
     case 'SET_WILDCARD_ENABLED': {
       return { ...state, wildcardEnabled: action.enabled };
     }
